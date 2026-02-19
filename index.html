@@ -3,837 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>뚠카롱 길드 현황판 (Public)</title>
+    <title>뚠카롱 길드 포털</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans KR', sans-serif; }
-        .chart-container { position: relative; width: 100%; height: 300px; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #f472b6; }
-        .fade-in { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        th.sortable { cursor: pointer; user-select: none; transition: background 0.2s; position: relative; }
-        th.sortable:hover { background-color: #fdf2f8 !important; color: #db2777 !important; }
-        .force-hide { display: none !important; }
-        #loadingOverlay { position: fixed; inset: 0; background: white; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .nav-item.active { background-color: #fdf2f8; color: #ec4899; box-shadow: inset 4px 0 0 #ec4899; }
-        #msgBox { transition: all 0.3s ease; transform: translateY(100px); opacity: 0; pointer-events: none; }
-        #msgBox.show { transform: translateY(0); opacity: 1; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.25rem; text-align: center; font-size: 0.75rem; }
-        .calendar-day { padding: 0.25rem; border-radius: 0.75rem; position: relative; transition: all 0.2s; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; aspect-ratio: 1/1; cursor: pointer; border: 1px solid transparent; }
-        .calendar-day:hover { background-color: #f9fafb; border-color: #fbcfe8; }
-        .calendar-day.today { background-color: #ec4899; color: white; font-weight: bold; }
-        .calendar-day.thursday { color: #db2777; background-color: #fdf2f8; border: 1px solid #fbcfe8; font-weight: bold; }
-        .calendar-day.not-current { opacity: 0.2; pointer-events: none; }
-        .calendar-head { font-size: 0.7rem; font-weight: 800; color: #9ca3af; text-transform: uppercase; padding-bottom: 8px; }
-        .event-dot { width: 4px; height: 4px; background-color: #ec4899; border-radius: 50%; margin-top: 2px; }
-        .calendar-day.today .event-dot { background-color: white; }
-        
-        .event-snippet { 
-            font-size: 11px; 
-            color: #db2777; 
-            opacity: 1; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            width: 100%; 
-            margin-top: 3px; 
-            line-height: 1.1; 
-            font-weight: 800; 
-            background-color: rgba(251, 207, 232, 0.3); 
-            border-radius: 4px;
-            padding: 1px 2px;
-        }
-        .calendar-day.today .event-snippet { color: white; background-color: rgba(255, 255, 255, 0.2); }
-
-        .score-zero { background-color: #fee2e2 !important; color: #ef4444 !important; }
-        .score-cell { transition: background 0.2s; }
-        .score-cell:hover { background-color: #f8fafb; }
-        
-        .masked-text { color: #d1d5db; letter-spacing: 2px; font-size: 10px; }
+        body{font-family:'Noto Sans KR',sans-serif}
+        ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#fbcfe8;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#f472b6}
+        .fade-in{animation:fadeIn .35s ease-out}@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        #loadingOverlay{position:fixed;inset:0;background:#fff;z-index:10000;display:flex;flex-direction:column;justify-content:center;align-items:center}.force-hide{display:none!important}
+        .nav-item.active{background:linear-gradient(135deg,#fdf2f8,#fce7f3);color:#ec4899;box-shadow:inset 4px 0 0 #ec4899}
+        #msgBox{transition:all .3s;transform:translateY(100px);opacity:0;pointer-events:none}#msgBox.show{transform:translateY(0);opacity:1}
+        th.sortable{cursor:pointer;user-select:none;transition:background .2s}th.sortable:hover{background-color:#fdf2f8!important;color:#db2777!important}
+        .score-zero{background-color:#fee2e2!important;color:#ef4444!important}.score-cell{transition:background .2s}.score-cell:hover{background-color:#f8fafb}
+        .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.25rem;text-align:center;font-size:.75rem}
+        .calendar-day{padding:.25rem;border-radius:.75rem;transition:all .2s;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;aspect-ratio:1/1;cursor:pointer;border:1px solid transparent}
+        .calendar-day:hover{background-color:#f9fafb;border-color:#fbcfe8}.calendar-day.today{background-color:#ec4899;color:#fff;font-weight:700}
+        .calendar-day.thursday{color:#db2777;background-color:#fdf2f8;border:1px solid #fbcfe8;font-weight:700}.calendar-day.not-current{opacity:.2;pointer-events:none}
+        .calendar-head{font-size:.7rem;font-weight:800;color:#9ca3af;text-transform:uppercase;padding-bottom:8px}
+        .event-dot{width:4px;height:4px;background-color:#ec4899;border-radius:50%;margin-top:2px}.calendar-day.today .event-dot{background-color:#fff}
+        .event-snippet{font-size:11px;color:#db2777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;margin-top:3px;line-height:1.1;font-weight:800;background-color:rgba(251,207,232,.3);border-radius:4px;padding:1px 2px}
+        .calendar-day.today .event-snippet{color:#fff;background-color:rgba(255,255,255,.2)}
+        @keyframes podiumRise{from{transform:scaleY(0)}to{transform:scaleY(1)}}.podium-bar{transform-origin:bottom;animation:podiumRise .6s ease-out forwards}
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800 h-screen overflow-hidden flex font-medium">
-
-    <div id="loadingOverlay">
-        <div class="text-center">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-opacity-20 border-t-pink-500 mb-8 mx-auto"></div>
-            <p class="text-pink-600 font-bold text-xl tracking-tight">데이터 동기화 중...</p>
-        </div>
-    </div>
-
-    <div id="msgBox" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10">
-        <div id="msgIcon" class="text-pink-500"><i class="fas fa-info-circle"></i></div>
-        <p id="msgText" class="text-sm font-bold"></p>
-    </div>
+    <div id="loadingOverlay"><div class="text-center"><div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-opacity-20 border-t-pink-500 mb-8 mx-auto"></div><p class="text-pink-600 font-bold text-xl tracking-tight">데이터 불러오는 중...</p><p class="text-gray-400 text-xs mt-2 font-bold">뚠카롱 길드 포털</p></div></div>
+    <div id="msgBox" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10"><div class="text-pink-500"><i class="fas fa-info-circle"></i></div><p id="msgText" class="text-sm font-bold"></p></div>
 
     <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-100 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 flex flex-col shadow-sm">
         <div class="p-6 border-b border-gray-100 flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-400 to-rose-400 flex items-center justify-center text-white font-bold shadow-lg shadow-pink-100 text-xl">뚠</div>
-            <div><h1 class="text-lg font-bold text-gray-800 tracking-tight">뚠카롱 현황판</h1><p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">Public View</p></div>
+            <div><h1 class="text-lg font-bold text-gray-800 tracking-tight">뚠카롱 포털</h1><p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">GUILD MEMBER PORTAL</p></div>
             <button id="closeSidebar" class="lg:hidden ml-auto text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
         </div>
-        <nav class="p-4 space-y-2 flex-1 overflow-y-auto no-scrollbar">
-            <button onclick="router('dashboard')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold" data-target="dashboard"><i class="fas fa-columns w-5 text-center"></i><span>대시보드</span></button>
-            <button onclick="router('members')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold" data-target="members"><i class="fas fa-users w-5 text-center"></i><span>길드원 명단</span></button>
-            <button onclick="router('analysis')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold" data-target="analysis"><i class="fas fa-chart-line w-5 text-center"></i><span>수로 점수 분석</span></button>
-            <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold" data-target="bail"><i class="fas fa-gem w-5 text-center"></i><span>보석금 현황</span></button>
-            <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center"></i><span>벌점 현황</span></button>
+        <nav class="p-4 space-y-2 flex-1 overflow-y-auto">
+            <button onclick="router('dashboard')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-pink-50 font-bold" data-target="dashboard"><i class="fas fa-home w-5 text-center"></i><span>대시보드</span></button>
+            <button onclick="router('members')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-pink-50 font-bold" data-target="members"><i class="fas fa-users w-5 text-center"></i><span>길드원 목록</span></button>
+            <button onclick="router('suro')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-pink-50 font-bold" data-target="suro"><i class="fas fa-trophy w-5 text-center"></i><span>수로 점수 조회</span></button>
+            <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-pink-50 font-bold" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center"></i><span>벌점 현황</span></button>
+            <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-pink-50 font-bold" data-target="bail"><i class="fas fa-gem w-5 text-center"></i><span>보석금 현황</span></button>
         </nav>
-        <div class="p-4 border-t border-gray-100 bg-gray-50/50 text-center font-bold"><p class="text-[10px] text-green-500 uppercase tracking-widest"><i class="fas fa-cloud mr-1 animate-pulse"></i> System Active</p></div>
+        <div class="p-4 border-t border-gray-100 bg-gray-50/50 text-center"><p class="text-[10px] text-green-500 font-bold uppercase tracking-widest"><i class="fas fa-cloud mr-1 animate-pulse"></i> Read-Only Mode</p><p class="text-[9px] text-gray-400 mt-1 font-bold">길드원 열람 전용</p></div>
     </aside>
-
     <div id="sidebarOverlay" class="fixed inset-0 bg-black/10 z-40 hidden lg:hidden"></div>
 
     <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 z-10 shadow-sm">
-            <div class="flex items-center gap-4"><button id="openSidebar" class="p-2 lg:hidden rounded-lg hover:bg-gray-100 text-gray-600"><i class="fas fa-bars text-xl"></i></button><h2 id="pageTitle" class="text-xl font-bold text-gray-800 tracking-tight">대시보드</h2></div>
-            <div class="flex items-center gap-4">
-                <div class="px-4 py-1.5 bg-pink-50 text-pink-600 rounded-full text-[11px] font-bold border border-pink-100 shadow-sm">
-                    ✨ <span id="anniversaryLabel">로딩 중...</span>
-                </div>
-                <div class="hidden md:flex px-4 py-1.5 bg-slate-50 text-slate-600 rounded-full text-[11px] font-bold border border-slate-100 shadow-sm gap-2">
-                    <span>👥</span> <span id="totalMembersCount">로딩 중...</span>
-                </div>
-                <button id="refreshBtn" onclick="fetchMembers()" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-all border border-gray-100 shadow-sm"><i class="fas fa-sync-alt"></i></button>
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 shrink-0 z-10 shadow-sm">
+            <div class="flex items-center gap-4"><button id="openSidebar" class="p-2 lg:hidden rounded-lg hover:bg-gray-100 text-gray-600"><i class="fas fa-bars text-xl"></i></button><h2 id="pageTitle" class="text-lg lg:text-xl font-bold text-gray-800 tracking-tight">대시보드</h2></div>
+            <div class="flex items-center gap-2 lg:gap-4">
+                <div class="px-3 lg:px-4 py-1.5 bg-pink-50 text-pink-600 rounded-full text-[10px] lg:text-[11px] font-bold border border-pink-100 shadow-sm">✨ <span id="anniversaryLabel">로딩 중...</span></div>
+                <div class="hidden md:flex px-4 py-1.5 bg-slate-50 text-slate-600 rounded-full text-[11px] font-bold border border-slate-100 shadow-sm gap-2"><span>👥</span><span id="totalMembersCount">-</span></div>
+                <button onclick="fetchData()" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 border border-gray-100 shadow-sm"><i class="fas fa-sync-alt"></i></button>
             </div>
         </header>
-        <!-- Modified Content Area Padding for wider view -->
         <div id="contentArea" class="flex-1 overflow-y-auto p-3 lg:p-6 relative bg-gray-50 flex flex-col min-h-0"></div>
     </main>
 
-    <!-- Event Detail Modal (Read Only) -->
-    <div id="eventDetailModal" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden fade-in font-bold">
-        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-10 border border-gray-50 relative">
-            <div class="flex justify-between items-center mb-10">
-                <h3 id="eventDetailDate" class="text-2xl font-black text-slate-800 tracking-tighter">2026-02-18</h3>
-                <button onclick="closeModal('eventDetailModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div class="space-y-8">
-                <div class="space-y-2">
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">일정 제목</label>
-                    <div id="eventTitleDisplay" class="w-full bg-gray-50 rounded-2xl p-5 text-sm font-bold shadow-inner text-gray-700"></div>
-                </div>
-                
-                <div class="space-y-2">
-                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">상세 내용</label>
-                    <div id="eventContentDisplay" class="w-full bg-gray-50 rounded-2xl p-5 text-sm font-bold shadow-inner text-gray-700 min-h-[100px] whitespace-pre-wrap"></div>
-                </div>
-            </div>
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex justify-around items-center py-2 px-1 shadow-lg lg:hidden">
+        <button onclick="router('dashboard')" class="mobile-tab flex flex-col items-center gap-0.5 px-2 py-1" data-target="dashboard"><i class="fas fa-home text-sm"></i><span class="text-[9px] font-bold">홈</span></button>
+        <button onclick="router('members')" class="mobile-tab flex flex-col items-center gap-0.5 px-2 py-1" data-target="members"><i class="fas fa-users text-sm"></i><span class="text-[9px] font-bold">길드원</span></button>
+        <button onclick="router('suro')" class="mobile-tab flex flex-col items-center gap-0.5 px-2 py-1" data-target="suro"><i class="fas fa-trophy text-sm"></i><span class="text-[9px] font-bold">수로</span></button>
+        <button onclick="router('penalty')" class="mobile-tab flex flex-col items-center gap-0.5 px-2 py-1" data-target="penalty"><i class="fas fa-exclamation-triangle text-sm"></i><span class="text-[9px] font-bold">벌점</span></button>
+        <button onclick="router('bail')" class="mobile-tab flex flex-col items-center gap-0.5 px-2 py-1" data-target="bail"><i class="fas fa-gem text-sm"></i><span class="text-[9px] font-bold">보석금</span></button>
+    </nav>
 
-            <div class="mt-8 text-center">
-                <button onclick="closeModal('eventDetailModal')" class="px-8 py-3 bg-gray-100 text-gray-500 rounded-xl font-bold text-xs hover:bg-gray-200 transition-all">닫기</button>
-            </div>
+    <div id="eventDetailModal" class="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden fade-in font-bold">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm p-10 border border-gray-50 flex flex-col max-h-[85vh] mx-4">
+            <div class="flex justify-between items-center mb-6 shrink-0"><h3 id="eventDetailDate" class="text-2xl font-black text-slate-800 tracking-tighter"></h3><button onclick="document.getElementById('eventDetailModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button></div>
+            <div id="eventListContent" class="flex-1 overflow-y-auto space-y-3"></div>
         </div>
     </div>
 
     <script>
-        // --- CONSTANTS ---
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOylLKXCCvWuHOliqYRP6sK_sOIRe9AmnfGg5xwNNMKD8eDf2K-J4oM7FpEbWVypkrrA/exec";
-        const GUILD_START_DATE = new Date('2020-03-17');
-        const MAPLE_JOBS = ["히어로", "다크나이트", "팔라딘", "불독", "썬콜", "비숍", "보우마스터", "신궁", "패스파인더","나이트로드", "섀도어", "듀얼블레이드", "캡틴", "바이퍼", "캐논마스터","미하일", "소울마스터", "플레임위자드", "윈드브레이커", "나이트워커", "스트라이커","아란", "에반", "루미너스", "메르세데스", "팬텀", "은월","데몬 슬레이어", "데몬 어벤져", "블래스터", "배틀메이지", "와일드헌터", "메카닉", "제논","카이저", "카인", "카데나", "엔젤릭버스터","라라", "호영", "아델", "일리움", "아크", "칼리","제로", "키네시스", "렌"];
-        const baseRanks = ['마카롱', '다쿠아즈'];
-        const initialGuildRanks = {
-            '뚠카롱': [...baseRanks, '크라운', '파르페', '티라미슈', '크로칸슈', '롤케이크', '팬케이크', '와플'],
-            '뚱카롱': [...baseRanks, '뚠케이크', '뚠브레드', '수플레', '뚠스콘', '반죽', '반죽(휴면)', '아인슈페너'],
-            '밤카롱': [...baseRanks, '부팬케이크', '부케이크', '아인슈페너', '반죽', '반죽(휴면)'],
-            '별카롱': [...baseRanks, '부팬케이크', '부케이크', '아인슈페너', '반죽', '반죽(휴면)'],
-            '달카롱': [...baseRanks, '부팬케이크', '부케이크', '아인슈페너', '반죽', '반죽(휴면)'],
-            '꿀카롱': [...baseRanks, '부팬케이크', '부케이크', '아인슈페너', '반죽', '반죽(휴면)']
-        };
-        const ITEMS_PER_PAGE = 17;
+    var SCRIPT_URL="https://script.google.com/macros/s/AKfycbwggYNNELvf6Onk9EQoYJPLXWMAtchkRpoNuOtHyp_Scjo3mqj2TQOBvvdR4yEnXoGVTw/exec";
+    var GUILD_START=new Date('2020-03-17'),PPG=20,chartInst=null;
+    var G=[{name:'뚠카롱',type:'메인 1기',icon:'fa-crown',max:200},{name:'뚱카롱',type:'메인 2기',icon:'fa-heart',max:200},{name:'밤카롱',type:'부캐 1기',icon:'fa-moon',max:200},{name:'별카롱',type:'부캐 2기',icon:'fa-star',max:200},{name:'달카롱',type:'부캐 3기',icon:'fa-sun',max:200},{name:'꿀카롱',type:'부캐 4기',icon:'fa-cube',max:200}];
+    var app={tab:'dashboard',members:[],suroH:[],bail:[],events:[],penalty:[],f:{guild:'all',search:'',sf:'name',so:'asc'},sf:{guild:'뚠카롱',search:'',sf:'avg',so:'desc'},cal:{y:new Date().getFullYear(),m:new Date().getMonth()},pg:{m:1,s:1}};
 
-        // --- GLOBAL STATE ---
-        let jobChartInstance = null;
-        let analysisChartInstance = null;
+    function msg(t){document.getElementById('msgText').innerText=t;document.getElementById('msgBox').classList.add('show');setTimeout(function(){document.getElementById('msgBox').classList.remove('show')},3e3)}
+    function load(v){document.getElementById('loadingOverlay').classList.toggle('force-hide',!v)}
+    function icon(r){if(r==='마카롱')return'<i class="fas fa-crown text-blue-500 mr-1.5"></i>';if(r==='다쿠아즈')return'<i class="fas fa-crown text-pink-500 mr-1.5"></i>';return'<span class="w-2.5 h-2.5 rounded-full bg-gray-200 mr-1.5 inline-block"></span>'}
+    function fmtRank(r){if(!r)return'-';if(['크라운','파르페','티라미슈','크로칸슈'].indexOf(r)!==-1)return r+' <span class="text-[8px] text-blue-500 font-bold">(아인슈페너)</span>';return r}
+    function suroTotal(g){if(!app.suroH.length)return 0;var h=app.suroH[app.suroH.length-1];return app.members.filter(function(m){return m.guild===g}).reduce(function(s,m){return s+(Number(m.suro&&m.suro[h])||0)},0)}
+    function bailStats(){var s={};app.bail.forEach(function(h){s[h.receiver]=(s[h.receiver]||0)+(parseInt(h.amount)||0)});return Object.entries(s).sort(function(a,b){return a[0].localeCompare(b[0],'ko')})}
+    function cmp(a,b,f,o){var vA=f==='mainInfo'?(a.isMain?a.name:(a.mainCharName||'')):a[f],vB=f==='mainInfo'?(b.isMain?b.name:(b.mainCharName||'')):b[f];if(vA===vB)return 0;var nA=parseFloat(vA),nB=parseFloat(vB);if(!isNaN(nA)&&!isNaN(nB))return o==='asc'?nA-nB:nB-nA;var r=String(vA||'')<String(vB||'')?-1:1;return o==='asc'?r:-r}
+    function chgPg(t,d){app.pg[t==='members'?'m':'s']+=d;if(t==='members')updMemTbl();else renderSuro(document.getElementById('contentArea'))}
+    window.changePage=chgPg;
 
-        const appState = {
-            activeTab: 'dashboard',
-            guilds: [
-                { id: 'ddun', name: '뚠카롱', type: '메인 1기', color: '#f472b6', icon: 'fa-crown', max: 200 },
-                { id: 'ddung', name: '뚱카롱', type: '메인 2기', color: '#fb7185', icon: 'fa-heart', max: 200 },
-                { id: 'bam', name: '밤카롱', type: '부캐 1기', color: '#6366f1', icon: 'fa-moon', max: 200 },
-                { id: 'byeol', name: '별카롱', type: '부캐 2기', color: '#facc15', icon: 'fa-star', max: 200 },
-                { id: 'dal', name: '달카롱', type: '부캐 3기', color: '#60a5fa', icon: 'fa-sun', max: 200 },
-                { id: 'kkul', name: '꿀카롱', type: '부캐 4기', color: '#fbbf24', icon: 'fa-cube', max: 200 },
-            ],
-            members: [], history: [], bailHistory: [], suroHeaders: [],
-            events: [],
-            penaltyHistory: [],
-            filters: { guild: 'all', search: '', sortField: 'name', sortOrder: 'asc' },
-            analysisFilters: { sortField: 'avg', sortOrder: 'desc' },
-            analysisGuild: '뚠카롱',
-            calendarView: { year: new Date().getFullYear(), month: new Date().getMonth() },
-            scriptUrl: APPS_SCRIPT_URL,
-            guildRanks: initialGuildRanks,
-            currentSelectedDate: null,
-            pagination: { members: 1, analysis: 1 }
-        };
+    function fetchData(){
+        load(true);
+        fetch(SCRIPT_URL+"?t="+Date.now(),{method:'GET',mode:'cors',cache:'no-cache',redirect:'follow'}).then(function(r){return r.json()}).then(function(j){
+            if(j.status==="success"){
+                app.members=(j.data.members||[]).map(function(m){m.id=String(m.id);return m}).filter(function(m){return m.name&&m.name.trim()});
+                app.suroH=j.data.suroHeaders||[];app.bail=j.data.bailHistory||[];
+                app.events=(j.data.events||[]).map(function(e){return{date:(e.date||'').split('T')[0].trim(),title:e.title,content:e.content}});
+                app.penalty=j.data.penaltyHistory||[];
+                var c={};G.forEach(function(g){c[g.name]=0});app.members.forEach(function(m){if(c[m.guild]!==undefined)c[m.guild]++});
+                var al={'뚠카롱':'뚠','뚱카롱':'뚱','밤카롱':'밤','별카롱':'별','달카롱':'달','꿀카롱':'꿀'};
+                document.getElementById('totalMembersCount').innerText=G.map(function(g){return(al[g.name]||g.name[0])+':'+c[g.name]}).join(' ');
+                var a=new Date()-GUILD_START,d=Math.floor(a/864e5);
+                document.getElementById('anniversaryLabel').innerText='뚠카롱 '+d+'일 ('+Math.floor(d/365)+'년 '+(d%365)+'일)';
+                router(app.tab);
+            }else msg("데이터를 불러오지 못했습니다.");
+            load(false);
+        }).catch(function(e){console.error(e);msg("네트워크 오류");load(false)});
+    }
+    window.fetchData=fetchData;
 
-        // --- HELPER FUNCTIONS ---
-        window.showMsg = (text, type = 'info') => {
-            const box = document.getElementById('msgBox'); if(!box) return;
-            document.getElementById('msgText').innerText = text;
-            box.classList.add('show'); setTimeout(() => box.classList.remove('show'), 3500);
-        };
-        window.showLoading = (show) => { document.getElementById('loadingOverlay')?.classList.toggle('force-hide', !show); };
-        
-        window.getAnniversaryInfo = () => {
-            const now = new Date(); const diff = now - GUILD_START_DATE;
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const years = Math.floor(days / 365);
-            const remainingDays = days % 365;
-            return { totalDays: days, years, remainingDays };
-        };
-        
-        window.updateAnniversaryLabel = () => {
-            const anniv = window.getAnniversaryInfo();
-            const el = document.getElementById('anniversaryLabel');
-            if (el) el.innerText = `뚠카롱이 생성된 지 ${anniv.totalDays}일 (${anniv.years}년 ${anniv.remainingDays}일)`;
-        };
+    function router(tab){
+        app.tab=tab;var c=document.getElementById('contentArea');c.innerHTML='';
+        document.querySelectorAll('.nav-item').forEach(function(el){el.classList.toggle('active',el.dataset.target===tab)});
+        document.querySelectorAll('.mobile-tab').forEach(function(el){var a=el.dataset.target===tab;el.classList.toggle('text-pink-500',a);el.classList.toggle('text-gray-400',!a)});
+        var t={dashboard:'길드 현황판',members:'길드원 목록',suro:'수로 점수 조회',bail:'보석금 현황',penalty:'벌점 관리 현황'};
+        document.getElementById('pageTitle').innerText=t[tab]||'';
+        if(tab==='dashboard')renderDash(c);else if(tab==='members')renderMem(c);else if(tab==='suro')renderSuro(c);
+        else if(tab==='penalty')renderPenalty(c);
+        else if(tab==='bail')renderBail(c);
+    }
+    window.router=router;
 
-        window.calculateTotalSuro = (guildName) => {
-            if (!appState.suroHeaders || appState.suroHeaders.length === 0) return 0;
-            const lastHeader = appState.suroHeaders[appState.suroHeaders.length - 1];
-            return appState.members.filter(m => m.guild === guildName).reduce((s, m) => s + (Number(m.suro?.[lastHeader]) || 0), 0);
-        };
+    // === DASHBOARD ===
+    function renderDash(c){
+        var d1=suroTotal('뚠카롱'),d2=suroTotal('뚱카롱'),bs=bailStats(),bh='';
+        if(!bs.length)bh='<p class="text-[10px] text-gray-300 italic text-center py-4">내역 없음</p>';
+        else bs.forEach(function(i){bh+='<div class="flex justify-between items-center py-2.5 border-b border-gray-50 last:border-0"><span class="text-[11px] font-bold text-gray-600">'+i[0]+'</span><span class="text-[11px] font-black text-pink-500">'+i[1]+'개</span></div>'});
+        var gc='';G.forEach(function(g){var n=app.members.filter(function(m){return m.guild===g.name}).length,p=Math.min(n/g.max*100,100);
+            gc+='<div class="bg-white p-5 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group" onclick="app.f.guild=\''+g.name+'\';router(\'members\')">'
+            +'<div class="flex items-center gap-2 mb-3"><div class="w-8 h-8 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-pink-50 group-hover:text-pink-500 text-xs"><i class="fas '+g.icon+'"></i></div>'
+            +'<div><span class="block font-bold text-sm text-gray-800 group-hover:text-pink-500 leading-tight">'+g.name+'</span><span class="text-[9px] text-gray-400 font-bold">'+g.type+'</span></div></div>'
+            +'<div class="w-full bg-gray-50 rounded-full h-1 overflow-hidden"><div class="h-full bg-pink-500" style="width:'+p+'%"></div></div>'
+            +'<p class="text-[10px] text-gray-400 font-bold mt-1.5 text-right">'+n+' / '+g.max+'</p></div>'});
+        var cv=app.cal;
+        c.innerHTML='<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8 mb-6 lg:mb-8 fade-in shrink-0"><div class="flex flex-col gap-6">'
+            +'<div class="flex gap-4 lg:gap-6 h-32 lg:h-40">'
+            +'<div onclick="app.sf.guild=\'뚠카롱\';router(\'suro\')" class="flex-1 bg-gradient-to-br from-pink-500 to-rose-500 rounded-[2rem] lg:rounded-[2.5rem] p-6 lg:p-8 shadow-lg text-white cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden flex flex-col justify-center"><div class="absolute top-0 right-0 p-4 opacity-20 text-4xl lg:text-5xl"><i class="fas fa-crown"></i></div><h3 class="text-xs font-bold opacity-80 uppercase tracking-widest text-center">뚠카롱 수로</h3><p class="text-2xl lg:text-3xl font-black tracking-tighter text-center">'+d1.toLocaleString()+'</p></div>'
+            +'<div onclick="app.sf.guild=\'뚱카롱\';router(\'suro\')" class="flex-1 bg-white border border-gray-100 rounded-[2rem] lg:rounded-[2.5rem] p-6 lg:p-8 shadow-sm cursor-pointer hover:border-pink-200 flex flex-col justify-center"><h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest text-center">뚱카롱 수로</h3><p class="text-2xl lg:text-3xl font-black tracking-tighter text-pink-500 text-center">'+d2.toLocaleString()+'</p></div></div>'
+            +'<div class="bg-white p-6 lg:p-8 rounded-[2rem] lg:rounded-[2.5rem] border border-gray-100 min-h-[320px] shadow-sm flex flex-col">'
+            +'<div class="flex justify-between items-center mb-6"><div class="flex items-center gap-3"><span class="text-2xl">📅</span><h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">길드 일정</h3></div>'
+            +'<div class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-2xl border border-gray-100"><button onclick="moveMo(-1)" class="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-white hover:text-pink-500 text-gray-400"><i class="fas fa-chevron-left text-[10px]"></i></button><span class="text-[11px] font-bold text-gray-600 w-16 text-center">'+cv.y+'.'+String(cv.m+1).padStart(2,'0')+'</span><button onclick="moveMo(1)" class="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-white hover:text-pink-500 text-gray-400"><i class="fas fa-chevron-right text-[10px]"></i></button></div></div>'
+            +renderCal()+'</div></div>'
+            +'<div class="flex flex-col gap-6 lg:gap-8"><div class="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">'+gc+'</div>'
+            +'<div class="bg-white p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3rem] shadow-sm border border-gray-100 flex flex-col flex-1 min-h-[180px] overflow-hidden"><div class="flex items-center justify-between mb-6"><h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest">간부진 보석금 현황</h3><i class="fas fa-gem text-pink-300"></i></div><div class="flex-1 overflow-y-auto pr-2">'+bh+'</div></div></div></div>';
+    }
 
-        window.getAdminBailStats = () => {
-            const stats = {};
-            appState.bailHistory.forEach(h => { const amount = parseInt(h.amount) || 0; stats[h.receiver] = (stats[h.receiver] || 0) + amount; });
-            return Object.entries(stats).sort((a,b) => a[0].localeCompare(b[0], 'ko'));
-        };
+    function moveMo(d){var m=app.cal.m+d,y=app.cal.y;if(m<0){m=11;y--}else if(m>11){m=0;y++}app.cal={y:y,m:m};router('dashboard')}
+    window.moveMo=moveMo;
 
-        function smartCompare(a, b, field, order) {
-            let valA = a[field]; let valB = b[field];
-            if (field === 'mainInfo') {
-                valA = a.isMain ? a.name : (a.mainCharName || "");
-                valB = b.isMain ? b.name : (b.mainCharName || "");
-            }
-            if (valA === valB) return 0;
-            const numA = parseFloat(valA); const numB = parseFloat(valB);
-            if (!isNaN(numA) && !isNaN(numB)) { return order === 'asc' ? numA - numB : numB - numA; }
-            const strA = String(valA || ""); const strB = String(valB || "");
-            const res = strA < strB ? -1 : 1;
-            return order === 'asc' ? res : -res;
-        }
+    function renderCal(){
+        var y=app.cal.y,mo=app.cal.m,f=new Date(y,mo,1).getDay(),la=new Date(y,mo+1,0).getDate(),pl=new Date(y,mo,0).getDate(),td=new Date();
+        var h='<div class="calendar-grid"><div class="calendar-head text-red-400">일</div><div class="calendar-head">월</div><div class="calendar-head">화</div><div class="calendar-head">수</div><div class="calendar-head text-pink-500">목</div><div class="calendar-head">금</div><div class="calendar-head text-blue-400">토</div>';
+        for(var i=f;i>0;i--)h+='<div class="calendar-day not-current"><span>'+(pl-i+1)+'</span></div>';
+        for(var d=1;d<=la;d++){var ds=y+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+            var ev=app.events.filter(function(e){return e.date===ds}),isT=td.getFullYear()===y&&td.getMonth()===mo&&td.getDate()===d,isTh=new Date(y,mo,d).getDay()===4;
+            var cl="calendar-day text-gray-600";if(isTh)cl+=" thursday";if(isT)cl+=" today";var eh='';
+            if(ev.length>0){eh+='<div class="event-dot"></div>';ev.slice(0,2).forEach(function(e){eh+='<div class="event-snippet" title="'+e.title+'">'+e.title+'</div>'});if(ev.length>2)eh+='<div class="text-[9px] text-pink-400 mt-0.5 font-bold">+'+(ev.length-2)+'</div>'}
+            h+='<div class="'+cl+'" onclick="showEvt(\''+ds+'\')"><span>'+d+'</span>'+eh+'</div>'}
+        var ex=(7-((f+la)%7))%7;for(var i=1;i<=ex;i++)h+='<div class="calendar-day not-current"><span>'+i+'</span></div>';
+        return h+'</div>';
+    }
 
-        window.getNicknameIcon = (role) => {
-            if (role === '마카롱') return '<i class="fas fa-crown text-blue-500 mr-2 shadow-sm"></i>';
-            if (role === '다쿠아즈') return '<i class="fas fa-crown text-pink-500 mr-2 shadow-sm"></i>';
-            return '<span class="w-3 h-3 rounded-full bg-gray-200 mr-2 inline-block"></span>';
-        };
+    function showEvt(ds){
+        var ev=app.events.filter(function(e){return e.date===ds});document.getElementById('eventDetailDate').innerText=ds;var el=document.getElementById('eventListContent');
+        if(!ev.length){el.innerHTML='<div class="text-center py-10"><i class="fas fa-calendar-day text-gray-200 text-3xl mb-4"></i><p class="text-sm text-gray-400 font-bold">등록된 일정이 없습니다.</p></div>'}
+        else{var h='';ev.forEach(function(e){h+='<div class="p-5 bg-pink-50/50 border border-pink-100 rounded-2xl"><div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-pink-500 rounded-full"></div><h4 class="font-bold text-sm text-gray-800">'+e.title+'</h4></div>'+(e.content?'<p class="text-xs text-gray-500 ml-4 leading-relaxed">'+e.content+'</p>':'')+'</div>'});el.innerHTML=h}
+        document.getElementById('eventDetailModal').classList.remove('hidden');
+    }
+    window.showEvt=showEvt;
 
-        function formatRankWithSuffix(rank) {
-            if (!rank) return '-';
-            const special = ['크라운', '파르페', '티라미슈', '크로칸슈'];
-            if (special.includes(rank)) return `${rank} <span class="text-[8.5px] text-blue-500 font-bold tracking-tighter">(아인슈페너)</span>`;
-            return rank;
-        }
+    // === MEMBERS ===
+    function renderMem(c){
+        var th='<button onclick="app.f.guild=\'all\';app.pg.m=1;updMemTbl()" class="shrink-0 px-4 py-2 rounded-xl text-xs font-bold '+(app.f.guild==='all'?'bg-gray-800 text-white shadow-md':'bg-gray-50 text-gray-500')+'">전체</button>';
+        G.forEach(function(g){th+='<button onclick="app.f.guild=\''+g.name+'\';app.pg.m=1;updMemTbl()" class="shrink-0 px-4 py-2 rounded-xl text-xs font-bold '+(app.f.guild===g.name?'bg-pink-500 text-white shadow-md':'bg-gray-50 text-gray-500')+'">'+g.name+'</button>'});
+        c.innerHTML='<div class="flex flex-col gap-3 fade-in h-full"><div class="bg-white p-3 lg:p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col xl:flex-row items-center gap-3 lg:gap-4 shrink-0"><div class="flex overflow-x-auto w-full xl:w-auto gap-2 shrink-0">'+th+'</div><div class="relative flex-1 w-full"><i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i><input type="text" oninput="app.f.search=this.value;app.pg.m=1;updMemTbl()" value="'+app.f.search+'" class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-xs font-bold shadow-inner focus:ring-2 focus:ring-pink-50" placeholder="닉네임, 직위, 직업, 본캐명 검색"></div></div><div id="mtc" class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex-1 min-h-0 flex flex-col"></div></div>';
+        updMemTbl();
+    }
 
-        // --- CORE API ---
-        window.fetchMembers = async () => {
-            window.showLoading(true);
-            try {
-                const targetUrl = appState.scriptUrl + "?t=" + new Date().getTime();
-                const response = await fetch(targetUrl, { 
-                    method: 'GET', 
-                    mode: 'cors', 
-                    cache: 'no-cache',
-                    redirect: 'follow'
-                });
-                const json = await response.json();
-                if (json.status === "success") {
-                    appState.members = (json.data.members || []).map(m => ({...m, id: String(m.id)})).filter(m => m.name && m.name.trim() !== "");
-                    appState.history = json.data.history || [];
-                    appState.suroHeaders = json.data.suroHeaders || [];
-                    appState.bailHistory = json.data.bailHistory || [];
-                    appState.events = json.data.events || [];
-                    appState.penaltyHistory = json.data.penaltyHistory || [];
-                    
-                    const countEl = document.getElementById('totalMembersCount');
-                    if (countEl) {
-                        const counts = {};
-                        appState.guilds.forEach(g => counts[g.name] = 0);
-                        appState.members.forEach(m => {
-                            if (counts[m.guild] !== undefined) counts[m.guild]++;
-                        });
-                        
-                        const aliases = { '뚠카롱': '뚠', '뚱카롱': '뚱', '밤카롱': '밤', '별카롱': '별', '달카롱': '달', '꿀카롱': '꿀' };
-                        const text = appState.guilds.map(g => {
-                            const name = aliases[g.name] || g.name.substring(0, 1);
-                            return `${name}:${counts[g.name]}`;
-                        }).join(' ');
-                        
-                        countEl.innerText = text;
-                    }
-                    
-                    window.updateAnniversaryLabel();
-                    window.router(appState.activeTab);
-                } else {
-                    window.showMsg("데이터를 불러오지 못했습니다.", "error");
-                }
-            } catch (e) { 
-                console.error("Fetch Error:", e); 
-                window.showMsg("데이터 연동 실패. 네트워크 상태를 확인하세요.", "error"); 
-            }
-            window.showLoading(false);
-        };
+    function updMemTbl(){
+        var cn=document.getElementById('mtc');if(!cn)return;var t=app.f.search.toLowerCase();
+        var fl=app.members.filter(function(m){var g=app.f.guild==='all'||m.guild===app.f.guild;var s=m.name.toLowerCase().indexOf(t)!==-1||(m.class||'').toLowerCase().indexOf(t)!==-1||(m.role||'').toLowerCase().indexOf(t)!==-1||(m.mainCharName||'').toLowerCase().indexOf(t)!==-1;return g&&s});
+        fl.sort(function(a,b){return cmp(a,b,app.f.sf,app.f.so)});
+        var tot=fl.length,pgs=Math.ceil(tot/PPG)||1;if(app.pg.m>pgs)app.pg.m=pgs;if(app.pg.m<1)app.pg.m=1;
+        var pg=fl.slice((app.pg.m-1)*PPG,app.pg.m*PPG);
+        function si(f){return app.f.sf===f?(app.f.so==='asc'?' <i class="fas fa-sort-up"></i>':' <i class="fas fa-sort-down"></i>'):''}
+        var h='<div class="overflow-auto flex-1"><table class="w-full text-left min-w-[800px] text-xs whitespace-nowrap"><thead class="bg-gray-50 text-[10px] font-bold text-gray-500 border-b border-gray-100 sticky top-0 z-10"><tr><th class="p-4 text-center w-14">No.</th><th class="p-4 sortable" onclick="memSort(\'name\')">닉네임'+si('name')+'</th><th class="p-4 sortable" onclick="memSort(\'mainInfo\')">본캐 정보'+si('mainInfo')+'</th><th class="p-4 sortable" onclick="memSort(\'guild\')">소속'+si('guild')+'</th><th class="p-4 sortable" onclick="memSort(\'role\')">직위'+si('role')+'</th><th class="p-4 sortable" onclick="memSort(\'class\')">직업'+si('class')+'</th></tr></thead><tbody class="divide-y divide-gray-50 text-gray-600 font-bold">';
+        pg.forEach(function(m,i){var gi=(app.pg.m-1)*PPG+i+1,mn=m.isMain?m.name:(m.mainCharName||'-'),mm=app.members.find(function(x){return x.name===mn}),mr=mm?fmtRank(mm.role):'-',ms='',mt='text-gray-700',st='text-gray-400',tr=mm?mm.role:(m.isMain?m.role:'');
+            if(['티라미슈','파르페','크라운'].indexOf(tr)!==-1){ms='background-color:#0066FF;';mt='text-white';st='text-white opacity-80'}else if(tr==='크로칸슈'){ms='background-color:#92D050;';mt='text-black';st='text-black opacity-80'}
+            var rh='<span class="text-[10px]">'+m.role+'</span>';if(m.role==='아인슈페너')rh='<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-sm" style="background-color:#FF99FF">'+m.role+'</span>';
+            h+='<tr class="hover:bg-pink-50/20 transition-colors h-12"><td class="p-3 text-center text-gray-400 text-[11px]">'+gi+'</td><td class="p-3 font-bold text-gray-800 flex items-center h-full leading-none">'+icon(m.role)+'<span class="text-sm tracking-tight">'+m.name+'</span></td><td class="p-3 leading-tight"><div class="rounded-xl p-2 -m-1" style="'+ms+'"><span class="block text-[11px] font-bold '+mt+'">'+mn+'</span><span class="text-[9px] font-medium '+st+'">'+mr+'</span></div></td><td class="p-3 text-[11px]">'+m.guild+'</td><td class="p-3">'+rh+'</td><td class="p-3"><span class="text-[10px] text-gray-400">'+(m.class||'-')+'</span></td></tr>'});
+        h+='</tbody></table></div><div class="p-3 border-t border-gray-100 flex justify-between items-center bg-gray-50/50"><span class="text-[10px] text-gray-400 font-bold ml-2">총 '+tot+'명</span><div class="flex items-center gap-4"><button onclick="changePage(\'members\',-1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 disabled:opacity-30" '+(app.pg.m<=1?'disabled':'')+'><i class="fas fa-chevron-left text-[10px]"></i></button><span class="text-xs font-bold text-gray-500">'+app.pg.m+' / '+pgs+'</span><button onclick="changePage(\'members\',1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 disabled:opacity-30" '+(app.pg.m>=pgs?'disabled':'')+'><i class="fas fa-chevron-right text-[10px]"></i></button></div></div>';
+        cn.innerHTML=h;
+    }
+    window.updMemTbl=updMemTbl;
+    function memSort(f){if(app.f.sf===f)app.f.so=app.f.so==='asc'?'desc':'asc';else{app.f.sf=f;app.f.so='asc'}app.pg.m=1;updMemTbl()}
+    window.memSort=memSort;
 
-        // --- ROUTER ---
-        window.router = (tab) => {
-            appState.activeTab = tab;
-            const content = document.getElementById('contentArea'); if(!content) return;
-            content.innerHTML = '';
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab));
-            const titles = { dashboard: '길드 현황판', members: '길드원 명단', analysis: '수로 분석', bail: '보석금 현황', penalty: '벌점 관리 현황' };
-            document.getElementById('pageTitle').innerText = titles[tab] || '';
-            if (tab === 'dashboard') window.renderDashboard(content);
-            else if (tab === 'members') window.renderMembers(content);
-            else if (tab === 'analysis') window.renderAnalysis(content, appState.analysisGuild);
-            else if (tab === 'bail') window.renderBail(content);
-            else if (tab === 'penalty') window.renderPenalty(content);
-        };
+    // === SURO ===
+    function renderSuro(c){
+        var gN=app.sf.guild,tg=app.members.filter(function(m){return m.guild===gN}),rH=app.suroH.slice(-5),cH=rH[rH.length-1],tot=suroTotal(gN);
+        var zc=tg.filter(function(m){return(Number(m.suro&&m.suro[cH])||0)===0}).length;
+        var pr=tg.map(function(m){var sc=rH.map(function(h){return Number(m.suro&&m.suro[h])||0}),av=sc.length?(sc.reduce(function(a,b){return a+b},0)/sc.length):0;return{name:m.name,role:m.role,avg:Number(av.toFixed(1)),cur:Number(m.suro&&m.suro[cH])||0,sc:sc}});
+        var st=app.sf.search.toLowerCase(),fl=st?pr.filter(function(m){return m.name.toLowerCase().indexOf(st)!==-1}):pr;
+        var sf=app.sf.sf,so=app.sf.so;fl.sort(function(a,b){if(sf==='avg')return so==='asc'?a.avg-b.avg:b.avg-a.avg;if(sf==='current')return so==='asc'?a.cur-b.cur:b.cur-a.cur;return cmp(a,b,sf,so)});
+        var ti=fl.length,pgs=Math.ceil(ti/PPG)||1;if(app.pg.s>pgs)app.pg.s=pgs;if(app.pg.s<1)app.pg.s=1;
+        var pd=fl.slice((app.pg.s-1)*PPG,app.pg.s*PPG);
+        function si(f){return app.sf.sf===f?(app.sf.so==='asc'?' <i class="fas fa-sort-up"></i>':' <i class="fas fa-sort-down"></i>'):''}
+        var t3=[].concat(pr).sort(function(a,b){return b.cur-a.cur}).slice(0,3),po='';
+        if(t3.length>=2)po+='<div class="flex flex-col items-center"><span class="text-[10px] font-bold text-gray-500 mb-1">'+t3[1].name+'</span><div class="w-14 lg:w-16 bg-gray-200 rounded-t-xl podium-bar flex items-center justify-center" style="height:70px;animation-delay:.2s"><span class="text-xs font-black text-gray-600">'+t3[1].cur.toLocaleString()+'</span></div><div class="w-14 lg:w-16 bg-gray-300 text-center py-1 rounded-b text-[10px] font-black text-white">2nd</div></div>';
+        if(t3.length>=1)po+='<div class="flex flex-col items-center"><span class="text-[10px] font-bold text-pink-500 mb-1">👑 '+t3[0].name+'</span><div class="w-14 lg:w-16 bg-pink-500 rounded-t-xl podium-bar flex items-center justify-center" style="height:100px"><span class="text-xs font-black text-white">'+t3[0].cur.toLocaleString()+'</span></div><div class="w-14 lg:w-16 bg-pink-600 text-center py-1 rounded-b text-[10px] font-black text-white">1st</div></div>';
+        if(t3.length>=3)po+='<div class="flex flex-col items-center"><span class="text-[10px] font-bold text-gray-500 mb-1">'+t3[2].name+'</span><div class="w-14 lg:w-16 bg-gray-100 rounded-t-xl podium-bar flex items-center justify-center" style="height:50px;animation-delay:.4s"><span class="text-xs font-black text-gray-500">'+t3[2].cur.toLocaleString()+'</span></div><div class="w-14 lg:w-16 bg-gray-200 text-center py-1 rounded-b text-[10px] font-black text-gray-500">3rd</div></div>';
 
-        // --- DASHBOARD ---
-        window.renderDashboard = (container) => {
-            const anniv = window.getAnniversaryInfo(); const ddunT = window.calculateTotalSuro('뚠카롱'); const ddungT = window.calculateTotalSuro('뚱카롱');
-            // Admin Bail Stats - Unmasked for public view (Receiver names visible)
-            
-            const adminBailStats = window.getAdminBailStats();
-            // Displaying Admin Names for public view
-            const adminBailHtml = adminBailStats.map(([name, count]) => `<div class="flex justify-between items-center py-2 border-b border-gray-50 last:border-0"><span class="text-[11px] font-bold text-gray-600">${name}</span><span class="text-[11px] font-black text-pink-500">${count}개</span></div>`).join('') || '<p class="text-[10px] text-gray-300 italic text-center py-4">보석금 내역 없음</p>';
-            
-            container.innerHTML = `
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8 fade-in shrink-0">
-                <div class="flex flex-col gap-6">
-                    <div class="flex gap-6 h-40">
-                        <div onclick="router('analysis'); renderAnalysis(document.getElementById('contentArea'), '뚠카롱')" class="flex-1 bg-gradient-to-br from-pink-500 to-rose-500 rounded-[2.5rem] p-8 shadow-lg text-white cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden flex flex-col justify-center border-none">
-                            <div class="absolute top-0 right-0 p-4 opacity-20 text-5xl"><i class="fas fa-crown"></i></div>
-                            <h3 class="text-sm font-bold opacity-80 uppercase tracking-widest text-center">뚠카롱 수로 총점</h3>
-                            <p class="text-3xl font-black tracking-tighter text-center">${ddunT.toLocaleString()}</p>
-                        </div>
-                        <div onclick="router('analysis'); renderAnalysis(document.getElementById('contentArea'), '뚱카롱')" class="flex-1 bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-sm text-gray-800 cursor-pointer hover:border-pink-200 transition-all flex flex-col justify-center">
-                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest text-center">뚱카롱 수로 총점</h3>
-                            <p class="text-3xl font-black tracking-tighter text-pink-500 text-center">${ddungT.toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 min-h-[340px] shadow-sm flex flex-col">
-                        <div class="flex justify-between items-center mb-6">
-                            <div class="flex items-center gap-3">
-                                <span class="text-2xl">📅</span>
-                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Guild Calendar</h3>
-                            </div>
-                            <div class="flex items-center gap-4">
-                                <div class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-2xl border border-gray-100">
-                                    <button onclick="moveMonth(-1)" class="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-white hover:text-pink-500 transition-all text-gray-400"><i class="fas fa-chevron-left text-[10px]"></i></button>
-                                    <span class="text-[11px] font-bold text-gray-600 w-16 text-center">${appState.calendarView.year}.${String(appState.calendarView.month + 1).padStart(2, '0')}</span>
-                                    <button onclick="moveMonth(1)" class="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-white hover:text-pink-500 transition-all text-gray-400"><i class="fas fa-chevron-right text-[10px]"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                        ${window.renderCalendar()}
-                    </div>
-                </div>
-                <div class="flex flex-col gap-8 h-full">
-                    <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col h-[300px] overflow-hidden shrink-0">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest">직업 분포도</h3>
-                            <select onchange="window.updateJobChart(this.value)" class="bg-gray-50 rounded-xl px-3 py-1.5 text-xs font-bold outline-none cursor-pointer hover:bg-gray-100">
-                                <option value="all">전체</option>${appState.guilds.map(g => `<option value="${g.name}">${g.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="flex-1 overflow-y-auto no-scrollbar">
-                            <div style="min-height: 250px;"><canvas id="jobChart"></canvas></div>
-                        </div>
-                    </div>
-                    <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col flex-1 min-h-[200px] overflow-hidden">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest">간부진 보석금 현황</h3>
-                            <i class="fas fa-gem text-pink-300"></i>
-                        </div>
-                        <div class="flex-1 overflow-y-auto no-scrollbar pr-2">${adminBailHtml}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in shrink-0">
-                ${appState.guilds.map(g => { 
-                    const count = appState.members.filter(m => m.guild === g.name).length; 
-                    const pct = Math.min((count / g.max) * 100, 100); 
-                    return `<div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group" onclick="filterByGuild('${g.name}')"><div class="flex justify-between items-start mb-6"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-pink-50 group-hover:text-pink-500 transition-colors"><i class="fas ${g.icon}"></i></div><div><span class="block font-bold text-lg text-gray-800 group-hover:text-pink-500">${g.name}</span><span class="text-[10px] text-gray-400 font-bold">${g.type}</span></div></div></div><div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden"><div class="h-full bg-pink-500 transition-all duration-1000" style="width:${pct}%"></div></div><p class="text-[10px] text-gray-400 font-bold mt-2 text-right">${count} / ${g.max}</p></div>`; 
-                }).join('')}
-            </div>`;
-            setTimeout(() => window.updateJobChart('all'), 0);
-        };
+        var tb='';G.forEach(function(g){tb+='<button onclick="app.sf.guild=\''+g.name+'\';app.sf.search=\'\';app.pg.s=1;renderSuro(document.getElementById(\'contentArea\'))" class="px-5 lg:px-6 py-2.5 rounded-xl text-xs font-bold shrink-0 '+(g.name===gN?'bg-pink-500 text-white shadow-lg':'bg-white text-gray-500 border border-gray-100')+'">'+g.name+'</button>'});
+        var pH=rH.slice(0,-1),pTh='';pH.forEach(function(h){pTh+='<th class="p-4 text-right font-medium hidden lg:table-cell">'+h.split('~')[0].trim()+'</th>'});
+        var rw='';pd.forEach(function(m,i){var rk=(app.pg.s-1)*PPG+i+1,bd='<span class="text-gray-300">'+rk+'</span>';if(rk===1)bd='<span class="text-yellow-500">🥇</span>';else if(rk===2)bd='<span class="text-gray-400">🥈</span>';else if(rk===3)bd='<span class="text-orange-400">🥉</span>';
+            var pt='';m.sc.slice(0,-1).forEach(function(s){pt+='<td class="p-4 text-right font-mono hidden lg:table-cell score-cell '+(s===0?'score-zero':'text-gray-400')+'">'+(s>0?s.toLocaleString():'0')+'</td>'});
+            rw+='<tr class="hover:bg-gray-50 transition-colors h-12"><td class="p-4 text-center">'+bd+'</td><td class="p-4 text-gray-800 flex items-center leading-none">'+icon(m.role)+m.name+'</td><td class="p-4 text-center text-pink-500 bg-pink-50/20">'+m.avg.toLocaleString()+'</td><td class="p-4 text-center font-mono '+(m.cur===0?'score-zero':'text-gray-700 font-black')+'">'+(m.cur>0?m.cur.toLocaleString():'0')+'</td>'+pt+'</tr>'});
 
-        // --- CALENDAR LOGIC ---
-        window.moveMonth = (delta) => {
-            let newMonth = appState.calendarView.month + delta;
-            let newYear = appState.calendarView.year;
-            if (newMonth < 0) { newMonth = 11; newYear--; }
-            else if (newMonth > 11) { newMonth = 0; newYear++; }
-            appState.calendarView.month = newMonth;
-            appState.calendarView.year = newYear;
-            window.router('dashboard');
-        };
+        c.innerHTML='<div class="flex flex-col gap-4 lg:gap-6 fade-in h-full overflow-hidden"><div class="flex gap-2 overflow-x-auto shrink-0">'+tb+'</div>'
+            +'<div class="grid grid-cols-3 gap-3 lg:gap-4 shrink-0 font-bold"><div class="bg-white p-4 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] border border-gray-100 shadow-sm flex flex-col justify-center items-center"><p class="text-[9px] lg:text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">전체 총점</p><h4 class="text-xl lg:text-3xl font-black text-gray-800 tracking-tighter">'+tot.toLocaleString()+'</h4></div><div class="bg-red-50 p-4 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] border border-red-100 shadow-sm flex flex-col justify-center items-center"><p class="text-[9px] lg:text-[10px] text-red-500 font-bold uppercase tracking-widest mb-1">🚨 미참여</p><h4 class="text-xl lg:text-3xl font-black text-red-600 tracking-tighter">'+zc+'명</h4></div><div class="bg-white p-4 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] border border-gray-100 shadow-sm flex flex-col justify-center items-center"><p class="text-[9px] lg:text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">데이터 주차</p><h4 class="text-[10px] lg:text-sm font-bold text-gray-700">'+(cH?cH.split(' ')[0]:'-')+'</h4></div></div>'
+            +'<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 shrink-0"><div class="bg-white p-6 lg:p-8 rounded-[2rem] lg:rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col items-center justify-center min-h-[200px]"><h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest">🏆 이번주 TOP 3</h3><div class="flex items-end gap-4 lg:gap-6 h-[120px]">'+po+'</div></div><div class="lg:col-span-2 bg-white p-6 lg:p-8 rounded-[2rem] lg:rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col min-h-[200px]"><h3 class="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest">주간 총점 추이</h3><div class="flex-1 min-h-[150px]"><canvas id="suroChart"></canvas></div></div></div>'
+            +'<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col"><div class="p-4 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">수로 점수 랭킹</h3><div class="relative w-full sm:w-64"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i><input type="text" oninput="app.sf.search=this.value;app.pg.s=1;renderSuro(document.getElementById(\'contentArea\'))" value="'+app.sf.search+'" class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none text-xs font-bold shadow-inner focus:ring-2 focus:ring-pink-50" placeholder="닉네임 검색"></div></div>'
+            +'<div class="flex-1 overflow-auto"><table class="w-full text-left text-xs whitespace-nowrap min-w-[700px]"><thead class="bg-gray-50 font-bold text-[10px] text-gray-500 uppercase sticky top-0 z-10 border-b border-gray-100"><tr><th class="p-4 w-14 text-center">RANK</th><th class="p-4 sortable" onclick="suroSort(\'name\')">캐릭터명'+si('name')+'</th><th class="p-4 text-center sortable bg-pink-50/50" onclick="suroSort(\'avg\')">평균'+si('avg')+'</th><th class="p-4 text-center sortable bg-yellow-50/50" onclick="suroSort(\'current\')">이번주'+si('current')+'</th>'+pTh+'</tr></thead><tbody class="divide-y divide-gray-50 font-bold">'+rw+'</tbody></table></div>'
+            +'<div class="p-3 border-t border-gray-100 flex justify-between items-center bg-gray-50/50"><span class="text-[10px] text-gray-400 font-bold ml-2">총 '+ti+'명</span><div class="flex items-center gap-4"><button onclick="changePage(\'suro\',-1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 disabled:opacity-30" '+(app.pg.s<=1?'disabled':'')+'><i class="fas fa-chevron-left text-[10px]"></i></button><span class="text-xs font-bold text-gray-500">'+app.pg.s+' / '+pgs+'</span><button onclick="changePage(\'suro\',1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 disabled:opacity-30" '+(app.pg.s>=pgs?'disabled':'')+'><i class="fas fa-chevron-right text-[10px]"></i></button></div></div></div></div>';
 
-        window.renderCalendar = () => { 
-            const year = appState.calendarView.year, month = appState.calendarView.month; 
-            const first = new Date(year, month, 1).getDay();
-            const last = new Date(year, month + 1, 0).getDate(); 
-            const prevLast = new Date(year, month, 0).getDate();
-            const today = new Date();
-            
-            let html = `<div class="calendar-grid"><div class="calendar-head text-red-400">일</div><div class="calendar-head">월</div><div class="calendar-head">화</div><div class="calendar-head">수</div><div class="calendar-head text-pink-500">목</div><div class="calendar-head">금</div><div class="calendar-head text-blue-400">토</div>`; 
-            
-            for(let i=first; i>0; i--) {
-                html += `<div class="calendar-day not-current"><span>${prevLast - i + 1}</span></div>`;
-            }
+        var cx=document.getElementById('suroChart');
+        if(cx){if(chartInst)chartInst.destroy();chartInst=new Chart(cx,{type:'line',data:{labels:rH.map(function(h){var p=h?h.split('-'):[];return p.length>=3?p[1]+'-'+p[2].substring(0,2):h}),datasets:[{label:'총점',data:rH.map(function(h){return app.members.filter(function(m){return m.guild===gN}).reduce(function(s,m){return s+(Number(m.suro&&m.suro[h])||0)},0)}),borderColor:'#ec4899',borderWidth:3,pointRadius:5,pointBackgroundColor:'#fff',tension:.4,fill:true,backgroundColor:'rgba(236,72,153,.05)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{display:false},x:{grid:{display:false},ticks:{font:{size:10,weight:'bold'}}}}}})}
+    }
+    window.renderSuro=renderSuro;
+    function suroSort(f){if(app.sf.sf===f)app.sf.so=app.sf.so==='asc'?'desc':'asc';else{app.sf.sf=f;app.sf.so=(f==='avg'||f==='current')?'desc':'asc'}app.pg.s=1;renderSuro(document.getElementById('contentArea'))}
+    window.suroSort=suroSort;
 
-            for(let d=1; d<=last; d++) { 
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dayEvent = appState.events.find(e => {
-                    const eDate = (e.date || '').trim();
-                    return eDate === dateStr || eDate.startsWith(dateStr);
-                });
-                const isToday = today.getFullYear()===year && today.getMonth()===month && today.getDate()===d;
-                const isThursday = new Date(year, month, d).getDay() === 4;
+    // === BAIL ===
+    function renderBail(c){
+        var st=bailStats(),sh='';st.forEach(function(i){sh+='<div class="bg-gray-50 rounded-2xl p-4 flex justify-between items-center border border-gray-100 hover:bg-white shadow-sm"><span class="font-bold text-gray-700 text-xs">'+i[0]+'</span><span class="font-black text-pink-500 text-lg">'+i[1]+'개</span></div>'});
+        if(!sh)sh='<p class="text-[10px] text-gray-300 italic text-center">데이터 없음</p>';
+        var rw='';[].concat(app.bail).reverse().forEach(function(h){rw+='<tr class="hover:bg-gray-50 border-b border-gray-50 h-12 font-bold text-xs"><td class="p-4 font-mono text-gray-400 text-[10px]">'+h.date+'</td><td class="p-4 text-gray-700">'+h.payer+'</td><td class="p-4 text-blue-500">'+h.receiver+'</td><td class="p-4 text-right text-pink-500">'+h.amount+'개</td></tr>'});
+        if(!rw)rw='<tr><td colspan="4" class="p-20 text-center text-gray-300 font-bold italic">내역이 없습니다.</td></tr>';
+        c.innerHTML='<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 fade-in h-full">'
+            +'<div class="lg:col-span-1 bg-white p-8 lg:p-10 rounded-[2.5rem] lg:rounded-[3rem] border border-gray-100 shadow-sm flex flex-col h-full overflow-hidden"><div class="mb-8"><h3 class="text-xl font-bold text-gray-800 tracking-tight">보석금 현황</h3><p class="text-xs text-gray-400 mt-1 uppercase font-bold tracking-widest">GEM BAIL STATUS</p></div><div class="space-y-6 flex-1 overflow-y-auto pb-6"><div class="bg-pink-50 rounded-2xl p-6 text-center border border-pink-100"><p class="text-[10px] text-pink-500 font-bold uppercase tracking-widest mb-1">총 납부 건수</p><h4 class="text-3xl font-black text-pink-600 tracking-tighter">'+app.bail.length+'</h4></div><h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">간부별 수령 총계</h4><div class="grid grid-cols-1 gap-2">'+sh+'</div></div></div>'
+            +'<div class="lg:col-span-2 bg-white rounded-[2.5rem] lg:rounded-[3rem] border border-gray-100 shadow-sm flex flex-col overflow-hidden h-full"><div class="p-6 lg:p-8 border-b border-gray-50 flex justify-between items-center"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">보석금 납부 이력</h3><span class="text-[10px] text-gray-400 font-bold italic">Total: '+app.bail.length+'</span></div><div class="flex-1 overflow-y-auto"><table class="w-full text-left text-xs"><thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase sticky top-0"><tr><th class="p-5">날짜</th><th class="p-5">납부자</th><th class="p-5">수령자</th><th class="p-5 text-right">수량</th></tr></thead><tbody class="divide-y divide-gray-50">'+rw+'</tbody></table></div></div></div>';
+    }
 
-                let cls = "calendar-day text-gray-600";
-                if(isThursday) cls += " thursday";
-                if(isToday) cls += " today";
-                
-                let eventHtml = '';
-                if(dayEvent) {
-                    eventHtml += `<div class="event-dot"></div>`;
-                    eventHtml += `<div class="event-snippet" title="${dayEvent.title}">${dayEvent.title}</div>`;
-                }
-                html += `<div class="${cls}" onclick="window.showEventDetail('${dateStr}')"><span>${d}</span>${eventHtml}</div>`; 
-            } 
-            
-            const totalCells = first + last;
-            const extraCells = (7 - (totalCells % 7)) % 7;
-            for(let i=1; i<=extraCells; i++) {
-                html += `<div class="calendar-day not-current"><span>${i}</span></div>`;
-            }
+    // === PENALTY ===
+    function renderPenalty(c){
+        var pc={};app.penalty.forEach(function(h){var p=Number(h.points)||0;pc[h.name]=(pc[h.name]||0)+p});
+        var tg=Object.entries(pc).filter(function(x){return x[1]>0}).sort(function(a,b){return b[1]-a[1]});
+        var cards='';if(!tg.length)cards='<p class="text-xs text-gray-400 font-bold italic py-4">현재 벌점 대상자가 없습니다.</p>';else tg.forEach(function(x){cards+='<div class="bg-red-50 px-5 py-3 rounded-full border border-red-100 flex items-center gap-3 shrink-0"><div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-red-500 font-bold text-sm shadow-sm">'+x[1]+'</div><span class="text-red-300 font-bold text-xs tracking-[0.2em]">******</span></div>'});
+        var rw='';[].concat(app.penalty).reverse().forEach(function(h){rw+='<tr class="hover:bg-gray-50 border-b border-gray-50 h-12 font-bold text-xs"><td class="p-4 text-gray-300 text-[10px] tracking-widest">**-**-**</td><td class="p-4 text-gray-300 tracking-widest">******</td><td class="p-4 text-red-500 font-black">'+h.points+'점</td><td class="p-4 text-gray-300 text-[10px]">비공개 사유</td></tr>'});
+        if(!rw)rw='<tr><td colspan="4" class="p-20 text-center text-gray-300 font-bold italic">기록이 없습니다.</td></tr>';
+        c.innerHTML='<div class="flex flex-col gap-6 lg:gap-8 fade-in h-full"><div class="bg-white p-6 lg:p-8 rounded-[2rem] lg:rounded-[2.5rem] border border-gray-100 shadow-sm shrink-0"><div class="mb-4"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">현재 벌점 관리 대상자 현황</h3></div><div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">'+cards+'</div></div><div class="bg-white rounded-[2rem] lg:rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col flex-1 overflow-hidden"><div class="p-6 lg:p-8 border-b border-gray-50"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">상세 부여 이력</h3></div><div class="flex-1 overflow-y-auto"><table class="w-full text-left text-xs whitespace-nowrap"><thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase sticky top-0"><tr><th class="p-5">날짜 (비공개)</th><th class="p-5">대상자 (비공개)</th><th class="p-5">점수</th><th class="p-5">부여 사유 (비공개)</th></tr></thead><tbody class="divide-y divide-gray-50">'+rw+'</tbody></table></div></div></div>';
+    }
 
-            return html + `</div>`; 
-        };
-
-        window.showEventDetail = (dateStr) => {
-            appState.currentSelectedDate = dateStr;
-            const modal = document.getElementById('eventDetailModal');
-            const dateDisplay = document.getElementById('eventDetailDate');
-            const titleDisplay = document.getElementById('eventTitleDisplay');
-            const contentDisplay = document.getElementById('eventContentDisplay');
-            
-            const existing = appState.events.find(e => {
-                const eDate = (e.date || '').trim();
-                return eDate === dateStr || eDate.startsWith(dateStr);
-            });
-            
-            dateDisplay.innerText = dateStr;
-            titleDisplay.innerText = existing ? existing.title : "일정 없음";
-            contentDisplay.innerText = existing ? existing.content : "등록된 상세 내용이 없습니다.";
-            modal.classList.remove('hidden');
-        };
-        
-        // --- PAGINATION HELPERS ---
-        window.changePage = (type, delta) => {
-            appState.pagination[type] += delta;
-            if (type === 'members') window.updateMemberTable();
-            if (type === 'analysis') window.renderAnalysis(document.getElementById('contentArea'), appState.analysisGuild);
-        };
-
-        // --- ANALYSIS ---
-        window.renderAnalysis = (container, gName) => {
-            appState.analysisGuild = gName;
-            const targets = appState.members.filter(m => m.guild === gName);
-            const recentHeaders = appState.suroHeaders.slice(-5);
-            const currentHeader = recentHeaders[recentHeaders.length - 1];
-            const total = window.calculateTotalSuro(gName);
-
-            const zeroPointMembers = targets.filter(m => (Number(m.suro?.[currentHeader]) || 0) === 0);
-            const processedList = targets.map(m => {
-                const scores = recentHeaders.map(h => Number(m.suro?.[h]) || 0);
-                const avg = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0;
-                return { ...m, avg: Number(avg), recentScores: scores };
-            });
-
-            processedList.sort((a, b) => {
-                const f = appState.analysisFilters.sortField;
-                const o = appState.analysisFilters.sortOrder;
-                if (f === 'avg') return o === 'asc' ? a.avg - b.avg : b.avg - a.avg;
-                if (f === 'score') {
-                    const vA = Number(a.suro?.[currentHeader]) || 0;
-                    const vB = Number(b.suro?.[currentHeader]) || 0;
-                    return o === 'asc' ? vA - vB : vB - vA;
-                }
-                return smartCompare(a, b, f, o);
-            });
-
-            const totalItems = processedList.length;
-            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-            if (appState.pagination.analysis > totalPages && totalPages > 0) appState.pagination.analysis = totalPages;
-            if (appState.pagination.analysis < 1) appState.pagination.analysis = 1;
-            
-            const pageData = processedList.slice((appState.pagination.analysis - 1) * ITEMS_PER_PAGE, appState.pagination.analysis * ITEMS_PER_PAGE);
-            const sortIcon = (f) => appState.analysisFilters.sortField === f ? (appState.analysisFilters.sortOrder === 'asc' ? ' <i class="fas fa-sort-up"></i>' : ' <i class="fas fa-sort-down"></i>') : '';
-
-            container.innerHTML = `
-            <div class="flex flex-col gap-6 fade-in h-full overflow-hidden">
-                <div class="flex gap-2 overflow-x-auto no-scrollbar shrink-0">
-                    ${appState.guilds.map(g => `<button onclick="window.renderAnalysis(document.getElementById('contentArea'), '${g.name}')" class="px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${g.name === gName ? 'bg-pink-500 text-white shadow-lg' : 'bg-white text-gray-500 border border-gray-100'}">${g.name}</button>`).join('')}
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0 font-bold">
-                    <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col justify-center items-center">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">전체 총점</p>
-                        <h4 class="text-3xl font-black text-gray-800 tracking-tighter">${total.toLocaleString()}</h4>
-                    </div>
-                    <div class="bg-red-50 p-6 rounded-[2rem] border border-red-100 shadow-sm flex flex-col justify-center items-center">
-                        <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-1">🚨 중요 알림 (미참여)</p>
-                        <h4 class="text-3xl font-black text-red-600 tracking-tighter">${zeroPointMembers.length}명</h4>
-                    </div>
-                    <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col justify-center items-center">
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">최근 데이터 주차</p>
-                        <h4 class="text-sm font-bold text-gray-700">${currentHeader ? currentHeader.split(' ')[0] : '데이터 없음'}</h4>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
-                    <div class="lg:col-span-1 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col overflow-hidden">
-                        <h3 class="text-xs font-bold text-gray-400 mb-6 uppercase tracking-widest">주간 총점 추이</h3>
-                        <div class="flex-1 min-h-[200px]">
-                            <canvas id="analysisChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="lg:col-span-2 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-                        <div class="p-6 border-b border-gray-50 flex justify-between items-center shrink-0">
-                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">인터랙티브 데이터 테이블</h3>
-                        </div>
-                        <div class="flex-1 overflow-auto no-scrollbar">
-                            <table class="w-full text-left text-xs whitespace-nowrap">
-                                <thead class="bg-gray-50 font-bold text-[10px] text-gray-500 uppercase sticky top-0 z-10 border-b border-gray-100">
-                                    <tr>
-                                        <th class="p-4 w-12 text-center">RANK</th>
-                                        <th class="p-4 sortable" onclick="window.setAnalysisSort('name')">캐릭터명${sortIcon('name')}</th>
-                                        <th class="p-4 text-center sortable bg-pink-50/50" onclick="window.setAnalysisSort('avg')">평균${sortIcon('avg')}</th>
-                                        ${recentHeaders.map(h => `<th class="p-4 text-right font-medium">${h.split('~')[0].trim()}</th>`).join('')}
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-50 font-bold">
-                                    ${pageData.map((m, i) => {
-                                        const globalIndex = (appState.pagination.analysis - 1) * ITEMS_PER_PAGE + i + 1;
-                                        return `
-                                        <tr class="hover:bg-gray-50 transition-colors h-12">
-                                            <td class="p-4 text-center text-gray-300">${globalIndex}</td>
-                                            <td class="p-4 text-gray-800 flex items-center leading-none">
-                                                ${window.getNicknameIcon(m.role)}${m.name}
-                                            </td>
-                                            <td class="p-4 text-center text-pink-500 bg-pink-50/20">${m.avg.toLocaleString()}</td>
-                                            ${m.recentScores.map(s => `
-                                                <td class="p-4 text-right font-mono score-cell ${s === 0 ? 'score-zero' : 'text-gray-400'}">
-                                                    ${s > 0 ? s.toLocaleString() : '0'}
-                                                </td>
-                                            `).join('')}
-                                        </tr>`;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="p-3 border-t border-gray-100 flex justify-center items-center gap-4 bg-gray-50/50">
-                            <button onclick="changePage('analysis', -1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 hover:text-pink-500 hover:border-pink-200 disabled:opacity-30 disabled:hover:bg-white" ${appState.pagination.analysis <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left text-[10px]"></i></button>
-                            <span class="text-xs font-bold text-gray-500">${appState.pagination.analysis} / ${totalPages || 1}</span>
-                            <button onclick="changePage('analysis', 1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 hover:text-pink-500 hover:border-pink-200 disabled:opacity-30 disabled:hover:bg-white" ${appState.pagination.analysis >= totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right text-[10px]"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-
-            const ctx = document.getElementById('analysisChart');
-            if(!ctx) return;
-            if(analysisChartInstance) analysisChartInstance.destroy();
-            analysisChartInstance = new Chart(ctx, { 
-                type: 'line', 
-                data: { 
-                    labels: recentHeaders.map(h => {
-                        const parts = h ? h.split('-') : [];
-                        if(parts.length >= 3) return parts[1] + '-' + parts[2].substring(0,2);
-                        return h;
-                    }), 
-                    datasets: [{ 
-                        label: '길드 총점', 
-                        data: recentHeaders.map(h => appState.members.filter(m => m.guild === gName).reduce((s, m) => s + (Number(m.suro?.[h]) || 0), 0)), 
-                        borderColor: '#ec4899', 
-                        borderWidth: 3, 
-                        pointRadius: 4, 
-                        pointBackgroundColor: '#fff', 
-                        tension: 0.4, 
-                        fill: true, 
-                        backgroundColor: 'rgba(236, 72, 153, 0.05)' 
-                    }] 
-                }, 
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } }, 
-                    scales: { 
-                        y: { display: false }, 
-                        x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } } 
-                    } 
-                } 
-            });
-        };
-        
-        window.setAnalysisSort = (f) => { 
-            if(appState.analysisFilters.sortField === f) appState.analysisFilters.sortOrder = appState.analysisFilters.sortOrder === 'asc' ? 'desc' : 'asc'; 
-            else { appState.analysisFilters.sortField = f; appState.analysisFilters.sortOrder = (f==='score'||f==='rank'||f==='avg') ? 'desc' : 'asc'; } 
-            appState.pagination.analysis = 1; 
-            window.renderAnalysis(document.getElementById('contentArea'), appState.analysisGuild); 
-        };
-
-        window.updateJobChart = (target) => {
-            const ctx = document.getElementById('jobChart'); if(!ctx) return;
-            const targets = target === 'all' ? appState.members : appState.members.filter(m => m.guild === target);
-            const counts = {}; targets.forEach(m => { const j = m.class || '미설정'; counts[j] = (counts[j] || 0) + 1; });
-            const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
-            if(jobChartInstance) jobChartInstance.destroy();
-            jobChartInstance = new Chart(ctx, { type: 'bar', data: { labels: sorted.map(j => j[0]), datasets: [{ label: '인원', data: sorted.map(j => j[1]), backgroundColor: '#f472b6', borderRadius: 4, barThickness: 12 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } } });
-        };
-
-        // --- MEMBERS VIEW (READ ONLY) ---
-        window.renderMembers = (container) => {
-            container.innerHTML = `
-            <div class="flex flex-col gap-3 fade-in h-full">
-                <!-- Compact Header Control Panel -->
-                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col xl:flex-row items-center gap-4 shrink-0">
-                    <!-- Guild Tabs -->
-                    <div class="flex overflow-x-auto no-scrollbar w-full xl:w-auto gap-2 shrink-0">
-                        <button onclick="window.filterByGuild('all')" class="shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all ${appState.filters.guild === 'all' ? 'bg-gray-800 text-white shadow-md' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">전체</button>
-                        ${appState.guilds.map(g => `<button onclick="window.filterByGuild('${g.name}')" class="shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all ${appState.filters.guild === g.name ? 'bg-pink-500 text-white shadow-md' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">${g.name}</button>`).join('')}
-                    </div>
-                    
-                    <!-- Search Bar (Takes available width) -->
-                    <div class="relative flex-1 w-full">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" oninput="window.handleSearch(this.value)" value="${appState.filters.search}" class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-xs font-bold shadow-inner focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임, 직위, 직업 검색">
-                    </div>
-                </div>
-
-                <!-- Table Area -->
-                <div id="memberTableContainer" class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex-1 min-h-0 flex flex-col"></div>
-            </div>`;
-            window.updateMemberTable();
-        };
-
-        window.updateMemberTable = () => {
-            const container = document.getElementById('memberTableContainer'); if(!container) return;
-            const term = appState.filters.search.toLowerCase();
-            const filtered = appState.members.filter(m => { 
-                const gMatch = appState.filters.guild === 'all' || m.guild === appState.filters.guild; 
-                const sMatch = m.name.toLowerCase().includes(term) || 
-                               (m.class||'').toLowerCase().includes(term) || 
-                               (m.role||'').toLowerCase().includes(term) ||
-                               (m.mainCharName || '').toLowerCase().includes(term) || 
-                               (m.isMain && m.name.toLowerCase().includes(term)); 
-                return gMatch && sMatch; 
-            });
-            filtered.sort((a, b) => smartCompare(a, b, appState.filters.sortField, appState.filters.sortOrder));
-            
-            // Pagination Logic
-            const totalItems = filtered.length;
-            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-            if (appState.pagination.members > totalPages && totalPages > 0) appState.pagination.members = totalPages;
-            if (appState.pagination.members < 1) appState.pagination.members = 1;
-            
-            const pageData = filtered.slice((appState.pagination.members - 1) * ITEMS_PER_PAGE, appState.pagination.members * ITEMS_PER_PAGE);
-
-            const sortIcon = (f) => appState.filters.sortField === f ? (appState.filters.sortOrder === 'asc' ? ' <i class="fas fa-sort-up"></i>' : ' <i class="fas fa-sort-down"></i>') : '';
-            let html = `<div class="overflow-y-auto flex-1"><table class="w-full text-left min-w-[900px] text-xs whitespace-nowrap"><thead class="bg-gray-50 text-[10px] font-bold text-gray-500 border-b border-gray-100 sticky top-0 z-10"><tr><th class="p-4 text-center w-16">No.</th><th class="p-4 sortable" onclick="window.handleSort('name')">닉네임${sortIcon('name')}</th><th class="p-4 sortable" onclick="window.handleSort('mainInfo')">본캐 정보${sortIcon('mainInfo')}</th><th class="p-4 sortable" onclick="window.handleSort('guild')">소속${sortIcon('guild')}</th><th class="p-4 sortable" onclick="window.handleSort('role')">직위${sortIcon('role')}</th><th class="p-4 sortable" onclick="window.handleSort('class')">직업${sortIcon('class')}</th></tr></thead><tbody class="divide-y divide-gray-50 text-gray-600 font-bold">`;
-            
-            pageData.forEach((m, idx) => {
-                const globalIndex = (appState.pagination.members - 1) * ITEMS_PER_PAGE + idx + 1;
-                const mainName = m.isMain ? m.name : (m.mainCharName || '-'); 
-                const mainMem = appState.members.find(x => x.name === mainName);
-                const mainRankHtml = mainMem ? formatRankWithSuffix(mainMem.role) : '-';
-                
-                // Color logic for Main Info Cell
-                let mainInfoStyle = "";
-                let mainInfoTextClass = "text-gray-700";
-                let subInfoTextClass = "text-gray-400";
-                
-                const targetRole = mainMem ? mainMem.role : (m.isMain ? m.role : '');
-
-                if (['티라미슈', '파르페', '크라운'].includes(targetRole)) {
-                    mainInfoStyle = "background-color: #0066FF;";
-                    mainInfoTextClass = "text-white";
-                    subInfoTextClass = "text-white opacity-80";
-                } else if (targetRole === '크로칸슈') {
-                    mainInfoStyle = "background-color: #92D050;";
-                    mainInfoTextClass = "text-black";
-                    subInfoTextClass = "text-black opacity-80";
-                }
-
-                let roleHtml = `<span class="text-[10px]">${m.role}</span>`;
-                if (m.role === '아인슈페너') {
-                    roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white tracking-tight shadow-sm" style="background-color: #FF99FF; text-shadow: 0 1px 1px rgba(0,0,0,0.1);">${m.role}</span>`;
-                }
-
-                html += `<tr class="hover:bg-pink-50/20 group transition-colors h-12">
-                    <td class="p-3 text-center text-gray-400 text-[11px]">${globalIndex}</td>
-                    <td class="p-3 font-bold text-gray-800 flex items-center h-full leading-none">${window.getNicknameIcon(m.role)}<span class="text-sm tracking-tight">${m.name}</span></td>
-                    <td class="p-3 leading-tight">
-                        <div class="rounded-xl p-2 transition-colors -m-1" style="${mainInfoStyle}">
-                            <span class="block text-[11px] font-bold ${mainInfoTextClass}">${mainName}</span>
-                            <span class="text-[9px] font-medium ${subInfoTextClass}">${mainRankHtml}</span>
-                        </div>
-                    </td>
-                    <td class="p-3">${m.guild}</td>
-                    <td class="p-3">${roleHtml}</td>
-                    <td class="p-3"><span class="text-[10px] text-gray-400">${m.class||'-'}</span></td>
-                </tr>`;
-            });
-            html += `</tbody></table></div>`;
-            
-            // Add Pagination Controls
-            html += `<div class="p-3 border-t border-gray-100 flex justify-center items-center gap-4 bg-gray-50/50">
-                <button onclick="changePage('members', -1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 hover:text-pink-500 hover:border-pink-200 disabled:opacity-30 disabled:hover:bg-white" ${appState.pagination.members <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left text-[10px]"></i></button>
-                <span class="text-xs font-bold text-gray-500">${appState.pagination.members} / ${totalPages || 1}</span>
-                <button onclick="changePage('members', 1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 hover:text-pink-500 hover:border-pink-200 disabled:opacity-30 disabled:hover:bg-white" ${appState.pagination.members >= totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right text-[10px]"></i></button>
-            </div>`;
-
-            container.innerHTML = html;
-        };
-
-        // --- BAIL MANAGEMENT (READ ONLY) ---
-        window.renderBail = (container) => {
-            const adminStats = window.getAdminBailStats();
-            // Masked name for history
-            // Unmasking Receiver Name as requested
-            const historyRows = [...appState.bailHistory].reverse().map(h => `<tr class="hover:bg-gray-50 border-b border-gray-50 h-12 transition-colors font-bold text-xs"><td class="p-4 font-mono text-gray-400 text-[10px]">${h.date}</td><td class="p-4 text-gray-700 masked-text">******</td><td class="p-4 text-blue-500 font-bold">${h.receiver}</td><td class="p-4 text-right text-pink-500">${h.amount}개</td></tr>`).join('');
-            
-            // Unmasking Admin Name in Stats
-            const statsHtml = adminStats.map(([name, count]) => `<div class="bg-gray-50 rounded-2xl p-4 flex justify-between items-center border border-gray-100 hover:bg-white transition-all shadow-sm"><span class="font-bold text-gray-700 text-xs">${name}</span><span class="font-black text-pink-500 text-lg">${count}개</span></div>`).join('');
-            
-            container.innerHTML = `<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in h-full">
-            <div class="lg:col-span-1 bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col h-full overflow-hidden">
-                <div class="mb-8">
-                    <h3 class="text-xl font-bold text-gray-800 tracking-tight">간부별 수령 총계</h3>
-                    <p class="text-xs text-gray-400 mt-1 uppercase font-bold tracking-widest">EXECUTIVE BAIL STATS</p>
-                </div>
-                <div class="space-y-6 flex-1 overflow-y-auto no-scrollbar pb-6">
-                    <div class="grid grid-cols-1 gap-2">${statsHtml || '<p class="text-[10px] text-gray-300 italic text-center">데이터 없음</p>'}</div>
-                </div>
-            </div>
-            <div class="lg:col-span-2 bg-white rounded-[3rem] border border-gray-100 shadow-sm flex flex-col overflow-hidden h-full">
-                <div class="p-8 border-b border-gray-50 flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">최근 보석금 납부 이력 (yy-mm-dd)</h3>
-                    <span class="text-[10px] text-gray-400 font-bold italic">Total: ${appState.bailHistory.length}</span>
-                </div>
-                <div class="flex-1 overflow-y-auto no-scrollbar">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase sticky top-0">
-                            <tr>
-                                <th class="p-5">날짜</th>
-                                <th class="p-5">납부자 (비공개)</th>
-                                <th class="p-5">수령자</th>
-                                <th class="p-5 text-right">수량</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">${historyRows || '<tr><td colspan="4" class="p-20 text-center text-gray-300 font-bold italic">내역이 존재하지 않습니다.</td></tr>'}</tbody>
-                    </table>
-                </div>
-            </div>
-            </div>`;
-        };
-
-        // --- PENALTY MANAGEMENT (READ ONLY) ---
-        window.renderPenalty = (container) => {
-            // Calculate penalty counts
-            const penaltyCounts = {};
-            appState.penaltyHistory.forEach(h => {
-                penaltyCounts[h.name] = (penaltyCounts[h.name] || 0) + Number(h.points);
-            });
-            const activePenalties = Object.entries(penaltyCounts).filter(([name, pts]) => pts > 0);
-
-            const penaltyRows = [...appState.penaltyHistory].map(h => {
-                return `
-                <tr class="hover:bg-gray-50 border-b border-gray-50 h-12 transition-colors font-bold text-xs">
-                    <td class="p-4 font-mono text-gray-400 text-[10px] masked-text">**-**-**</td>
-                    <td class="p-4 text-gray-700 masked-text">******</td>
-                    <td class="p-4 text-red-500">${h.points}점</td>
-                    <td class="p-4 text-gray-300 text-[11px] masked-text">비공개 사유</td>
-                </tr>
-            `}).join('');
-
-            container.innerHTML = `
-            <div class="grid grid-cols-1 gap-8 fade-in h-full">
-                <!-- Status & History Only (Form Removed) -->
-                <div class="flex flex-col gap-6 h-full overflow-hidden">
-                    <!-- Current Targets Card -->
-                    <div class="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm shrink-0 min-h-[160px]">
-                        <div class="mb-4">
-                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">현재 벌점 관리 대상자 현황</h3>
-                        </div>
-                        <div class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                            ${activePenalties.length > 0 
-                                ? activePenalties.map(([name, pts]) => `
-                                    <div class="flex items-center gap-3 bg-red-50 pl-2 pr-5 py-2 rounded-full border border-red-100 shrink-0">
-                                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-red-500 font-bold text-xs shadow-sm">${pts}</div>
-                                        <span class="text-xs font-bold text-red-300 masked-text">******</span>
-                                    </div>
-                                  `).join('')
-                                : '<p class="text-xs text-gray-300 font-bold italic w-full">현재 벌점자가 없습니다.</p>'
-                            }
-                        </div>
-                    </div>
-
-                    <!-- History Table -->
-                    <div class="bg-white rounded-[3rem] border border-gray-100 shadow-sm flex flex-col flex-1 overflow-hidden">
-                        <div class="p-8 border-b border-gray-50 flex justify-between items-center shrink-0">
-                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">상세 부여 이력</h3>
-                        </div>
-                        <div class="flex-1 overflow-y-auto no-scrollbar">
-                            <table class="w-full text-left text-xs whitespace-nowrap">
-                                <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase sticky top-0">
-                                    <tr>
-                                        <th class="p-5">날짜 (비공개)</th>
-                                        <th class="p-5">대상자 (비공개)</th>
-                                        <th class="p-5">점수</th>
-                                        <th class="p-5">부여 사유 (비공개)</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-50">
-                                    ${penaltyRows || '<tr><td colspan="4" class="p-20 text-center text-gray-300 font-bold italic">벌점 이력이 없습니다.</td></tr>'}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        };
-
-        window.handleSearch = (v) => { appState.filters.search = v; appState.pagination.members = 1; window.updateMemberTable(); };
-        window.filterByGuild = (g) => { appState.filters.guild = g; appState.pagination.members = 1; if(appState.activeTab === 'members') window.renderMembers(document.getElementById('contentArea')); else window.updateMemberTable(); };
-        window.handleSort = (field) => { if(appState.filters.sortField === field) appState.filters.sortOrder = appState.filters.sortOrder === 'asc' ? 'desc' : 'asc'; else { appState.filters.sortField = field; appState.filters.sortOrder = 'asc'; } appState.pagination.members = 1; window.updateMemberTable(); };
-        window.closeModal = (id) => { document.getElementById(id)?.classList.add('hidden'); };
-        
-        function initSidebar() {
-            const sb = document.getElementById('sidebar'), ov = document.getElementById('sidebarOverlay');
-            document.getElementById('openSidebar').onclick = () => { sb.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); };
-            document.getElementById('closeSidebar').onclick = () => { sb.classList.add('-translate-x-full'); ov.classList.add('hidden'); };
-            ov.onclick = () => { sb.classList.add('-translate-x-full'); ov.classList.add('hidden'); };
-        }
-
-        document.addEventListener('DOMContentLoaded', () => { initSidebar(); window.fetchMembers(); });
+    // === INIT ===
+    (function(){
+        var sb=document.getElementById('sidebar'),ov=document.getElementById('sidebarOverlay');
+        document.getElementById('openSidebar').onclick=function(){sb.classList.remove('-translate-x-full');ov.classList.remove('hidden')};
+        document.getElementById('closeSidebar').onclick=function(){sb.classList.add('-translate-x-full');ov.classList.add('hidden')};
+        ov.onclick=function(){sb.classList.add('-translate-x-full');ov.classList.add('hidden')};
+        fetchData();
+    })();
     </script>
 </body>
 </html>
