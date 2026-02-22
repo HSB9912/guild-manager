@@ -70,6 +70,20 @@
             box-shadow: 0 4px 12px rgba(236, 72, 153, 0.08);
         }
 
+        /* ===== MOBILE OPTIMIZATIONS ===== */
+        @supports (padding-top: env(safe-area-inset-top)) { body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); } }
+        @media (max-width: 640px) {
+            .calendar-grid { gap: 0.125rem; font-size: 0.65rem; }
+            .calendar-day { min-height: 38px; padding: 0.125rem; }
+            .calendar-head { font-size: 0.6rem; padding-bottom: 4px; }
+            .event-snippet { font-size: 8px; padding: 0px 1px; }
+            #msgBox { left: 1rem; right: 1rem; transform: translateX(0) translateY(100px) !important; width: auto; padding: 0.75rem 1rem; }
+            #msgBox.show { transform: translateX(0) translateY(0) !important; }
+        }
+        @media (max-width: 768px) { table { font-size: 0.65rem; } table th, table td { padding: 0.5rem 0.375rem !important; } table th { font-size: 9px; } }
+        .overflow-y-auto, .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+        .nav-item, button { -webkit-tap-highlight-color: transparent; }
+
         /* Sticky first column for analysis table on mobile */
         .analysis-table-wrap table thead th:nth-child(1),
         .analysis-table-wrap table thead th:nth-child(2),
@@ -116,7 +130,7 @@
         </div>
     </div>
 
-    <div id="msgBox" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10">
+    <div id="msgBox" class="fixed bottom-10 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[200] bg-slate-900 text-white px-5 lg:px-8 py-3 lg:py-4 rounded-xl lg:rounded-2xl shadow-2xl flex items-center gap-3 lg:gap-4 border border-white/10 max-w-md mx-auto sm:mx-0">
         <div id="msgIcon" class="text-pink-500"><i class="fas fa-info-circle"></i></div>
         <p id="msgText" class="text-sm font-bold"></p>
     </div>
@@ -140,9 +154,9 @@
     <div id="sidebarOverlay" class="fixed inset-0 bg-black/10 z-[990] hidden lg:hidden"></div>
 
     <main class="flex-1 flex flex-col overflow-hidden bg-gray-50 relative z-0">
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 shrink-0 z-10 shadow-sm relative">
-            <div class="flex items-center gap-2 lg:gap-4"><button id="openSidebar" class="p-2 lg:hidden rounded-lg hover:bg-gray-100 text-gray-600"><i class="fas fa-bars text-xl"></i></button><h2 id="pageTitle" class="text-lg lg:text-xl font-bold text-gray-800 tracking-tight">대시보드</h2></div>
-            <div class="flex items-center gap-3 lg:gap-4">
+        <header class="h-14 lg:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 lg:px-8 shrink-0 z-10 shadow-sm relative">
+            <div class="flex items-center gap-2 lg:gap-4 min-w-0"><button id="openSidebar" class="p-2 lg:hidden rounded-lg hover:bg-gray-100 text-gray-600 shrink-0"><i class="fas fa-bars text-lg"></i></button><h2 id="pageTitle" class="text-base lg:text-xl font-bold text-gray-800 tracking-tight truncate">대시보드</h2></div>
+            <div class="flex items-center gap-2 lg:gap-4 shrink-0">
                 <div class="px-3 lg:px-4 py-1.5 bg-pink-50 text-pink-600 rounded-full text-[10px] lg:text-[11px] font-bold border border-pink-100 shadow-sm hidden sm:block">
                     ✨ <span id="anniversaryLabel">로딩 중...</span>
                 </div>
@@ -152,7 +166,7 @@
                 <button id="refreshBtn" onclick="fetchMembers()" class="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-all border border-gray-100 shadow-sm"><i class="fas fa-sync-alt text-xs lg:text-base"></i></button>
             </div>
         </header>
-        <div id="contentArea" class="flex-1 overflow-y-auto p-3 lg:p-6 relative bg-gray-50 flex flex-col min-h-0"></div>
+        <div id="contentArea" class="flex-1 overflow-y-auto p-2 sm:p-3 lg:p-6 relative bg-gray-50 flex flex-col min-h-0"></div>
     </main>
 
     <!-- Event Detail Modal (read-only) -->
@@ -364,6 +378,9 @@
             else if (tab === 'analysis') window.renderAnalysis(content, appState.analysisGuild);
             else if (tab === 'bail') window.renderBail(content);
             else if (tab === 'penalty') window.renderPenalty(content);
+            // 사이드바 자동 닫기 (모바일)
+            const sb = document.getElementById('sidebar'), ov = document.getElementById('sidebarOverlay');
+            if (window.innerWidth < 1024) { sb.classList.add('-translate-x-full'); ov.classList.add('hidden'); }
         };
 
         // --- DASHBOARD ---
@@ -374,13 +391,13 @@
             container.innerHTML = `
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8 fade-in shrink-0">
                 <div class="flex flex-col gap-6">
-                    <div class="flex gap-6 h-40">
-                        <div onclick="router('analysis'); renderAnalysis(document.getElementById('contentArea'), '뚠카롱')" class="flex-1 bg-gradient-to-br from-pink-500 to-rose-500 rounded-[2.5rem] p-8 shadow-lg text-white cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden flex flex-col justify-center border-none">
+                    <div class="grid grid-cols-2 gap-3 lg:gap-6 h-auto lg:h-40">
+                        <div onclick="router('analysis'); renderAnalysis(document.getElementById('contentArea'), '뚠카롱')" class="bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl lg:rounded-[2.5rem] p-4 lg:p-8 shadow-lg text-white cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden flex flex-col justify-center border-none">
                             <div class="absolute top-0 right-0 p-4 opacity-20 text-5xl"><i class="fas fa-crown"></i></div>
                             <h3 class="text-sm font-bold opacity-80 uppercase tracking-widest text-center">뚠카롱 수로 총점</h3>
                             <p class="text-3xl font-black tracking-tighter text-center">${ddunT.toLocaleString()}</p>
                         </div>
-                        <div onclick="router('analysis'); renderAnalysis(document.getElementById('contentArea'), '뚱카롱')" class="flex-1 bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-sm text-gray-800 cursor-pointer hover:border-pink-200 transition-all flex flex-col justify-center relative overflow-hidden">
+                        <div onclick="router('analysis'); renderAnalysis(document.getElementById('contentArea'), '뚱카롱')" class="bg-white border border-gray-100 rounded-2xl lg:rounded-[2.5rem] p-4 lg:p-8 shadow-sm text-gray-800 cursor-pointer hover:border-pink-200 transition-all flex flex-col justify-center relative overflow-hidden">
                             <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest text-center">뚱카롱 수로 총점</h3>
                             <p class="text-3xl font-black tracking-tighter text-pink-500 text-center">${ddungT.toLocaleString()}</p>
                         </div>
@@ -416,11 +433,11 @@
                     </div>
                 </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in shrink-0">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 lg:gap-6 fade-in shrink-0">
                 ${appState.guilds.map(g => { 
                     const count = appState.members.filter(m => m.guild === g.name).length; 
                     const pct = Math.min((count / g.max) * 100, 100); 
-                    return `<div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group" onclick="filterByGuild('${g.name}')"><div class="flex justify-between items-start mb-6"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-pink-50 group-hover:text-pink-500 transition-colors"><i class="fas ${g.icon}"></i></div><div><span class="block font-bold text-lg text-gray-800 group-hover:text-pink-500">${g.name}</span><span class="text-[10px] text-gray-400 font-bold">${g.type}</span></div></div></div><div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden"><div class="h-full bg-pink-500 transition-all duration-1000" style="width:${pct}%"></div></div><p class="text-[10px] text-gray-400 font-bold mt-2 text-right">${count} / ${g.max}</p></div>`; 
+                    return `<div class="bg-white p-4 lg:p-8 rounded-2xl lg:rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group" onclick="filterByGuild('${g.name}')"><div class="flex justify-between items-start mb-6"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-pink-50 group-hover:text-pink-500 transition-colors"><i class="fas ${g.icon}"></i></div><div><span class="block font-bold text-lg text-gray-800 group-hover:text-pink-500">${g.name}</span><span class="text-[10px] text-gray-400 font-bold">${g.type}</span></div></div></div><div class="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden"><div class="h-full bg-pink-500 transition-all duration-1000" style="width:${pct}%"></div></div><p class="text-[10px] text-gray-400 font-bold mt-2 text-right">${count} / ${g.max}</p></div>`; 
                 }).join('')}
             </div>`;
             setTimeout(() => window.updateJobChart('all'), 0);
@@ -513,9 +530,29 @@
             if (type === 'members') window.updateMemberTable();
         };
 
+        window._analysisSearchTimer = null;
         window.setAnalysisSearch = (val) => {
             appState.analysisFilters.search = val;
-            window.renderAnalysis(document.getElementById('contentArea'), appState.analysisGuild);
+            if (window._analysisSearchTimer) clearTimeout(window._analysisSearchTimer);
+            window._analysisSearchTimer = setTimeout(() => { window.updateAnalysisTable(); }, 200);
+        };
+
+        window.updateAnalysisTable = () => {
+            const tbody = document.getElementById('analysisTableBody');
+            if (!tbody) return;
+            const gName = appState.analysisGuild;
+            const guildTargets = appState.members.filter(m => m.guild === gName);
+            const rawSearch = (appState.analysisFilters.search || '').trim();
+            const searchTokens = rawSearch.length > 0 ? rawSearch.toLowerCase().split(/[\s,]+/).filter(t => t.length > 0) : [];
+            const displayTargets = searchTokens.length > 0
+                ? guildTargets.filter(m => { const mn = m.isMain ? m.name : (m.mainCharName||''); return searchTokens.some(t => m.name.toLowerCase().includes(t)||mn.toLowerCase().includes(t)||(m.mainCharName||'').toLowerCase().includes(t)); })
+                : guildTargets;
+            const recentHeaders = [...appState.suroHeaders];
+            const currentHeader = recentHeaders.length > 0 ? recentHeaders[recentHeaders.length - 1] : null;
+            const processedList = displayTargets.map(m => { const scores = recentHeaders.map(h => Math.round(Number(m.suro?.[h])) || 0); const vs = scores.filter(s => s > 0); return { ...m, avg: vs.length > 0 ? Math.round(vs.reduce((a,b)=>a+b,0)/vs.length) : 0, recentScores: scores }; });
+            const f = appState.analysisFilters.sortField, o = appState.analysisFilters.sortOrder;
+            processedList.sort((a,b) => { if(f.startsWith('date_')){const th=f.replace('date_',''),hi=recentHeaders.indexOf(th),ph=hi>0?recentHeaders[hi-1]:null;const rate=(m)=>{const c=Math.round(Number(m.suro?.[th]))||0;if(!ph)return c>0?-500:-1000;const p=Math.round(Number(m.suro?.[ph]))||0;if(c===0&&p===0)return-1000;if(p===0&&c>0)return-500;return((c-p)/p)*100;};const rA=rate(a),rB=rate(b);if(rA===rB){const cA=Math.round(Number(a.suro?.[th]))||0,cB=Math.round(Number(b.suro?.[th]))||0;return o==='asc'?cA-cB:cB-cA;}return o==='asc'?rA-rB:rB-rA;}if(f==='avg')return o==='asc'?a.avg-b.avg:b.avg-a.avg;if(f==='score'){const vA=Math.round(Number(a.suro?.[currentHeader]))||0,vB=Math.round(Number(b.suro?.[currentHeader]))||0;return o==='asc'?vA-vB:vB-vA;}return smartCompare(a,b,f,o); });
+            tbody.innerHTML = processedList.map((m,i) => { let row = `<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${i+1}</td><td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50"><div class="flex items-center leading-none overflow-hidden text-ellipsis">${window.getNicknameIcon(m.role)}<span class="truncate">${m.name}</span></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>`; m.recentScores.forEach((s,si) => { let dh='',ps=si>0?m.recentScores[si-1]:0; if(s>0||(s===0&&ps>0)){if(ps>0){const dp=((s-ps)/ps*100);if(s>ps)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ ${dp.toFixed(1)}%</span>`;else if(s<ps)dh=`<span class="text-[9px] text-blue-500 font-bold tracking-tighter block mt-0.5">▼ ${Math.abs(dp).toFixed(1)}%</span>`;else dh=`<span class="text-[9px] text-gray-400 font-bold tracking-tighter block mt-0.5">- 0.0%</span>`;}else if(s>0)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ NEW</span>`;}row+=`<td class="p-3 min-w-[100px] text-right font-mono align-middle ${s===0?'bg-red-50/20 text-red-400 group-hover:bg-red-50/50':'bg-white text-gray-700 group-hover:bg-gray-50'} relative z-10"><div class="flex flex-col justify-center items-end leading-tight min-h-[28px]"><span class="${s>0?'text-xs':'text-gray-400'}">${s>0?s.toLocaleString():'0'}</span>${dh}</div></td>`; }); return row + '</tr>'; }).join('');
         };
 
         // --- ANALYSIS (100% preserved) ---
@@ -523,8 +560,11 @@
             appState.analysisGuild = gName;
             
             const guildTargets = appState.members.filter(m => m.guild === gName);
-            const searchToken = (appState.analysisFilters.search || '').toLowerCase().trim();
-            const displayTargets = searchToken ? guildTargets.filter(m => m.name.toLowerCase().includes(searchToken)) : guildTargets;
+            const rawSearch = (appState.analysisFilters.search || '').trim();
+            const searchTokens = rawSearch.length > 0 ? rawSearch.toLowerCase().split(/[\s,]+/).filter(t => t.length > 0) : [];
+            const displayTargets = searchTokens.length > 0
+                ? guildTargets.filter(m => { const mn = m.isMain ? m.name : (m.mainCharName||''); return searchTokens.some(t => m.name.toLowerCase().includes(t)||mn.toLowerCase().includes(t)||(m.mainCharName||'').toLowerCase().includes(t)); })
+                : guildTargets;
             
             const getWedStr = (h) => {
                 if (!h) return '';
@@ -676,7 +716,7 @@
                     </div>
                     <div class="relative w-full sm:w-64 shrink-0">
                         <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" oninput="window.setAnalysisSearch(this.value)" value="${appState.analysisFilters.search || ''}" class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl outline-none text-xs font-bold shadow-sm focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임 검색">
+                        <input type="text" oninput="window.setAnalysisSearch(this.value)" value="${appState.analysisFilters.search || ''}" class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl outline-none text-xs font-bold shadow-sm focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임/본캐명 검색 (띄어쓰기로 다중검색)">
                     </div>
                 </div>
 
@@ -745,7 +785,7 @@
                                         }).join('')}
                                     </tr>
                                 </thead>
-                                <tbody class="font-bold text-gray-700">
+                                <tbody id="analysisTableBody" class="font-bold text-gray-700">
                                     ${processedList.map((m, i) => {
                                         const globalIndex = i + 1;
                                         return `
@@ -894,7 +934,8 @@
         };
 
         // --- MEMBERS (Public, read-only, card-based on mobile) ---
-        window.handleSearch = (v) => { appState.filters.search = v; appState.pagination.members = 1; window.updateMemberTable(); };
+        window._memberSearchTimer = null;
+        window.handleSearch = (v) => { appState.filters.search = v; appState.pagination.members = 1; if(window._memberSearchTimer) clearTimeout(window._memberSearchTimer); window._memberSearchTimer = setTimeout(() => window.updateMemberTable(), 100); };
         window.filterByGuild = (g) => { appState.filters.guild = g; appState.pagination.members = 1; if(appState.activeTab === 'members') window.renderMembers(document.getElementById('contentArea')); else window.updateMemberTable(); };
         window.handleSort = (field) => { if(appState.filters.sortField === field) appState.filters.sortOrder = appState.filters.sortOrder === 'asc' ? 'desc' : 'asc'; else { appState.filters.sortField = field; appState.filters.sortOrder = 'asc'; } appState.pagination.members = 1; window.updateMemberTable(); };
 
@@ -908,7 +949,7 @@
                     </div>
                     <div class="relative flex-1 w-full">
                         <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" oninput="window.handleSearch(this.value)" value="${appState.filters.search}" class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-xs font-bold shadow-inner focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임 검색">
+                        <input type="text" oninput="window.handleSearch(this.value)" value="${appState.filters.search}" class="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-[11px] lg:text-xs font-bold shadow-inner focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임/본캐명 검색 (띄어쓰기로 다중검색)">
                     </div>
                 </div>
                 <div id="memberTableContainer" class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex-1 min-h-0 flex flex-col"></div>
