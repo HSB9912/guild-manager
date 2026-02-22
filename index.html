@@ -576,14 +576,14 @@
             const rawSearch = (appState.analysisFilters.search || '').trim();
             const searchTokens = rawSearch.length > 0 ? rawSearch.toLowerCase().split(/[\s,]+/).filter(t => t.length > 0) : [];
             const displayTargets = searchTokens.length > 0
-                ? guildTargets.filter(m => { const mn = m.isMain ? m.name : (m.mainCharName||''); return searchTokens.some(t => m.name.toLowerCase().includes(t)||mn.toLowerCase().includes(t)||(m.mainCharName||'').toLowerCase().includes(t)); })
+                ? guildTargets.filter(m => { const mn = m.isMain ? m.name : (m.mainCharName||''); return searchTokens.some(t => m.name.toLowerCase().includes(t)||mn.toLowerCase().includes(t)||(m.mainCharName||'').toLowerCase().includes(t)||(m.class||'').toLowerCase().includes(t)); })
                 : guildTargets;
             const recentHeaders = [...appState.suroHeaders];
             const currentHeader = recentHeaders.length > 0 ? recentHeaders[recentHeaders.length - 1] : null;
             const processedList = displayTargets.map(m => { const scores = recentHeaders.map(h => Math.round(Number(m.suro?.[h])) || 0); const vs = scores.filter(s => s > 0); return { ...m, avg: vs.length > 0 ? Math.round(vs.reduce((a,b)=>a+b,0)/vs.length) : 0, recentScores: scores }; });
             const f = appState.analysisFilters.sortField, o = appState.analysisFilters.sortOrder;
             processedList.sort((a,b) => { if(f.startsWith('date_')){const th=f.replace('date_',''),hi=recentHeaders.indexOf(th),ph=hi>0?recentHeaders[hi-1]:null;const rate=(m)=>{const c=Math.round(Number(m.suro?.[th]))||0;if(!ph)return c>0?-500:-1000;const p=Math.round(Number(m.suro?.[ph]))||0;if(c===0&&p===0)return-1000;if(p===0&&c>0)return-500;return((c-p)/p)*100;};const rA=rate(a),rB=rate(b);if(rA===rB){const cA=Math.round(Number(a.suro?.[th]))||0,cB=Math.round(Number(b.suro?.[th]))||0;return o==='asc'?cA-cB:cB-cA;}return o==='asc'?rA-rB:rB-rA;}if(f==='avg')return o==='asc'?a.avg-b.avg:b.avg-a.avg;if(f==='score'){const vA=Math.round(Number(a.suro?.[currentHeader]))||0,vB=Math.round(Number(b.suro?.[currentHeader]))||0;return o==='asc'?vA-vB:vB-vA;}return smartCompare(a,b,f,o); });
-            tbody.innerHTML = processedList.map((m,i) => { let row = `<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${i+1}</td><td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50"><div class="flex items-center leading-none overflow-hidden text-ellipsis">${window.getNicknameIcon(m.role)}<span class="truncate">${m.name}</span></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>`; m.recentScores.forEach((s,si) => { let dh='',ps=si>0?m.recentScores[si-1]:0; if(s>0||(s===0&&ps>0)){if(ps>0){const dp=((s-ps)/ps*100);if(s>ps)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ ${dp.toFixed(1)}%</span>`;else if(s<ps)dh=`<span class="text-[9px] text-blue-500 font-bold tracking-tighter block mt-0.5">▼ ${Math.abs(dp).toFixed(1)}%</span>`;else dh=`<span class="text-[9px] text-gray-400 font-bold tracking-tighter block mt-0.5">- 0.0%</span>`;}else if(s>0)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ NEW</span>`;}row+=`<td class="p-3 min-w-[100px] text-right font-mono align-middle ${s===0?'bg-red-50/20 text-red-400 group-hover:bg-red-50/50':'bg-white text-gray-700 group-hover:bg-gray-50'} relative z-10"><div class="flex flex-col justify-center items-end leading-tight min-h-[28px]"><span class="${s>0?'text-xs':'text-gray-400'}">${s>0?s.toLocaleString():'0'}</span>${dh}</div></td>`; }); return row + '</tr>'; }).join('');
+            tbody.innerHTML = processedList.map((m,i) => { let row = `<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${i+1}</td><td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50"><div class="flex items-center leading-none overflow-hidden text-ellipsis">${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>`; m.recentScores.forEach((s,si) => { let dh='',ps=si>0?m.recentScores[si-1]:0; if(s>0||(s===0&&ps>0)){if(ps>0){const dp=((s-ps)/ps*100);if(s>ps)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ ${dp.toFixed(1)}%</span>`;else if(s<ps)dh=`<span class="text-[9px] text-blue-500 font-bold tracking-tighter block mt-0.5">▼ ${Math.abs(dp).toFixed(1)}%</span>`;else dh=`<span class="text-[9px] text-gray-400 font-bold tracking-tighter block mt-0.5">- 0.0%</span>`;}else if(s>0)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ NEW</span>`;}row+=`<td class="p-3 min-w-[100px] text-right font-mono align-middle ${s===0?'bg-red-50/20 text-red-400 group-hover:bg-red-50/50':'bg-white text-gray-700 group-hover:bg-gray-50'} relative z-10"><div class="flex flex-col justify-center items-end leading-tight min-h-[28px]"><span class="${s>0?'text-xs':'text-gray-400'}">${s>0?s.toLocaleString():'0'}</span>${dh}</div></td>`; }); return row + '</tr>'; }).join('');
         };
 
         // --- ANALYSIS (100% preserved) ---
@@ -594,7 +594,7 @@
             const rawSearch = (appState.analysisFilters.search || '').trim();
             const searchTokens = rawSearch.length > 0 ? rawSearch.toLowerCase().split(/[\s,]+/).filter(t => t.length > 0) : [];
             const displayTargets = searchTokens.length > 0
-                ? guildTargets.filter(m => { const mn = m.isMain ? m.name : (m.mainCharName||''); return searchTokens.some(t => m.name.toLowerCase().includes(t)||mn.toLowerCase().includes(t)||(m.mainCharName||'').toLowerCase().includes(t)); })
+                ? guildTargets.filter(m => { const mn = m.isMain ? m.name : (m.mainCharName||''); return searchTokens.some(t => m.name.toLowerCase().includes(t)||mn.toLowerCase().includes(t)||(m.mainCharName||'').toLowerCase().includes(t)||(m.class||'').toLowerCase().includes(t)); })
                 : guildTargets;
             
             const getWedStr = (h) => {
@@ -747,7 +747,7 @@
                     </div>
                     <div class="relative w-full sm:w-64 shrink-0">
                         <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" oninput="window.setAnalysisSearch(this.value)" value="${appState.analysisFilters.search || ''}" class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl outline-none text-xs font-bold shadow-sm focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임/본캐명 검색 (띄어쓰기로 다중검색)">
+                        <input type="text" oninput="window.setAnalysisSearch(this.value)" value="${appState.analysisFilters.search || ''}" class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl outline-none text-xs font-bold shadow-sm focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임/본캐/직업 검색 (다중검색)">
                     </div>
                 </div>
 
@@ -824,7 +824,7 @@
                                             <td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${globalIndex}</td>
                                             <td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50">
                                                 <div class="flex items-center leading-none overflow-hidden text-ellipsis">
-                                                    ${window.getNicknameIcon(m.role)}<span class="truncate">${m.name}</span>
+                                                    ${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div>
                                                 </div>
                                             </td>
                                             <td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>
@@ -980,7 +980,7 @@
                     </div>
                     <div class="relative flex-1 w-full">
                         <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" oninput="window.handleSearch(this.value)" value="${appState.filters.search}" class="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-[11px] lg:text-xs font-bold shadow-inner focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임/본캐명 검색 (띄어쓰기로 다중검색)">
+                        <input type="text" oninput="window.handleSearch(this.value)" value="${appState.filters.search}" class="w-full pl-8 lg:pl-10 pr-3 lg:pr-4 py-2 lg:py-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none text-[11px] lg:text-xs font-bold shadow-inner focus:ring-2 focus:ring-pink-50 transition-all" placeholder="닉네임/본캐/직업 검색 (다중검색)">
                     </div>
                 </div>
                 <div id="memberTableContainer" class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm flex-1 min-h-0 flex flex-col"></div>
