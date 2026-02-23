@@ -119,14 +119,31 @@
         .analysis-table-wrap table thead th:nth-child(2) {
             border-right: 2px solid #e5e7eb;
         }
+
+        /* Sticky columns for analysis table
+
+
+
+        thead th { position: sticky; top: 0; z-index: 20; background: inherit; }
+
+
+
+        /* Sticky table header */
+        .stick-head { border-collapse: separate; border-spacing: 0; }
+        .stick-head thead th { position: sticky; top: 0; z-index: 10; background: #f9fafb; }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800 h-screen overflow-hidden flex font-medium">
 
     <div id="loadingOverlay">
-        <div class="text-center">
-            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 border-opacity-20 border-t-pink-500 mb-8 mx-auto"></div>
-            <p class="text-pink-600 font-bold text-xl tracking-tight">데이터 동기화 중...</p>
+        <div class="text-center w-72">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-pink-400 to-rose-400 flex items-center justify-center text-white font-bold shadow-lg shadow-pink-200 text-2xl mx-auto mb-6">뚠</div>
+            <p class="text-gray-800 font-black text-lg tracking-tight mb-1">뚠카롱 길드 관리</p>
+            <p id="loadingStatus" class="text-gray-400 font-bold text-xs mb-6">서버 연결 중...</p>
+            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-3">
+                <div id="loadingBar" class="h-full bg-gradient-to-r from-pink-400 to-rose-400 rounded-full transition-all duration-500 ease-out" style="width:5%"></div>
+            </div>
+            <p id="loadingPct" class="text-[10px] text-gray-300 font-bold">0%</p>
         </div>
     </div>
 
@@ -182,7 +199,7 @@
 
     <script>
         const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/19V1FFMz9M3gQof6T89nwLSGHEK_OriOint2adLINlY0/edit?gid=1890518105#gid=1890518105";
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2pUeqDIeXUOnqn2TbbMYUGzOdYdz0rS9L6IJxgQSzW4-6yYNILiwh-EpqBymXQA8lzg/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNbMrU2WH7Z4u2DiH8_xp-0Cf3KHjaEwR4JOGD1_KByLEJS10WCE2iF1yZjbVEwyus/exec";
         const GUILD_START_DATE = new Date('2020-03-17');
         const MAPLE_JOBS = ["히어로", "다크나이트", "팔라딘", "불독", "썬콜", "비숍", "보우마스터", "신궁", "패스파인더","나이트로드", "섀도어", "듀얼블레이드", "캡틴", "바이퍼", "캐논마스터","미하일", "소울마스터", "플레임위자드", "윈드브레이커", "나이트워커", "스트라이커","아란", "에반", "루미너스", "메르세데스", "팬텀", "은월","데몬 슬레이어", "데몬 어벤져", "블래스터", "배틀메이지", "와일드헌터", "메카닉", "제논","카이저", "카인", "카데나", "엔젤릭버스터","라라", "호영", "아델", "일리움", "아크", "칼리","제로", "키네시스", "렌"];
         const baseRanks = ['마카롱', '다쿠아즈'];
@@ -229,6 +246,14 @@
             box.classList.add('show'); setTimeout(() => box.classList.remove('show'), 3500);
         };
         window.showLoading = (show) => { document.getElementById('loadingOverlay')?.classList.toggle('force-hide', !show); };
+        window.setLoadProgress = (pct, status) => {
+            const bar = document.getElementById('loadingBar');
+            const pctEl = document.getElementById('loadingPct');
+            const statusEl = document.getElementById('loadingStatus');
+            if(bar) bar.style.width = pct + '%';
+            if(pctEl) pctEl.textContent = pct + '%';
+            if(status && statusEl) statusEl.textContent = status;
+        };
         
         window.getAnniversaryInfo = () => {
             const now = new Date(); const diff = now - GUILD_START_DATE;
@@ -377,7 +402,8 @@
                 console.error("Fetch Error:", e); 
                 alert("🚨 서버 통신 실패 (Failed to fetch)\n\n구글 앱스크립트 권한 문제일 가능성이 높습니다.\n앱스크립트 [새 배포] 시 액세스 권한을 반드시 [모든 사용자]로 설정해주세요.");
             } finally {
-                window.showLoading(false);
+                window.setLoadProgress(100, '완료!');
+                setTimeout(() => window.showLoading(false), 300);
                 window.router(appState.activeTab);
             }
         };
@@ -467,14 +493,15 @@
                 <div class="flex flex-col gap-8 h-full">
                     <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col min-h-[300px] overflow-hidden shrink-0">
                         <div class="flex justify-between items-center mb-4 shrink-0">
-                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest">직업 분포도</h3>
-                            <select onchange="window.updateJobChart(this.value)" class="bg-gray-50 rounded-xl px-3 py-1.5 text-xs font-bold outline-none cursor-pointer hover:bg-gray-100">
-                                <option value="all">전체</option>${appState.guilds.map(g => `<option value="${g.name}">${g.name}</option>`).join('')}
+                            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2"><i class="fas fa-chart-bar text-pink-300"></i> 직업 분포도</h3>
+                            <select onchange="window.updateJobChart(this.value)" class="bg-gray-50 rounded-xl px-3 py-1.5 text-xs font-bold outline-none cursor-pointer hover:bg-gray-100 border border-gray-100">
+                                <option value="all">전체보기</option>${appState.guilds.map(g => `<option value="${g.name}">${g.name}</option>`).join('')}
                             </select>
                         </div>
                         <div class="flex-1 overflow-y-auto no-scrollbar relative">
-                            <div id="jobChartContainer" style="min-height: 250px;"><canvas id="jobChart"></canvas></div>
+                            <div id="jobChartContainer" class="flex flex-col gap-4"></div>
                         </div>
+                        <button onclick="window.toggleJobChart()" id="jobToggleBtn" class="mt-3 py-2 text-[10px] font-bold text-gray-400 hover:text-pink-500 transition-all flex items-center justify-center gap-1"><i class="fas fa-chevron-down text-[8px]" id="jobToggleIcon"></i> <span id="jobToggleText">더보기</span></button>
                     </div>
                 </div>
             </div>
@@ -597,7 +624,7 @@
             const processedList = displayTargets.map(m => { const scores = recentHeaders.map(h => Math.round(Number(m.suro?.[h])) || 0); const vs = scores.filter(s => s > 0); return { ...m, avg: vs.length > 0 ? Math.round(vs.reduce((a,b)=>a+b,0)/vs.length) : 0, recentScores: scores }; });
             const f = appState.analysisFilters.sortField, o = appState.analysisFilters.sortOrder;
             processedList.sort((a,b) => { if(f.startsWith('date_')){const th=f.replace('date_',''),hi=recentHeaders.indexOf(th),ph=hi>0?recentHeaders[hi-1]:null;const rate=(m)=>{const c=Math.round(Number(m.suro?.[th]))||0;if(!ph)return c>0?-500:-1000;const p=Math.round(Number(m.suro?.[ph]))||0;if(c===0&&p===0)return-1000;if(p===0&&c>0)return-500;return((c-p)/p)*100;};const rA=rate(a),rB=rate(b);if(rA===rB){const cA=Math.round(Number(a.suro?.[th]))||0,cB=Math.round(Number(b.suro?.[th]))||0;return o==='asc'?cA-cB:cB-cA;}return o==='asc'?rA-rB:rB-rA;}if(f==='avg')return o==='asc'?a.avg-b.avg:b.avg-a.avg;if(f==='score'){const vA=Math.round(Number(a.suro?.[currentHeader]))||0,vB=Math.round(Number(b.suro?.[currentHeader]))||0;return o==='asc'?vA-vB:vB-vA;}return smartCompare(a,b,f,o); });
-            tbody.innerHTML = processedList.map((m,i) => { let row = `<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${i+1}</td><td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50"><div class="flex items-center leading-none overflow-hidden text-ellipsis">${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>`; m.recentScores.forEach((s,si) => { let dh='',ps=si>0?m.recentScores[si-1]:0; if(s>0||(s===0&&ps>0)){if(ps>0){const dp=((s-ps)/ps*100);if(s>ps)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ ${dp.toFixed(1)}%</span>`;else if(s<ps)dh=`<span class="text-[9px] text-blue-500 font-bold tracking-tighter block mt-0.5">▼ ${Math.abs(dp).toFixed(1)}%</span>`;else dh=`<span class="text-[9px] text-gray-400 font-bold tracking-tighter block mt-0.5">- 0.0%</span>`;}else if(s>0)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ NEW</span>`;}row+=`<td class="p-3 min-w-[100px] text-right font-mono align-middle ${s===0?'bg-red-50/20 text-red-400 group-hover:bg-red-50/50':'bg-white text-gray-700 group-hover:bg-gray-50'} relative z-10"><div class="flex flex-col justify-center items-end leading-tight min-h-[28px]"><span class="${s>0?'text-xs':'text-gray-400'}">${s>0?s.toLocaleString():'0'}</span>${dh}</div></td>`; }); return row + '</tr>'; }).join('');
+            tbody.innerHTML = processedList.map((m,i) => { let row = `<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${i+1}</td><td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50 bg-white"><div class="flex items-center leading-none overflow-hidden text-ellipsis">${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>`; m.recentScores.forEach((s,si) => { let dh='',ps=si>0?m.recentScores[si-1]:0; if(s>0||(s===0&&ps>0)){if(ps>0){const dp=((s-ps)/ps*100);if(s>ps)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ ${dp.toFixed(1)}%</span>`;else if(s<ps)dh=`<span class="text-[9px] text-blue-500 font-bold tracking-tighter block mt-0.5">▼ ${Math.abs(dp).toFixed(1)}%</span>`;else dh=`<span class="text-[9px] text-gray-400 font-bold tracking-tighter block mt-0.5">- 0.0%</span>`;}else if(s>0)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ NEW</span>`;}row+=`<td class="p-3 min-w-[100px] text-right font-mono align-middle ${s===0?'bg-red-50/20 text-red-400 group-hover:bg-red-50/50':'bg-white text-gray-700 group-hover:bg-gray-50'}"><div class="flex flex-col justify-center items-end leading-tight min-h-[28px]"><span class="${s>0?'text-xs':'text-gray-400'}">${s>0?s.toLocaleString():'0'}</span>${dh}</div></td>`; }); return row + '</tr>'; }).join('');
         };
 
         window.renderAnalysis = (container, gName) => {
@@ -678,10 +705,10 @@
             pctIncreases.sort((a,b) => b.val - a.val);
             avgIncreases.sort((a,b) => b.val - a.val);
 
-            const topScoreHighMVP = topScores.slice(0, 3);
-            const topScoreMVP = scoreIncreases.slice(0, 3);
-            const topPctMVP = pctIncreases.slice(0, 3);
-            const topAvgMVP = avgIncreases.slice(0, 3);
+            const topScoreHighMVP = topScores.slice(0, 5);
+            const topScoreMVP = scoreIncreases.slice(0, 5);
+            const topPctMVP = pctIncreases.slice(0, 5);
+            const topAvgMVP = avgIncreases.slice(0, 5);
 
             window._mvpFullData = { high: topScores, score: scoreIncreases, pct: pctIncreases, avg: avgIncreases };
 
@@ -755,8 +782,9 @@
             };
 
             container.innerHTML = `
-            <div class="flex flex-col gap-4 fade-in h-full">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
+            <div class="flex flex-col fade-in h-full">
+                <!-- 상단 컨트롤 (고정) -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0 pb-3 bg-gray-50 z-20">
                     <div class="flex gap-2 overflow-x-auto no-scrollbar shrink-0 w-full sm:w-auto">
                         ${analysisGuildsOptions.map(gNameOption => `<button onclick="window.renderAnalysis(document.getElementById('contentArea'), '${gNameOption}')" class="px-6 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${gNameOption === gName ? 'bg-pink-500 text-white shadow-lg' : 'bg-white text-gray-500 border border-gray-100'}">${gNameOption}</button>`).join('')}
                     </div>
@@ -766,68 +794,64 @@
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-3 shrink-0">
-                    <div class="grid grid-cols-3 gap-3 font-bold">
-                        <div class="bg-white py-3 lg:py-4 px-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-center items-center h-full min-h-[80px]">
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">전체 총점</p>
-                            <h4 class="text-base lg:text-xl font-black text-gray-800 tracking-tighter">${displayTotal.toLocaleString()}</h4>
-                        </div>
-                        <div class="bg-red-50 py-3 lg:py-4 px-4 rounded-2xl border border-red-100 shadow-sm flex flex-col justify-center items-center h-full min-h-[80px]">
-                            <p class="text-[9px] text-red-500 font-bold uppercase tracking-widest mb-1.5">🚨 미참여</p>
-                            <h4 class="text-base lg:text-xl font-black text-red-600 tracking-tighter">${zeroPointMembers.length}명</h4>
-                        </div>
-                        <div class="bg-white py-3 lg:py-4 px-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-center items-center h-full min-h-[80px]">
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1.5">최근 데이터 주차</p>
-                            <h4 class="text-xs lg:text-sm font-bold text-gray-700">${currentHeader ? getWedStr(currentHeader) : '데이터 없음'}</h4>
-                        </div>
+                <!-- 스크롤 영역 -->
+                <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3">
+
+                <!-- ★ 상단 요약 한 줄 -->
+                <div class="grid grid-cols-3 gap-2 shrink-0 font-bold">
+                    <div class="bg-white py-2.5 px-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-center gap-3">
+                        <span class="text-[8px] text-gray-400 uppercase tracking-widest">전체 총점</span>
+                        <span class="text-base font-black text-gray-800 tracking-tighter">${displayTotal.toLocaleString()}</span>
                     </div>
-                    
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 font-bold">
-                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-3.5 rounded-2xl border border-blue-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('high')">
-                            <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-6xl text-blue-500"><i class="fas fa-crown"></i></div>
-                            <div class="flex justify-between items-center z-10"><p class="text-[9px] text-blue-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-star"></i> 이번 주 고득점 MVP</p><span class="text-[8px] text-blue-300 group-hover/mvp:text-blue-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
-                            ${renderMvpList(topScoreHighMVP, 'high')}
-                        </div>
-                        <div class="bg-gradient-to-br from-yellow-50 to-orange-50 p-3.5 rounded-2xl border border-orange-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('score')">
-                            <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-6xl text-orange-500"><i class="fas fa-trophy"></i></div>
-                            <div class="flex justify-between items-center z-10"><p class="text-[9px] text-orange-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-arrow-trend-up"></i> 주간 점수 떡상 MVP</p><span class="text-[8px] text-orange-300 group-hover/mvp:text-orange-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
-                            ${renderMvpList(topScoreMVP, 'score')}
-                        </div>
-                        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 p-3.5 rounded-2xl border border-emerald-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('pct')">
-                            <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-6xl text-emerald-500"><i class="fas fa-chart-line"></i></div>
-                            <div class="flex justify-between items-center z-10"><p class="text-[9px] text-emerald-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-percent"></i> 주간 상승률 MVP</p><span class="text-[8px] text-emerald-300 group-hover/mvp:text-emerald-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
-                            ${renderMvpList(topPctMVP, 'pct')}
-                        </div>
-                        <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 p-3.5 rounded-2xl border border-purple-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('avg')">
-                            <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-6xl text-purple-500"><i class="fas fa-bolt"></i></div>
-                            <div class="flex justify-between items-center z-10"><p class="text-[9px] text-purple-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-balance-scale"></i> 주간 평균대비 떡상</p><span class="text-[8px] text-purple-300 group-hover/mvp:text-purple-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
-                            ${renderMvpList(topAvgMVP, 'avg')}
-                        </div>
+                    <div class="bg-red-50 py-2.5 px-4 rounded-xl border border-red-100 shadow-sm flex items-center justify-center gap-3">
+                        <span class="text-[8px] text-red-500 uppercase tracking-widest">🚨 미참여</span>
+                        <span class="text-base font-black text-red-600">${zeroPointMembers.length}명</span>
+                    </div>
+                    <div class="bg-white py-2.5 px-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-center gap-3 cursor-pointer group" onclick="window.expandChart()">
+                        <span class="text-[8px] text-gray-400 uppercase tracking-widest">최근 주차</span>
+                        <span class="text-sm font-bold text-gray-700">${currentHeader ? getWedStr(currentHeader) : '없음'}</span>
+                        <span class="text-[8px] text-gray-300 group-hover:text-pink-400"><i class="fas fa-chart-line"></i></span>
                     </div>
                 </div>
+                <canvas id="analysisChart" style="display:none;"></canvas>
 
-                <div class="flex flex-col lg:flex-row gap-5 flex-1 min-h-[400px] lg:min-h-0">
-                    <div class="w-full lg:w-[30%] bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden shrink-0 lg:h-full cursor-pointer group" onclick="window.expandChart()">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">주간 총점 추이</h3>
-                            <span class="text-[9px] text-gray-300 group-hover:text-pink-400 transition-colors flex items-center gap-1"><i class="fas fa-expand-alt"></i> 클릭하여 확대</span>
+                <!-- ★ MVP 4개 한 줄 -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 font-bold shrink-0">
+                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-2.5 lg:p-3.5 rounded-xl lg:rounded-2xl border border-blue-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[85px] lg:min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('high')">
+                            <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-4xl lg:text-6xl text-blue-500"><i class="fas fa-crown"></i></div>
+                            <div class="flex justify-between items-center z-10"><p class="text-[8px] lg:text-[9px] text-blue-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-star"></i> 이번 주 고득점</p><span class="text-[8px] text-blue-300 group-hover/mvp:text-blue-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
+                            ${renderMvpList(topScoreHighMVP, 'high')}
                         </div>
-                        <div class="flex-1 w-full min-h-[150px] relative">
-                            <canvas id="analysisChart"></canvas>
+                        <div class="bg-gradient-to-br from-yellow-50 to-orange-50 p-2.5 lg:p-3.5 rounded-xl lg:rounded-2xl border border-orange-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[85px] lg:min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('score')">
+                            <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-4xl lg:text-6xl text-orange-500"><i class="fas fa-trophy"></i></div>
+                            <div class="flex justify-between items-center z-10"><p class="text-[8px] lg:text-[9px] text-orange-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-arrow-trend-up"></i> 점수 떡상</p><span class="text-[8px] text-orange-300 group-hover/mvp:text-orange-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
+                            ${renderMvpList(topScoreMVP, 'score')}
                         </div>
-                    </div>
+                        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 p-2.5 lg:p-3.5 rounded-xl lg:rounded-2xl border border-emerald-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[85px] lg:min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('pct')">
+                            <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-4xl lg:text-6xl text-emerald-500"><i class="fas fa-chart-line"></i></div>
+                            <div class="flex justify-between items-center z-10"><p class="text-[8px] lg:text-[9px] text-emerald-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-percent"></i> 상승률</p><span class="text-[8px] text-emerald-300 group-hover/mvp:text-emerald-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
+                            ${renderMvpList(topPctMVP, 'pct')}
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 p-2.5 lg:p-3.5 rounded-xl lg:rounded-2xl border border-purple-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[85px] lg:min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('avg')">
+                            <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-4xl lg:text-6xl text-purple-500"><i class="fas fa-bolt"></i></div>
+                            <div class="flex justify-between items-center z-10"><p class="text-[8px] lg:text-[9px] text-purple-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-balance-scale"></i> 평균대비 떡상</p><span class="text-[8px] text-purple-300 group-hover/mvp:text-purple-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
+                            ${renderMvpList(topAvgMVP, 'avg')}
+                        </div>
+                </div>
 
-                    <div class="w-full lg:w-[70%] bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden shrink-0 lg:h-full relative">
-                        <div class="p-4 border-b border-gray-50 flex justify-between items-center shrink-0 bg-white relative z-40">
-                            <h3 class="text-xs font-bold text-gray-800 uppercase tracking-widest">전체 데이터 (누적)</h3>
+                <!-- ★ 전체 데이터 테이블 (전체 너비) -->
+                <div class="min-h-[80vh]">
+                    <div class="bg-white rounded-xl lg:rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden h-full relative">
+                        <div class="p-3 lg:p-4 border-b border-gray-50 flex justify-between items-center shrink-0 bg-white relative z-40">
+                            <h3 class="text-[10px] lg:text-xs font-bold text-gray-800 uppercase tracking-widest">전체 데이터 (누적)</h3>
                             <button onclick="window.expandTable()" class="text-[9px] text-gray-300 hover:text-pink-400 transition-colors flex items-center gap-1 font-bold"><i class="fas fa-expand-alt"></i> 확대</button>
                         </div>
                         <div id="analysisTableWrapper" class="analysis-table-wrap flex-1 overflow-auto bg-white scroll-smooth relative">
-                            <table class="w-full text-left text-xs whitespace-nowrap">
-                                <thead class="text-[10px] text-gray-500 uppercase bg-gray-50 border-b border-gray-200 sticky top-0 z-30">
+                            <table class="w-full text-left text-xs whitespace-nowrap stick-head">
+                                <thead class="text-[10px] text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
                                     <tr>
-                                        <th class="p-3 text-center min-w-[50px]">RANK</th>
-                                        <th class="p-3 sortable cursor-pointer hover:bg-gray-200 min-w-[140px]" onclick="window.setAnalysisSort('name')">캐릭터명${sortIcon('name')}</th>
+                                        <th class="p-3 text-center min-w-[50px] bg-gray-50">RANK</th>
+                                        <th class="p-3 sortable cursor-pointer hover:bg-gray-200 min-w-[140px] bg-gray-50" onclick="window.setAnalysisSort('name')">캐릭터명${sortIcon('name')}</th>
                                         <th class="p-3 text-center sortable bg-pink-50 text-pink-600 cursor-pointer min-w-[110px]" onclick="window.setAnalysisSort('avg')">평균 (참여)${sortIcon('avg')}</th>
                                         ${recentHeaders.map((h, idx) => {
                                             const displayStr = getWedStr(h);
@@ -840,8 +864,8 @@
                                         const globalIndex = i + 1;
                                         return `
                                         <tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50">
-                                            <td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${globalIndex}</td>
-                                            <td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50">
+                                            <td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50 bg-white">${globalIndex}</td>
+                                            <td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50 bg-white">
                                                 <div class="flex items-center leading-none overflow-hidden text-ellipsis">
                                                     ${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div>
                                                 </div>
@@ -871,7 +895,7 @@
                                                 }
 
                                                 return `
-                                                <td class="p-3 min-w-[100px] text-right font-mono align-middle ${s === 0 ? 'bg-red-50/20 text-red-400 group-hover:bg-red-50/50' : 'bg-white text-gray-700 group-hover:bg-gray-50'} relative z-10">
+                                                <td class="p-3 min-w-[100px] text-right font-mono align-middle ${s === 0 ? 'bg-red-50/20 text-red-400 group-hover:bg-red-50/50' : 'bg-white text-gray-700 group-hover:bg-gray-50'}">
                                                     <div class="flex flex-col justify-center items-end leading-tight min-h-[28px]">
                                                         <span class="${s > 0 ? 'text-xs' : 'text-gray-400'}">${s > 0 ? s.toLocaleString() : '0'}</span>
                                                         ${diffHtml}
@@ -885,6 +909,7 @@
                             </table>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>`;
 
@@ -974,13 +999,13 @@
                     var tbody=document.getElementById('modalTableBody');
                     if(thead) thead.innerHTML='<tr><th class="p-3 text-center min-w-[50px] bg-gray-50">RANK</th><th class="p-3 min-w-[140px] cursor-pointer hover:bg-gray-200 bg-gray-50" onclick="window._modalSort(\'name\')">\uCE90\uB9AD\uD130\uBA85'+si('name')+'</th><th class="p-3 text-center min-w-[110px] cursor-pointer bg-pink-50 text-pink-600 hover:bg-pink-100" onclick="window._modalSort(\'avg\')">\uD3C9\uADE0 (\uCC38\uC5EC)'+si('avg')+'</th>'+recentHeaders.map(function(h){return '<th class="p-3 min-w-[100px] text-right cursor-pointer hover:bg-gray-200 bg-gray-50" onclick="window._modalSort(\'date_'+h+'\')">'+getWedStr(h)+si('date_'+h)+'</th>';}).join('')+'</tr>';
                     if(tbody) tbody.innerHTML=processed.map(function(m,i){
-                        var row='<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400">'+(i+1)+'</td><td class="p-3 text-gray-800"><div class="flex items-center leading-none">'+window.getNicknameIcon(m.role)+'<div class="flex flex-col min-w-0"><span class="truncate">'+m.name+'</span><span class="text-[9px] text-gray-400 font-medium truncate">'+(m.class||'')+'</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30">'+m.avg.toLocaleString()+'</td>';
+                        var row='<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400 bg-white">'+(i+1)+'</td><td class="p-3 text-gray-800 bg-white"><div class="flex items-center leading-none">'+window.getNicknameIcon(m.role)+'<div class="flex flex-col min-w-0"><span class="truncate">'+m.name+'</span><span class="text-[9px] text-gray-400 font-medium truncate">'+(m.class||'')+'</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30">'+m.avg.toLocaleString()+'</td>';
                         m.recentScores.forEach(function(s,si2){var dh='',ps=si2>0?m.recentScores[si2-1]:0;if(s>0||(s===0&&ps>0)){if(ps>0){var dp=((s-ps)/ps*100);if(s>ps)dh='<span class="text-[9px] text-red-500 font-bold block mt-0.5">\u25B2 '+dp.toFixed(1)+'%</span>';else if(s<ps)dh='<span class="text-[9px] text-blue-500 font-bold block mt-0.5">\u25BC '+Math.abs(dp).toFixed(1)+'%</span>';else dh='<span class="text-[9px] text-gray-400 font-bold block mt-0.5">- 0.0%</span>';}else if(s>0)dh='<span class="text-[9px] text-red-500 font-bold block mt-0.5">\u25B2 NEW</span>';}row+='<td class="p-3 min-w-[100px] text-right font-mono '+(s===0?'bg-red-50/20 text-red-400':'text-gray-700')+'"><div class="flex flex-col items-end leading-tight min-h-[28px]"><span class="'+(s>0?'text-xs':'text-gray-400')+'">'+(s>0?s.toLocaleString():'0')+'</span>'+dh+'</div></td>';});
                         return row+'</tr>';
                     }).join('');
                 }
                 window._modalSort=function(col){if(modalSort.field===col){modalSort.order=modalSort.order==='asc'?'desc':'asc';}else{modalSort.field=col;modalSort.order=(col==='avg'||col==='score'||col.startsWith('date_'))?'desc':'asc';}renderModalTable();};
-                modal.innerHTML='<div style="padding:1rem 1.25rem;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:1rem;"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest shrink-0">\uC804\uCCB4 \uB370\uC774\uD130 \u2014 '+gName+'</h3><div class="flex items-center gap-2 flex-1 max-w-md"><div class="flex-1 relative"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i><input id="modalSearchInput" type="text" class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-pink-100" placeholder="\uB2C9\uB124\uC784/\uBCF8\uCE90/\uC9C1\uC5C5 \uAC80\uC0C9" oninput="clearTimeout(window._mst);window._mst=setTimeout(function(){window._modalSearchFn(document.getElementById(\'modalSearchInput\').value)},150)"></div><button onclick="document.getElementById(\'tableModal\').remove()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors shrink-0"><i class="fas fa-times"></i></button></div></div><div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;" class="no-scrollbar"><table class="w-full text-left text-xs whitespace-nowrap font-bold"><thead id="modalTableHead" class="text-[10px] text-gray-500 uppercase border-b border-gray-200 sticky top-0 z-10"></thead><tbody id="modalTableBody" class="text-gray-700"></tbody></table></div>';
+                modal.innerHTML='<div style="padding:1rem 1.25rem;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:1rem;"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest shrink-0">\uC804\uCCB4 \uB370\uC774\uD130 \u2014 '+gName+'</h3><div class="flex items-center gap-2 flex-1 max-w-md"><div class="flex-1 relative"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i><input id="modalSearchInput" type="text" class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-pink-100" placeholder="\uB2C9\uB124\uC784/\uBCF8\uCE90/\uC9C1\uC5C5 \uAC80\uC0C9" oninput="clearTimeout(window._mst);window._mst=setTimeout(function(){window._modalSearchFn(document.getElementById(\'modalSearchInput\').value)},150)"></div><button onclick="document.getElementById(\'tableModal\').remove()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors shrink-0"><i class="fas fa-times"></i></button></div></div><div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;" class="no-scrollbar"><table class="w-full text-left text-xs whitespace-nowrap font-bold stick-head"><thead id="modalTableHead" class="text-[10px] text-gray-500 uppercase border-b border-gray-200 bg-gray-50"></thead><tbody id="modalTableBody" class="text-gray-700"></tbody></table></div>';
                 overlay.appendChild(modal);
                 document.body.appendChild(overlay);
                 window._modalSearchFn=function(v){modalSearch=v.trim();renderModalTable();};
@@ -1048,51 +1073,31 @@
             window.renderAnalysis(document.getElementById('contentArea'), appState.analysisGuild); 
         };
 
+        window._jobExpanded = false;
         window.updateJobChart = (target) => {
-            const ctx = document.getElementById('jobChart'); if(!ctx) return;
-            const container = document.getElementById('jobChartContainer');
-            
+            const container = document.getElementById('jobChartContainer'); if(!container) return;
             const targets = target === 'all' ? appState.members : appState.members.filter(m => m.guild === target);
             const counts = {}; targets.forEach(m => { const j = m.class || '미설정'; counts[j] = (counts[j] || 0) + 1; });
             const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]);
-            
-            const newHeight = Math.max(250, 50 + (sorted.length * 30));
-            if(container) container.style.height = newHeight + 'px';
-
-            const jobPalette = [
-                '#FF9AA2', '#FFB7B2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA',
-                '#FF6F61', '#6B5B95', '#88B04B', '#F7CAC9', '#92A8D1', '#955251',
-                '#B565A7', '#009B77', '#DD4124', '#D65076', '#45B8AC', '#EFC050',
-                '#5B5EA6', '#9B2335', '#DFCFBE', '#55B4B0', '#E15D44', '#7FCDCD',
-                '#BC243C', '#C3447A', '#98B4D4'
-            ];
-
-            const backgroundColors = sorted.map((_, i) => jobPalette[i % jobPalette.length]);
-
-            if(jobChartInstance) jobChartInstance.destroy();
-            jobChartInstance = new Chart(ctx, { 
-                type: 'bar', 
-                data: { 
-                    labels: sorted.map(j => j[0]), 
-                    datasets: [{ 
-                        label: '인원', 
-                        data: sorted.map(j => j[1]), 
-                        backgroundColor: backgroundColors,
-                        borderRadius: 4, 
-                        barThickness: 20
-                    }] 
-                }, 
-                options: { 
-                    indexAxis: 'y', 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } }, 
-                    scales: { 
-                        x: { beginAtZero: true, ticks: { precision: 0 } },
-                        y: { ticks: { autoSkip: false, font: { size: 11, weight: 'bold' }, color: '#4b5563' } }
-                    } 
-                } 
-            });
+            const maxCount = sorted.length > 0 ? sorted[0][1] : 1;
+            const barColors = ['#F9A8D4','#FCA5A5','#FDBA74','#FDE68A','#A7F3D0','#93C5FD','#C4B5FD','#F0ABFC','#6EE7B7','#7DD3FC','#FDA4AF','#D8B4FE','#A5B4FC','#99F6E4'];
+            const list = window._jobExpanded ? sorted : sorted.slice(0, 7);
+            container.innerHTML = list.map((item, i) => {
+                const pct = Math.round((item[1] / maxCount) * 100);
+                const color = barColors[i % barColors.length];
+                return `<div><div class="flex justify-between items-center mb-1"><span class="text-sm font-bold text-gray-700">${item[0]}</span><span class="text-sm font-black text-gray-500">${item[1]}</span></div><div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden"><div class="h-full rounded-full transition-all duration-700" style="width:${pct}%;background:${color}"></div></div></div>`;
+            }).join('');
+            const btn = document.getElementById('jobToggleBtn');
+            if(btn) btn.style.display = sorted.length <= 7 ? 'none' : 'flex';
+            const icon = document.getElementById('jobToggleIcon');
+            const txt = document.getElementById('jobToggleText');
+            if(icon) icon.className = window._jobExpanded ? 'fas fa-chevron-up text-[8px]' : 'fas fa-chevron-down text-[8px]';
+            if(txt) txt.textContent = window._jobExpanded ? '접기' : '더보기 (' + (sorted.length - 7) + ')';
+        };
+        window.toggleJobChart = () => {
+            window._jobExpanded = !window._jobExpanded;
+            const select = document.querySelector('#jobChartContainer')?.closest('.shrink-0')?.querySelector('select');
+            window.updateJobChart(select ? select.value : 'all');
         };
 
         window._memberSearchTimer = null;
@@ -1187,7 +1192,7 @@
                 });
                 html += `</div>`;
             } else {
-                html = `<div class="overflow-y-auto flex-1 relative"><table class="w-full text-left min-w-[800px] text-xs whitespace-nowrap"><thead class="bg-gray-50 text-[10px] font-bold text-gray-500 border-b border-gray-100 sticky top-0 z-10 shadow-sm"><tr><th class="p-4 text-center w-16">No.</th><th class="p-4 sortable" onclick="window.handleSort('name')">닉네임${sortIcon('name')}</th><th class="p-4 sortable" onclick="window.handleSort('mainInfo')">본캐 정보${sortIcon('mainInfo')}</th><th class="p-4 sortable" onclick="window.handleSort('guild')">소속${sortIcon('guild')}</th><th class="p-4 sortable" onclick="window.handleSort('role')">직위${sortIcon('role')}</th><th class="p-4 sortable" onclick="window.handleSort('class')">직업${sortIcon('class')}</th></tr></thead><tbody class="divide-y divide-gray-50 text-gray-600 font-bold relative z-0">`;
+                html = `<div class="overflow-y-auto flex-1 relative"><table class="w-full text-left min-w-[800px] text-xs whitespace-nowrap"><thead class="bg-gray-50 text-[10px] font-bold text-gray-500 border-b border-gray-100 shadow-sm"><tr><th class="p-4 text-center w-16">No.</th><th class="p-4 sortable" onclick="window.handleSort('name')">닉네임${sortIcon('name')}</th><th class="p-4 sortable" onclick="window.handleSort('mainInfo')">본캐 정보${sortIcon('mainInfo')}</th><th class="p-4 sortable" onclick="window.handleSort('guild')">소속${sortIcon('guild')}</th><th class="p-4 sortable" onclick="window.handleSort('role')">직위${sortIcon('role')}</th><th class="p-4 sortable" onclick="window.handleSort('class')">직업${sortIcon('class')}</th></tr></thead><tbody class="divide-y divide-gray-50 text-gray-600 font-bold">`;
                 
                 pageData.forEach((m, idx) => {
                     const globalIndex = (appState.pagination.members - 1) * ITEMS_PER_PAGE + idx + 1;
@@ -1264,14 +1269,14 @@
                     </div>
                     <div class="flex-1 overflow-y-auto no-scrollbar">
                         <table class="w-full text-left text-xs">
-                            <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase sticky top-0 z-20">
+                            <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase">
                                 <tr>
                                     <th class="p-5">납부자</th>
                                     <th class="p-5">수령자</th>
                                     <th class="p-5 text-right">수량</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-50 relative z-10">
+                            <tbody class="divide-y divide-gray-50">
                                 ${historyRows || '<tr><td colspan="3" class="p-20 text-center text-gray-300 font-bold italic">내역이 존재하지 않습니다.</td></tr>'}
                             </tbody>
                         </table>
@@ -1311,15 +1316,15 @@
                         <h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">벌점 이력</h3>
                     </div>
                     <div class="flex-1 overflow-y-auto no-scrollbar">
-                        <table class="w-full text-left text-xs whitespace-nowrap">
-                            <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase sticky top-0 z-20">
+                        <table class="w-full text-left text-xs whitespace-nowrap stick-head">
+                            <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase">
                                 <tr>
                                     <th class="p-5">대상자</th>
                                     <th class="p-5">점수</th>
                                     <th class="p-5">사유</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-50 relative z-10">
+                            <tbody class="divide-y divide-gray-50">
                                 ${penaltyRows || '<tr><td colspan="3" class="p-20 text-center text-gray-300 font-bold italic">벌점 이력이 없습니다.</td></tr>'}
                             </tbody>
                         </table>
