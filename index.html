@@ -1216,11 +1216,15 @@
                     const mainRankHtml = mainMem ? formatRankWithSuffix(mainMem.role) : '-';
                     
                     const targetRole = mainMem ? mainMem.role : (m.isMain ? m.role : '');
-                    let rowBorderStyle = "";
-                    if (['티라미슈', '파르페', '크라운'].includes(targetRole)) {
-                        rowBorderStyle = "border-left: 4px solid #0066FF;";
+                    let rowStyle = "";
+                    if (targetRole === '크라운') {
+                        rowStyle = "background:linear-gradient(to right,#FFF9E6,#FFF3CC);border-left:3px solid #F0C050;";
+                    } else if (targetRole === '파르페') {
+                        rowStyle = "background:linear-gradient(to right,#EBF0FF,#E4EAFF);border-left:3px solid #8EA8F0;";
+                    } else if (targetRole === '티라미슈') {
+                        rowStyle = "background:linear-gradient(to right,#EBF0FF,#E8EDFF);border-left:3px solid #A0B4E8;";
                     } else if (targetRole === '크로칸슈') {
-                        rowBorderStyle = "border-left: 4px solid #92D050;";
+                        rowStyle = "background:linear-gradient(to right,#EEFFEE,#E5FAE5);border-left:3px solid #92D050;";
                     }
 
                     let roleHtml = `<span class="text-[10px]">${m.role}</span>`;
