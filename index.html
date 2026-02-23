@@ -182,7 +182,7 @@
 
     <script>
         const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/19V1FFMz9M3gQof6T89nwLSGHEK_OriOint2adLINlY0/edit?gid=1890518105#gid=1890518105";
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgazT4PO4EQSjC0LS5GMUg27FHkrt9HbLjbW4vKcKmeCBmztpjhtKwLH92ib4boiUYBw/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2pUeqDIeXUOnqn2TbbMYUGzOdYdz0rS9L6IJxgQSzW4-6yYNILiwh-EpqBymXQA8lzg/exec";
         const GUILD_START_DATE = new Date('2020-03-17');
         const MAPLE_JOBS = ["히어로", "다크나이트", "팔라딘", "불독", "썬콜", "비숍", "보우마스터", "신궁", "패스파인더","나이트로드", "섀도어", "듀얼블레이드", "캡틴", "바이퍼", "캐논마스터","미하일", "소울마스터", "플레임위자드", "윈드브레이커", "나이트워커", "스트라이커","아란", "에반", "루미너스", "메르세데스", "팬텀", "은월","데몬 슬레이어", "데몬 어벤져", "블래스터", "배틀메이지", "와일드헌터", "메카닉", "제논","카이저", "카인", "카데나", "엔젤릭버스터","라라", "호영", "아델", "일리움", "아크", "칼리","제로", "키네시스", "렌"];
         const baseRanks = ['마카롱', '다쿠아즈'];
@@ -306,7 +306,7 @@
         window.fetchMembers = async () => {
             window.showLoading(true);
             try {
-                const targetUrl = appState.scriptUrl + "?t=" + new Date().getTime();
+                const targetUrl = appState.scriptUrl + "?t=" + new Date().getTime() + "&mode=public";
                 const response = await fetch(targetUrl, { redirect: 'follow' }); 
                 
                 if (!response.ok) {
