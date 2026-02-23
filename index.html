@@ -683,6 +683,8 @@
             const topPctMVP = pctIncreases.slice(0, 3);
             const topAvgMVP = avgIncreases.slice(0, 3);
 
+            window._mvpFullData = { high: topScores, score: scoreIncreases, pct: pctIncreases, avg: avgIncreases };
+
             processedList.sort((a, b) => {
                 const f = appState.analysisFilters.sortField;
                 const o = appState.analysisFilters.sortOrder;
@@ -781,32 +783,35 @@
                     </div>
                     
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 font-bold">
-                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-3.5 rounded-2xl border border-blue-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px]">
+                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-3.5 rounded-2xl border border-blue-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('high')">
                             <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-6xl text-blue-500"><i class="fas fa-crown"></i></div>
-                            <p class="text-[9px] text-blue-600 font-bold uppercase tracking-widest z-10 flex items-center gap-1"><i class="fas fa-star"></i> 이번 주 고득점 MVP</p>
+                            <div class="flex justify-between items-center z-10"><p class="text-[9px] text-blue-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-star"></i> 이번 주 고득점 MVP</p><span class="text-[8px] text-blue-300 group-hover/mvp:text-blue-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
                             ${renderMvpList(topScoreHighMVP, 'high')}
                         </div>
-                        <div class="bg-gradient-to-br from-yellow-50 to-orange-50 p-3.5 rounded-2xl border border-orange-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px]">
+                        <div class="bg-gradient-to-br from-yellow-50 to-orange-50 p-3.5 rounded-2xl border border-orange-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('score')">
                             <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-6xl text-orange-500"><i class="fas fa-trophy"></i></div>
-                            <p class="text-[9px] text-orange-600 font-bold uppercase tracking-widest z-10 flex items-center gap-1"><i class="fas fa-arrow-trend-up"></i> 주간 점수 떡상 MVP</p>
+                            <div class="flex justify-between items-center z-10"><p class="text-[9px] text-orange-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-arrow-trend-up"></i> 주간 점수 떡상 MVP</p><span class="text-[8px] text-orange-300 group-hover/mvp:text-orange-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
                             ${renderMvpList(topScoreMVP, 'score')}
                         </div>
-                        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 p-3.5 rounded-2xl border border-emerald-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px]">
+                        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 p-3.5 rounded-2xl border border-emerald-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('pct')">
                             <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-6xl text-emerald-500"><i class="fas fa-chart-line"></i></div>
-                            <p class="text-[9px] text-emerald-600 font-bold uppercase tracking-widest z-10 flex items-center gap-1"><i class="fas fa-percent"></i> 주간 상승률 MVP</p>
+                            <div class="flex justify-between items-center z-10"><p class="text-[9px] text-emerald-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-percent"></i> 주간 상승률 MVP</p><span class="text-[8px] text-emerald-300 group-hover/mvp:text-emerald-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
                             ${renderMvpList(topPctMVP, 'pct')}
                         </div>
-                        <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 p-3.5 rounded-2xl border border-purple-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px]">
+                        <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 p-3.5 rounded-2xl border border-purple-100 shadow-sm flex flex-col relative overflow-hidden h-full min-h-[100px] cursor-pointer group/mvp" onclick="window.expandMvp('avg')">
                             <div class="absolute -right-2 -bottom-2 opacity-[0.05] text-6xl text-purple-500"><i class="fas fa-bolt"></i></div>
-                            <p class="text-[9px] text-purple-600 font-bold uppercase tracking-widest z-10 flex items-center gap-1"><i class="fas fa-balance-scale"></i> 주간 평균대비 떡상</p>
+                            <div class="flex justify-between items-center z-10"><p class="text-[9px] text-purple-600 font-bold uppercase tracking-widest flex items-center gap-1"><i class="fas fa-balance-scale"></i> 주간 평균대비 떡상</p><span class="text-[8px] text-purple-300 group-hover/mvp:text-purple-500 transition-colors"><i class="fas fa-expand-alt"></i></span></div>
                             ${renderMvpList(topAvgMVP, 'avg')}
                         </div>
                     </div>
                 </div>
 
                 <div class="flex flex-col lg:flex-row gap-5 flex-1 min-h-[400px] lg:min-h-0">
-                    <div class="w-full lg:w-[30%] bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden shrink-0 lg:h-full">
-                        <h3 class="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest">주간 총점 추이</h3>
+                    <div class="w-full lg:w-[30%] bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden shrink-0 lg:h-full cursor-pointer group" onclick="window.expandChart()">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">주간 총점 추이</h3>
+                            <span class="text-[9px] text-gray-300 group-hover:text-pink-400 transition-colors flex items-center gap-1"><i class="fas fa-expand-alt"></i> 클릭하여 확대</span>
+                        </div>
                         <div class="flex-1 w-full min-h-[150px] relative">
                             <canvas id="analysisChart"></canvas>
                         </div>
@@ -815,10 +820,11 @@
                     <div class="w-full lg:w-[70%] bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden shrink-0 lg:h-full relative">
                         <div class="p-4 border-b border-gray-50 flex justify-between items-center shrink-0 bg-white relative z-40">
                             <h3 class="text-xs font-bold text-gray-800 uppercase tracking-widest">전체 데이터 (누적)</h3>
+                            <button onclick="window.expandTable()" class="text-[9px] text-gray-300 hover:text-pink-400 transition-colors flex items-center gap-1 font-bold"><i class="fas fa-expand-alt"></i> 확대</button>
                         </div>
                         <div id="analysisTableWrapper" class="analysis-table-wrap flex-1 overflow-auto bg-white scroll-smooth relative">
                             <table class="w-full text-left text-xs whitespace-nowrap">
-                                <thead class="text-[10px] text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
+                                <thead class="text-[10px] text-gray-500 uppercase bg-gray-50 border-b border-gray-200 sticky top-0 z-30">
                                     <tr>
                                         <th class="p-3 text-center min-w-[50px]">RANK</th>
                                         <th class="p-3 sortable cursor-pointer hover:bg-gray-200 min-w-[140px]" onclick="window.setAnalysisSort('name')">캐릭터명${sortIcon('name')}</th>
@@ -918,6 +924,118 @@
                     } 
                 } 
             });
+
+            window.expandMvp = (type) => {
+                var data = (window._mvpFullData && window._mvpFullData[type]) || [];
+                if (data.length === 0) return;
+                var titles = { high: '이번 주 고득점 전체 랭킹', score: '점수 떡상 전체 랭킹', pct: '상승률 전체 랭킹', avg: '평균대비 떡상 전체 랭킹' };
+                var colors = { high: ['blue','from-blue-50 to-cyan-50','border-blue-100'], score: ['orange','from-yellow-50 to-orange-50','border-orange-100'], pct: ['emerald','from-emerald-50 to-teal-50','border-emerald-100'], avg: ['purple','from-purple-50 to-fuchsia-50','border-purple-100'] };
+                var c = colors[type] || colors.high;
+                var formatVal = function(m) { if(type==='high') return Math.round(m.val).toLocaleString(); if(type==='score') return '+'+Math.round(m.val).toLocaleString(); if(type==='pct') return '\u25B2'+m.val.toFixed(1)+'%'; if(type==='avg') return '+'+Math.round(m.val).toLocaleString(); return m.val; };
+                var overlay = document.createElement('div');
+                overlay.id = 'mvpModal';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem;';
+                overlay.onclick = function(e) { if(e.target === overlay) overlay.remove(); };
+                var modal = document.createElement('div');
+                modal.style.cssText = 'background:white;border-radius:1.5rem;width:100%;max-width:480px;max-height:80vh;box-shadow:0 25px 50px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;';
+                modal.innerHTML = '<div class="p-4 border-b border-gray-100 flex justify-between items-center shrink-0 bg-gradient-to-r '+c[1]+'"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">'+titles[type]+'</h3><button onclick="document.getElementById(\'mvpModal\').remove()" class="w-8 h-8 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-gray-500 transition-colors"><i class="fas fa-times"></i></button></div><div class="flex-1 overflow-y-auto p-4 space-y-1">' + data.map(function(m,i){ return '<div class="flex justify-between items-center py-2 px-3 rounded-xl '+(i<3?'bg-gradient-to-r '+c[1]+' border '+c[2]:i%2===0?'bg-gray-50':'')+' transition-colors"><div class="flex items-center gap-3 overflow-hidden"><span class="font-black text-'+c[0]+'-500 w-7 text-center text-sm '+(i<3?'':'text-gray-400')+'">'+(i+1)+'</span><div class="flex items-center gap-1.5">'+window.getNicknameIcon(m.role)+'<span class="font-bold text-gray-800 text-sm truncate" style="max-width:180px;">'+m.name+'</span></div></div><span class="font-black text-'+c[0]+'-600 text-sm shrink-0 '+(i>=3?'text-gray-600':'')+'">'+formatVal(m)+'</span></div>'; }).join('') + '</div><div class="p-3 border-t border-gray-100 text-center shrink-0"><span class="text-[10px] text-gray-400 font-bold">\uCD1D '+data.length+'\uBA85</span></div>';
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+            };
+
+            window.expandTable = () => {
+                var ex = document.getElementById('tableModal'); if(ex) ex.remove();
+                var overlay = document.createElement('div');
+                overlay.id = 'tableModal';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:0.75rem;';
+                overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+                var modal = document.createElement('div');
+                modal.style.cssText = 'background:white;border-radius:1.5rem;width:100%;max-width:95vw;height:90vh;box-shadow:0 25px 50px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;';
+                var gName = appState.analysisGuild;
+                var guildTargets = appState.members.filter(function(m){ return m.guild===gName; });
+                var recentHeaders = [].concat(appState.suroHeaders);
+                var getWedStr = function(h){ var m2=h.match(/(\d+)-(\d+)-(\d+)\(.\)\s*~\s*(\d+)-(\d+)-(\d+)/); return m2?m2[4]+'/'+m2[5]+'/'+m2[6]:h; };
+                var modalSort = { field: appState.analysisFilters.sortField, order: appState.analysisFilters.sortOrder };
+                var modalSearch = '';
+                function renderModalTable(){
+                    var searchTokens = modalSearch.length>0 ? modalSearch.toLowerCase().split(/[\s,]+/).filter(function(t){return t.length>0;}) : [];
+                    var filtered = searchTokens.length>0 ? guildTargets.filter(function(m){ var mn=m.isMain?m.name:(m.mainCharName||''); return searchTokens.some(function(t){ return m.name.toLowerCase().includes(t)||mn.toLowerCase().includes(t)||(m.mainCharName||'').toLowerCase().includes(t)||(m.class||'').toLowerCase().includes(t); }); }) : guildTargets;
+                    var currentHeader = recentHeaders.length>0?recentHeaders[recentHeaders.length-1]:null;
+                    var processed = filtered.map(function(m){ var scores=recentHeaders.map(function(h){return Math.round(Number(m.suro&&m.suro[h]))||0;}); var vs=scores.filter(function(s){return s>0;}); return Object.assign({},m,{avg:vs.length>0?Math.round(vs.reduce(function(a,b){return a+b;},0)/vs.length):0,recentScores:scores}); });
+                    var f=modalSort.field, o=modalSort.order;
+                    processed.sort(function(a,b){
+                        if(f.startsWith('date_')){var th=f.replace('date_',''),hi=recentHeaders.indexOf(th),ph=hi>0?recentHeaders[hi-1]:null;var rate=function(m){var c=Math.round(Number(m.suro&&m.suro[th]))||0;if(!ph)return c>0?-500:-1000;var p=Math.round(Number(m.suro&&m.suro[ph]))||0;if(c===0&&p===0)return-1000;if(p===0&&c>0)return-500;return((c-p)/p)*100;};var rA=rate(a),rB=rate(b);if(rA===rB){var cA=Math.round(Number(a.suro&&a.suro[th]))||0,cB=Math.round(Number(b.suro&&b.suro[th]))||0;return o==='asc'?cA-cB:cB-cA;}return o==='asc'?rA-rB:rB-rA;}
+                        if(f==='avg')return o==='asc'?a.avg-b.avg:b.avg-a.avg;
+                        if(f==='score'){var vA=Math.round(Number(a.suro&&a.suro[currentHeader]))||0,vB=Math.round(Number(b.suro&&b.suro[currentHeader]))||0;return o==='asc'?vA-vB:vB-vA;}
+                        return o==='asc'?String(a.name).localeCompare(String(b.name)):String(b.name).localeCompare(String(a.name));
+                    });
+                    var si=function(col){return modalSort.field===col?(modalSort.order==='asc'?' \u25B2':' \u25BC'):'';};
+                    var thead=document.getElementById('modalTableHead');
+                    var tbody=document.getElementById('modalTableBody');
+                    if(thead) thead.innerHTML='<tr><th class="p-3 text-center min-w-[50px] bg-gray-50">RANK</th><th class="p-3 min-w-[140px] cursor-pointer hover:bg-gray-200 bg-gray-50" onclick="window._modalSort(\'name\')">\uCE90\uB9AD\uD130\uBA85'+si('name')+'</th><th class="p-3 text-center min-w-[110px] cursor-pointer bg-pink-50 text-pink-600 hover:bg-pink-100" onclick="window._modalSort(\'avg\')">\uD3C9\uADE0 (\uCC38\uC5EC)'+si('avg')+'</th>'+recentHeaders.map(function(h){return '<th class="p-3 min-w-[100px] text-right cursor-pointer hover:bg-gray-200 bg-gray-50" onclick="window._modalSort(\'date_'+h+'\')">'+getWedStr(h)+si('date_'+h)+'</th>';}).join('')+'</tr>';
+                    if(tbody) tbody.innerHTML=processed.map(function(m,i){
+                        var row='<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400">'+(i+1)+'</td><td class="p-3 text-gray-800"><div class="flex items-center leading-none">'+window.getNicknameIcon(m.role)+'<div class="flex flex-col min-w-0"><span class="truncate">'+m.name+'</span><span class="text-[9px] text-gray-400 font-medium truncate">'+(m.class||'')+'</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30">'+m.avg.toLocaleString()+'</td>';
+                        m.recentScores.forEach(function(s,si2){var dh='',ps=si2>0?m.recentScores[si2-1]:0;if(s>0||(s===0&&ps>0)){if(ps>0){var dp=((s-ps)/ps*100);if(s>ps)dh='<span class="text-[9px] text-red-500 font-bold block mt-0.5">\u25B2 '+dp.toFixed(1)+'%</span>';else if(s<ps)dh='<span class="text-[9px] text-blue-500 font-bold block mt-0.5">\u25BC '+Math.abs(dp).toFixed(1)+'%</span>';else dh='<span class="text-[9px] text-gray-400 font-bold block mt-0.5">- 0.0%</span>';}else if(s>0)dh='<span class="text-[9px] text-red-500 font-bold block mt-0.5">\u25B2 NEW</span>';}row+='<td class="p-3 min-w-[100px] text-right font-mono '+(s===0?'bg-red-50/20 text-red-400':'text-gray-700')+'"><div class="flex flex-col items-end leading-tight min-h-[28px]"><span class="'+(s>0?'text-xs':'text-gray-400')+'">'+(s>0?s.toLocaleString():'0')+'</span>'+dh+'</div></td>';});
+                        return row+'</tr>';
+                    }).join('');
+                }
+                window._modalSort=function(col){if(modalSort.field===col){modalSort.order=modalSort.order==='asc'?'desc':'asc';}else{modalSort.field=col;modalSort.order=(col==='avg'||col==='score'||col.startsWith('date_'))?'desc':'asc';}renderModalTable();};
+                modal.innerHTML='<div style="padding:1rem 1.25rem;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:1rem;"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest shrink-0">\uC804\uCCB4 \uB370\uC774\uD130 \u2014 '+gName+'</h3><div class="flex items-center gap-2 flex-1 max-w-md"><div class="flex-1 relative"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i><input id="modalSearchInput" type="text" class="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-pink-100" placeholder="\uB2C9\uB124\uC784/\uBCF8\uCE90/\uC9C1\uC5C5 \uAC80\uC0C9" oninput="clearTimeout(window._mst);window._mst=setTimeout(function(){window._modalSearchFn(document.getElementById(\'modalSearchInput\').value)},150)"></div><button onclick="document.getElementById(\'tableModal\').remove()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors shrink-0"><i class="fas fa-times"></i></button></div></div><div style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;" class="no-scrollbar"><table class="w-full text-left text-xs whitespace-nowrap font-bold"><thead id="modalTableHead" class="text-[10px] text-gray-500 uppercase border-b border-gray-200 sticky top-0 z-10"></thead><tbody id="modalTableBody" class="text-gray-700"></tbody></table></div>';
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+                window._modalSearchFn=function(v){modalSearch=v.trim();renderModalTable();};
+                renderModalTable();
+                var scrollDiv=modal.querySelector('[style*="overflow:auto"]');
+                if(scrollDiv) scrollDiv.scrollLeft=scrollDiv.scrollWidth;
+            };
+
+            window.expandChart = () => {
+                const gName = appState.analysisGuild;
+                const guildTargets = appState.members.filter(m => m.guild === gName);
+                const recentHeaders = [...appState.suroHeaders];
+                const getShortWedStr = (h) => { const m2 = h.match(/(\d+)-(\d+)-(\d+)\(.\)\s*~\s*(\d+)-(\d+)-(\d+)/); return m2 ? m2[4]+'/'+m2[5]+'/'+m2[6] : h; };
+
+                const overlay = document.createElement('div');
+                overlay.id = 'chartModal';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem;';
+                overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+
+                const modal = document.createElement('div');
+                modal.style.cssText = 'background:white;border-radius:1.5rem;padding:1.5rem;width:100%;max-width:900px;max-height:90vh;box-shadow:0 25px 50px rgba(0,0,0,0.25);position:relative;';
+                modal.innerHTML = '<div class="flex justify-between items-center mb-4"><h3 class="text-sm font-bold text-gray-800 uppercase tracking-widest">주간 총점 추이 — ' + gName + '</h3><button onclick="document.getElementById(\'chartModal\').remove()" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors"><i class="fas fa-times"></i></button></div><div style="height:400px;position:relative;"><canvas id="expandedChart"></canvas></div>';
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+
+                setTimeout(() => {
+                    const ctx2 = document.getElementById('expandedChart');
+                    if(!ctx2) return;
+                    new Chart(ctx2, {
+                        type: 'line',
+                        data: {
+                            labels: recentHeaders.map(h => getShortWedStr(h)),
+                            datasets: [{
+                                label: '길드 총점',
+                                data: recentHeaders.map(h => guildTargets.reduce((s, m) => s + (Math.round(Number(m.suro?.[h])) || 0), 0)),
+                                borderColor: '#ec4899', borderWidth: 3, pointRadius: 6, pointBackgroundColor: '#fff',
+                                pointBorderWidth: 2, tension: 0.4, fill: true, backgroundColor: 'rgba(236, 72, 153, 0.08)'
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { backgroundColor: '#1f2937', titleFont: { size: 13, weight: 'bold' }, bodyFont: { size: 12 }, padding: 12, cornerRadius: 10,
+                                    callbacks: { label: (c) => '총점: ' + c.parsed.y.toLocaleString() }
+                                }
+                            },
+                            scales: {
+                                y: { beginAtZero: false, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 11, weight: 'bold' }, callback: (v) => v.toLocaleString() } },
+                                x: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' } } }
+                            }
+                        }
+                    });
+                }, 50);
+            };
         };
         
         window.setAnalysisSort = (f) => { 
