@@ -132,6 +132,130 @@
         /* Sticky table header */
         .stick-head { border-collapse: separate; border-spacing: 0; }
         .stick-head thead th { position: sticky; top: 0; z-index: 10; background: #f9fafb; }
+
+        /* ===== DARK MODE ===== */
+        body.dark { background-color: #0f1117; color: #c9cdd4; }
+        body.dark .bg-gray-50, body.dark main { background-color: #0f1117 !important; }
+        body.dark .bg-white, body.dark .member-card { background-color: #1a1d27 !important; color: #c9cdd4; border-color: #2a2d3a !important; }
+        body.dark aside { background-color: #14161e !important; border-color: #2a2d3a !important; }
+        body.dark header { background-color: #14161e !important; border-color: #2a2d3a !important; }
+        body.dark .border-gray-100, body.dark .border-gray-200, body.dark .border-gray-50 { border-color: #2a2d3a !important; }
+        body.dark .text-gray-800, body.dark .text-slate-800 { color: #e0e3ea !important; }
+        body.dark .text-gray-700 { color: #b8bcc6 !important; }
+        body.dark .text-gray-600 { color: #8b90a0 !important; }
+        body.dark .text-gray-500 { color: #6b7080 !important; }
+        body.dark .text-gray-400 { color: #555a6a !important; }
+        body.dark .bg-gray-100 { background-color: #22252f !important; }
+        body.dark .bg-gray-50 { background-color: #1a1d27 !important; }
+        body.dark input, body.dark select { background-color: #22252f !important; color: #c9cdd4 !important; border-color: #333848 !important; }
+        body.dark input::placeholder { color: #555a6a !important; }
+
+        /* 테이블 */
+        body.dark table thead { background-color: #14161e !important; }
+        body.dark table thead th { background-color: #14161e !important; color: #6b7080 !important; border-color: #2a2d3a !important; }
+        body.dark table tbody td { background-color: #1a1d27 !important; border-color: #22252f !important; }
+        body.dark table tbody tr:hover td { background-color: #22252f !important; }
+        body.dark .stick-head thead th { background: #14161e !important; }
+        body.dark .analysis-table-wrap table tbody tr td:nth-child(1),
+        body.dark .analysis-table-wrap table tbody tr td:nth-child(2) { background: #1a1d27 !important; }
+        body.dark .analysis-table-wrap table tbody tr:hover td:nth-child(1),
+        body.dark .analysis-table-wrap table tbody tr:hover td:nth-child(2) { background: #22252f !important; }
+        body.dark .analysis-table-wrap table thead th:nth-child(1),
+        body.dark .analysis-table-wrap table thead th:nth-child(2) { background: #14161e !important; }
+        body.dark .analysis-table-wrap table tbody tr td:nth-child(2) { border-right-color: #2a2d3a !important; }
+        body.dark .analysis-table-wrap table thead th:nth-child(2) { border-right-color: #333848 !important; }
+
+        /* 사이드바 */
+        body.dark .nav-item:hover { background-color: #22252f !important; }
+        body.dark .nav-item.active { background-color: #1e1a2e !important; color: #c084fc !important; box-shadow: inset 4px 0 0 #a855f7 !important; }
+        body.dark .bg-gray-50\/50 { background-color: #14161e !important; }
+
+        /* 그림자 제거 (다크에선 안 보임) */
+        body.dark .shadow-sm, body.dark .shadow-lg, body.dark .shadow-md { box-shadow: none !important; }
+
+        /* 로딩 */
+        body.dark #loadingOverlay { background: #0f1117 !important; }
+
+        /* 핑크/컬러풀 요소들 → 다크모드에서 뮤트 */
+        body.dark .bg-pink-50, body.dark .bg-pink-50\/30 { background-color: rgba(168,85,247,0.08) !important; }
+        body.dark .text-pink-600, body.dark .text-pink-500 { color: #a78bfa !important; }
+        body.dark .border-pink-100, body.dark .border-pink-50 { border-color: #2a2540 !important; }
+        body.dark .bg-red-50, body.dark .bg-red-50\/20, body.dark .bg-red-50\/50 { background-color: rgba(239,68,68,0.08) !important; }
+        body.dark .text-red-500, body.dark .text-red-600, body.dark .text-red-400 { color: #f87171 !important; }
+        body.dark .border-red-100 { border-color: #3a2020 !important; }
+        body.dark .text-blue-500, body.dark .text-blue-600 { color: #93c5fd !important; }
+        body.dark .text-green-500, body.dark .text-green-600 { color: #86efac !important; }
+        body.dark .text-amber-500, body.dark .text-amber-600 { color: #fbbf24 !important; }
+        body.dark .text-orange-500 { color: #fb923c !important; }
+        body.dark .text-purple-600, body.dark .text-purple-500 { color: #c084fc !important; }
+        body.dark .text-indigo-500 { color: #a5b4fc !important; }
+
+        /* 뱃지/태그 → 다크에서 통일된 뮤트 톤 */
+        body.dark [style*="background:#fdf2f8"], body.dark [style*="background:#fff1f2"],
+        body.dark [style*="background:#eef2ff"], body.dark [style*="background:#fefce8"],
+        body.dark [style*="background:#eff6ff"], body.dark [style*="background:#fffbeb"] {
+            background: #22252f !important; border-color: #333848 !important;
+        }
+
+        /* 길드 뱃지 색상 뮤트 */
+        body.dark .bg-pink-500, body.dark .bg-rose-600 { background-color: #7c3aed !important; }
+        body.dark .bg-indigo-500 { background-color: #6366f1 !important; }
+        body.dark .bg-amber-500 { background-color: #d97706 !important; }
+        body.dark .bg-blue-500 { background-color: #3b82f6 !important; }
+        body.dark .bg-orange-500 { background-color: #ea580c !important; }
+
+        /* MVP 카드 → 다크에선 단색 배경 */
+        body.dark .bg-gradient-to-br { background: #1a1d27 !important; }
+        body.dark [class*="from-blue-50"], body.dark [class*="from-yellow-50"],
+        body.dark [class*="from-emerald-50"], body.dark [class*="from-purple-50"] {
+            background: #1a1d27 !important;
+        }
+        body.dark [class*="border-blue-100"], body.dark [class*="border-orange-100"],
+        body.dark [class*="border-emerald-100"], body.dark [class*="border-purple-100"] {
+            border-color: #2a2d3a !important;
+        }
+        body.dark .bg-white\/40 { background-color: rgba(255,255,255,0.05) !important; }
+
+        /* 가이드 페이지 */
+        body.dark .bg-gradient-to-r { background: #1a1d27 !important; }
+        body.dark [class*="from-pink-50"] { background: #1a1d27 !important; }
+
+        /* 캘린더 */
+        body.dark .calendar-day { color: #8b90a0; }
+        body.dark .calendar-day:hover { background-color: #22252f; border-color: #333848; }
+        body.dark .calendar-day.today { background-color: #7c3aed; color: white; }
+        body.dark .calendar-day.thursday { background-color: rgba(124,58,237,0.15); color: #c084fc; border-color: rgba(124,58,237,0.3); }
+        body.dark .event-snippet { background-color: rgba(124,58,237,0.15); color: #c9cdd4; }
+        body.dark .calendar-day.today .event-snippet { background-color: rgba(255,255,255,0.15); color: white; }
+        body.dark .calendar-day.thursday .event-snippet { color: #c084fc; background-color: rgba(124,58,237,0.12); }
+
+        /* 행 하이라이트 (직위별) → 다크모드에서는 JS에서 직접 처리 */
+        body.dark .hover\:bg-pink-50\/30:hover { background-color: rgba(124,58,237,0.1) !important; }
+
+        /* 버튼 */
+        body.dark .bg-pink-500 { background-color: #7c3aed !important; }
+        body.dark .hover\:bg-pink-100:hover { background-color: #22252f !important; }
+        body.dark .hover\:bg-gray-100:hover { background-color: #22252f !important; }
+
+        /* 스크롤바 */
+        body.dark ::-webkit-scrollbar-track { background: #14161e; }
+        body.dark ::-webkit-scrollbar-thumb { background: #333848; }
+        body.dark ::-webkit-scrollbar-thumb:hover { background: #444a5a; }
+
+        /* 모달 */
+        body.dark .personal-suro-content { background: #1a1d27; }
+
+        /* 개인 수로 모달 */
+        .personal-suro-modal { position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem; }
+        .personal-suro-content { background:white;border-radius:1.5rem;width:100%;max-width:500px;max-height:85vh;box-shadow:0 25px 50px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden; }
+
+        /* 모바일 수로 분석 최적화 */
+        @media (max-width: 640px) {
+            .grid-cols-3 { grid-template-columns: 1fr !important; }
+            .grid-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
+            .analysis-table-wrap table { font-size: 0.6rem; }
+            .analysis-table-wrap table th, .analysis-table-wrap table td { padding: 0.375rem 0.25rem !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800 h-screen overflow-hidden flex font-medium">
@@ -187,6 +311,7 @@
                 <div class="flex items-center gap-1" id="totalMembersCount">
                     <span class="text-[9px] lg:text-[10px] text-gray-300 font-bold">로딩 중...</span>
                 </div>
+                <button id="darkToggle" onclick="window.toggleDark()" class="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-all border border-gray-100 shadow-sm" title="다크모드"><i class="fas fa-adjust text-xs lg:text-base"></i></button>
                 <button id="refreshBtn" onclick="fetchMembers()" class="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-all border border-gray-100 shadow-sm"><i class="fas fa-sync-alt text-xs lg:text-base"></i></button>
             </div>
         </header>
@@ -250,6 +375,102 @@
             const box = document.getElementById('msgBox'); if(!box) return;
             document.getElementById('msgText').innerText = text;
             box.classList.add('show'); setTimeout(() => box.classList.remove('show'), 3500);
+        };
+
+        // ===== 다크모드 =====
+        window.toggleDark = () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem('darkMode', isDark ? '1' : '0');
+            const icon = document.querySelector('#darkToggle i');
+            if (icon) icon.className = isDark ? 'fas fa-sun text-xs lg:text-base text-amber-400' : 'fas fa-adjust text-xs lg:text-base';
+        };
+        // 저장된 다크모드 복원
+        if (localStorage.getItem('darkMode') === '1') {
+            document.body.classList.add('dark');
+            setTimeout(() => {
+                const icon = document.querySelector('#darkToggle i');
+                if (icon) icon.className = 'fas fa-sun text-xs lg:text-base text-amber-400';
+            }, 100);
+        }
+
+        // ===== 개인 수로 데이터 모달 =====
+        window.showPersonalSuro = (memberName) => {
+            const member = appState.members.find(m => m.name === memberName);
+            if (!member) return;
+
+            const headers = [...appState.suroHeaders];
+            const scores = headers.map(h => Math.round(Number(member.suro?.[h])) || 0);
+            const validScores = scores.filter(s => s > 0);
+            const avg = validScores.length > 0 ? Math.round(validScores.reduce((a,b) => a+b, 0) / validScores.length) : 0;
+            const mx = validScores.length > 0 ? Math.max(...validScores) : 0;
+            const mn = validScores.length > 0 ? Math.min(...validScores) : 0;
+            const participation = scores.length > 0 ? Math.round((validScores.length / scores.length) * 100) : 0;
+
+            const getWedStr = (h) => {
+                const p = h.split('~');
+                return p.length > 1 ? p[1].replace('수로 점수', '').trim() : h.trim();
+            };
+
+            const recentScores = scores.slice(-4);
+            const recentHeaders = headers.slice(-4);
+            const maxBarVal = Math.max(...recentScores, 1);
+            const dk = document.body.classList.contains('dark');
+
+            // 최근 추세 바
+            var trendHtml = '';
+            recentHeaders.forEach(function(h, i) {
+                var s = recentScores[i];
+                var pct = Math.round((s / maxBarVal) * 100);
+                var prev = i > 0 ? recentScores[i-1] : 0;
+                var diffHtml = '';
+                if (prev > 0 && s > 0) {
+                    var dp = ((s - prev) / prev * 100);
+                    if (s > prev) diffHtml = '<span class="text-red-500 text-[9px] ml-1">\u25B2' + dp.toFixed(1) + '%</span>';
+                    else if (s < prev) diffHtml = '<span class="text-blue-500 text-[9px] ml-1">\u25BC' + Math.abs(dp).toFixed(1) + '%</span>';
+                }
+                trendHtml += '<div><div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold '+(dk?'text-gray-400':'text-gray-600')+'">' + getWedStr(h) + '</span><span class="text-xs font-black '+(s===0?'text-red-400':dk?'text-gray-200':'text-gray-700')+'">' + (s>0?s.toLocaleString():'0') + diffHtml + '</span></div><div class="w-full '+(dk?'bg-gray-700':'bg-gray-100')+' rounded-full h-2.5 overflow-hidden"><div class="h-full rounded-full transition-all duration-700 '+(s===0?'bg-red-300':'bg-gradient-to-r from-pink-400 to-rose-400')+'" style="width:'+pct+'%"></div></div></div>';
+            });
+
+            // 전체 기록
+            var allHtml = '';
+            var revHeaders = [...headers].reverse();
+            revHeaders.forEach(function(h, i) {
+                var idx2 = headers.length - 1 - i;
+                var s = scores[idx2];
+                var cls = s === 0 ? (dk?'bg-red-900/20 text-red-400':'bg-red-50 text-red-400') : (i%2===0?(dk?'bg-gray-800':'bg-gray-50'):'');
+                allHtml += '<div class="flex justify-between items-center py-1.5 px-2 rounded-lg text-[11px] font-bold '+cls+'"><span class="'+(dk?'text-gray-400':'text-gray-500')+'">' + getWedStr(h) + '</span><span class="'+(s===0?'text-red-400':dk?'text-gray-200':'text-gray-700')+'">' + (s>0?s.toLocaleString():'0') + '</span></div>';
+            });
+
+            var overlay = document.createElement('div');
+            overlay.className = 'personal-suro-modal';
+            overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+            function statCard(label, value, colorName) {
+                return '<div class="text-center p-3 rounded-xl '+(dk?'bg-'+colorName+'-900/30 border border-'+colorName+'-800/30':'bg-'+colorName+'-50 border border-'+colorName+'-100')+'"><p class="text-[8px] '+(dk?'text-'+colorName+'-300':'text-'+colorName+'-500')+' font-bold uppercase">'+label+'</p><p class="text-lg font-black '+(dk?'text-'+colorName+'-300':'text-'+colorName+'-600')+'">'+value+'</p></div>';
+            }
+
+            overlay.innerHTML = '<div class="personal-suro-content">' +
+                '<div class="p-5 border-b '+(dk?'border-gray-700':'border-gray-100')+' flex justify-between items-center shrink-0">' +
+                    '<div class="flex items-center gap-3">' + window.getNicknameIcon(member.role) +
+                        '<div><h3 class="text-lg font-bold '+(dk?'text-gray-100':'text-gray-800')+'">' + member.name + '</h3>' +
+                        '<p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+'">' + member.guild + ' \xB7 ' + (member.class||'-') + ' \xB7 ' + (member.role||'-') + '</p></div>' +
+                    '</div>' +
+                    '<button onclick="this.closest(\'.personal-suro-modal\').remove()" class="w-8 h-8 rounded-full '+(dk?'bg-gray-700 hover:bg-gray-600 text-gray-300':'bg-gray-100 hover:bg-gray-200 text-gray-500')+' flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>' +
+                '</div>' +
+                '<div class="p-5 flex-1 overflow-y-auto">' +
+                    '<div class="grid grid-cols-4 gap-2 mb-5">' +
+                        statCard('\uD3C9\uADE0', avg.toLocaleString(), 'pink') +
+                        statCard('\uCD5C\uACE0', mx.toLocaleString(), 'blue') +
+                        statCard('\uCD5C\uC800', mn.toLocaleString(), 'amber') +
+                        statCard('\uCC38\uC5EC\uC728', participation+'%', 'green') +
+                    '</div>' +
+                    '<div class="mb-5"><p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+' font-bold uppercase tracking-widest mb-3">\uCD5C\uADFC \uCD94\uC138</p><div class="space-y-2">' + trendHtml + '</div></div>' +
+                    '<div><p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+' font-bold uppercase tracking-widest mb-3">\uC804\uCCB4 \uAE30\uB85D ('+headers.length+'\uC8FC\uCC28)</p><div class="max-h-[200px] overflow-y-auto space-y-1">' + allHtml + '</div></div>' +
+                '</div>' +
+            '</div>';
+
+            document.body.appendChild(overlay);
         };
         window.showLoading = (show) => { document.getElementById('loadingOverlay')?.classList.toggle('force-hide', !show); };
         window.setLoadProgress = (pct, status) => {
@@ -825,7 +1046,7 @@
             const processedList = displayTargets.map(m => { const scores = recentHeaders.map(h => Math.round(Number(m.suro?.[h])) || 0); const vs = scores.filter(s => s > 0); return { ...m, avg: vs.length > 0 ? Math.round(vs.reduce((a,b)=>a+b,0)/vs.length) : 0, recentScores: scores }; });
             const f = appState.analysisFilters.sortField, o = appState.analysisFilters.sortOrder;
             processedList.sort((a,b) => { if(f.startsWith('date_')){const th=f.replace('date_',''),hi=recentHeaders.indexOf(th),ph=hi>0?recentHeaders[hi-1]:null;const rate=(m)=>{const c=Math.round(Number(m.suro?.[th]))||0;if(!ph)return c>0?-500:-1000;const p=Math.round(Number(m.suro?.[ph]))||0;if(c===0&&p===0)return-1000;if(p===0&&c>0)return-500;return((c-p)/p)*100;};const rA=rate(a),rB=rate(b);if(rA===rB){const cA=Math.round(Number(a.suro?.[th]))||0,cB=Math.round(Number(b.suro?.[th]))||0;return o==='asc'?cA-cB:cB-cA;}return o==='asc'?rA-rB:rB-rA;}if(f==='avg')return o==='asc'?a.avg-b.avg:b.avg-a.avg;if(f==='score'){const vA=Math.round(Number(a.suro?.[currentHeader]))||0,vB=Math.round(Number(b.suro?.[currentHeader]))||0;return o==='asc'?vA-vB:vB-vA;}return smartCompare(a,b,f,o); });
-            tbody.innerHTML = processedList.map((m,i) => { let row = `<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${i+1}</td><td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50 bg-white"><div class="flex items-center leading-none overflow-hidden text-ellipsis">${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>`; m.recentScores.forEach((s,si) => { let dh='',ps=si>0?m.recentScores[si-1]:0; if(s>0||(s===0&&ps>0)){if(ps>0){const dp=((s-ps)/ps*100);if(s>ps)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ ${dp.toFixed(1)}%</span>`;else if(s<ps)dh=`<span class="text-[9px] text-blue-500 font-bold tracking-tighter block mt-0.5">▼ ${Math.abs(dp).toFixed(1)}%</span>`;else dh=`<span class="text-[9px] text-gray-400 font-bold tracking-tighter block mt-0.5">- 0.0%</span>`;}else if(s>0)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ NEW</span>`;}row+=`<td class="p-3 min-w-[100px] text-right font-mono align-middle ${s===0?'bg-red-50/20 text-red-400 group-hover:bg-red-50/50':'bg-white text-gray-700 group-hover:bg-gray-50'}"><div class="flex flex-col justify-center items-end leading-tight min-h-[28px]"><span class="${s>0?'text-xs':'text-gray-400'}">${s>0?s.toLocaleString():'0'}</span>${dh}</div></td>`; }); return row + '</tr>'; }).join('');
+            tbody.innerHTML = processedList.map((m,i) => { let row = `<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer" onclick="window.showPersonalSuro(this.dataset.name)" data-name="${m.name}"><td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50">${i+1}</td><td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50 bg-white"><div class="flex items-center leading-none overflow-hidden text-ellipsis">${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>`; m.recentScores.forEach((s,si) => { let dh='',ps=si>0?m.recentScores[si-1]:0; if(s>0||(s===0&&ps>0)){if(ps>0){const dp=((s-ps)/ps*100);if(s>ps)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ ${dp.toFixed(1)}%</span>`;else if(s<ps)dh=`<span class="text-[9px] text-blue-500 font-bold tracking-tighter block mt-0.5">▼ ${Math.abs(dp).toFixed(1)}%</span>`;else dh=`<span class="text-[9px] text-gray-400 font-bold tracking-tighter block mt-0.5">- 0.0%</span>`;}else if(s>0)dh=`<span class="text-[9px] text-red-500 font-bold tracking-tighter block mt-0.5">▲ NEW</span>`;}row+=`<td class="p-3 min-w-[100px] text-right font-mono align-middle ${s===0?'bg-red-50/20 text-red-400 group-hover:bg-red-50/50':'bg-white text-gray-700 group-hover:bg-gray-50'}"><div class="flex flex-col justify-center items-end leading-tight min-h-[28px]"><span class="${s>0?'text-xs':'text-gray-400'}">${s>0?s.toLocaleString():'0'}</span>${dh}</div></td>`; }); return row + '</tr>'; }).join('');
         };
 
         window.renderAnalysis = (container, gName) => {
@@ -999,7 +1220,7 @@
                 <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3">
 
                 <!-- ★ 상단 요약 한 줄 -->
-                <div class="grid grid-cols-3 gap-2 shrink-0 font-bold">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 shrink-0 font-bold">
                     <div class="bg-white py-2.5 px-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-center gap-3">
                         <span class="text-[8px] text-gray-400 uppercase tracking-widest">전체 총점</span>
                         <span class="text-base font-black text-gray-800 tracking-tighter">${displayTotal.toLocaleString()}</span>
@@ -1064,7 +1285,7 @@
                                     ${processedList.map((m, i) => {
                                         const globalIndex = i + 1;
                                         return `
-                                        <tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50">
+                                        <tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer" onclick="window.showPersonalSuro(this.dataset.name)" data-name="${m.name}">
                                             <td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50 bg-white">${globalIndex}</td>
                                             <td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50 bg-white">
                                                 <div class="flex items-center leading-none overflow-hidden text-ellipsis">
@@ -1200,7 +1421,7 @@
                     var tbody=document.getElementById('modalTableBody');
                     if(thead) thead.innerHTML='<tr><th class="p-3 text-center min-w-[50px] bg-gray-50">RANK</th><th class="p-3 min-w-[140px] cursor-pointer hover:bg-gray-200 bg-gray-50" onclick="window._modalSort(\'name\')">\uCE90\uB9AD\uD130\uBA85'+si('name')+'</th><th class="p-3 text-center min-w-[110px] cursor-pointer bg-pink-50 text-pink-600 hover:bg-pink-100" onclick="window._modalSort(\'avg\')">\uD3C9\uADE0 (\uCC38\uC5EC)'+si('avg')+'</th>'+recentHeaders.map(function(h){return '<th class="p-3 min-w-[100px] text-right cursor-pointer hover:bg-gray-200 bg-gray-50" onclick="window._modalSort(\'date_'+h+'\')">'+getWedStr(h)+si('date_'+h)+'</th>';}).join('')+'</tr>';
                     if(tbody) tbody.innerHTML=processed.map(function(m,i){
-                        var row='<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50"><td class="p-3 text-center text-gray-400 bg-white">'+(i+1)+'</td><td class="p-3 text-gray-800 bg-white"><div class="flex items-center leading-none">'+window.getNicknameIcon(m.role)+'<div class="flex flex-col min-w-0"><span class="truncate">'+m.name+'</span><span class="text-[9px] text-gray-400 font-medium truncate">'+(m.class||'')+'</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30">'+m.avg.toLocaleString()+'</td>';
+                        var row='<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer" onclick="window.showPersonalSuro(this.dataset.name)" data-name="'+m.name.replace(/"/g,'&quot;')+'"><td class="p-3 text-center text-gray-400 bg-white">'+(i+1)+'</td><td class="p-3 text-gray-800 bg-white"><div class="flex items-center leading-none">'+window.getNicknameIcon(m.role)+'<div class="flex flex-col min-w-0"><span class="truncate">'+m.name+'</span><span class="text-[9px] text-gray-400 font-medium truncate">'+(m.class||'')+'</span></div></div></td><td class="p-3 text-center text-pink-600 bg-pink-50/30">'+m.avg.toLocaleString()+'</td>';
                         m.recentScores.forEach(function(s,si2){var dh='',ps=si2>0?m.recentScores[si2-1]:0;if(s>0||(s===0&&ps>0)){if(ps>0){var dp=((s-ps)/ps*100);if(s>ps)dh='<span class="text-[9px] text-red-500 font-bold block mt-0.5">\u25B2 '+dp.toFixed(1)+'%</span>';else if(s<ps)dh='<span class="text-[9px] text-blue-500 font-bold block mt-0.5">\u25BC '+Math.abs(dp).toFixed(1)+'%</span>';else dh='<span class="text-[9px] text-gray-400 font-bold block mt-0.5">- 0.0%</span>';}else if(s>0)dh='<span class="text-[9px] text-red-500 font-bold block mt-0.5">\u25B2 NEW</span>';}row+='<td class="p-3 min-w-[100px] text-right font-mono '+(s===0?'bg-red-50/20 text-red-400':'text-gray-700')+'"><div class="flex flex-col items-end leading-tight min-h-[28px]"><span class="'+(s>0?'text-xs':'text-gray-400')+'">'+(s>0?s.toLocaleString():'0')+'</span>'+dh+'</div></td>';});
                         return row+'</tr>';
                     }).join('');
@@ -1401,8 +1622,16 @@
                     const targetRole = mainMem ? mainMem.role : (m.isMain ? m.role : '');
                     let rowStyle = "";
                     const hlCfg = ROW_HIGHLIGHT_ROLES[targetRole];
+                    const isDarkMode = document.body.classList.contains('dark');
+                    const DARK_HIGHLIGHT = {
+                        '크라운': { background:'#252218', borderLeft:'3px solid #B8962E' },
+                        '파르페': { background:'#1a1d2e', borderLeft:'3px solid #6B84D0' },
+                        '티라미슈': { background:'#1a1d2e', borderLeft:'3px solid #7B94D8' },
+                        '크로칸슈': { background:'#1a2518', borderLeft:'3px solid #6AB030' }
+                    };
                     if (hlCfg) {
-                        rowStyle = `background:${hlCfg.background};${hlCfg.borderLeft ? 'border-left:' + hlCfg.borderLeft + ';' : ''}`;
+                        const hl = isDarkMode ? (DARK_HIGHLIGHT[targetRole] || hlCfg) : hlCfg;
+                        rowStyle = `background:${hl.background};${hl.borderLeft ? 'border-left:' + hl.borderLeft + ';' : ''}`;
                     }
 
                     let roleHtml = formatRoleHtml(m.role);
