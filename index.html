@@ -73,6 +73,7 @@
    <button onclick="router('home')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="home"><i class="fas fa-home w-5 text-center text-xs"></i><span>홈</span></button>
    <button onclick="router('members')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="members"><i class="fas fa-users w-5 text-center text-xs"></i><span>길드원</span></button>
    <button onclick="router('analysis')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="analysis"><i class="fas fa-chart-line w-5 text-center text-xs"></i><span>수로 분석</span></button>
+   <button onclick="router('guild_stats')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="guild_stats"><i class="fas fa-chart-pie w-5 text-center text-xs"></i><span>길드 현황</span></button>
    <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금</span></button>
    <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
    <p class="admin-only hidden px-4 pt-4 pb-2 text-[9px] font-bold text-gray-300 uppercase tracking-widest">관리자</p>
@@ -1193,11 +1194,12 @@
             const content = document.getElementById('contentArea'); if(!content) return;
             content.innerHTML = '';
             document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab));
-            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영' };
+            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', guild_stats: '길드 현황', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영' };
             document.getElementById('pageTitle').innerText = titles[tab] || '';
             if (tab === 'home') window.renderHome(content);
             else if (tab === 'members') window.renderMembers(content);
             else if (tab === 'analysis') window.renderAnalysis(content, appState.analysisGuild);
+            else if (tab === 'guild_stats') window.renderGuildStats(content);
             else if (tab === 'suro_input' && isAdmin()) window.renderSuroInput(content);
             else if (tab === 'bail') window.renderBail(content);
             else if (tab === 'penalty') window.renderPenalty(content);
@@ -3968,6 +3970,206 @@
   window.renderHistory = (container) => { container.innerHTML = `<div class="bg-white rounded-[3rem] border border-gray-100 shadow-sm overflow-hidden h-full flex flex-col"><div class="p-8 border-b font-bold text-gray-800 shrink-0 relative z-20 bg-white">운영 이력</div><div class="flex-1 overflow-y-auto no-scrollbar"><table class="w-full text-left text-xs whitespace-nowrap stick-head"><thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase"><tr><th class="p-6">DATE</th><th class="p-6">TYPE</th><th class="p-6">NAME</th><th class="p-6">CONTENT</th></tr></thead><tbody class="divide-y divide-gray-100">${appState.history.length === 0 ? `<tr><td colspan="4" class="p-20 text-center text-gray-300 font-bold">기록 없음</td></tr>` : [...appState.history].reverse().map(l => `<tr class="hover:bg-gray-50 transition-colors h-12 leading-none font-bold"><td class="p-6 text-gray-400 font-mono text-[10px]">${l.date}</td><td class="p-6"><span class="px-2 py-1 rounded-lg bg-gray-100 text-[9px] font-bold">${l.category}</span></td><td class="p-6 text-gray-700">${l.name}</td><td class="p-6 text-gray-500">${l.content}</td></tr>`).join('')}</tbody></table></div></div>`; };
 
   window._recordsState = { data: [], view: 'table', filter: '', statusFilter: 'all', guildFilter: 'all', editingId: null };
+
+  window.renderGuildStats = (container) => {
+    const members = appState.members;
+    const guilds = appState.guilds;
+    const headers = appState.suroHeaders || [];
+    const latestH = headers.length > 0 ? headers[headers.length - 1] : null;
+
+    // === 1. 기본 통계 ===
+    const totalCount = members.length;
+    const mainCount = members.filter(m => m.isMain).length;
+    const subCount = totalCount - mainCount;
+    const guildCounts = {};
+    guilds.forEach(g => guildCounts[g.name] = members.filter(m => m.guild === g.name).length);
+
+    // === 2. 직업 분포 ===
+    const classCounts = {};
+    members.forEach(m => {
+      const c = m.class || '미설정';
+      classCounts[c] = (classCounts[c] || 0) + 1;
+    });
+    const sortedClasses = Object.entries(classCounts).sort((a,b) => b[1] - a[1]);
+    const topClasses = sortedClasses.slice(0, 10);
+
+    // === 3. 레벨 분포 ===
+    const levelBuckets = { '미설정': 0, '~199': 0, '200~249': 0, '250~269': 0, '270~279': 0, '280~289': 0, '290~299': 0, '300': 0 };
+    members.forEach(m => {
+      const lv = m.level || 0;
+      if (lv === 0) levelBuckets['미설정']++;
+      else if (lv < 200) levelBuckets['~199']++;
+      else if (lv < 250) levelBuckets['200~249']++;
+      else if (lv < 270) levelBuckets['250~269']++;
+      else if (lv < 280) levelBuckets['270~279']++;
+      else if (lv < 290) levelBuckets['280~289']++;
+      else if (lv < 300) levelBuckets['290~299']++;
+      else levelBuckets['300']++;
+    });
+
+    // === 4. 본캐 매칭 검증 ===
+    const allNames = new Set(members.map(m => m.name));
+    const orphanSubs = members.filter(m => !m.isMain && m.mainCharName && m.mainCharName.trim() !== '' && !allNames.has(m.mainCharName));
+    const noMainSet = members.filter(m => !m.isMain && (!m.mainCharName || m.mainCharName.trim() === ''));
+    const mainNoSubs = members.filter(m => m.isMain && !members.some(m2 => !m2.isMain && m2.mainCharName === m.name));
+
+    // === 5. 수로 참여율 ===
+    let suroParticipation = null;
+    if (latestH) {
+      const mainMembers = members.filter(m => m.isMain);
+      const participated = mainMembers.filter(m => (Math.round(Number(m.suro?.[latestH])) || 0) > 0);
+      suroParticipation = { total: mainMembers.length, participated: participated.length, rate: mainMembers.length > 0 ? (participated.length / mainMembers.length * 100).toFixed(1) : 0 };
+    }
+
+    const maxClassCount = topClasses.length > 0 ? topClasses[0][1] : 1;
+
+    container.innerHTML = `
+    <div class="flex flex-col gap-3 fade-in h-full overflow-y-auto no-scrollbar">
+      <!-- 요약 카드 -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 lg:gap-3">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 lg:p-4 text-center">
+          <div class="text-2xl lg:text-3xl font-black text-gray-800">${totalCount}</div>
+          <div class="text-[10px] lg:text-xs text-gray-400 font-bold mt-1">전체 인원</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 lg:p-4 text-center">
+          <div class="text-2xl lg:text-3xl font-black text-pink-500">${mainCount}</div>
+          <div class="text-[10px] lg:text-xs text-gray-400 font-bold mt-1">본캐 <span class="text-gray-300">${subCount} 부캐</span></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 lg:p-4 text-center">
+          <div class="text-2xl lg:text-3xl font-black ${orphanSubs.length > 0 ? 'text-red-500' : 'text-emerald-500'}">${orphanSubs.length}</div>
+          <div class="text-[10px] lg:text-xs text-gray-400 font-bold mt-1">고아 부캐</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 lg:p-4 text-center">
+          <div class="text-2xl lg:text-3xl font-black text-blue-500">${suroParticipation ? suroParticipation.rate + '%' : '-'}</div>
+          <div class="text-[10px] lg:text-xs text-gray-400 font-bold mt-1">수로 참여율</div>
+        </div>
+      </div>
+
+      <!-- 길드별 인원 -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5">
+        <h3 class="text-sm font-bold text-gray-800 mb-3"><i class="fas fa-users mr-2 text-pink-400"></i>길드별 인원</h3>
+        <div class="space-y-2">
+          ${guilds.map(g => {
+            const cnt = guildCounts[g.name] || 0;
+            const pct = totalCount > 0 ? (cnt / totalCount * 100) : 0;
+            const colors = {'뚠카롱':'bg-pink-400','뚱카롱':'bg-rose-500','밤카롱':'bg-indigo-400','별카롱':'bg-amber-400','달카롱':'bg-blue-400','꿀카롱':'bg-orange-400'};
+            return `<div class="flex items-center gap-3">
+              <span class="text-[10px] font-bold text-gray-600 w-14 shrink-0">${g.name.replace('카롱','')}</span>
+              <div class="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                <div class="h-full ${colors[g.name]||'bg-pink-300'} rounded-full flex items-center justify-end pr-2 transition-all" style="width:${Math.max(pct,5)}%">
+                  <span class="text-[9px] font-black text-white">${cnt}</span>
+                </div>
+              </div>
+              <span class="text-[9px] font-bold text-gray-400 w-10 text-right">${pct.toFixed(0)}%</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <!-- 직업 분포 TOP10 -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5">
+          <h3 class="text-sm font-bold text-gray-800 mb-3"><i class="fas fa-briefcase mr-2 text-purple-400"></i>직업 분포 TOP 10</h3>
+          <div class="space-y-1.5">
+            ${topClasses.map(([cls, cnt], i) => `<div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold text-gray-500 w-4 text-right">${i+1}</span>
+              <span class="text-[10px] font-bold text-gray-700 w-16 truncate">${cls}</span>
+              <div class="flex-1 bg-gray-100 rounded-full h-3.5 overflow-hidden">
+                <div class="h-full bg-purple-300 rounded-full transition-all" style="width:${(cnt/maxClassCount*100)}%"></div>
+              </div>
+              <span class="text-[10px] font-bold text-gray-500 w-6 text-right">${cnt}</span>
+            </div>`).join('')}
+            ${sortedClasses.length > 10 ? `<div class="text-[9px] text-gray-400 text-center mt-1">외 ${sortedClasses.length - 10}개 직업</div>` : ''}
+          </div>
+        </div>
+
+        <!-- 레벨 분포 -->
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5">
+          <h3 class="text-sm font-bold text-gray-800 mb-3"><i class="fas fa-layer-group mr-2 text-emerald-400"></i>레벨 분포</h3>
+          <div class="space-y-1.5">
+            ${Object.entries(levelBuckets).filter(([,v]) => v > 0).map(([label, cnt]) => {
+              const pct = totalCount > 0 ? (cnt / totalCount * 100) : 0;
+              const color = label === '300' ? 'bg-amber-400' : label.startsWith('290') ? 'bg-red-400' : label.startsWith('280') ? 'bg-orange-400' : label.startsWith('270') ? 'bg-pink-400' : label.startsWith('250') ? 'bg-blue-400' : label.startsWith('200') ? 'bg-cyan-400' : label === '미설정' ? 'bg-gray-300' : 'bg-gray-400';
+              return `<div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-gray-600 w-16">${label}</span>
+                <div class="flex-1 bg-gray-100 rounded-full h-3.5 overflow-hidden">
+                  <div class="h-full ${color} rounded-full transition-all" style="width:${Math.max(pct,3)}%"></div>
+                </div>
+                <span class="text-[10px] font-bold text-gray-500 w-12 text-right">${cnt}명 (${pct.toFixed(0)}%)</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- 본캐 매칭 검증 -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5">
+        <h3 class="text-sm font-bold text-gray-800 mb-3"><i class="fas fa-link mr-2 text-red-400"></i>본캐 매칭 검증</h3>
+
+        ${orphanSubs.length > 0 ? `
+        <div class="mb-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-[9px] font-bold">경고 ${orphanSubs.length}건</span>
+            <span class="text-[10px] text-gray-500">본캐가 길드에 없는 부캐 (탈퇴 가능성)</span>
+          </div>
+          <div class="space-y-1">
+            ${orphanSubs.map(m => `<div class="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-xl border border-red-100">
+              <i class="fas fa-exclamation-circle text-red-400 text-[10px]"></i>
+              <span class="text-[11px] font-bold text-gray-800">${m.name}</span>
+              <span class="text-[9px] text-gray-400">→</span>
+              <span class="text-[11px] font-bold text-red-500 line-through">${m.mainCharName}</span>
+              <span class="text-[9px] text-gray-400 ml-auto">${m.guild}</span>
+            </div>`).join('')}
+          </div>
+        </div>` : `
+        <div class="flex items-center gap-2 px-3 py-2 bg-emerald-50 rounded-xl border border-emerald-100 mb-4">
+          <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
+          <span class="text-[11px] font-bold text-emerald-700">모든 부캐의 본캐가 길드에 존재합니다</span>
+        </div>`}
+
+        ${noMainSet.length > 0 ? `
+        <div class="mb-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 text-[9px] font-bold">미설정 ${noMainSet.length}건</span>
+            <span class="text-[10px] text-gray-500">본캐 정보가 없는 부캐</span>
+          </div>
+          <div class="flex flex-wrap gap-1">
+            ${noMainSet.slice(0, 20).map(m => `<span class="px-2 py-1 bg-amber-50 border border-amber-200 rounded-lg text-[10px] font-bold text-amber-700">${m.name}</span>`).join('')}
+            ${noMainSet.length > 20 ? `<span class="px-2 py-1 text-[10px] text-gray-400 font-bold">외 ${noMainSet.length - 20}명</span>` : ''}
+          </div>
+        </div>` : ''}
+
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 text-[9px] font-bold">참고 ${mainNoSubs.length}명</span>
+            <span class="text-[10px] text-gray-500">부캐가 없는 본캐</span>
+          </div>
+          <div class="text-[10px] text-gray-400">${mainNoSubs.length > 0 ? mainNoSubs.slice(0,15).map(m => m.name).join(', ') + (mainNoSubs.length > 15 ? ` 외 ${mainNoSubs.length-15}명` : '') : '없음'}</div>
+        </div>
+      </div>
+
+      ${suroParticipation ? `
+      <!-- 수로 참여 현황 -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5">
+        <h3 class="text-sm font-bold text-gray-800 mb-3"><i class="fas fa-flag mr-2 text-emerald-400"></i>최근 수로 참여 현황 (본캐 기준)</h3>
+        <div class="flex items-center gap-4">
+          <div class="relative w-20 h-20">
+            <svg viewBox="0 0 36 36" class="w-full h-full">
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f3f4f6" stroke-width="3"/>
+              <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="${suroParticipation.rate}, 100" stroke-linecap="round"/>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <span class="text-sm font-black text-gray-800">${suroParticipation.rate}%</span>
+            </div>
+          </div>
+          <div>
+            <div class="text-[11px] font-bold text-gray-600">참여 <span class="text-emerald-500">${suroParticipation.participated}명</span> / 전체 ${suroParticipation.total}명</div>
+            <div class="text-[10px] text-gray-400 mt-1">미참여 ${suroParticipation.total - suroParticipation.participated}명</div>
+          </div>
+        </div>
+      </div>` : ''}
+    </div>`;
+  };
 
   window.renderRecords = async (container) => {
    const st = window._recordsState;
