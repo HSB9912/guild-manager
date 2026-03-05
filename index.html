@@ -2364,22 +2364,12 @@
 
                 const isDark = document.documentElement.classList.contains('dark');
                 let rowStyle = "";
-                if (targetRole === '크라운') {
-                    rowStyle = isDark 
-                        ? "background:rgba(234,179,8,0.1);border-left:3px solid #F0C050;" 
-                        : "background:linear-gradient(to right,#FFF9E6,#FFF3CC);border-left:3px solid #F0C050;";
-                } else if (targetRole === '파르페') {
-                    rowStyle = isDark 
-                        ? "background:rgba(99,102,241,0.1);border-left:3px solid #8EA8F0;" 
-                        : "background:linear-gradient(to right,#EBF0FF,#E4EAFF);border-left:3px solid #8EA8F0;";
-                } else if (targetRole === '티라미슈') {
-                    rowStyle = isDark 
-                        ? "background:rgba(99,102,241,0.08);border-left:3px solid #A0B4E8;" 
-                        : "background:linear-gradient(to right,#EBF0FF,#E8EDFF);border-left:3px solid #A0B4E8;";
-                } else if (targetRole === '크로칸슈') {
-                    rowStyle = isDark 
-                        ? "background:rgba(34,197,94,0.1);border-left:3px solid #92D050;" 
-                        : "background:linear-gradient(to right,#EEFFEE,#E5FAE5);border-left:3px solid #92D050;";
+                const _trRd = SITE_CONFIG?.roleDisplay?.[targetRole] || {};
+                if (_trRd.rowColor) {
+                    const rc = _trRd.rowColor;
+                    rowStyle = isDark
+                        ? `background:${rc}15;border-left:3px solid ${rc};`
+                        : `background:linear-gradient(to right,${rc}18,${rc}25);border-left:3px solid ${rc};`;
                 }
 
                 const pending = appState.pendingUpdates[m.id];
@@ -2391,11 +2381,12 @@
                 const _rtc = _rd.textColor || '';
                 const _rbc = _rd.bgColor || '';
                 let roleHtml = '';
-                if (!appState.isBatchMode && (_rbc || _rtc)) {
+                if (!appState.isBatchMode) {
                     let rstyle = '';
-                    if (_rbc) { rstyle += 'background-color:' + _rbc + ';'; if (!_rtc) rstyle += 'color:white;'; }
-                    if (_rtc) rstyle += 'color:' + _rtc + ';';
-                    roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-tight shadow-sm" style="${rstyle}text-shadow:0 1px 1px rgba(0,0,0,0.08);">${m.role}</span>`;
+                    if (_rbc) { rstyle += 'background-color:' + _rbc + ';'; rstyle += 'color:' + (_rtc || 'white') + ';'; }
+                    else if (_rtc) { rstyle += 'color:' + _rtc + ';background:#f3f4f6;'; }
+                    else { rstyle += 'background:#f3f4f6;color:#6b7280;'; }
+                    roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-tight" style="${rstyle}">${m.role}</span>`;
                 } else {
                     roleHtml = `<span class="text-[10px]">${m.role}</span>`;
                 }
@@ -5312,20 +5303,22 @@
    const pri = rolePriority[rName] !== undefined ? rolePriority[rName] : 99;
    const tc = rd.textColor || '';
    const bc = rd.bgColor || '';
+   const rc = rd.rowColor || '';
    return `<div class="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-100 flex-wrap">
    <input class="cfg-role-emoji w-10 text-center bg-white border border-gray-200 rounded-lg px-1 py-1 text-sm outline-none" value="${rd.emoji || ''}" data-role="${rName}">
    <span class="text-xs font-bold flex-1 min-w-[60px]" data-role-preview="${rName}" style="${tc?'color:'+tc+';':''}${bc?'background:'+bc+';padding:2px 8px;border-radius:6px;':''}${bc&&!tc?'color:white;':''}">${rName}</span>
    <div class="flex items-center gap-1">
-     <label class="text-[8px] text-gray-400 font-bold">글자</label>
-     <input type="color" class="cfg-role-textcolor w-7 h-7 border border-gray-200 rounded-lg cursor-pointer p-0.5" value="${tc || '#374151'}" data-role="${rName}" oninput="window._cfgPreviewRole('${rName}')">
-     <button onclick="document.querySelector('.cfg-role-textcolor[data-role=\\'${rName}\\']').value='#374151';window._cfgPreviewRole('${rName}')" class="text-[8px] text-gray-300 hover:text-red-400" title="초기화"><i class="fas fa-times"></i></button>
+     <label class="text-[8px] text-gray-400 font-bold">뱃지</label>
+     <input type="color" class="cfg-role-textcolor w-6 h-6 border border-gray-200 rounded cursor-pointer p-0.5" value="${tc || '#374151'}" data-role="${rName}" oninput="window._cfgPreviewRole('${rName}')">
+     <input type="color" class="cfg-role-bgcolor w-6 h-6 border border-gray-200 rounded cursor-pointer p-0.5" value="${bc || '#f3f4f6'}" data-role="${rName}" oninput="window._cfgPreviewRole('${rName}')">
+     <button onclick="document.querySelector('.cfg-role-textcolor[data-role=\\'${rName}\\']').value='#374151';document.querySelector('.cfg-role-bgcolor[data-role=\\'${rName}\\']').value='#f3f4f6';window._cfgPreviewRole('${rName}')" class="text-[8px] text-gray-300 hover:text-red-400" title="뱃지 초기화"><i class="fas fa-times"></i></button>
    </div>
    <div class="flex items-center gap-1">
-     <label class="text-[8px] text-gray-400 font-bold">배경</label>
-     <input type="color" class="cfg-role-bgcolor w-7 h-7 border border-gray-200 rounded-lg cursor-pointer p-0.5" value="${bc || '#f3f4f6'}" data-role="${rName}" oninput="window._cfgPreviewRole('${rName}')">
-     <button onclick="document.querySelector('.cfg-role-bgcolor[data-role=\\'${rName}\\']').value='';window._cfgPreviewRole('${rName}')" class="text-[8px] text-gray-300 hover:text-red-400" title="배경 제거"><i class="fas fa-times"></i></button>
+     <label class="text-[8px] text-gray-400 font-bold">행</label>
+     <input type="color" class="cfg-role-rowcolor w-6 h-6 border border-gray-200 rounded cursor-pointer p-0.5" value="${rc || '#ffffff'}" data-role="${rName}">
+     <button onclick="document.querySelector('.cfg-role-rowcolor[data-role=\\'${rName}\\']').value='#ffffff'" class="text-[8px] text-gray-300 hover:text-red-400" title="행 색상 제거"><i class="fas fa-times"></i></button>
    </div>
-   <input type="number" class="cfg-role-priority w-12 text-center bg-white border border-gray-200 rounded-lg px-1 py-1 text-[10px] font-bold outline-none" value="${pri}" data-role="${rName}" title="우선순위 (낮을수록 높은 직위)">
+   <input type="number" class="cfg-role-priority w-10 text-center bg-white border border-gray-200 rounded-lg px-1 py-1 text-[10px] font-bold outline-none" value="${pri}" data-role="${rName}" title="우선순위">
    </div>`;
    }).join('');
 
@@ -5631,6 +5624,11 @@
    const rName = el.dataset.role;
    if (!cfg.roleDisplay[rName]) cfg.roleDisplay[rName] = {};
    cfg.roleDisplay[rName].bgColor = el.value && el.value !== '#f3f4f6' ? el.value : '';
+   });
+   document.querySelectorAll('.cfg-role-rowcolor').forEach(el => {
+   const rName = el.dataset.role;
+   if (!cfg.roleDisplay[rName]) cfg.roleDisplay[rName] = {};
+   cfg.roleDisplay[rName].rowColor = el.value && el.value !== '#ffffff' ? el.value : '';
    });
    document.querySelectorAll('.cfg-role-priority').forEach(el => {
    const rName = el.dataset.role;
