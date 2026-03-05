@@ -2365,11 +2365,12 @@
                 const isDark = document.documentElement.classList.contains('dark');
                 let rowStyle = "";
                 const _trRd = SITE_CONFIG?.roleDisplay?.[targetRole] || {};
-                if (_trRd.rowColor) {
-                    const rc = _trRd.rowColor;
+                const _mRd = SITE_CONFIG?.roleDisplay?.[m.role] || {};
+                const _rowColor = _trRd.rowColor || _mRd.rowColor || '';
+                if (_rowColor) {
                     rowStyle = isDark
-                        ? `background:${rc}15;border-left:3px solid ${rc};`
-                        : `background:linear-gradient(to right,${rc}18,${rc}25);border-left:3px solid ${rc};`;
+                        ? `background:${_rowColor}15;border-left:3px solid ${_rowColor};`
+                        : `background:linear-gradient(to right,${_rowColor}18,${_rowColor}25);border-left:3px solid ${_rowColor};`;
                 }
 
                 const pending = appState.pendingUpdates[m.id];
