@@ -3775,7 +3775,7 @@
      const { error } = await supaDb.from('guide_pages').update({ content: html, updated_at: new Date().toISOString() }).eq('id', existing.id);
      if (error) throw error;
    } else {
-     const { data: inserted, error } = await supaDb.from('guide_pages').insert({ slug: gs.slug, content: html, updated_at: new Date().toISOString() }).select().single();
+     const { data: inserted, error } = await supaDb.from('guide_pages').insert({ slug: gs.slug, title: gs.slug, content: html, updated_at: new Date().toISOString() }).select().single();
      if (error) throw error;
      if (inserted) gs.pages[gs.slug] = inserted;
    }
