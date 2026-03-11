@@ -3279,21 +3279,33 @@
                 if (data) data.forEach(p => gs.pages[p.slug] = p);
             } catch(e) { console.error(e); }
 
-            const slugs = [
+            const defaultSlugs = [
+                { slug: 'notice1', label: '공지 1', icon: 'fa-bullhorn' },
+                { slug: 'notice2', label: '공지 2', icon: 'fa-bullhorn' },
+                { slug: 'notice3', label: '공지 3', icon: 'fa-bullhorn' },
                 { slug: 'intro', label: '길드 소개', icon: 'fa-heart' },
                 { slug: 'ranks', label: '직위 & 부캐', icon: 'fa-medal' },
                 { slug: 'links', label: '링크 모음', icon: 'fa-link' }
             ];
+            // site_config에서 커스텀 탭 로드
+            const customTabs = SITE_CONFIG?.guideTabs || null;
+            const slugs = customTabs || defaultSlugs;
+            if (!gs.slug || !slugs.find(s => s.slug === gs.slug)) gs.slug = slugs[0]?.slug || 'notice1';
+
+            // 홈 표시 여부
+            const homeVisible = SITE_CONFIG?.guideHomeVisible || {};
 
             container.innerHTML = `
             <div class="h-full flex flex-col gap-3 fade-in">
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 shrink-0">
                     <div class="flex flex-wrap items-center gap-2 mb-3">
                         <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-edit mr-2 text-pink-500"></i>가이드 페이지 편집</h3>
-                        <div class="flex gap-1.5 ml-2">
+                        <div class="flex gap-1.5 ml-2 flex-wrap">
                             ${slugs.map(s => `<button onclick="window._guideSelectPage('${s.slug}')" class="guide-slug-btn px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${gs.slug === s.slug ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas ${s.icon} mr-1"></i>${s.label}</button>`).join('')}
                         </div>
                         <div class="flex gap-2 ml-auto">
+                            <button onclick="window._guideToggleHome('${gs.slug}')" class="px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all ${homeVisible[gs.slug] === false ? 'bg-gray-200 text-gray-400' : 'bg-blue-500 text-white shadow'}" title="홈 화면에 표시/숨김"><i class="fas ${homeVisible[gs.slug] === false ? 'fa-eye-slash' : 'fa-eye'} mr-1"></i>홈 ${homeVisible[gs.slug] === false ? 'OFF' : 'ON'}</button>
+                            <button onclick="window._guideEditLabel('${gs.slug}')" class="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-xl text-[10px] font-bold hover:bg-amber-200" title="탭 이름 변경"><i class="fas fa-tag mr-1"></i>이름</button>
                             <button onclick="window._guideSave()" id="guideSaveBtn" class="px-4 py-1.5 bg-emerald-500 text-white rounded-xl text-[10px] font-bold shadow hover:bg-emerald-600 transition-all"><i class="fas fa-save mr-1"></i>저장</button>
                             <button onclick="window._guidePreview()" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-xl text-[10px] font-bold hover:bg-gray-200 transition-all"><i class="fas fa-eye mr-1"></i>미리보기</button>
                         </div>
@@ -3679,6 +3691,41 @@
    }
    }
    document.getElementById('guideBlockMenu')?.classList.add('hidden');
+  };
+
+  window._guideToggleHome = async (slug) => {
+    const homeVisible = SITE_CONFIG?.guideHomeVisible || {};
+    homeVisible[slug] = homeVisible[slug] === false ? true : false;
+    try {
+      const cfg = { ...SITE_CONFIG, guideHomeVisible: homeVisible };
+      await supaDb.from('site_config').upsert({ id: 1, config: cfg });
+      SITE_CONFIG.guideHomeVisible = homeVisible;
+      window.showMsg(slug + ' 홈 표시: ' + (homeVisible[slug] === false ? 'OFF' : 'ON'), 'success');
+      window.renderGuideEditor(document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('저장 실패', 'error'); }
+  };
+
+  window._guideEditLabel = async (slug) => {
+    const tabs = SITE_CONFIG?.guideTabs || [
+      { slug: 'notice1', label: '공지 1', icon: 'fa-bullhorn' },
+      { slug: 'notice2', label: '공지 2', icon: 'fa-bullhorn' },
+      { slug: 'notice3', label: '공지 3', icon: 'fa-bullhorn' },
+      { slug: 'intro', label: '길드 소개', icon: 'fa-heart' },
+      { slug: 'ranks', label: '직위 & 부캐', icon: 'fa-medal' },
+      { slug: 'links', label: '링크 모음', icon: 'fa-link' },
+    ];
+    const tab = tabs.find(t => t.slug === slug);
+    if (!tab) return;
+    const newLabel = prompt('탭 이름 변경:', tab.label);
+    if (!newLabel || newLabel === tab.label) return;
+    tab.label = newLabel;
+    try {
+      const cfg = { ...SITE_CONFIG, guideTabs: tabs };
+      await supaDb.from('site_config').upsert({ id: 1, config: cfg });
+      SITE_CONFIG.guideTabs = tabs;
+      window.showMsg('탭 이름 변경: ' + newLabel, 'success');
+      window.renderGuideEditor(document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('저장 실패', 'error'); }
   };
 
   window._guideSelectPage = (slug) => {
@@ -9286,17 +9333,29 @@
    .replace(/\bborder-blue-100\b/g, '');
    };
 
-   let introHtml = '', ranksHtml = '', linksHtml = '';
+   let noticeHtml = '', introHtml = '', ranksHtml = '', linksHtml = '';
+   const guideData = {};
    try {
-   const [introRes, ranksRes, linksRes] = await Promise.all([
-   supaDb.from('guide_pages').select('content').eq('slug','intro').maybeSingle(),
-   supaDb.from('guide_pages').select('content').eq('slug','ranks').maybeSingle(),
-   supaDb.from('guide_pages').select('content').eq('slug','links').maybeSingle()
-   ]);
-   introHtml = stripBorder(replacePlaceholders(introRes.data?.content || ''));
-   ranksHtml = stripBorder(replacePlaceholders(ranksRes.data?.content || ''));
-   linksHtml = stripBorder(replacePlaceholders(linksRes.data?.content || ''));
+   const { data: allGuides } = await supaDb.from('guide_pages').select('*').order('id');
+   if (allGuides) allGuides.forEach(p => guideData[p.slug] = stripBorder(replacePlaceholders(p.content || '')));
+   introHtml = guideData['intro'] || '';
+   ranksHtml = guideData['ranks'] || '';
+   linksHtml = guideData['links'] || '';
    } catch(e) { console.error('Guide load error:', e); }
+
+   const defaultHomeTabs = [
+     { slug: 'notice1', label: '공지 1', icon: 'fa-bullhorn' },
+     { slug: 'notice2', label: '공지 2', icon: 'fa-bullhorn' },
+     { slug: 'notice3', label: '공지 3', icon: 'fa-bullhorn' },
+     { slug: 'intro', label: '길드 소개', icon: 'fa-heart' },
+     { slug: 'ranks', label: '직위 & 부캐', icon: 'fa-medal' },
+     { slug: 'links', label: '링크 모음', icon: 'fa-link' },
+   ];
+   const homeVisible = SITE_CONFIG?.guideHomeVisible || {};
+   const homeTabs = (SITE_CONFIG?.guideTabs || defaultHomeTabs).filter(t => {
+     if (homeVisible[t.slug] === false) return false;
+     return true;
+   });
 
    const statsCards = guilds.map(g => {
    const cnt = appState.members.filter(m => m.guild === g.name).length;
@@ -9321,24 +9380,18 @@
 
    const editBtn = isAdmin() ? `<button onclick="router('guide_edit')" class="text-[9px] font-bold text-pink-400 hover:text-pink-600 bg-pink-50 dark:bg-pink-900/30 px-2 py-1 rounded-lg transition-all"><i class="fas fa-edit mr-1"></i>편집</button>` : '';
 
+   const visibleTabs = homeTabs.filter(t => guideData[t.slug]);
+   const firstTab = visibleTabs[0]?.slug || '';
+
    container.innerHTML = `<div class="flex flex-col gap-4 fade-in">
 
-   <div class="relative">
-   <div class="absolute right-4 top-3 z-20">${editBtn}</div>
-   <div class="home-guide-content">${introHtml || '<div class="bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 p-6 rounded-2xl"><h3 class="text-lg font-black text-gray-800 dark:text-gray-100">뚠카롱에 오신 것을 환영합니다!</h3><p class="text-sm text-gray-500 mt-2">메이플스토리 리부트2 서버 길드 연합입니다.</p></div>'}</div>
+   ${visibleTabs.length > 0 ? `<div class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700">
+   <div class="flex items-center gap-1 p-3 border-b border-gray-100 dark:border-gray-700 overflow-x-auto no-scrollbar">
+     ${visibleTabs.map(t => `<button onclick="window._homeGuideTab='${t.slug}';document.querySelectorAll('.hg-tab-btn').forEach(b=>b.className=b.className.replace(/bg-pink-500 text-white shadow/g,'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'));this.className=this.className.replace(/bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400/g,'bg-pink-500 text-white shadow');document.querySelectorAll('.hg-tab-content').forEach(c=>c.classList.add('hidden'));document.getElementById('hg-${t.slug}')?.classList.remove('hidden')" class="hg-tab-btn px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all shrink-0 ${t.slug===firstTab?'bg-pink-500 text-white shadow':'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'} hover:opacity-90"><i class="fas ${t.icon} mr-1"></i>${t.label}</button>`).join('')}
+     <span class="ml-auto shrink-0">${editBtn}</span>
    </div>
-
-   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 relative">
-   <div class="absolute right-4 top-3 z-20">${editBtn}</div>
-   <h4 class="text-sm font-black text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2"><i class="fas fa-medal text-pink-400"></i>직위 안내</h4>
-   <div class="home-guide-content">${ranksHtml || '<p class="text-xs text-gray-400">직위 정보가 없습니다.</p>'}</div>
-   </div>
-
-   <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 relative">
-   <div class="absolute right-4 top-3 z-20">${editBtn}</div>
-   <h4 class="text-sm font-black text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2"><i class="fas fa-link text-pink-400"></i>링크 모음</h4>
-   <div class="home-guide-content">${linksHtml || '<p class="text-xs text-gray-400">링크 정보가 없습니다.</p>'}</div>
-   </div>
+   ${visibleTabs.map(t => `<div id="hg-${t.slug}" class="hg-tab-content p-5 ${t.slug!==firstTab?'hidden':''}"><div class="home-guide-content">${guideData[t.slug]}</div></div>`).join('')}
+   </div>` : ''}
 
    ${eventsHtml ? `<div class="bg-white dark:bg-gray-800 rounded-2xl p-5">
    <h4 class="text-sm font-black text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2"><i class="fas fa-calendar text-pink-400"></i>최근 일정</h4>
