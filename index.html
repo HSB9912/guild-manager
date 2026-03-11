@@ -3770,8 +3770,15 @@
 
    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>저장 중...'; }
    try {
-   const { error } = await supaDb.from('guide_pages').update({ content: html, updated_at: new Date().toISOString() }).eq('slug', gs.slug);
-   if (error) throw error;
+   const existing = gs.pages[gs.slug];
+   if (existing && existing.id) {
+     const { error } = await supaDb.from('guide_pages').update({ content: html, updated_at: new Date().toISOString() }).eq('id', existing.id);
+     if (error) throw error;
+   } else {
+     const { data: inserted, error } = await supaDb.from('guide_pages').insert({ slug: gs.slug, content: html, updated_at: new Date().toISOString() }).select().single();
+     if (error) throw error;
+     if (inserted) gs.pages[gs.slug] = inserted;
+   }
    gs.pages[gs.slug] = { ...gs.pages[gs.slug], content: html };
    window.showMsg('가이드 저장 완료!', 'success');
    } catch(e) {
