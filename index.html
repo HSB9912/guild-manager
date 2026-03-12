@@ -5098,12 +5098,9 @@
   window._getPromoHeader = () => {
     const headers = appState.suroHeaders || [];
     if (headers.length === 0) return null;
-    // 메이플 기준 지난주 = 목요일 초기화 기준으로 가장 최근 완료된 주차
-    // 최신 헤더에 유효 점수가 있는지 확인, 없으면 그 이전 주차 사용
     for (let i = headers.length - 1; i >= 0; i--) {
       const h = headers[i];
-      const g1 = appState.members.filter(m => m.guild === '뚠카롱' && m.isMain);
-      const hasScores = g1.some(m => (Math.round(Number(m.suro?.[h])) || 0) > 0);
+      const hasScores = appState.members.filter(m => m.guild === '뚠카롱').some(m => (Math.round(Number(m.suro?.[h])) || 0) > 0);
       if (hasScores) return h;
     }
     return headers[headers.length - 1];
@@ -5112,18 +5109,16 @@
   window._getPromoWeekScores = (guildName) => {
     const h = window._getPromoHeader();
     if (!h) return [];
-    return appState.members.filter(m => m.guild === guildName && m.isMain).map(m => ({
+    return appState.members.filter(m => m.guild === guildName).map(m => ({
       ...m, score: Math.round(Number(m.suro?.[h])) || 0,
     }));
   };
 
   window._get180Cutline = () => {
     const g1 = window._getPromoWeekScores('뚠카롱')
-      .filter(m => m.score > 0)
       .sort((a,b) => b.score - a.score);
-    if (g1.length === 0) return 0;
-    const idx = Math.min(179, g1.length - 1);
-    return g1[idx].score;
+    if (g1.length < 180) return g1.length > 0 ? g1[g1.length - 1].score : 0;
+    return g1[179].score;
   };
 
   window._getBottom20 = () => {
@@ -5176,7 +5171,7 @@
           <div class="text-right shrink-0">
             <div class="text-[9px] opacity-70">승격 기준 컷라인</div>
             <div class="text-xl font-black">${cutline.toLocaleString()}점</div>
-            <div class="text-[8px] opacity-60">기준: ${promoH ? promoH.replace(' 수로 점수','') : '없음'} · 참여 ${window._getPromoWeekScores('뚠카롱').filter(m=>m.score>0).length}명 중 ${Math.min(180, window._getPromoWeekScores('뚠카롱').filter(m=>m.score>0).length)}등</div>
+            <div class="text-[8px] opacity-60">기준: ${promoH ? promoH.replace(' 수로 점수','') : '없음'} · 1기 ${g1Total}명 중 180등</div>
           </div>
         </div>
       </div>
