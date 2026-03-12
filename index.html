@@ -5149,8 +5149,7 @@
     for (let i = 0; i < matchLen; i++) {
       const ch = challengers[i]; const df = bottom20[i];
       let result = 'failed', reason = '';
-      if (df.score === 0 && ch.score > 0) { result = 'promoted'; reason = '방어자 0점 (자동)'; }
-      else if (ch.score > cutline) { result = 'promoted'; reason = '180등 컷 돌파'; }
+      if (ch.score > cutline) { result = 'promoted'; reason = '180등 컷 돌파'; }
       else if (ch.score >= df.score + 5000) { result = 'promoted'; reason = '5,000점 격차'; }
       else { reason = '조건 미달'; }
       matches.push({ challenger: ch, defender: df, result, reason, rank: i + 1 });
@@ -5331,8 +5330,7 @@
     for (let i = 0; i < matchLen; i++) {
       const ch = challengers[i]; const df = bottom20[i];
       let result = 'failed', reason = '';
-      if (df.score === 0 && ch.score > 0) { result = 'promoted'; reason = '방어자 0점'; }
-      else if (ch.score > cutline) { result = 'promoted'; reason = '180등 컷 돌파'; }
+      if (ch.score > cutline) { result = 'promoted'; reason = '180등 컷 돌파'; }
       else if (ch.score >= df.score + 5000) { result = 'promoted'; reason = '5,000점 격차'; }
       else { reason = '조건 미달'; }
       await supaDb.from('promotion_history').insert({ week_label: weekLabel, challenger_name: ch.name, challenger_score: ch.score, defender_name: df.name, defender_score: df.score, result, reason });
