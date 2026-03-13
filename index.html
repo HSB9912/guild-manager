@@ -5,73 +5,56 @@
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>뚠카롱 길드 관리 시스템</title>
  <script src="https://cdn.tailwindcss.com"></script>
- <script>tailwind.config = { darkMode: 'class', safelist: [
-   'font-black','font-bold','font-medium','font-semibold','font-extrabold',
-   'text-xs','text-sm','text-base','text-lg','text-xl','text-2xl','text-3xl','text-4xl',
-   'text-\\[8px\\]','text-\\[9px\\]','text-\\[10px\\]','text-\\[11px\\]',
-   'rounded-xl','rounded-2xl','rounded-full','rounded-lg',
-   'shadow-sm','overflow-hidden',
-   'grid','grid-cols-2','grid-cols-3','grid-cols-5',
-   'gap-1','gap-1.5','gap-2','gap-3','gap-4','gap-x-4','gap-y-0',
-   'p-2','p-3','p-4','p-5','p-6','px-2','px-3','px-4','px-5','py-0.5','py-1','py-1.5','py-2','py-3',
-   'mb-0.5','mb-1','mb-2','mb-3','mb-4','mb-20','mt-0.5','mt-1','mt-2','mt-4','ml-1','ml-3','ml-auto',
-   'space-y-2','space-y-3',
-   'flex','flex-wrap','flex-1','items-center','justify-between','self-center','min-w-0','shrink-0',
-   'border','border-2',
-   'leading-relaxed','line-through','no-underline','cursor-pointer','truncate',
-   'bg-white','bg-gray-50','bg-gray-900',
-   'bg-red-50','bg-pink-50','bg-rose-50','bg-amber-50','bg-yellow-50','bg-green-50','bg-emerald-50',
-   'bg-blue-50','bg-indigo-50','bg-purple-50','bg-violet-50',
-   'bg-red-500','bg-amber-500','bg-emerald-500','bg-purple-500','bg-indigo-600','bg-purple-600','bg-pink-500',
-   'text-white','text-gray-100','text-gray-300','text-gray-400','text-gray-500','text-gray-600','text-gray-700','text-gray-800',
-   'text-red-400','text-red-500','text-red-600',
-   'text-pink-400','text-pink-500','text-pink-600',
-   'text-blue-400','text-blue-500','text-blue-600',
-   'text-green-400','text-green-600','text-green-700',
-   'text-amber-400','text-amber-600',
-   'text-indigo-400','text-indigo-500','text-indigo-600',
-   'text-purple-400','text-purple-500','text-purple-600',
-   'text-emerald-400','text-emerald-600',
-   'text-orange-500','text-yellow-400',
-   'border-gray-100','border-gray-200','border-gray-600','border-gray-700',
-   'border-red-100','border-red-200','border-red-800',
-   'border-pink-100','border-pink-200','border-pink-700','border-pink-800',
-   'border-blue-200','border-blue-800',
-   'border-orange-200','border-orange-800',
-   'border-indigo-100','border-indigo-200','border-indigo-700','border-indigo-800',
-   'border-purple-100','border-purple-800',
-   'border-emerald-200','border-emerald-800',
-   'border-amber-200','border-amber-300','border-amber-700',
-   'border-green-200',
-   'bg-gradient-to-r','bg-gradient-to-br',
-   'from-red-50','from-pink-50','from-rose-50','from-amber-50','from-yellow-50',
-   'from-green-50','from-emerald-50','from-blue-50','from-indigo-50','from-purple-50','from-violet-50',
-   'from-pink-950/30','from-rose-950/30','from-indigo-950/30','from-purple-950/30','from-amber-950/30','from-yellow-950/30',
-   'to-rose-50','to-pink-50','to-yellow-50','to-emerald-50','to-purple-50','to-violet-50','to-indigo-50',
-   'to-rose-950/30','to-purple-950/30','to-yellow-950/30',
-   'from-red-900/20','from-pink-900/20','from-green-900/20','from-emerald-900/20','from-blue-900/20',
-   'from-indigo-900/20','from-purple-900/20','from-amber-900/20','from-yellow-900/20',
-   'to-pink-900/20','to-rose-900/20','to-emerald-900/20','to-indigo-900/20','to-purple-900/20','to-yellow-900/20',
-   'dark:bg-gray-700','dark:bg-gray-700/30','dark:bg-gray-800','dark:bg-gray-900','dark:bg-gray-950',
-   'dark:bg-red-900/20','dark:bg-green-900/20','dark:bg-emerald-900/20','dark:bg-blue-900/20',
-   'dark:bg-indigo-900/20','dark:bg-purple-900/20','dark:bg-amber-900/20','dark:bg-yellow-900/20',
-   'dark:bg-red-900/10','dark:bg-green-900/30',
-   'dark:text-gray-100','dark:text-gray-300','dark:text-gray-400',
-   'dark:text-red-400','dark:text-pink-400','dark:text-blue-400','dark:text-green-300','dark:text-green-400',
-   'dark:text-amber-400','dark:text-indigo-300','dark:text-indigo-400','dark:text-purple-400','dark:text-emerald-400',
-   'dark:border-gray-600','dark:border-gray-700',
-   'dark:border-red-800','dark:border-pink-800','dark:border-blue-800','dark:border-orange-800',
-   'dark:border-indigo-800','dark:border-purple-800','dark:border-emerald-800','dark:border-amber-700',
-   'hover:scale-\\[1.02\\]','transition-transform',
-   'bg-red-50/30','dark:bg-red-900/10','opacity-50',
-   'divide-y','divide-gray-100','dark:divide-gray-700',
- ] }</script>
+ <script>tailwind.config = { darkMode: 'class' }</script>
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
  <style> @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');body{font-family:'Noto Sans KR',sans-serif;}.chart-container{position:relative;width:100%;height:300px;}::-webkit-scrollbar{width:8px;height:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:#fbcfe8;border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#f472b6;}.fade-in{animation:fadeIn 0.3s ease-out;}@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}th.sortable{cursor:pointer;user-select:none;transition:background 0.2s;position:relative;}th.sortable:hover{background-color:#fdf2f8 !important;color:#db2777 !important;}.force-hide{display:none !important;}#loadingOverlay{position:fixed;inset:0;background:white;z-index:10000;display:flex;flex-direction:column;justify-content:center;align-items:center;}.nav-item.active{background-color:#fdf2f8;color:#ec4899;box-shadow:inset 4px 0 0 #ec4899;}#msgBox{transition:all 0.3s ease;transform:translateY(100px);opacity:0;pointer-events:none;}#msgBox.show{transform:translateY(0);opacity:1;}.batch-modified{background-color:#fff7ed !important;}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0.25rem;text-align:center;font-size:0.75rem;}.calendar-day{padding:0.25rem;border-radius:0.75rem;position:relative;transition:all 0.2s;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;aspect-ratio:1/1;cursor:pointer;border:1px solid transparent;}@media (min-width:1024px){.calendar-day{min-height:56px;}}.calendar-day:hover{background-color:#f9fafb;border-color:#fbcfe8;}.calendar-day.today{background-color:#ec4899;color:white;font-weight:bold;}.calendar-day.thursday{color:#db2777;background-color:#fdf2f8;border:1px solid #fbcfe8;font-weight:bold;}.calendar-day.not-current{opacity:0.2;pointer-events:none;}.calendar-head{font-size:0.7rem;font-weight:800;color:#9ca3af;text-transform:uppercase;padding-bottom:8px;}.event-dot{width:4px;height:4px;background-color:#ec4899;border-radius:50%;margin-top:2px;}.calendar-day.today .event-dot{background-color:white;}.event-snippet{font-size:10px;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;margin-top:3px;line-height:1.2;font-weight:800;background-color:rgba(236,72,153,0.18);border-radius:4px;padding:2px 4px;}@media (min-width:1024px){.event-snippet{font-size:11px;}}.calendar-day.today .event-snippet{color:white;background-color:rgba(255,255,255,0.2);}.calendar-day.thursday .event-snippet{color:#be123c;background-color:rgba(159,18,57,0.13);}.score-zero{background-color:#fee2e2 !important;color:#ef4444 !important;}.score-cell{transition:background 0.2s;}.score-cell:hover{background-color:#f8fafb;}.custom-checkbox{width:1.25rem;height:1.25rem;border-radius:0.5rem;border:2px solid #e5e7eb;appearance:none;cursor:pointer;transition:all 0.2s;}.custom-checkbox:checked{background-color:#ef4444;border-color:#ef4444;background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");}.event-item-active{background-color:#fdf2f8;border-color:#f472b6;color:#db2777;}@media (max-width:768px){.nav-item{min-height:44px;}button,select,input[type="checkbox"]{min-height:36px;}}.no-scrollbar::-webkit-scrollbar{display:none;}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}@supports (padding-top:env(safe-area-inset-top)){body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}}@media (max-width:640px){.calendar-grid{gap:0.125rem;font-size:0.65rem;}.calendar-day{min-height:38px;padding:0.125rem;}.calendar-head{font-size:0.6rem;padding-bottom:4px;}.event-snippet{font-size:8px;padding:0px 1px;}#msgBox{left:1rem;right:1rem;transform:translateX(0) translateY(100px) !important;width:auto;padding:0.75rem 1rem;bottom:calc(4.5rem + env(safe-area-inset-bottom,0px));}#msgBox.show{transform:translateX(0) translateY(0) !important;}}@media (max-width:1024px){.overflow-x-guard{overflow-x:auto;-webkit-overflow-scrolling:touch;}}@media (max-width:768px){table{font-size:0.65rem;}table th,table td{padding:0.5rem 0.375rem !important;}table th{font-size:9px;}}.overflow-y-auto,.overflow-x-auto{-webkit-overflow-scrolling:touch;}.nav-item,button{-webkit-tap-highlight-color:transparent;}@media (max-width:640px){#memberModal > div > div,#deleteModal > div > div,#eventDetailModal > div > div{max-height:90vh;overflow-y:auto;border-radius:1.5rem;}}.stick-head{border-collapse:separate;border-spacing:0;}.stick-head thead th{position:sticky;top:0;z-index:10;background:#f9fafb;}@media (max-width:640px){.analysis-summary-grid{grid-template-columns:1fr !important;}.analysis-mvp-grid{grid-template-columns:repeat(2,1fr) !important;}.analysis-table-wrap table{font-size:0.6rem;}.analysis-table-wrap table th,.analysis-table-wrap table td{padding:0.375rem 0.25rem !important;}}body.dark{background-color:#0f1117;color:#c9cdd4;}body.dark .bg-gray-50,body.dark main{background-color:#0f1117 !important;}body.dark .bg-white{background-color:#1c1f2b !important;color:#c9cdd4;border-color:#2a2d3a !important;}body.dark aside{background-color:#14161e !important;border-color:#2a2d3a !important;}body.dark header{background-color:#14161e !important;border-color:#2a2d3a !important;}body.dark .border-gray-100,body.dark .border-gray-200,body.dark .border-gray-50{border-color:#2a2d3a !important;}body.dark .text-gray-800,body.dark .text-slate-800{color:#e0e3ea !important;}body.dark .text-gray-700{color:#b8bcc6 !important;}body.dark .text-gray-600{color:#8b90a0 !important;}body.dark .text-gray-500{color:#6b7080 !important;}body.dark .text-gray-400{color:#555a6a !important;}body.dark .text-gray-300{color:#444a5a !important;}body.dark .bg-gray-100{background-color:#22252f !important;}body.dark .bg-gray-50{background-color:#1a1d27 !important;}body.dark input,body.dark select,body.dark textarea{background-color:#22252f !important;color:#c9cdd4 !important;border-color:#333848 !important;}body.dark input::placeholder,body.dark textarea::placeholder{color:#555a6a !important;}body.dark table thead{background-color:#14161e !important;}body.dark table thead th{background-color:#14161e !important;color:#6b7080 !important;border-color:#2a2d3a !important;}body.dark table tbody td{background-color:#1a1d27 !important;border-color:#22252f !important;}body.dark table tbody tr:hover td{background-color:#22252f !important;}body.dark .stick-head thead th{background:#14161e !important;}body.dark .nav-item:hover{background-color:#22252f !important;}body.dark .nav-item.active{background-color:#1e1a2e !important;color:#c084fc !important;box-shadow:inset 4px 0 0 #a855f7 !important;}body.dark .shadow-sm,body.dark .shadow-lg,body.dark .shadow-md,body.dark .shadow-2xl{box-shadow:none !important;}body.dark #loadingOverlay{background:#0f1117 !important;}body.dark .bg-pink-50,body.dark .bg-pink-50\/30{background-color:rgba(168,85,247,0.08) !important;}body.dark .text-pink-600,body.dark .text-pink-500,body.dark .text-pink-400{color:#a78bfa !important;}body.dark .border-pink-100,body.dark .border-pink-50{border-color:#2a2540 !important;}body.dark .bg-red-50,body.dark .bg-red-50\/20{background-color:rgba(239,68,68,0.08) !important;}body.dark .text-red-500,body.dark .text-red-600,body.dark .text-red-400{color:#f87171 !important;}body.dark .text-blue-500,body.dark .text-blue-600,body.dark .text-blue-400{color:#93c5fd !important;}body.dark .text-green-500,body.dark .text-green-600,body.dark .text-green-400{color:#86efac !important;}body.dark .text-amber-500,body.dark .text-amber-600{color:#fbbf24 !important;}body.dark .text-orange-500{color:#fb923c !important;}body.dark .text-purple-600,body.dark .text-purple-500{color:#c084fc !important;}body.dark .bg-pink-500{background-color:#7c3aed !important;}body.dark .bg-gradient-to-br,body.dark .bg-gradient-to-tr,body.dark .bg-gradient-to-r{background:#1a1d27 !important;}body.dark [class*="from-pink"],body.dark [class*="from-rose"],body.dark [class*="from-blue"],body.dark [class*="from-emerald"],body.dark [class*="from-purple"],body.dark [class*="from-yellow"],body.dark [class*="from-amber"],body.dark [class*="from-green"],body.dark [class*="from-red"],body.dark [class*="from-indigo"],body.dark [class*="from-orange"],body.dark [class*="from-cyan"]{background:#1a1d27 !important;}body.dark [class*="border-pink-100"],body.dark [class*="border-rose-100"],body.dark [class*="border-blue-100"],body.dark [class*="border-emerald-100"],body.dark [class*="border-purple-100"],body.dark [class*="border-orange-100"],body.dark [class*="border-amber-100"],body.dark [class*="border-green-100"],body.dark [class*="border-red-100"]{border-color:#2a2d3a !important;}body.dark .bg-white\/40{background-color:rgba(255,255,255,0.05) !important;}body.dark .hover\:bg-pink-50\/30:hover,body.dark .hover\:bg-gray-50:hover{background-color:#22252f !important;}body.dark .hover\:bg-pink-100:hover,body.dark .hover\:bg-gray-100:hover{background-color:#22252f !important;}body.dark th.sortable:hover{background-color:#22252f !important;color:#a78bfa !important;}body.dark .batch-modified{background-color:rgba(251,146,60,0.1) !important;}body.dark .calendar-day{color:#8b90a0;}body.dark .calendar-day:hover{background-color:#22252f;border-color:#333848;}body.dark .calendar-day.today{background-color:#7c3aed;color:white;}body.dark .calendar-day.thursday{background-color:rgba(124,58,237,0.15);color:#c084fc;border-color:rgba(124,58,237,0.3);}body.dark .event-snippet{background-color:rgba(124,58,237,0.15);color:#c9cdd4;}body.dark .calendar-day.today .event-snippet{background-color:rgba(255,255,255,0.15);color:white;}body.dark .bg-green-50{background-color:rgba(34,197,94,0.08) !important;}body.dark .bg-amber-50{background-color:rgba(245,158,11,0.08) !important;}body.dark .bg-blue-50{background-color:rgba(59,130,246,0.08) !important;}body.dark .bg-emerald-50{background-color:rgba(16,185,129,0.08) !important;}body.dark .bg-purple-50{background-color:rgba(168,85,247,0.08) !important;}body.dark [style*="background:#fdf2f8"],body.dark [style*="background:#fff1f2"],body.dark [style*="background:#eef2ff"],body.dark [style*="background:#fefce8"],body.dark [style*="background:#eff6ff"],body.dark [style*="background:#fffbeb"]{background:#22252f !important;border-color:#333848 !important;}body.dark::-webkit-scrollbar-track{background:#14161e;}body.dark::-webkit-scrollbar-thumb{background:#333848;}body.dark::-webkit-scrollbar-thumb:hover{background:#444a5a;}body.dark #authOverlay{background:#0f1117 !important;}body.dark .bg-gradient-to-br.from-pink-50{background:#0f1117 !important;}body.dark .score-zero{background-color:rgba(239,68,68,0.08) !important;color:#f87171 !important;}body.dark .analysis-table-wrap table tbody tr td:nth-child(1),body.dark .analysis-table-wrap table tbody tr td:nth-child(2){background:#1a1d27 !important;}body.dark .analysis-table-wrap table tbody tr:hover td:nth-child(1),body.dark .analysis-table-wrap table tbody tr:hover td:nth-child(2){background:#22252f !important;}body.dark .analysis-table-wrap table thead th:nth-child(1),body.dark .analysis-table-wrap table thead th:nth-child(2){background:#14161e !important;}.mobile-tab{color:#9ca3af;transition:all 0.15s;}.mobile-tab.active{color:#ec4899;}.mobile-tab:active{transform:scale(0.92);}.safe-bottom{padding-bottom:env(safe-area-inset-bottom,0);}@media (max-width:1023px){#contentArea{padding-bottom:80px !important;}}body.font-sm #contentArea{font-size:0.8rem;}body.font-sm #contentArea table{font-size:0.6rem;}body.font-sm #contentArea .text-xs{font-size:0.65rem !important;}body.font-sm #contentArea .text-sm{font-size:0.75rem !important;}body.font-sm header .text-base{font-size:0.85rem !important;}body.font-sm header .text-\[9px\],body.font-sm header .text-\[10px\]{font-size:8px !important;}body.font-lg #contentArea{font-size:1.1rem;}body.font-lg #contentArea table{font-size:0.85rem;}body.font-lg #contentArea .text-xs{font-size:0.85rem !important;}body.font-lg #contentArea .text-sm{font-size:1rem !important;}body.font-lg #contentArea .text-\[10px\]{font-size:0.75rem !important;}body.font-lg #contentArea .text-\[11px\]{font-size:0.8rem !important;}body.font-lg #contentArea .text-\[9px\]{font-size:0.7rem !important;}body.font-lg header .text-base{font-size:1.15rem !important;}body.font-lg header .text-\[9px\]{font-size:11px !important;}body.font-lg header .text-\[10px\]{font-size:12px !important;}body.font-lg nav .text-sm{font-size:1rem !important;}body.font-lg nav .text-\[9px\]{font-size:11px !important;}body.dark #mobileTabBar{background:#14161e !important;border-color:#2a2d3a !important;}body.dark .mobile-tab{color:#6b7280;}body.dark .mobile-tab.active{color:#f472b6;}.board-post-content table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px;}.board-post-content table th,.board-post-content table td{border:1px solid #e5e7eb;padding:6px 8px;}.board-post-content table th{background:#f9fafb;font-weight:700;}.board-post-content hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0;}.board-post-content ul,.board-post-content ol{padding-left:20px;margin:4px 0;}.board-post-content a{color:#3b82f6;text-decoration:underline;}body.dark .board-post-content table th,body.dark .board-post-content table td{border-color:#374151;}body.dark .board-post-content table th{background:#1a1d27;}body.dark .board-post-content hr{border-top-color:#374151;}body.dark .board-post-content a{color:#93c5fd;}</style>
 </head>
 <body class="bg-gray-50 text-slate-800 h-screen overflow-hidden flex font-medium">
+<!-- Tailwind CDN 사전 클래스 등록 (가이드 콘텐츠 동적 로딩용) -->
+<div class="hidden" aria-hidden="true">
+<span class="font-black font-bold font-semibold font-extrabold font-medium"></span>
+<span class="text-xs text-sm text-base text-lg text-xl text-2xl text-3xl text-4xl text-[8px] text-[9px] text-[10px] text-[11px]"></span>
+<span class="rounded-xl rounded-2xl rounded-full rounded-lg shadow-sm overflow-hidden"></span>
+<span class="grid grid-cols-2 grid-cols-3 grid-cols-5 gap-1 gap-1.5 gap-2 gap-3 gap-4 gap-x-4 gap-y-0"></span>
+<span class="p-2 p-3 p-4 p-5 p-6 px-2 px-3 px-4 px-5 py-0.5 py-1 py-1.5 py-2 py-3"></span>
+<span class="mb-0.5 mb-1 mb-2 mb-3 mb-4 mb-20 mt-0.5 mt-1 mt-2 mt-4 ml-1 ml-3 ml-auto"></span>
+<span class="space-y-2 space-y-3 flex flex-wrap flex-1 items-center justify-between self-center min-w-0 shrink-0"></span>
+<span class="border border-2 leading-relaxed line-through no-underline cursor-pointer truncate"></span>
+<span class="bg-white bg-gray-50 bg-gray-900 bg-red-50 bg-pink-50 bg-rose-50 bg-amber-50 bg-yellow-50 bg-green-50 bg-emerald-50 bg-blue-50 bg-indigo-50 bg-purple-50 bg-violet-50"></span>
+<span class="bg-red-500 bg-amber-500 bg-emerald-500 bg-purple-500 bg-indigo-600 bg-purple-600 bg-pink-500"></span>
+<span class="text-white text-gray-100 text-gray-300 text-gray-400 text-gray-500 text-gray-600 text-gray-700 text-gray-800"></span>
+<span class="text-red-400 text-red-500 text-red-600 text-pink-400 text-pink-500 text-pink-600"></span>
+<span class="text-blue-400 text-blue-500 text-blue-600 text-green-400 text-green-600 text-green-700"></span>
+<span class="text-amber-400 text-amber-600 text-indigo-400 text-indigo-500 text-indigo-600"></span>
+<span class="text-purple-400 text-purple-500 text-purple-600 text-emerald-400 text-emerald-600"></span>
+<span class="text-orange-500 text-yellow-400"></span>
+<span class="border-gray-100 border-gray-200 border-gray-600 border-gray-700"></span>
+<span class="border-red-100 border-red-200 border-red-800 border-pink-100 border-pink-200 border-pink-700 border-pink-800"></span>
+<span class="border-blue-200 border-blue-800 border-orange-200 border-orange-800"></span>
+<span class="border-indigo-100 border-indigo-200 border-indigo-700 border-indigo-800"></span>
+<span class="border-purple-100 border-purple-800 border-emerald-200 border-emerald-800"></span>
+<span class="border-amber-200 border-amber-300 border-amber-700 border-green-200"></span>
+<span class="bg-gradient-to-r bg-gradient-to-br"></span>
+<span class="from-red-50 from-pink-50 from-rose-50 from-amber-50 from-yellow-50 from-green-50 from-emerald-50 from-blue-50 from-indigo-50 from-purple-50 from-violet-50"></span>
+<span class="from-pink-950/30 from-rose-950/30 from-indigo-950/30 from-purple-950/30 from-amber-950/30 from-yellow-950/30"></span>
+<span class="to-rose-50 to-pink-50 to-yellow-50 to-emerald-50 to-purple-50 to-violet-50 to-indigo-50"></span>
+<span class="to-rose-950/30 to-purple-950/30 to-yellow-950/30"></span>
+<span class="from-red-900/20 from-pink-900/20 from-green-900/20 from-emerald-900/20 from-blue-900/20 from-indigo-900/20 from-purple-900/20 from-amber-900/20 from-yellow-900/20"></span>
+<span class="to-pink-900/20 to-rose-900/20 to-emerald-900/20 to-indigo-900/20 to-purple-900/20 to-yellow-900/20"></span>
+<span class="dark:bg-gray-700 dark:bg-gray-700/30 dark:bg-gray-800 dark:bg-gray-900 dark:bg-gray-950"></span>
+<span class="dark:bg-red-900/20 dark:bg-green-900/20 dark:bg-emerald-900/20 dark:bg-blue-900/20 dark:bg-indigo-900/20 dark:bg-purple-900/20 dark:bg-amber-900/20 dark:bg-yellow-900/20"></span>
+<span class="dark:bg-red-900/10 dark:bg-green-900/30"></span>
+<span class="dark:text-gray-100 dark:text-gray-300 dark:text-gray-400"></span>
+<span class="dark:text-red-400 dark:text-pink-400 dark:text-blue-400 dark:text-green-300 dark:text-green-400"></span>
+<span class="dark:text-amber-400 dark:text-indigo-300 dark:text-indigo-400 dark:text-purple-400 dark:text-emerald-400"></span>
+<span class="dark:border-gray-600 dark:border-gray-700"></span>
+<span class="dark:border-red-800 dark:border-pink-800 dark:border-blue-800 dark:border-orange-800"></span>
+<span class="dark:border-indigo-800 dark:border-purple-800 dark:border-emerald-800 dark:border-amber-700"></span>
+<span class="hover:scale-[1.02] transition-transform bg-red-50/30 dark:bg-red-900/10 opacity-50"></span>
+<span class="divide-y divide-gray-100 dark:divide-gray-700"></span>
+</div>
 
  <div id="authOverlay" class="fixed inset-0 z-[20000] bg-gradient-to-br from-pink-50 via-white to-rose-50 flex items-center justify-center hidden">
   <div class="text-center w-80 p-8">
@@ -5885,21 +5868,44 @@
         </div>` : ''}
 
         ${team.reward_choice === 'B' && isAdmin() ? `
-        <div class="bg-purple-50 rounded-2xl border border-purple-200 p-4">
-          <p class="text-sm font-bold text-purple-700 mb-3 text-center">🎰 B보상 칠흑 가챠 룰렛 ${!allClear ? '<span class="text-[9px] text-amber-500">(⚠ 미션 미완료)</span>' : ''}</p>
-          <div class="grid grid-cols-3 sm:grid-cols-4 gap-1 mb-4">
-            ${window._getRouletteItems().map(item => `<div class="bg-white rounded-lg p-1.5 border border-purple-100 text-center"><span class="text-[9px] font-bold" style="color:${item.color}">${item.name}</span><br><span class="text-[8px] text-gray-400">${item.prob}%</span><br><span class="text-[8px] text-gray-300">${item.value}</span></div>`).join('')}
-          </div>
-          <div id="rouletteDisplay" class="mb-4">
-            <div class="bg-white rounded-2xl border-4 border-purple-300 p-8 text-center">
-              <div id="rouletteItemText" class="text-3xl font-black text-gray-300">🎰 돌려주세요!</div>
-              <div id="rouletteValueText" class="text-sm text-gray-300 mt-1"></div>
+        <div class="bg-purple-50 dark:bg-purple-900/20 rounded-2xl border border-purple-200 dark:border-purple-800 p-4">
+          <p class="text-sm font-bold text-purple-700 dark:text-purple-300 mb-3 text-center">🎰 B보상 칠흑 가챠 룰렛 ${!allClear ? '<span class="text-[9px] text-amber-500">(⚠ 미션 미완료)</span>' : ''}</p>
+          
+          <!-- Canvas 룰렛 -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:16px">
+            <div id="rouletteResult" style="min-height:36px;text-align:center">
+              <div id="rouletteMainText" style="font-size:18px;font-weight:900;color:#6b7280">🎰 돌려주세요</div>
+              <div id="rouletteSubText" style="font-size:11px;color:#9ca3af;margin-top:2px"></div>
+            </div>
+            <div style="position:relative">
+              <div style="position:absolute;top:-4px;left:50%;transform:translateX(-50%);z-index:10;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:20px solid #7c3aed;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))"></div>
+              <canvas id="rouletteCanvas" style="display:block;border-radius:50%;box-shadow:0 0 0 3px rgba(124,58,237,.2),0 4px 20px rgba(0,0,0,.15)"></canvas>
             </div>
           </div>
-          <div class="flex gap-2 justify-center">
-            <button onclick="window._buddySpinRoulette(${team.id}, false)" class="px-6 py-3 bg-purple-500 text-white rounded-2xl font-bold text-sm shadow-lg hover:bg-purple-600 transition-all">🎰 연습 돌리기</button>
+
+          <!-- 속도 조절 -->
+          <div style="display:flex;gap:4px;margin-bottom:12px;max-width:320px;margin-left:auto;margin-right:auto">
+            <button onclick="window._rouletteSpeed='fast';window._rouletteUpdateSpeedUI()" class="rl-spd flex-1 py-1.5 rounded-lg text-[9px] font-bold border-2 border-gray-200 dark:border-gray-600 text-gray-400 bg-transparent transition-all" data-spd="fast" style="font-family:inherit;cursor:pointer">매우빠름</button>
+            <button onclick="window._rouletteSpeed='norm';window._rouletteUpdateSpeedUI()" class="rl-spd flex-1 py-1.5 rounded-lg text-[9px] font-bold border-2 border-gray-200 dark:border-gray-600 text-gray-400 bg-transparent transition-all" data-spd="norm" style="font-family:inherit;cursor:pointer">빠름</button>
+            <button onclick="window._rouletteSpeed='slow';window._rouletteUpdateSpeedUI()" class="rl-spd flex-1 py-1.5 rounded-lg text-[9px] font-bold border-2 border-purple-400 text-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 transition-all" data-spd="slow" style="font-family:inherit;cursor:pointer">보통</button>
+            <button onclick="window._rouletteSpeed='vslow';window._rouletteUpdateSpeedUI()" class="rl-spd flex-1 py-1.5 rounded-lg text-[9px] font-bold border-2 border-gray-200 dark:border-gray-600 text-gray-400 bg-transparent transition-all" data-spd="vslow" style="font-family:inherit;cursor:pointer">느림</button>
+          </div>
+
+          <!-- 버튼 -->
+          <div class="flex gap-2 justify-center mb-4">
+            <button onclick="window._buddySpinRoulette(${team.id}, false)" id="rouletteSpinBtn" class="px-6 py-3 bg-purple-500 text-white rounded-2xl font-bold text-sm shadow-lg hover:bg-purple-600 transition-all">🎰 연습 돌리기</button>
             ${(!roulette || roulette.length === 0) ? `<button onclick="window._buddySpinRoulette(${team.id}, true)" id="rouletteConfirmBtn" class="px-6 py-3 bg-red-500 text-white rounded-2xl font-bold text-sm shadow-lg hover:bg-red-600 transition-all">🔒 보상 확정!</button>` : `<span class="text-[10px] text-green-600 font-bold self-center">✅ 이미 확정됨</span><button onclick="window._buddyResetRoulette(${team.id})" class="text-[9px] text-red-400 hover:text-red-600 font-bold self-center ml-2"><i class="fas fa-undo mr-0.5"></i>결과 취소</button>`}
           </div>
+
+          <!-- 품목 테이블 -->
+          <details class="bg-white dark:bg-gray-800 rounded-xl border border-purple-100 dark:border-purple-800">
+            <summary class="px-3 py-2 text-[10px] font-bold text-purple-500 cursor-pointer">품목 확률표 보기</summary>
+            <div class="px-3 pb-3">
+              <div class="grid grid-cols-3 sm:grid-cols-4 gap-1 mt-2">
+                ${window._getRouletteItems().map(item => `<div class="rounded-lg p-1.5 text-center" style="background:${item.color}10;border:1px solid ${item.color}30"><span class="text-[9px] font-bold" style="color:${item.color}">${item.name}</span><br><span class="text-[8px] text-gray-400">${item.prob}%</span><br><span class="text-[8px] text-gray-300">${item.value}</span></div>`).join('')}
+              </div>
+            </div>
+          </details>
         </div>` : ''}
 
         ${roulette && roulette.length > 0 ? `
@@ -5916,6 +5922,8 @@
         </div>` : ''}
       </div>`;
       container.innerHTML = html;
+      // Canvas 룰렛 초기화
+      setTimeout(() => { if (window._rouletteInit) window._rouletteInit(); }, 100);
     } catch(e) { container.innerHTML = '<div class="p-8 text-center text-red-400 text-xs font-bold">오류: '+e.message+'</div>'; }
   };
 
@@ -6070,52 +6078,187 @@
     } catch(e) { window.showMsg('삭제 실패', 'error'); }
   };
 
+  // === Canvas 원형 룰렛 ===
+  window._rouletteAngle = 0;
+  window._rouletteBusy = false;
+  window._rouletteSpeed = 'slow';
+  const _RL_SPEED = {fast:1800, norm:3000, slow:5000, vslow:8500};
+
+  window._rouletteUpdateSpeedUI = () => {
+    document.querySelectorAll('.rl-spd').forEach(b => {
+      const isOn = b.dataset.spd === window._rouletteSpeed;
+      b.style.borderColor = isOn ? '#a855f7' : '';
+      b.style.color = isOn ? '#7c3aed' : '#9ca3af';
+      b.style.background = isOn ? 'rgba(168,85,247,0.08)' : 'transparent';
+    });
+  };
+
+  window._rouletteInit = () => {
+    const cv = document.getElementById('rouletteCanvas');
+    if (!cv) return;
+    const maxW = Math.min(cv.parentElement?.parentElement?.clientWidth || 360, 360) - 20;
+    const SIZE = Math.max(240, Math.min(maxW, 340));
+    const DPR = window.devicePixelRatio || 1;
+    cv.width = SIZE * DPR; cv.height = SIZE * DPR;
+    cv.style.width = SIZE + 'px'; cv.style.height = SIZE + 'px';
+    cv._size = SIZE; cv._dpr = DPR;
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    window._rouletteDraw(window._rouletteAngle);
+  };
+
+  window._rouletteDraw = (rot) => {
+    const cv = document.getElementById('rouletteCanvas');
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    const SIZE = cv._size || 300;
+    const c = SIZE / 2, r = SIZE / 2 - 5;
+    const items = window._getRouletteItems();
+    const total = items.reduce((s, it) => s + it.prob, 0);
+    const dk = document.body.classList.contains('dark');
+
+    ctx.save();
+    ctx.setTransform(cv._dpr || 1, 0, 0, cv._dpr || 1, 0, 0);
+    ctx.clearRect(0, 0, SIZE, SIZE);
+
+    // 외곽
+    ctx.beginPath(); ctx.arc(c, c, r + 3, 0, Math.PI * 2);
+    ctx.fillStyle = dk ? '#1c1f2b' : '#e5e7eb';
+    ctx.fill();
+
+    let startA = 0;
+    items.forEach((it) => {
+      const sweep = (it.prob / total) * Math.PI * 2;
+      const s = startA + rot - Math.PI / 2;
+      const e = s + sweep;
+
+      ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, r, s, e); ctx.closePath();
+      ctx.fillStyle = it.color; ctx.fill();
+
+      ctx.beginPath(); ctx.moveTo(c, c);
+      ctx.lineTo(c + Math.cos(s) * r, c + Math.sin(s) * r);
+      ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1; ctx.stroke();
+
+      const degSweep = sweep * 180 / Math.PI;
+      if (degSweep >= 4) {
+        const mid = s + sweep / 2, tr = r * 0.6;
+        const tx = c + Math.cos(mid) * tr, ty = c + Math.sin(mid) * tr;
+        ctx.save(); ctx.translate(tx, ty);
+        let ta = mid;
+        const norm = ((ta % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        if (norm > Math.PI / 2 && norm < Math.PI * 1.5) ta += Math.PI;
+        ctx.rotate(ta);
+        ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 2;
+        const fs = Math.max(8, Math.min(13, sweep * r * 0.1));
+        if (degSweep >= 12) {
+          ctx.font = '900 ' + fs + 'px "Noto Sans KR",sans-serif';
+          ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(it.name, 0, -fs * .5);
+          ctx.font = '700 ' + Math.max(7, fs - 2) + 'px "Noto Sans KR",sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,.55)';
+          ctx.fillText(it.prob + '%', 0, fs * .45);
+        } else {
+          ctx.font = '900 ' + Math.max(7, fs - 1) + 'px "Noto Sans KR",sans-serif';
+          ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(it.name, 0, 0);
+        }
+        ctx.restore();
+      }
+      startA += sweep;
+    });
+
+    // 중심
+    ctx.beginPath(); ctx.arc(c, c, r * .11, 0, Math.PI * 2);
+    const g = ctx.createRadialGradient(c, c, 0, c, c, r * .11);
+    g.addColorStop(0, '#4c1d95'); g.addColorStop(1, '#2e1065');
+    ctx.fillStyle = g; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.15)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+  };
+
+  window._rouletteCurItem = (rot) => {
+    const items = window._getRouletteItems();
+    const total = items.reduce((s, it) => s + it.prob, 0);
+    const pa = ((-rot % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+    let cum = 0;
+    for (const it of items) {
+      cum += (it.prob / total) * Math.PI * 2;
+      if (pa < cum) return it;
+    }
+    return items[items.length - 1];
+  };
+
   window._buddySpinRoulette = async (teamId, isConfirm) => {
+    if (window._rouletteBusy) return;
     if (isConfirm && !confirm('⚠ 보상을 확정하시겠습니까? 한 번 확정하면 변경할 수 없습니다!')) return;
+
+    window._rouletteBusy = true;
+    const spinBtn = document.getElementById('rouletteSpinBtn');
+    const confBtn = document.getElementById('rouletteConfirmBtn');
+    if (spinBtn) spinBtn.disabled = true;
+    if (confBtn) confBtn.disabled = true;
+
+    const rm = document.getElementById('rouletteMainText');
+    const rs = document.getElementById('rouletteSubText');
+    if (rm) { rm.textContent = '돌아가는 중...'; rm.style.color = '#6b7280'; rm.style.fontSize = ''; }
+    if (rs) rs.textContent = '';
 
     const items = window._getRouletteItems();
     const rand = Math.random() * 100;
-    let cumulative = 0, result = items[0];
-    for (const item of items) { cumulative += item.prob; if (rand < cumulative) { result = item; break; } }
+    let cum = 0, result = items[0];
+    for (const it of items) { cum += it.prob; if (rand < cum) { result = it; break; } }
 
-    const itemEl = document.getElementById('rouletteItemText');
-    const valueEl = document.getElementById('rouletteValueText');
-    if (!itemEl) return;
+    // 목표 각도
+    const total = items.reduce((s, it) => s + it.prob, 0);
+    let sa = 0; const idx = items.indexOf(result);
+    for (let i = 0; i < idx; i++) sa += (items[i].prob / total) * Math.PI * 2;
+    const sw = (result.prob / total) * Math.PI * 2;
+    const mid = sa + sw / 2;
+    const off = (Math.random() - .5) * sw * .5;
+    const stopAngle = -(mid + off);
 
-    // 슬롯머신 애니메이션
-    let spinCount = 0;
-    const totalSpins = 35 + Math.floor(Math.random() * 15);
+    const spins = (5 + Math.floor(Math.random() * 4)) * Math.PI * 2;
+    const curAngle = window._rouletteAngle;
+    const target = curAngle + spins + (stopAngle - (curAngle % (Math.PI * 2)));
+    const dur = _RL_SPEED[window._rouletteSpeed] + Math.random() * 800;
+    const t0 = performance.now();
 
     await new Promise(resolve => {
-      const spin = () => {
-        const current = spinCount >= totalSpins ? result : items[Math.floor(Math.random() * items.length)];
-        itemEl.textContent = current.name;
-        itemEl.style.color = current.color;
-        if (valueEl) valueEl.textContent = current.value;
-        spinCount++;
-        if (spinCount <= totalSpins) {
-          const delay = spinCount < totalSpins * 0.5 ? 50 : spinCount < totalSpins * 0.75 ? 100 : spinCount < totalSpins * 0.9 ? 200 : 400;
-          setTimeout(spin, delay);
+      function anim(now) {
+        const el = now - t0, p = Math.min(el / dur, 1);
+        const e = 1 - Math.pow(1 - p, 5);
+        window._rouletteAngle = curAngle + (target - curAngle) * e;
+        window._rouletteDraw(window._rouletteAngle);
+        if (p < 1) {
+          const cur = window._rouletteCurItem(window._rouletteAngle);
+          if (rm) { rm.textContent = cur.name; rm.style.color = cur.color; }
+          requestAnimationFrame(anim);
         } else {
-          itemEl.textContent = '🎉 ' + result.name + ' 🎉';
-          itemEl.className = 'text-3xl font-black animate-pulse';
-          if (valueEl) valueEl.textContent = result.value + (isConfirm ? ' — 확정!' : ' — 연습');
+          window._rouletteAngle = target;
+          window._rouletteDraw(window._rouletteAngle);
           resolve();
         }
-      };
-      spin();
+      }
+      requestAnimationFrame(anim);
     });
+
+    if (rm) { rm.textContent = '🎉 ' + result.name; rm.style.color = result.color; rm.style.fontSize = '22px'; }
+    if (rs) rs.textContent = result.value + (isConfirm ? ' — 🔒 확정!' : ' — 연습');
+    setTimeout(() => { if (rm) rm.style.fontSize = ''; }, 3000);
+
+    window._rouletteBusy = false;
+    if (spinBtn) spinBtn.disabled = false;
+    if (confBtn) confBtn.disabled = false;
 
     if (isConfirm) {
       try {
         const {error} = await supaDb.from('buddy_roulette').insert({team_id: teamId, result_item: result.name, result_value: result.value});
         if (error) throw error;
         await supaDb.from('buddy_teams').update({status: 'completed'}).eq('id', teamId);
-        const btn = document.getElementById('rouletteConfirmBtn');
-        if (btn) { btn.disabled = true; btn.textContent = '✅ 확정 완료'; btn.className = 'px-6 py-3 bg-green-500 text-white rounded-2xl font-bold text-sm cursor-default'; }
+        if (confBtn) { confBtn.disabled = true; confBtn.textContent = '✅ 확정 완료'; confBtn.className = 'px-6 py-3 bg-green-500 text-white rounded-2xl font-bold text-sm cursor-default'; }
         window.showMsg('🎉 ' + result.name + ' (' + result.value + ') 확정!', 'success');
         setTimeout(() => window._buddyDetail(teamId), 2000);
-      } catch(e) { window.showMsg('저장 실패: '+e.message, 'error'); }
+      } catch(e) { window.showMsg('저장 실패: ' + e.message, 'error'); }
     }
   };
 
@@ -10007,22 +10150,11 @@
    return html;
    };
 
-   const stripBorder = (html) => {
-   if(!html) return '';
-   return html.replace(/\bborder\b/g, '')
-   .replace(/\bborder-gray-100\b/g, '')
-   .replace(/\bborder-gray-200\b/g, '')
-   .replace(/\bborder-pink-100\b/g, '')
-   .replace(/\bborder-pink-200\/50\b/g, '')
-   .replace(/\bborder-red-100\b/g, '')
-   .replace(/\bborder-blue-100\b/g, '');
-   };
-
    let noticeHtml = '', introHtml = '', ranksHtml = '', linksHtml = '';
    const guideData = {};
    try {
    const { data: allGuides } = await supaDb.from('guide_pages').select('*').order('id');
-   if (allGuides) allGuides.forEach(p => guideData[p.slug] = stripBorder(replacePlaceholders(p.content || '')));
+   if (allGuides) allGuides.forEach(p => guideData[p.slug] = replacePlaceholders(p.content || ''));
    introHtml = guideData['intro'] || '';
    ranksHtml = guideData['ranks'] || '';
    linksHtml = guideData['links'] || '';
