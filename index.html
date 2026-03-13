@@ -9782,7 +9782,21 @@
    container.querySelectorAll('.home-guide-content, .home-guide-content *').forEach(el => {
    el.style.borderColor = 'transparent';
    el.style.borderWidth = '0';
-   
+   });
+   // 가이드 콘텐츠 내 router() 링크 활성화 (contenteditable에서 onclick이 strip될 수 있으므로)
+   container.querySelectorAll('.home-guide-content a[onclick*="router"]').forEach(a => {
+     const match = a.getAttribute('onclick')?.match(/router\(['"](\w+)['"]\)/);
+     if (match) { a.dataset.route = match[1]; a.removeAttribute('onclick'); }
+   });
+   container.querySelectorAll('.home-guide-content a[data-route]').forEach(a => {
+     a.addEventListener('click', (e) => { e.preventDefault(); window.router(a.dataset.route); });
+   });
+   // data-route 속성만 있는 경우도 처리 (onclick 없이 data-route로 직접 넣은 경우)
+   container.querySelectorAll('.home-guide-content [data-route]').forEach(el => {
+     if (el.tagName !== 'A') {
+       el.style.cursor = 'pointer';
+       el.addEventListener('click', () => window.router(el.dataset.route));
+     }
    });
    }, 50);
   };
