@@ -3324,15 +3324,41 @@
                         <button onclick="document.execCommand('bold')" class="w-7 h-7 rounded-lg hover:bg-white text-xs font-black text-gray-600 transition-all" title="굵게"><b>B</b></button>
                         <button onclick="document.execCommand('italic')" class="w-7 h-7 rounded-lg hover:bg-white text-xs italic text-gray-600 transition-all" title="기울임"><i>I</i></button>
                         <button onclick="document.execCommand('underline')" class="w-7 h-7 rounded-lg hover:bg-white text-xs underline text-gray-600 transition-all" title="밑줄"><u>U</u></button>
+                        <button onclick="document.execCommand('strikeThrough')" class="w-7 h-7 rounded-lg hover:bg-white text-xs text-gray-600 transition-all line-through" title="취소선">S</button>
                         <span class="w-px h-6 bg-gray-200 mx-0.5"></span>
-                        <button onclick="document.execCommand('foreColor',false,'#ec4899')" class="w-7 h-7 rounded-lg hover:bg-white text-xs font-bold text-pink-500 transition-all" title="핑크">A</button>
-                        <button onclick="document.execCommand('foreColor',false,'#ef4444')" class="w-7 h-7 rounded-lg hover:bg-white text-xs font-bold text-red-500 transition-all" title="빨강">A</button>
-                        <button onclick="document.execCommand('foreColor',false,'#3b82f6')" class="w-7 h-7 rounded-lg hover:bg-white text-xs font-bold text-blue-500 transition-all" title="파랑">A</button>
-                        <button onclick="document.execCommand('foreColor',false,'#10b981')" class="w-7 h-7 rounded-lg hover:bg-white text-xs font-bold text-emerald-500 transition-all" title="초록">A</button>
-                        <button onclick="document.execCommand('foreColor',false,'#374151')" class="w-7 h-7 rounded-lg hover:bg-white text-xs font-bold text-gray-700 transition-all" title="검정">A</button>
+                        <!-- 글자색 -->
+                        <div class="relative" id="foreColorWrap">
+                            <button onclick="document.getElementById('foreColorPanel').classList.toggle('hidden')" class="h-7 px-1.5 rounded-lg hover:bg-white text-xs font-bold transition-all flex items-center gap-1" title="글자색" style="color:var(--guide-fc,#374151)"><span style="border-bottom:3px solid var(--guide-fc,#374151);padding-bottom:1px">A</span><i class="fas fa-caret-down text-[8px] text-gray-400"></i></button>
+                            <div id="foreColorPanel" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-2xl shadow-2xl p-3 z-[200] w-56">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase mb-2">글자색</p>
+                                <div class="flex flex-wrap gap-1.5 mb-2" id="fcPresets"></div>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="fcPicker" value="#374151" class="w-8 h-8 rounded-lg cursor-pointer border-0 p-0" style="appearance:none;-webkit-appearance:none" title="직접 선택">
+                                    <input type="text" id="fcHex" value="#374151" class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[10px] font-mono font-bold outline-none" placeholder="#000000" maxlength="7">
+                                    <button onclick="window._guideApplyFC()" class="px-2 py-1 bg-gray-900 text-white rounded-lg text-[9px] font-bold">적용</button>
+                                </div>
+                                <div class="flex items-center gap-1 mt-2"><p class="text-[8px] text-gray-400">최근:</p><div id="fcRecent" class="flex gap-1"></div></div>
+                            </div>
+                        </div>
+                        <!-- 배경색 -->
+                        <div class="relative" id="bgColorWrap">
+                            <button onclick="document.getElementById('bgColorPanel').classList.toggle('hidden')" class="h-7 px-1.5 rounded-lg hover:bg-white text-xs font-bold text-gray-600 transition-all flex items-center gap-1" title="배경색"><span style="background:var(--guide-bc,#fef08a);padding:1px 4px;border-radius:3px">A</span><i class="fas fa-caret-down text-[8px] text-gray-400"></i></button>
+                            <div id="bgColorPanel" class="hidden absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-2xl shadow-2xl p-3 z-[200] w-56">
+                                <p class="text-[9px] font-bold text-gray-400 uppercase mb-2">배경색 (하이라이트)</p>
+                                <div class="flex flex-wrap gap-1.5 mb-2" id="bcPresets"></div>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="bcPicker" value="#fef08a" class="w-8 h-8 rounded-lg cursor-pointer border-0 p-0" style="appearance:none;-webkit-appearance:none" title="직접 선택">
+                                    <input type="text" id="bcHex" value="#fef08a" class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[10px] font-mono font-bold outline-none" placeholder="#000000" maxlength="7">
+                                    <button onclick="window._guideApplyBC()" class="px-2 py-1 bg-gray-900 text-white rounded-lg text-[9px] font-bold">적용</button>
+                                </div>
+                                <button onclick="document.execCommand('removeFormat');document.getElementById('bgColorPanel').classList.add('hidden')" class="mt-2 text-[9px] text-gray-400 hover:text-red-500 font-bold">배경색 제거</button>
+                            </div>
+                        </div>
                         <span class="w-px h-6 bg-gray-200 mx-0.5"></span>
+                        <button onclick="document.execCommand('fontSize',false,'1')" class="w-7 h-7 rounded-lg hover:bg-white text-[8px] text-gray-600 transition-all" title="아주 작게">XS</button>
                         <button onclick="document.execCommand('fontSize',false,'2')" class="w-7 h-7 rounded-lg hover:bg-white text-[9px] text-gray-600 transition-all" title="작게">S</button>
                         <button onclick="document.execCommand('fontSize',false,'4')" class="w-7 h-7 rounded-lg hover:bg-white text-sm text-gray-600 transition-all" title="크게">L</button>
+                        <button onclick="document.execCommand('fontSize',false,'6')" class="w-7 h-7 rounded-lg hover:bg-white text-base text-gray-600 transition-all" title="아주 크게">XL</button>
                         <span class="w-px h-6 bg-gray-200 mx-0.5"></span>
                         <button onclick="document.execCommand('insertUnorderedList')" class="w-7 h-7 rounded-lg hover:bg-white text-xs text-gray-600 transition-all" title="목록"><i class="fas fa-list-ul"></i></button>
                         <button onclick="document.execCommand('insertOrderedList')" class="w-7 h-7 rounded-lg hover:bg-white text-xs text-gray-600 transition-all" title="번호목록"><i class="fas fa-list-ol"></i></button>
@@ -3342,6 +3368,7 @@
                         <span class="w-px h-6 bg-gray-200 mx-0.5"></span>
                         <button onclick="document.execCommand('justifyLeft')" class="w-7 h-7 rounded-lg hover:bg-white text-xs text-gray-600 transition-all" title="왼쪽"><i class="fas fa-align-left"></i></button>
                         <button onclick="document.execCommand('justifyCenter')" class="w-7 h-7 rounded-lg hover:bg-white text-xs text-gray-600 transition-all" title="가운데"><i class="fas fa-align-center"></i></button>
+                        <button onclick="document.execCommand('justifyRight')" class="w-7 h-7 rounded-lg hover:bg-white text-xs text-gray-600 transition-all" title="오른쪽"><i class="fas fa-align-right"></i></button>
                         <span class="w-px h-6 bg-gray-200 mx-0.5"></span>
                         <button onclick="window._guideToggleSource()" class="w-7 h-7 rounded-lg hover:bg-white text-xs text-orange-500 transition-all" title="HTML 소스"><i class="fas fa-code"></i></button>
                         <button onclick="window._guideUploadImage()" class="w-7 h-7 rounded-lg hover:bg-white text-xs text-purple-500 transition-all" title="이미지 업로드"><i class="fas fa-image"></i></button>
@@ -3387,7 +3414,56 @@
             document.addEventListener('click', (e) => {
                 const menu = document.getElementById('guideBlockMenu');
                 if (menu && !menu.parentElement.contains(e.target)) menu.classList.add('hidden');
+                // 컬러 패널 외부 클릭 닫기
+                const fcp = document.getElementById('foreColorPanel');
+                if (fcp && !document.getElementById('foreColorWrap')?.contains(e.target)) fcp.classList.add('hidden');
+                const bcp = document.getElementById('bgColorPanel');
+                if (bcp && !document.getElementById('bgColorWrap')?.contains(e.target)) bcp.classList.add('hidden');
             }, { once: false });
+
+            // 컬러피커 초기화
+            (() => {
+                const FC_PRESETS = [
+                    '#000000','#374151','#6b7280','#9ca3af','#ffffff',
+                    '#ef4444','#f97316','#f59e0b','#eab308','#84cc16',
+                    '#22c55e','#10b981','#14b8a6','#06b6d4','#0ea5e9',
+                    '#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef',
+                    '#ec4899','#f43f5e','#be185d','#7c3aed','#1d4ed8',
+                    '#15803d','#b45309','#dc2626','#1e293b','#0f172a',
+                ];
+                const BC_PRESETS = [
+                    'transparent','#fef08a','#fde68a','#fed7aa','#fecaca',
+                    '#fbcfe8','#e9d5ff','#c4b5fd','#bfdbfe','#a5f3fc',
+                    '#bbf7d0','#d9f99d','#fef9c3','#fff1f2','#fdf2f8',
+                    '#f5f3ff','#eef2ff','#eff6ff','#ecfdf5','#f0fdf4',
+                    '#fefce8','#fffbeb','#fff7ed','#fef2f2','#faf5ff',
+                    '#f8fafc','#f1f5f9','#e2e8f0','#cbd5e1','#94a3b8',
+                ];
+                const mkDot = (colors, container, type) => {
+                    const el = document.getElementById(container);
+                    if (!el) return;
+                    el.innerHTML = colors.map(c => {
+                        const isT = c === 'transparent';
+                        const border = (c === '#ffffff' || isT) ? 'border:1px solid #e5e7eb;' : '';
+                        const bg = isT ? 'background:linear-gradient(45deg,#f3f4f6 25%,transparent 25%,transparent 75%,#f3f4f6 75%),linear-gradient(45deg,#f3f4f6 25%,transparent 25%,transparent 75%,#f3f4f6 75%);background-size:6px 6px;background-position:0 0,3px 3px;' : 'background:'+c+';';
+                        return '<button onclick="window._guidePickColor(\''+type+'\',\''+c+'\')" class="w-5 h-5 rounded-md cursor-pointer hover:scale-125 transition-transform" style="'+bg+border+'" title="'+c+'"></button>';
+                    }).join('');
+                };
+                mkDot(FC_PRESETS, 'fcPresets', 'fc');
+                mkDot(BC_PRESETS, 'bcPresets', 'bc');
+                const fcp = document.getElementById('fcPicker');
+                const fch = document.getElementById('fcHex');
+                if (fcp && fch) {
+                    fcp.addEventListener('input', () => { fch.value = fcp.value; });
+                    fch.addEventListener('input', () => { if(/^#[0-9a-fA-F]{6}$/.test(fch.value)) fcp.value = fch.value; });
+                }
+                const bcp = document.getElementById('bcPicker');
+                const bch = document.getElementById('bcHex');
+                if (bcp && bch) {
+                    bcp.addEventListener('input', () => { bch.value = bcp.value; });
+                    bch.addEventListener('input', () => { if(/^#[0-9a-fA-F]{6}$/.test(bch.value)) bcp.value = bch.value; });
+                }
+            })();
 
             setTimeout(() => {
                 const editor = document.getElementById('guideEditor');
@@ -3791,6 +3867,51 @@
   window._guideSelectPage = (slug) => {
    window._guideEditorState.slug = slug;
    window.renderGuideEditor(document.getElementById('contentArea'));
+  };
+
+  // 컬러피커 함수
+  window._guideFcRecent = [];
+  window._guideBcRecent = [];
+
+  window._guidePickColor = (type, color) => {
+    if (type === 'fc') {
+      document.execCommand('foreColor', false, color);
+      document.documentElement.style.setProperty('--guide-fc', color);
+      document.getElementById('fcPicker').value = color === 'transparent' ? '#ffffff' : color;
+      document.getElementById('fcHex').value = color;
+      document.getElementById('foreColorPanel')?.classList.add('hidden');
+      if (!window._guideFcRecent.includes(color)) { window._guideFcRecent.unshift(color); window._guideFcRecent = window._guideFcRecent.slice(0,6); }
+      window._guideUpdateRecent('fc');
+    } else {
+      if (color === 'transparent') {
+        document.execCommand('removeFormat');
+      } else {
+        document.execCommand('hiliteColor', false, color);
+      }
+      document.documentElement.style.setProperty('--guide-bc', color === 'transparent' ? '#fef08a' : color);
+      document.getElementById('bcPicker').value = color === 'transparent' ? '#fef08a' : color;
+      document.getElementById('bcHex').value = color;
+      document.getElementById('bgColorPanel')?.classList.add('hidden');
+      if (color !== 'transparent' && !window._guideBcRecent.includes(color)) { window._guideBcRecent.unshift(color); window._guideBcRecent = window._guideBcRecent.slice(0,6); }
+      window._guideUpdateRecent('bc');
+    }
+  };
+
+  window._guideApplyFC = () => {
+    const hex = document.getElementById('fcHex')?.value || document.getElementById('fcPicker')?.value;
+    if (hex) window._guidePickColor('fc', hex);
+  };
+
+  window._guideApplyBC = () => {
+    const hex = document.getElementById('bcHex')?.value || document.getElementById('bcPicker')?.value;
+    if (hex) window._guidePickColor('bc', hex);
+  };
+
+  window._guideUpdateRecent = (type) => {
+    const arr = type === 'fc' ? window._guideFcRecent : window._guideBcRecent;
+    const el = document.getElementById(type === 'fc' ? 'fcRecent' : 'bcRecent');
+    if (!el) return;
+    el.innerHTML = arr.map(c => `<button onclick="window._guidePickColor('${type}','${c}')" class="w-4 h-4 rounded cursor-pointer hover:scale-125 transition-transform" style="background:${c};border:1px solid #e5e7eb" title="${c}"></button>`).join('');
   };
 
   window._guideInsertLink = () => {
