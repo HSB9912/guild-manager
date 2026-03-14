@@ -5898,12 +5898,21 @@
           </div>
 
           <!-- 품목 테이블 -->
-          <details class="bg-white dark:bg-gray-800 rounded-xl border border-purple-100 dark:border-purple-800">
-            <summary class="px-3 py-2 text-[10px] font-bold text-purple-500 cursor-pointer">품목 확률표 보기</summary>
-            <div class="px-3 pb-3">
-              <div class="grid grid-cols-3 sm:grid-cols-4 gap-1 mt-2">
-                ${window._getRouletteItems().map(item => `<div class="rounded-lg p-1.5 text-center" style="background:${item.color}10;border:1px solid ${item.color}30"><span class="text-[9px] font-bold" style="color:${item.color}">${item.name}</span><br><span class="text-[8px] text-gray-400">${item.prob}%</span><br><span class="text-[8px] text-gray-300">${item.value}</span></div>`).join('')}
-              </div>
+          <details class="bg-white dark:bg-gray-800 rounded-xl border border-purple-100 dark:border-purple-800 overflow-hidden">
+            <summary class="px-3 py-2 text-[10px] font-bold text-purple-500 cursor-pointer">▼ 품목 확률표 보기</summary>
+            <div class="overflow-x-auto">
+              <table style="width:100%;border-collapse:collapse;font-size:11px">
+                <thead><tr style="background:#f3f0ff">
+                  <th style="padding:6px 10px;text-align:left;font-size:9px;font-weight:800;color:#7c3aed;text-transform:uppercase">이름</th>
+                  <th style="padding:6px 10px;text-align:right;font-size:9px;font-weight:800;color:#7c3aed;text-transform:uppercase">확률</th>
+                  <th style="padding:6px 10px;text-align:right;font-size:9px;font-weight:800;color:#7c3aed;text-transform:uppercase">시세</th>
+                </tr></thead>
+                <tbody>${window._getRouletteItems().map(item => `<tr style="border-top:1px solid #f3f4f6">
+                  <td style="padding:5px 10px;font-weight:700"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${item.color};margin-right:6px;vertical-align:middle"></span>${item.name}</td>
+                  <td style="padding:5px 10px;text-align:right;color:#6b7280">${item.prob}%</td>
+                  <td style="padding:5px 10px;text-align:right;color:#9ca3af;font-size:10px">${item.value}</td>
+                </tr>`).join('')}</tbody>
+              </table>
             </div>
           </details>
         </div>` : ''}
