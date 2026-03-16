@@ -1800,23 +1800,9 @@
             processedList.sort((a, b) => {
                 if (f.startsWith('date_')) {
                     const targetHeader = f.replace('date_', '');
-                    const headerIdx = recentHeaders.indexOf(targetHeader);
-                    const prevHeader = headerIdx > 0 ? recentHeaders[headerIdx - 1] : null;
-                    const getIncRate = (m) => {
-                        const curr = Math.round(Number(m.suro?.[targetHeader])) || 0;
-                        if (!prevHeader) return curr > 0 ? -500 : -1000;
-                        const prev = Math.round(Number(m.suro?.[prevHeader])) || 0;
-                        if (curr === 0 && prev === 0) return -1000; 
-                        if (prev === 0 && curr > 0) return -500; 
-                        return ((curr - prev) / prev) * 100;
-                    };
-                    const rateA = getIncRate(a); const rateB = getIncRate(b);
-                    if (rateA === rateB) {
-                        const currA = Math.round(Number(a.suro?.[targetHeader])) || 0;
-                        const currB = Math.round(Number(b.suro?.[targetHeader])) || 0;
-                        return o === 'asc' ? currA - currB : currB - currA;
-                    }
-                    return o === 'asc' ? rateA - rateB : rateB - rateA;
+                    const currA = Math.round(Number(a.suro?.[targetHeader])) || 0;
+                    const currB = Math.round(Number(b.suro?.[targetHeader])) || 0;
+                    return o === 'asc' ? currA - currB : currB - currA;
                 }
                 if (f === 'avg') return o === 'asc' ? a.avg - b.avg : b.avg - a.avg;
                 if (f === 'score') {
@@ -1966,27 +1952,9 @@
 
                 if (f.startsWith('date_')) {
                     const targetHeader = f.replace('date_', '');
-                    const headerIdx = recentHeaders.indexOf(targetHeader);
-                    const prevHeader = headerIdx > 0 ? recentHeaders[headerIdx - 1] : null;
-
-                    const getIncRate = (m) => {
-                        const curr = Math.round(Number(m.suro?.[targetHeader])) || 0;
-                        if (!prevHeader) return curr > 0 ? -500 : -1000;
-                        const prev = Math.round(Number(m.suro?.[prevHeader])) || 0;
-                        if (curr === 0 && prev === 0) return -1000; 
-                        if (prev === 0 && curr > 0) return -500; 
-                        return ((curr - prev) / prev) * 100;
-                    };
-
-                    const rateA = getIncRate(a);
-                    const rateB = getIncRate(b);
-
-                    if (rateA === rateB) {
-                        const currA = Math.round(Number(a.suro?.[targetHeader])) || 0;
-                        const currB = Math.round(Number(b.suro?.[targetHeader])) || 0;
-                        return o === 'asc' ? currA - currB : currB - currA;
-                    }
-                    return o === 'asc' ? rateA - rateB : rateB - rateA;
+                    const currA = Math.round(Number(a.suro?.[targetHeader])) || 0;
+                    const currB = Math.round(Number(b.suro?.[targetHeader])) || 0;
+                    return o === 'asc' ? currA - currB : currB - currA;
                 }
 
                 if (f === 'avg') return o === 'asc' ? a.avg - b.avg : b.avg - a.avg;
@@ -7417,10 +7385,13 @@
    </label>`).join('');
 
    const autoRankGuilds = Object.keys(autoRankRules);
-   const autoRankHtml = autoRankGuilds.map(gn => {
+   const _arFirstGuild = autoRankGuilds[0] || '';
+   const autoRankTabsHtml = autoRankGuilds.map((gn, gi) => 
+     `<button onclick="document.querySelectorAll('.ar-guild-section').forEach(s=>s.classList.add('hidden'));document.getElementById('arSec_${gn.replace(/[^a-zA-Z가-힣]/g,'')}').classList.remove('hidden');document.querySelectorAll('.ar-guild-tab').forEach(t=>{t.classList.remove('bg-purple-500','text-white','shadow');t.classList.add('bg-gray-100','text-gray-500')});this.classList.add('bg-purple-500','text-white','shadow');this.classList.remove('bg-gray-100','text-gray-500')" class="ar-guild-tab px-4 py-1.5 rounded-xl text-[10px] font-bold transition-all ${gi===0?'bg-purple-500 text-white shadow':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${gn}</button>`
+   ).join('');
+   const autoRankHtml = autoRankGuilds.map((gn, gi) => {
    const rules = autoRankRules[gn] || [];
-   return `<div class="mb-5">
-   <div class="flex items-center gap-2 mb-2"><h4 class="text-xs font-bold text-gray-700">${gn}</h4><span class="text-[9px] text-gray-400">${rules.length}개 규칙</span></div>
+   return `<div class="ar-guild-section ${gi>0?'hidden':''}" id="arSec_${gn.replace(/[^a-zA-Z가-힣]/g,'')}">
    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
    <div class="grid grid-cols-[50px_50px_70px_1fr_60px_28px] gap-0 text-[8px] font-bold text-gray-400 uppercase bg-gray-50 border-b border-gray-200 px-2 py-1.5">
      <span>topN</span><span>btmN</span><span>최소점수</span><span>직위명</span><span>비고</span><span></span>
@@ -7522,8 +7493,9 @@
    </div>
 
    <div class="mb-8">
-   <h4 class="text-sm text-gray-600 mb-3 flex items-center gap-2"><i class="fas fa-magic text-pink-400 text-xs"></i> 직위 커트라인 & 자동 배정 규칙</h4>
-   <p class="text-[9px] text-gray-400 mb-3">직위 자동부여 + 홈/현황 표시에 모두 사용됩니다. topN: 상위 N명 (등수), bottomN: 하위 N명, 최소점수: 점수 구간. 우선순위: bottomN → topN → 점수</p>
+   <h4 class="text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-magic text-pink-400 text-xs"></i> 직위 커트라인 & 자동 배정 규칙</h4>
+   <p class="text-[9px] text-gray-400 mb-2">topN: 상위 N명 (등수), bottomN: 하위 N명, 최소점수: 점수 구간. 우선순위: bottomN → topN → 점수</p>
+   <div class="flex gap-1.5 mb-3">${autoRankTabsHtml}</div>
    ${autoRankHtml}
    </div>
 
@@ -7622,6 +7594,8 @@
    </div>
    </div>
    </div>`;
+   // 디자인 탭이면 드래그앤드롭 초기화
+   if (sTab === 'design') setTimeout(() => window._cfgInitRoleDrag?.(), 50);
   };
 
   window._cfgPreviewRole = (rName) => {
