@@ -6864,8 +6864,8 @@
    // 직위 이모지/색상 (드래그 순서 지원, 1열)
    const allRoleNames = [...new Set(Object.values(ranks).flat())];
    const sortedRoleNames = [...allRoleNames].sort((a, b) => {
-     const pa = rolePriority[a] !== undefined ? rolePriority[a] : 99;
-     const pb = rolePriority[b] !== undefined ? rolePriority[b] : 99;
+     const pa = rolePriority[a] !== undefined ? rolePriority[a] : (999 + allRoleNames.indexOf(a));
+     const pb = rolePriority[b] !== undefined ? rolePriority[b] : (999 + allRoleNames.indexOf(b));
      return pa - pb;
    });
    const rolesHtml = sortedRoleNames.map((rName, ri) => {
@@ -6888,6 +6888,7 @@
      +'<input type="color" class="cfg-role-rowcolor w-6 h-6 border border-gray-200 rounded cursor-pointer p-0" value="'+(rc||'#ffffff')+'" data-role="'+rName+'">'
      +'<button onclick="document.querySelector(\'.cfg-role-rowcolor[data-role=\\\''+rName+'\\\']\').value=\'#ffffff\'" class="text-[9px] text-gray-300 hover:text-red-400"><i class="fas fa-times"></i></button></div>'
      +'<input type="number" class="cfg-role-priority w-8 text-center bg-gray-50 border border-gray-200 rounded px-0 py-0.5 text-[9px] font-bold outline-none hidden" value="'+ri+'" data-role="'+rName+'">'
+     +'<button onclick="window._cfgRemoveRole(\''+rName+'\')" class="text-gray-200 hover:text-red-400 text-[10px] ml-auto shrink-0" title="직위 삭제"><i class="fas fa-times"></i></button>'
      +'</div>';
    }).join('');
 
@@ -7129,6 +7130,23 @@
     if (loading) loading.innerHTML = url ? '<img src="'+url+'" class="w-full h-full object-cover">' : '뚠';
   };
 
+  window._cfgRemoveRole = (roleName) => {
+    if (!confirm(roleName + ' 직위를 목록에서 삭제하시겠습니까?\n(길드원의 직위가 변경되지는 않습니다)')) return;
+    const cfg = SITE_CONFIG || {};
+    // ranks에서 삭제
+    if (cfg.ranks) {
+      Object.keys(cfg.ranks).forEach(gn => {
+        cfg.ranks[gn] = cfg.ranks[gn].filter(r => r !== roleName);
+      });
+    }
+    // roleDisplay, rolePriority에서도 삭제
+    if (cfg.roleDisplay) delete cfg.roleDisplay[roleName];
+    if (cfg.rolePriority) delete cfg.rolePriority[roleName];
+    SITE_CONFIG = cfg;
+    window.renderSettings(document.getElementById('contentArea'));
+    window.showMsg(roleName + ' 직위가 삭제되었습니다 (저장 필요)', 'info');
+  };
+
   window._cfgMoveRole = (btn, dir) => {
     const item = btn.closest('.cfg-role-item');
     const list = item?.parentElement;
@@ -7249,10 +7267,14 @@
    if (!cfg.roleDisplay[rName]) cfg.roleDisplay[rName] = {};
    cfg.roleDisplay[rName].rowColor = el.value && el.value !== '#ffffff' ? el.value : '';
    });
-   document.querySelectorAll('.cfg-role-priority').forEach(el => {
-   const rName = el.dataset.role;
-   cfg.rolePriority[rName] = parseInt(el.value) || 99;
-   });
+   // DOM 순서 기반으로 priority 수집 (위에 있을수록 낮은 숫자 = 높은 우선순위)
+   const roleList = document.getElementById('cfgRoleList');
+   if (roleList) {
+     roleList.querySelectorAll('.cfg-role-item').forEach((el, idx) => {
+       const rName = el.dataset.role;
+       if (rName) cfg.rolePriority[rName] = idx;
+     });
+   }
 
    cfg.cutoffs = cfg.cutoffs || {};
    document.querySelectorAll('.cfg-cutoff-section').forEach(sec => {
