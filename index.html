@@ -7333,18 +7333,18 @@
    const iconOptions = ['fa-crown','fa-heart','fa-moon','fa-star','fa-sun','fa-cube','fa-gem','fa-fire','fa-bolt','fa-shield-alt','fa-dragon','fa-feather','fa-leaf','fa-snowflake'];
 
    const guildsHtml = guilds.map((g, gi) => `
-   <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3" data-guild-idx="${gi}">
-   <div class="flex items-center gap-3 mb-1">
-   <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm" style="background:${g.color}"><i class="fas ${g.icon}"></i></div>
-   <span class="font-bold text-gray-800 text-sm">${g.name}</span>
-   <button onclick="window._cfgRemoveGuild(${gi})" class="ml-auto text-gray-300 hover:text-red-400 text-xs"><i class="fas fa-trash"></i></button>
+   <div class="bg-gray-50 rounded-xl p-3 border border-gray-100" data-guild-idx="${gi}">
+   <div class="flex items-center gap-2 mb-2">
+   <div class="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs" style="background:${g.color}"><i class="fas ${g.icon} text-[10px]"></i></div>
+   <span class="font-bold text-gray-800 text-xs">${g.name}</span>
+   <button onclick="window._cfgRemoveGuild(${gi})" class="ml-auto text-gray-300 hover:text-red-400 text-[10px]"><i class="fas fa-trash"></i></button>
    </div>
-   <div class="grid grid-cols-2 gap-2">
-   <div><label class="text-[9px] text-gray-400 block mb-1">길드 이름</label><input class="cfg-guild-name w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${g.name}" data-idx="${gi}"></div>
-   <div><label class="text-[9px] text-gray-400 block mb-1">타입</label><input class="cfg-guild-type w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${g.type}" data-idx="${gi}"></div>
-   <div><label class="text-[9px] text-gray-400 block mb-1">대표색</label><div class="flex items-center gap-2"><input type="color" class="cfg-guild-color w-8 h-8 rounded-lg border-0 cursor-pointer" value="${g.color}" data-idx="${gi}"><span class="text-[10px] text-gray-400 font-mono">${g.color}</span></div></div>
-   <div><label class="text-[9px] text-gray-400 block mb-1">아이콘</label><select class="cfg-guild-icon w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" data-idx="${gi}">${iconOptions.map(ic => `<option value="${ic}" ${g.icon===ic?'selected':''}>${ic.replace('fa-','')}</option>`).join('')}</select></div>
-   <div><label class="text-[9px] text-gray-400 block mb-1">최대 인원</label><input type="number" class="cfg-guild-max w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${g.max}" data-idx="${gi}"></div>
+   <div class="grid grid-cols-5 gap-1.5 text-[10px]">
+   <div><label class="text-[8px] text-gray-400 block">이름</label><input class="cfg-guild-name w-full bg-white border border-gray-200 rounded-lg px-2 py-1 text-[10px] font-bold outline-none" value="${g.name}" data-idx="${gi}"></div>
+   <div><label class="text-[8px] text-gray-400 block">타입</label><input class="cfg-guild-type w-full bg-white border border-gray-200 rounded-lg px-2 py-1 text-[10px] font-bold outline-none" value="${g.type}" data-idx="${gi}"></div>
+   <div><label class="text-[8px] text-gray-400 block">색상</label><div class="flex items-center gap-1"><input type="color" class="cfg-guild-color w-6 h-6 rounded border-0 cursor-pointer" value="${g.color}" data-idx="${gi}"><span class="text-[8px] text-gray-400 font-mono">${g.color}</span></div></div>
+   <div><label class="text-[8px] text-gray-400 block">아이콘</label><select class="cfg-guild-icon w-full bg-white border border-gray-200 rounded-lg px-1 py-1 text-[10px] font-bold outline-none" data-idx="${gi}">${iconOptions.map(ic => `<option value="${ic}" ${g.icon===ic?'selected':''}>${ic.replace('fa-','')}</option>`).join('')}</select></div>
+   <div><label class="text-[8px] text-gray-400 block">인원</label><input type="number" class="cfg-guild-max w-full bg-white border border-gray-200 rounded-lg px-2 py-1 text-[10px] font-bold outline-none" value="${g.max}" data-idx="${gi}"></div>
    </div>
    </div>`).join('');
 
@@ -7360,22 +7360,22 @@
    const tc = rd.textColor || '';
    const bc = rd.bgColor || '';
    const rc = rd.rowColor || '';
-   return `<div class="cfg-role-item flex items-center gap-2 bg-white rounded-xl px-3 py-2 border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow" draggable="true" data-role="${rName}" data-pri="${ri}">
-   <span class="text-gray-300 text-xs mr-1 drag-handle"><i class="fas fa-grip-vertical"></i></span>
-   <input class="cfg-role-emoji w-10 text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-sm outline-none" value="${rd.emoji || ''}" data-role="${rName}">
-   <span class="text-xs font-bold min-w-[60px]" data-role-preview="${rName}" style="${tc?'color:'+tc+';':''}${bc?'background:'+bc+';padding:2px 8px;border-radius:6px;':''}${bc&&!tc?'color:white;':''}">${rName}</span>
-   <div class="flex items-center gap-1 ml-auto">
-     <label class="text-[8px] text-gray-400 font-bold">뱃지</label>
-     <input type="color" class="cfg-role-textcolor w-5 h-5 border border-gray-200 rounded cursor-pointer p-0" value="${tc || '#374151'}" data-role="${rName}" oninput="window._cfgPreviewRole('${rName}')">
-     <input type="color" class="cfg-role-bgcolor w-5 h-5 border border-gray-200 rounded cursor-pointer p-0" value="${bc || '#f3f4f6'}" data-role="${rName}" oninput="window._cfgPreviewRole('${rName}')">
-     <button onclick="document.querySelector('.cfg-role-textcolor[data-role=\\'${rName}\\']').value='#374151';document.querySelector('.cfg-role-bgcolor[data-role=\\'${rName}\\']').value='#f3f4f6';window._cfgPreviewRole('${rName}')" class="text-[8px] text-gray-300 hover:text-red-400"><i class="fas fa-times"></i></button>
+   return `<div class="cfg-role-item flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow" draggable="true" data-role="${rName}" data-pri="${ri}">
+   <span class="text-gray-300 text-xs drag-handle"><i class="fas fa-grip-vertical"></i></span>
+   <input class="cfg-role-emoji w-9 text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-sm outline-none" value="${rd.emoji || ''}" data-role="${rName}">
+   <span class="text-sm font-bold min-w-[70px]" data-role-preview="${rName}" style="${tc?'color:'+tc+';':''}${bc?'background:'+bc+';padding:2px 10px;border-radius:6px;':''}${bc&&!tc?'color:white;':''}">${rName}</span>
+   <div class="flex items-center gap-1.5">
+     <span class="text-[9px] text-gray-400 font-bold">뱃지</span>
+     <input type="color" class="cfg-role-textcolor w-6 h-6 border border-gray-200 rounded cursor-pointer p-0" value="${tc || '#374151'}" data-role="${rName}" oninput="window._cfgPreviewRole('${rName}')">
+     <input type="color" class="cfg-role-bgcolor w-6 h-6 border border-gray-200 rounded cursor-pointer p-0" value="${bc || '#f3f4f6'}" data-role="${rName}" oninput="window._cfgPreviewRole('${rName}')">
+     <button onclick="document.querySelector('.cfg-role-textcolor[data-role=\\'${rName}\\']').value='#374151';document.querySelector('.cfg-role-bgcolor[data-role=\\'${rName}\\']').value='#f3f4f6';window._cfgPreviewRole('${rName}')" class="text-[9px] text-gray-300 hover:text-red-400"><i class="fas fa-times"></i></button>
    </div>
-   <div class="flex items-center gap-1">
-     <label class="text-[8px] text-gray-400 font-bold">행</label>
-     <input type="color" class="cfg-role-rowcolor w-5 h-5 border border-gray-200 rounded cursor-pointer p-0" value="${rc || '#ffffff'}" data-role="${rName}">
-     <button onclick="document.querySelector('.cfg-role-rowcolor[data-role=\\'${rName}\\']').value='#ffffff'" class="text-[8px] text-gray-300 hover:text-red-400"><i class="fas fa-times"></i></button>
+   <div class="flex items-center gap-1.5">
+     <span class="text-[9px] text-gray-400 font-bold">행</span>
+     <input type="color" class="cfg-role-rowcolor w-6 h-6 border border-gray-200 rounded cursor-pointer p-0" value="${rc || '#ffffff'}" data-role="${rName}">
+     <button onclick="document.querySelector('.cfg-role-rowcolor[data-role=\\'${rName}\\']').value='#ffffff'" class="text-[9px] text-gray-300 hover:text-red-400"><i class="fas fa-times"></i></button>
    </div>
-   <input type="number" class="cfg-role-priority w-8 text-center bg-gray-50 border border-gray-200 rounded px-0 py-0.5 text-[9px] font-bold outline-none hidden" value="${ri}" data-role="${rName}" title="우선순위">
+   <input type="number" class="cfg-role-priority w-8 text-center bg-gray-50 border border-gray-200 rounded px-0 py-0.5 text-[9px] font-bold outline-none hidden" value="${ri}" data-role="${rName}">
    </div>`;
    }).join('');
 
@@ -7384,19 +7384,23 @@
    <span class="text-xs font-bold">${(roleDisplay[rn]||{}).emoji||''} ${rn}</span>
    </label>`).join('');
 
-   const autoRankGuilds = Object.keys(autoRankRules);
-   const _arFirstGuild = autoRankGuilds[0] || '';
-   const autoRankTabsHtml = autoRankGuilds.map((gn, gi) => 
-     `<button onclick="document.querySelectorAll('.ar-guild-section').forEach(s=>s.classList.add('hidden'));document.getElementById('arSec_${gn.replace(/[^a-zA-Z가-힣]/g,'')}').classList.remove('hidden');document.querySelectorAll('.ar-guild-tab').forEach(t=>{t.classList.remove('bg-purple-500','text-white','shadow');t.classList.add('bg-gray-100','text-gray-500')});this.classList.add('bg-purple-500','text-white','shadow');this.classList.remove('bg-gray-100','text-gray-500')" class="ar-guild-tab px-4 py-1.5 rounded-xl text-[10px] font-bold transition-all ${gi===0?'bg-purple-500 text-white shadow':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${gn}</button>`
-   ).join('');
-   const autoRankHtml = autoRankGuilds.map((gn, gi) => {
-   const rules = autoRankRules[gn] || [];
-   return `<div class="ar-guild-section ${gi>0?'hidden':''}" id="arSec_${gn.replace(/[^a-zA-Z가-힣]/g,'')}">
-   <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-   <div class="grid grid-cols-[50px_50px_70px_1fr_60px_28px] gap-0 text-[8px] font-bold text-gray-400 uppercase bg-gray-50 border-b border-gray-200 px-2 py-1.5">
-     <span>topN</span><span>btmN</span><span>최소점수</span><span>직위명</span><span>비고</span><span></span>
-   </div>
-   <div class="divide-y divide-gray-100" id="autoRankList_${gn.replace(/[^a-zA-Z가-힣]/g,'')}">${rules.map((r, ri) => `
+   // 부캐길드 통합 처리
+   const subGuilds = ['밤카롱','별카롱','달카롱','꿀카롱'];
+   const mainGuilds = autoRankGuilds.filter(g => !subGuilds.includes(g));
+   // 부캐길드 규칙이 하나라도 있으면 통합 탭 표시
+   const hasSubRules = subGuilds.some(g => (autoRankRules[g] || []).length > 0);
+   // 부캐길드 규칙은 공용이므로 첫 번째 부캐길드 데이터 사용 (또는 "부캐길드" 키)
+   const subRulesKey = autoRankRules['부캐길드'] ? '부캐길드' : subGuilds.find(g => (autoRankRules[g] || []).length > 0) || '부캐길드';
+   const displayGuilds = [...mainGuilds];
+   if (hasSubRules || mainGuilds.length > 0) displayGuilds.push('부캐길드(밤/별/달/꿀)');
+
+   const _arFirstGuild = displayGuilds[0] || '';
+   const autoRankTabsHtml = displayGuilds.map((gn, gi) => {
+     const secId = gn.replace(/[^a-zA-Z가-힣]/g,'');
+     return `<button onclick="document.querySelectorAll('.ar-guild-section').forEach(s=>s.classList.add('hidden'));document.getElementById('arSec_${secId}').classList.remove('hidden');document.querySelectorAll('.ar-guild-tab').forEach(t=>{t.classList.remove('bg-purple-500','text-white','shadow');t.classList.add('bg-gray-100','text-gray-500')});this.classList.add('bg-purple-500','text-white','shadow');this.classList.remove('bg-gray-100','text-gray-500')" class="ar-guild-tab px-4 py-1.5 rounded-xl text-[10px] font-bold transition-all ${gi===0?'bg-purple-500 text-white shadow':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${gn.replace('카롱','').replace('부캐길드(밤/별/달/꿀)','부캐길드')}</button>`;
+   }).join('');
+
+   const _buildRuleRows = (gn, rules) => rules.map((r, ri) => `
    <div class="grid grid-cols-[50px_50px_70px_1fr_60px_28px] gap-0 items-center px-2 py-1 hover:bg-purple-50/30">
    <input type="number" class="cfg-autorule-topn w-11 bg-transparent border-b border-gray-200 px-1 py-0.5 text-[11px] font-bold outline-none text-center focus:border-purple-400" value="${r.topN || ''}" data-guild="${gn}" data-ri="${ri}" placeholder="—">
    <input type="number" class="cfg-autorule-bottomn w-11 bg-transparent border-b border-gray-200 px-1 py-0.5 text-[11px] font-bold outline-none text-center focus:border-purple-400" value="${r.bottomN || ''}" data-guild="${gn}" data-ri="${ri}" placeholder="—">
@@ -7404,10 +7408,27 @@
    <input class="cfg-autorule-rank bg-transparent border-b border-gray-200 px-1 py-0.5 text-[11px] font-bold outline-none focus:border-purple-400" value="${r.rank}" data-guild="${gn}" data-ri="${ri}" placeholder="직위명">
    <input class="cfg-autorule-note w-14 bg-transparent border-b border-gray-200 px-1 py-0.5 text-[9px] outline-none text-gray-400 focus:border-purple-400" value="${r.note||''}" data-guild="${gn}" data-ri="${ri}" placeholder="비고">
    <button onclick="window._cfgRemoveAutoRule('${gn}',${ri})" class="text-gray-300 hover:text-red-400 text-xs text-center"><i class="fas fa-times"></i></button>
-   </div>`).join('')}</div>
+   </div>`).join('');
+
+   const _buildSection = (gn, secId, rules, hidden) => `
+   <div class="ar-guild-section ${hidden?'hidden':''}" id="arSec_${secId}">
+   <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+   <div class="grid grid-cols-[50px_50px_70px_1fr_60px_28px] gap-0 text-[8px] font-bold text-gray-400 uppercase bg-gray-50 border-b border-gray-200 px-2 py-1.5">
+     <span>topN</span><span>btmN</span><span>최소점수</span><span>직위명</span><span>비고</span><span></span>
+   </div>
+   <div class="divide-y divide-gray-100" id="autoRankList_${secId}">${_buildRuleRows(gn, rules)}</div>
    </div>
    <button onclick="window._cfgAddAutoRule('${gn}')" class="mt-1.5 text-[10px] text-purple-500 hover:text-purple-700 font-bold"><i class="fas fa-plus mr-1"></i>규칙 추가</button>
    </div>`;
+
+   const autoRankHtml = displayGuilds.map((gn, gi) => {
+     const secId = gn.replace(/[^a-zA-Z가-힣]/g,'');
+     if (gn === '부캐길드(밤/별/달/꿀)') {
+       const subRules = autoRankRules[subRulesKey] || [];
+       return _buildSection(subRulesKey, secId, subRules, gi > 0);
+     }
+     const rules = autoRankRules[gn] || [];
+     return _buildSection(gn, secId, rules, gi > 0);
    }).join('');
 
    const badgeHtml = guilds.map(g => {
@@ -7430,166 +7451,159 @@
    {id:'admin', label:'관리자', icon:'fa-user-shield'},
    {id:'backup', label:'백업', icon:'fa-download'}
    ];
-   const stabsHtml = stabs.map(t => `<button onclick="window._settingsTab='${t.id}';window.renderSettings(document.getElementById('contentArea'));${t.id==='admin'?'setTimeout(()=>window._loadAdminList(),100)':''}${t.id==='roulette'?';setTimeout(()=>window._rouletteRenderSettings(),100)':''}" class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${sTab===t.id ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas ${t.icon} mr-1"></i>${t.label}</button>`).join('');
+   const stabsHtml = stabs.map(t => `<button onclick="window._settingsTab='${t.id}';window.renderSettings(document.getElementById('contentArea'));${t.id==='admin'?'setTimeout(()=>window._loadAdminList(),100)':''}${t.id==='roulette'?';setTimeout(()=>window._rouletteRenderSettings(),100)':''}" class="px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-xs font-bold transition-all shrink-0 ${sTab===t.id ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas ${t.icon} mr-1"></i>${t.label}</button>`).join('');
 
    container.innerHTML = `
-   <div class="fade-in space-y-4">
-   <div class="flex gap-2 flex-wrap">${stabsHtml}</div>
+   <div class="fade-in space-y-3 lg:space-y-4">
+   <!-- 탭 바 (모바일: 스크롤, PC: flex wrap) -->
+   <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">${stabsHtml}</div>
+
+   <!-- 시스템 -->
    <div class="${sTab !== 'system' ? 'hidden' : ''}">
-
-   <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
-   <h3 class="text-lg mb-6 text-gray-800 dark:text-gray-100">시스템 설정</h3>
-   <div class="space-y-6">
-   <div class="space-y-2">
-   <label class="text-[10px] font-bold text-gray-400 uppercase">Supabase Project URL</label>
-   <input type="text" value="${SUPABASE_URL}" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-5 text-xs font-mono outline-none shadow-inner" readonly>
-   </div>
-   <div class="space-y-2">
-   <label class="text-[10px] font-bold text-gray-400 uppercase">Database Status</label>
-   <div class="w-full bg-green-50 border border-green-100 rounded-2xl p-5 text-xs font-bold text-green-600"><i class="fas fa-check-circle mr-2"></i>Supabase Connected (Seoul Region)</div>
-   </div>
+   <div class="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
+   <h3 class="text-base lg:text-lg mb-4 text-gray-800 dark:text-gray-100">시스템 설정</h3>
+   <div class="space-y-4">
+   <div><label class="text-[9px] font-bold text-gray-400 uppercase">Supabase URL</label>
+   <input type="text" value="${SUPABASE_URL}" class="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-[10px] lg:text-xs font-mono outline-none mt-1" readonly></div>
+   <div class="w-full bg-green-50 border border-green-100 rounded-xl p-3 text-[10px] lg:text-xs font-bold text-green-600"><i class="fas fa-check-circle mr-1"></i>Supabase Connected</div>
    </div>
    </div>
    </div>
 
+   <!-- 디자인 -->
    <div class="${sTab !== 'design' ? 'hidden' : ''}">
-
-   <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
-   <div class="flex items-center gap-3 mb-2">
-   <div class="w-10 h-10 bg-pink-100 rounded-2xl flex items-center justify-center"><i class="fas fa-palette text-pink-500"></i></div>
-   <div><h3 class="text-xl text-gray-800">디자인 설정</h3><p class="text-[10px] text-gray-400">퍼블릭 페이지에 표시되는 디자인 요소를 수정합니다</p></div>
+   <div class="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
+   <div class="flex items-center gap-2 mb-1">
+   <div class="w-8 h-8 bg-pink-100 rounded-xl flex items-center justify-center"><i class="fas fa-palette text-pink-500 text-xs"></i></div>
+   <div><h3 class="text-base lg:text-lg text-gray-800">디자인 설정</h3></div>
    </div>
-   <p class="text-[10px] text-pink-400 mb-8"><i class="fas fa-info-circle mr-1"></i>변경 후 하단의 [디자인 설정 저장] 버튼을 눌러야 반영됩니다</p>
+   <p class="text-[9px] text-pink-400 mb-6"><i class="fas fa-info-circle mr-1"></i>변경 후 하단 [저장] 필수</p>
 
-   <div class="mb-8">
-   <h4 class="text-sm text-gray-600 mb-3 flex items-center gap-2"><i class="fas fa-calendar text-pink-400 text-xs"></i> 기본 정보</h4>
-   <div class="grid grid-cols-2 gap-4">
-   <div><label class="text-[9px] text-gray-400 block mb-1">길드 시작일</label><input type="date" id="cfgStartDate" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${guildStartDate}"></div>
-   <div><label class="text-[9px] text-gray-400 block mb-1">수로 면제 라벨</label><input id="cfgExemptLabel" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${suroExemptLabel}"></div>
-   <div class="col-span-2"><label class="text-[9px] text-gray-400 block mb-1">수로 면제 안내 문구</label><input id="cfgExemptNote" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${suroExemptNote}" placeholder="예: 크로칸슈 이상 — 부캐 전부 수로 면제"></div>
+   <!-- 기본 정보 -->
+   <div class="mb-6">
+   <h4 class="text-xs lg:text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-calendar text-pink-400 text-[10px]"></i>기본 정보</h4>
+   <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+   <div><label class="text-[8px] text-gray-400 block">길드 시작일</label><input type="date" id="cfgStartDate" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none" value="${guildStartDate}"></div>
+   <div><label class="text-[8px] text-gray-400 block">수로 면제 라벨</label><input id="cfgExemptLabel" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none" value="${suroExemptLabel}"></div>
+   <div class="sm:col-span-2"><label class="text-[8px] text-gray-400 block">면제 안내 문구</label><input id="cfgExemptNote" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none" value="${suroExemptNote}" placeholder="예: 크로칸슈 이상 — 부캐 면제"></div>
    </div>
-   </div>
-
-   <div class="mb-8">
-   <h4 class="text-sm text-gray-600 mb-3 flex items-center gap-2"><i class="fas fa-users text-pink-400 text-xs"></i> 길드 정보</h4>
-   <div class="grid grid-cols-1 lg:grid-cols-2 gap-3" id="cfgGuildList">${guildsHtml}</div>
-   <button onclick="window._cfgAddGuild()" class="mt-3 text-[10px] text-pink-500 hover:text-pink-700 font-bold"><i class="fas fa-plus mr-1"></i>길드 추가</button>
    </div>
 
-   <div class="mb-8">
-   <h4 class="text-sm text-gray-600 mb-3 flex items-center gap-2"><i class="fas fa-tag text-pink-400 text-xs"></i> 길드 배지 색상</h4>
-   <div class="space-y-2" id="cfgBadgeList">${badgeHtml}</div>
+   <!-- 길드 정보 -->
+   <div class="mb-6">
+   <h4 class="text-xs lg:text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-users text-pink-400 text-[10px]"></i>길드 정보</h4>
+   <div class="grid grid-cols-1 lg:grid-cols-2 gap-2" id="cfgGuildList">${guildsHtml}</div>
+   <button onclick="window._cfgAddGuild()" class="mt-2 text-[10px] text-pink-500 hover:text-pink-700 font-bold"><i class="fas fa-plus mr-1"></i>길드 추가</button>
    </div>
 
-   <div class="mb-8">
-   <h4 class="text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-medal text-pink-400 text-xs"></i> 직위 이모지 / 색상</h4>
-   <p class="text-[9px] text-gray-400 mb-2"><i class="fas fa-grip-vertical text-gray-300 mr-1"></i>드래그로 순서 변경 (위 = 높은 우선순위)</p>
+   <!-- 길드 배지 -->
+   <div class="mb-6">
+   <h4 class="text-xs lg:text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-tag text-pink-400 text-[10px]"></i>길드 배지 색상</h4>
+   <div class="space-y-1.5" id="cfgBadgeList">${badgeHtml}</div>
+   </div>
+
+   <!-- 직위 이모지/색상 -->
+   <div class="mb-6">
+   <h4 class="text-xs lg:text-sm text-gray-600 mb-1 flex items-center gap-2"><i class="fas fa-medal text-pink-400 text-[10px]"></i>직위 이모지 / 색상</h4>
+   <p class="text-[8px] text-gray-400 mb-2"><i class="fas fa-grip-vertical text-gray-300 mr-1"></i>드래그로 순서 변경 (위 = 높은 우선순위)</p>
    <div class="space-y-1" id="cfgRoleList">${rolesHtml}</div>
    </div>
 
-   <div class="mb-8">
-   <h4 class="text-sm text-gray-600 mb-3 flex items-center gap-2"><i class="fas fa-shield-alt text-pink-400 text-xs"></i> 수로 면제 직위</h4>
-   <div class="grid grid-cols-2 lg:grid-cols-3 gap-2">${exemptHtml}</div>
+   <!-- 수로 면제 -->
+   <div class="mb-6">
+   <h4 class="text-xs lg:text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-shield-alt text-pink-400 text-[10px]"></i>수로 면제 직위</h4>
+   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">${exemptHtml}</div>
    </div>
 
-   <div class="mb-8">
-   <h4 class="text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-magic text-pink-400 text-xs"></i> 직위 커트라인 & 자동 배정 규칙</h4>
-   <p class="text-[9px] text-gray-400 mb-2">topN: 상위 N명 (등수), bottomN: 하위 N명, 최소점수: 점수 구간. 우선순위: bottomN → topN → 점수</p>
-   <div class="flex gap-1.5 mb-3">${autoRankTabsHtml}</div>
+   <!-- 직위 배정 규칙 -->
+   <div class="mb-6">
+   <h4 class="text-xs lg:text-sm text-gray-600 mb-1 flex items-center gap-2"><i class="fas fa-magic text-pink-400 text-[10px]"></i>직위 커트라인 & 자동 배정</h4>
+   <p class="text-[8px] text-gray-400 mb-2">topN: 상위 N명, btmN: 하위 N명, 최소점수: 점수 구간</p>
+   <div class="flex gap-1.5 mb-2 overflow-x-auto no-scrollbar">${autoRankTabsHtml}</div>
    ${autoRankHtml}
    </div>
 
-   <div class="flex gap-3 pt-4 border-t border-gray-100">
-   <button onclick="window._cfgSave()" id="cfgSaveBtn" class="px-8 py-4 bg-pink-500 text-white rounded-2xl font-bold text-sm shadow-lg hover:bg-pink-600 transition-all"><i class="fas fa-save mr-2"></i>디자인 설정 저장</button>
-   <button onclick="window._cfgReset()" class="px-6 py-4 bg-gray-100 text-gray-500 rounded-2xl font-bold text-xs hover:bg-gray-200 transition-all"><i class="fas fa-undo mr-2"></i>초기화</button>
+   <!-- 저장 -->
+   <div class="flex gap-2 pt-3 border-t border-gray-100 sticky bottom-0 bg-white dark:bg-gray-800 pb-2 z-10">
+   <button onclick="window._cfgSave()" id="cfgSaveBtn" class="px-6 py-3 bg-pink-500 text-white rounded-xl font-bold text-xs shadow-lg hover:bg-pink-600 transition-all"><i class="fas fa-save mr-1"></i>디자인 설정 저장</button>
+   <button onclick="window._cfgReset()" class="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-bold text-[10px] hover:bg-gray-200 transition-all"><i class="fas fa-undo mr-1"></i>초기화</button>
    </div>
    </div>
    </div>
 
+   <!-- 룰렛 -->
    <div class="${sTab !== 'roulette' ? 'hidden' : ''}">
-   <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
-   <div class="flex items-center gap-3 mb-4">
-   <div class="w-10 h-10 bg-purple-100 rounded-2xl flex items-center justify-center"><i class="fas fa-dice text-purple-500"></i></div>
-   <div><h3 class="text-lg text-gray-800">칠흑 가챠 룰렛 설정</h3><p class="text-[10px] text-gray-400">B보상 룰렛 품목과 확률을 관리합니다 (합계 100%)</p></div>
-   <button onclick="window._rouletteAddItem()" class="ml-auto px-3 py-1.5 bg-purple-500 text-white rounded-xl text-[10px] font-bold hover:bg-purple-600"><i class="fas fa-plus mr-1"></i>품목 추가</button>
+   <div class="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
+   <div class="flex items-center gap-2 mb-3">
+   <div class="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center"><i class="fas fa-dice text-purple-500 text-xs"></i></div>
+   <div class="flex-1 min-w-0"><h3 class="text-base lg:text-lg text-gray-800">칠흑 가챠 룰렛 설정</h3><p class="text-[9px] text-gray-400">B보상 룰렛 품목과 확률 (합계 100%)</p></div>
+   <button onclick="window._rouletteAddItem()" class="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-[10px] font-bold hover:bg-purple-600 shrink-0"><i class="fas fa-plus mr-1"></i>추가</button>
    </div>
-   <div class="overflow-x-auto">
+   <div class="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
    <table class="w-full text-xs" id="rouletteSettingsTable">
-   <thead><tr class="text-[9px] text-gray-400 uppercase border-b">
-   <th class="p-2 text-left" style="width:30%">품목명</th>
-   <th class="p-2 text-center" style="width:15%">확률(%)</th>
-   <th class="p-2 text-left" style="width:15%">시세</th>
-   <th class="p-2 text-center" style="width:15%">색상</th>
-   <th class="p-2 text-center" style="width:10%">삭제</th>
+   <thead><tr class="text-[8px] lg:text-[9px] text-gray-400 uppercase border-b">
+   <th class="p-1.5 text-left" style="min-width:100px">품목명</th>
+   <th class="p-1.5 text-center" style="min-width:60px">확률(%)</th>
+   <th class="p-1.5 text-left" style="min-width:60px">시세</th>
+   <th class="p-1.5 text-center" style="min-width:40px">색상</th>
+   <th class="p-1.5 text-center" style="min-width:30px">삭제</th>
    </tr></thead>
    <tbody id="rouletteItemsBody"></tbody>
    </table>
    </div>
-   <div class="flex items-center gap-3 mt-4">
+   <div class="flex items-center gap-3 mt-3">
    <span id="rouletteTotalProb" class="text-[10px] font-bold text-gray-400"></span>
-   <button onclick="window._rouletteSave()" class="ml-auto px-5 py-2 bg-purple-500 text-white rounded-xl text-xs font-bold shadow hover:bg-purple-600"><i class="fas fa-save mr-1"></i>저장</button>
+   <button onclick="window._rouletteSave()" class="ml-auto px-4 py-2 bg-purple-500 text-white rounded-lg text-[10px] font-bold shadow hover:bg-purple-600"><i class="fas fa-save mr-1"></i>저장</button>
    </div>
    </div>
    </div>
 
+   <!-- 관리자 -->
    <div class="${sTab !== 'admin' ? 'hidden' : ''}">
-
-   <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold mb-4">
-   <div class="flex items-center gap-3 mb-4">
-   <div class="w-10 h-10 bg-amber-100 rounded-2xl flex items-center justify-center"><i class="fas fa-gift text-amber-500"></i></div>
-   <div><h3 class="text-lg text-gray-800">수로 보상 설정</h3><p class="text-[10px] text-gray-400">조각 시세를 설정하면 크라운/파르페 보상이 자동 계산됩니다</p></div>
+   <div class="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold mb-3">
+   <div class="flex items-center gap-2 mb-3">
+   <div class="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center"><i class="fas fa-gift text-amber-500 text-xs"></i></div>
+   <div><h3 class="text-base text-gray-800">수로 보상 설정</h3><p class="text-[9px] text-gray-400">조각 시세 설정 → 보상 자동 계산</p></div>
    </div>
-   <div class="flex items-center gap-3 flex-wrap">
-     <label class="text-xs text-gray-600">솔 에르다 조각 1개 시세 (만원)</label>
-     <input type="number" id="cfgPiecePrice" value="${SITE_CONFIG?.suroReward?.piecePrice || 0}" class="w-32 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-amber-100" placeholder="예: 650">
-     <button onclick="window._savePiecePrice()" class="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold shadow hover:bg-amber-600 transition-all"><i class="fas fa-save mr-1"></i>저장</button>
+   <div class="flex items-center gap-2 flex-wrap">
+     <label class="text-[10px] text-gray-600">시세 (만원)</label>
+     <input type="number" id="cfgPiecePrice" value="${SITE_CONFIG?.suroReward?.piecePrice || 0}" class="w-28 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none" placeholder="650">
+     <button onclick="window._savePiecePrice()" class="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-[10px] font-bold shadow hover:bg-amber-600"><i class="fas fa-save mr-1"></i>저장</button>
    </div>
    </div>
-
-   <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
-   <div class="flex items-center gap-3 mb-2">
-   <div class="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center"><i class="fas fa-user-shield text-blue-500"></i></div>
-   <div><h3 class="text-xl text-gray-800">관리자 계정 관리</h3><p class="text-[10px] text-gray-400">Google 로그인 후 승인된 사용자만 접근할 수 있습니다</p></div>
+   <div class="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
+   <div class="flex items-center gap-2 mb-2">
+   <div class="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center"><i class="fas fa-user-shield text-blue-500 text-xs"></i></div>
+   <div><h3 class="text-base text-gray-800">관리자 계정</h3></div>
    </div>
-   ${CURRENT_USER ? `<p class="text-[10px] text-blue-400 mb-6"><i class="fas fa-user mr-1"></i>현재 로그인: <strong>${CURRENT_USER.email}</strong> (${CURRENT_USER.role})</p>` : ''}
-
-   <div id="adminListContainer" class="space-y-6">
-   <div class="text-center py-4 text-gray-300"><i class="fas fa-spinner fa-spin mr-1"></i> 로딩 중...</div>
+   ${CURRENT_USER ? `<p class="text-[9px] text-blue-400 mb-4"><i class="fas fa-user mr-1"></i>${CURRENT_USER.email} (${CURRENT_USER.role})</p>` : ''}
+   <div id="adminListContainer" class="space-y-4">
+   <div class="text-center py-4 text-gray-300 text-xs"><i class="fas fa-spinner fa-spin mr-1"></i>로딩...</div>
    </div>
    </div>
    </div>
 
+   <!-- 백업 -->
    <div class="${sTab !== 'backup' ? 'hidden' : ''}">
-
-   <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
-   <h3 class="text-xl mb-3 text-gray-800"><i class="fas fa-download mr-3 text-emerald-500"></i>데이터 백업</h3>
-   <p class="text-xs text-gray-400 mb-8">전체 DB를 JSON 파일로 다운로드합니다. 테이블별 개별 파일이 ZIP으로 묶여 저장됩니다.</p>
-   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-   <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-   <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 bg-pink-100 rounded-xl flex items-center justify-center"><i class="fas fa-users text-pink-500 text-xs"></i></div><span class="text-xs font-bold text-gray-700">members</span></div>
-   <p class="text-[10px] text-gray-400">${appState.members.length}건</p>
+   <div class="bg-white dark:bg-gray-800 p-4 lg:p-6 rounded-2xl border border-gray-100 dark:border-gray-700 font-bold">
+   <h3 class="text-base lg:text-lg mb-2 text-gray-800"><i class="fas fa-download mr-2 text-emerald-500"></i>데이터 백업</h3>
+   <p class="text-[10px] text-gray-400 mb-4">전체 DB를 JSON/CSV/ZIP으로 다운로드</p>
+   <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+   ${[
+     {icon:'fa-users',color:'pink',name:'members',count:appState.members.length+'건'},
+     {icon:'fa-chart-line',color:'emerald',name:'suro_scores',count:appState.suroHeaders.length+'주차'},
+     {icon:'fa-gem',color:'blue',name:'bail',count:(appState.bailHistory||[]).length+'건'},
+     {icon:'fa-exclamation-triangle',color:'red',name:'penalty',count:(appState.penaltyHistory||[]).length+'건'},
+     {icon:'fa-book',color:'purple',name:'records',count:'영구보존'}
+   ].map(t => `<div class="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center gap-2">
+   <div class="w-6 h-6 bg-${t.color}-100 rounded-lg flex items-center justify-center"><i class="fas ${t.icon} text-${t.color}-500 text-[9px]"></i></div>
+   <div><span class="text-[10px] font-bold text-gray-700 block">${t.name}</span><span class="text-[8px] text-gray-400">${t.count}</span></div>
+   </div>`).join('')}
    </div>
-   <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-   <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center"><i class="fas fa-chart-line text-emerald-500 text-xs"></i></div><span class="text-xs font-bold text-gray-700">suro_scores</span></div>
-   <p class="text-[10px] text-gray-400">${appState.suroHeaders.length}개 주차</p>
-   </div>
-   <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-   <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center"><i class="fas fa-gem text-blue-500 text-xs"></i></div><span class="text-xs font-bold text-gray-700">bail_history</span></div>
-   <p class="text-[10px] text-gray-400">${(appState.bailHistory||[]).length}건</p>
-   </div>
-   <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-   <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 bg-red-100 rounded-xl flex items-center justify-center"><i class="fas fa-exclamation-triangle text-red-500 text-xs"></i></div><span class="text-xs font-bold text-gray-700">penalty + history</span></div>
-   <p class="text-[10px] text-gray-400">${(appState.penaltyHistory||[]).length} + ${(appState.history||[]).length}건</p>
-   </div>
-   <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100">
-   <div class="flex items-center gap-3 mb-3"><div class="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center"><i class="fas fa-book text-purple-500 text-xs"></i></div><span class="text-xs font-bold text-gray-700">member_records (영구기록)</span></div>
-   <p class="text-[10px] text-gray-400">영구 보존 데이터</p>
-   </div>
-   </div>
-   <div class="flex flex-wrap gap-3">
-   <button onclick="window._backupAll()" id="backupAllBtn" class="px-8 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-xs shadow-lg hover:bg-emerald-600 transition-all"><i class="fas fa-file-archive mr-2"></i>전체 백업 (ZIP)</button>
-   <button onclick="window._backupJSON()" class="px-6 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold text-xs hover:bg-gray-200 transition-all"><i class="fas fa-file-code mr-2"></i>단일 JSON</button>
-   <button onclick="window._backupCSV()" class="px-6 py-4 bg-blue-50 text-blue-600 rounded-2xl font-bold text-xs hover:bg-blue-100 transition-all"><i class="fas fa-file-csv mr-2"></i>CSV (구글시트용)</button>
+   <div class="flex flex-wrap gap-2">
+   <button onclick="window._backupAll()" id="backupAllBtn" class="px-5 py-2.5 bg-emerald-500 text-white rounded-xl font-bold text-[10px] shadow hover:bg-emerald-600"><i class="fas fa-file-archive mr-1"></i>전체 백업 (ZIP)</button>
+   <button onclick="window._backupJSON()" class="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-bold text-[10px] hover:bg-gray-200"><i class="fas fa-file-code mr-1"></i>JSON</button>
+   <button onclick="window._backupCSV()" class="px-4 py-2.5 bg-blue-50 text-blue-600 rounded-xl font-bold text-[10px] hover:bg-blue-100"><i class="fas fa-file-csv mr-1"></i>CSV</button>
    </div>
    </div>
    </div>
