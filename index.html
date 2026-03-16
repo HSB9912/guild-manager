@@ -7589,16 +7589,26 @@
    <h3 class="text-base lg:text-lg mb-2 text-gray-800"><i class="fas fa-download mr-2 text-emerald-500"></i>데이터 백업</h3>
    <p class="text-[10px] text-gray-400 mb-4">전체 DB를 JSON/CSV/ZIP으로 다운로드</p>
    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-   ${[
-     {icon:'fa-users',color:'pink',name:'members',count:appState.members.length+'건'},
-     {icon:'fa-chart-line',color:'emerald',name:'suro_scores',count:appState.suroHeaders.length+'주차'},
-     {icon:'fa-gem',color:'blue',name:'bail',count:(appState.bailHistory||[]).length+'건'},
-     {icon:'fa-exclamation-triangle',color:'red',name:'penalty',count:(appState.penaltyHistory||[]).length+'건'},
-     {icon:'fa-book',color:'purple',name:'records',count:'영구보존'}
-   ].map(t => `<div class="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center gap-2">
-   <div class="w-6 h-6 bg-${t.color}-100 rounded-lg flex items-center justify-center"><i class="fas ${t.icon} text-${t.color}-500 text-[9px]"></i></div>
-   <div><span class="text-[10px] font-bold text-gray-700 block">${t.name}</span><span class="text-[8px] text-gray-400">${t.count}</span></div>
-   </div>`).join('')}
+   <div class="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center gap-2">
+   <div class="w-6 h-6 bg-pink-100 rounded-lg flex items-center justify-center"><i class="fas fa-users text-pink-500 text-[9px]"></i></div>
+   <div><span class="text-[10px] font-bold text-gray-700 block">members</span><span class="text-[8px] text-gray-400">${appState.members.length}건</span></div>
+   </div>
+   <div class="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center gap-2">
+   <div class="w-6 h-6 bg-emerald-100 rounded-lg flex items-center justify-center"><i class="fas fa-chart-line text-emerald-500 text-[9px]"></i></div>
+   <div><span class="text-[10px] font-bold text-gray-700 block">suro_scores</span><span class="text-[8px] text-gray-400">${appState.suroHeaders.length}주차</span></div>
+   </div>
+   <div class="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center gap-2">
+   <div class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center"><i class="fas fa-gem text-blue-500 text-[9px]"></i></div>
+   <div><span class="text-[10px] font-bold text-gray-700 block">bail</span><span class="text-[8px] text-gray-400">${(appState.bailHistory||[]).length}건</span></div>
+   </div>
+   <div class="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center gap-2">
+   <div class="w-6 h-6 bg-red-100 rounded-lg flex items-center justify-center"><i class="fas fa-exclamation-triangle text-red-500 text-[9px]"></i></div>
+   <div><span class="text-[10px] font-bold text-gray-700 block">penalty</span><span class="text-[8px] text-gray-400">${(appState.penaltyHistory||[]).length}건</span></div>
+   </div>
+   <div class="bg-gray-50 rounded-xl p-2.5 border border-gray-100 flex items-center gap-2">
+   <div class="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center"><i class="fas fa-book text-purple-500 text-[9px]"></i></div>
+   <div><span class="text-[10px] font-bold text-gray-700 block">records</span><span class="text-[8px] text-gray-400">영구보존</span></div>
+   </div>
    </div>
    <div class="flex flex-wrap gap-2">
    <button onclick="window._backupAll()" id="backupAllBtn" class="px-5 py-2.5 bg-emerald-500 text-white rounded-xl font-bold text-[10px] shadow hover:bg-emerald-600"><i class="fas fa-file-archive mr-1"></i>전체 백업 (ZIP)</button>
