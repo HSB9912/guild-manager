@@ -643,24 +643,10 @@
 
         window.getNicknameIcon = (role, member) => {
             const rd = SITE_CONFIG?.roleDisplay?.[role] || {};
-            let icon = '';
-            if (rd.emoji) icon = `<span class="mr-1.5 text-sm">${rd.emoji}</span>`;
-            else if (role === '마카롱') icon = '<i class="fas fa-crown text-blue-500 mr-1.5 shadow-sm"></i>';
-            else if (role === '다쿠아즈') icon = '<i class="fas fa-crown text-pink-500 mr-1.5 shadow-sm"></i>';
-            else icon = '<span class="w-3 h-3 rounded-full bg-gray-200 mr-1.5 inline-block"></span>';
-
-            // 간부(마카롱/다쿠아즈) 서브 직위 뱃지
-            if (member && ['마카롱','다쿠아즈'].includes(role)) {
-              const sub = window.getComputedRank(member);
-              if (sub) {
-                const subRd = SITE_CONFIG?.roleDisplay?.[sub] || {};
-                const subEmoji = subRd.emoji || '';
-                const subColors = {'크라운':'bg-amber-100 text-amber-600 border-amber-200','파르페':'bg-pink-100 text-pink-600 border-pink-200','티라미슈':'bg-orange-100 text-orange-600 border-orange-200','크로칸슈':'bg-green-100 text-green-600 border-green-200','롤케이크':'bg-purple-100 text-purple-600 border-purple-200','팬케이크':'bg-blue-100 text-blue-600 border-blue-200','스콘':'bg-gray-100 text-gray-500 border-gray-200'};
-                const sc = subColors[sub] || 'bg-gray-100 text-gray-500 border-gray-200';
-                icon += `<span class="text-[7px] font-bold px-1 py-0 rounded border ${sc} mr-1" title="수로 기준 직위">${subEmoji||''}${sub}</span>`;
-              }
-            }
-            return icon;
+            if (rd.emoji) return `<span class="mr-1.5 text-sm">${rd.emoji}</span>`;
+            if (role === '마카롱') return '<i class="fas fa-crown text-blue-500 mr-1.5 shadow-sm"></i>';
+            if (role === '다쿠아즈') return '<i class="fas fa-crown text-pink-500 mr-1.5 shadow-sm"></i>';
+            return '<span class="w-3 h-3 rounded-full bg-gray-200 mr-1.5 inline-block"></span>';
         };
 
         // 마카롱/다쿠아즈 간부의 수로 기반 가상 직위 계산
@@ -2538,7 +2524,14 @@
                     if (_rbc) { rstyle += 'background-color:' + _rbc + ';'; rstyle += 'color:' + (_rtc || 'white') + ';'; }
                     else if (_rtc) { rstyle += 'color:' + _rtc + ';background:#f3f4f6;'; }
                     else { rstyle += 'background:#f3f4f6;color:#6b7280;'; }
-                    roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-tight" style="${rstyle}">${m.role}</span>`;
+                    
+                    // 마카롱/다쿠아즈 간부: 서브 직위 표시
+                    let roleText = m.role;
+                    if (['마카롱','다쿠아즈'].includes(m.role)) {
+                      const subRole = window.getComputedRank(m);
+                      if (subRole) roleText = m.role + ' · ' + subRole;
+                    }
+                    roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-tight" style="${rstyle}">${roleText}</span>`;
                 } else {
                     roleHtml = `<span class="text-[10px]">${m.role}</span>`;
                 }
