@@ -9,11 +9,31 @@
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
- <style> @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');body{font-family:'Noto Sans KR',sans-serif;}.chart-container{position:relative;width:100%;height:300px;}::-webkit-scrollbar{width:8px;height:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:#fbcfe8;border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#f472b6;}.fade-in{animation:fadeIn 0.3s ease-out;}@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}th.sortable{cursor:pointer;user-select:none;transition:background 0.2s;position:relative;}th.sortable:hover{background-color:#fdf2f8 !important;color:#db2777 !important;}.force-hide{display:none !important;}#loadingOverlay{position:fixed;inset:0;background:white;z-index:10000;display:flex;flex-direction:column;justify-content:center;align-items:center;}.nav-item.active{background-color:#fdf2f8;color:#ec4899;box-shadow:inset 4px 0 0 #ec4899;}#msgBox{transition:all 0.3s ease;transform:translateY(100px);opacity:0;pointer-events:none;}#msgBox.show{transform:translateY(0);opacity:1;}.batch-modified{background-color:#fff7ed !important;}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0.25rem;text-align:center;font-size:0.75rem;}.calendar-day{padding:0.25rem;border-radius:0.75rem;position:relative;transition:all 0.2s;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;aspect-ratio:1/1;cursor:pointer;border:1px solid transparent;}@media (min-width:1024px){.calendar-day{min-height:56px;}}.calendar-day:hover{background-color:#f9fafb;border-color:#fbcfe8;}.calendar-day.today{background-color:#ec4899;color:white;font-weight:bold;}.calendar-day.thursday{color:#db2777;background-color:#fdf2f8;border:1px solid #fbcfe8;font-weight:bold;}.calendar-day.not-current{opacity:0.2;pointer-events:none;}.calendar-head{font-size:0.7rem;font-weight:800;color:#9ca3af;text-transform:uppercase;padding-bottom:8px;}.event-dot{width:4px;height:4px;background-color:#ec4899;border-radius:50%;margin-top:2px;}.calendar-day.today .event-dot{background-color:white;}.event-snippet{font-size:10px;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;margin-top:3px;line-height:1.2;font-weight:800;background-color:rgba(236,72,153,0.18);border-radius:4px;padding:2px 4px;}@media (min-width:1024px){.event-snippet{font-size:11px;}}.calendar-day.today .event-snippet{color:white;background-color:rgba(255,255,255,0.2);}.calendar-day.thursday .event-snippet{color:#be123c;background-color:rgba(159,18,57,0.13);}.score-zero{background-color:#fee2e2 !important;color:#ef4444 !important;}.score-cell{transition:background 0.2s;}.score-cell:hover{background-color:#f8fafb;}.custom-checkbox{width:1.25rem;height:1.25rem;border-radius:0.5rem;border:2px solid #e5e7eb;appearance:none;cursor:pointer;transition:all 0.2s;}.custom-checkbox:checked{background-color:#ef4444;border-color:#ef4444;background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");}.event-item-active{background-color:#fdf2f8;border-color:#f472b6;color:#db2777;}@media (max-width:768px){.nav-item{min-height:44px;}button,select,input[type="checkbox"]{min-height:36px;}}.no-scrollbar::-webkit-scrollbar{display:none;}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}@supports (padding-top:env(safe-area-inset-top)){body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}}@media (max-width:640px){.calendar-grid{gap:0.125rem;font-size:0.65rem;}.calendar-day{min-height:38px;padding:0.125rem;}.calendar-head{font-size:0.6rem;padding-bottom:4px;}.event-snippet{font-size:8px;padding:0px 1px;}#msgBox{left:1rem;right:1rem;transform:translateX(0) translateY(100px) !important;width:auto;padding:0.75rem 1rem;bottom:calc(4.5rem + env(safe-area-inset-bottom,0px));}#msgBox.show{transform:translateX(0) translateY(0) !important;}}@media (max-width:1024px){.overflow-x-guard{overflow-x:auto;-webkit-overflow-scrolling:touch;}}@media (max-width:768px){table{font-size:0.65rem;}table th,table td{padding:0.5rem 0.375rem !important;}table th{font-size:9px;}}.overflow-y-auto,.overflow-x-auto{-webkit-overflow-scrolling:touch;}.nav-item,button{-webkit-tap-highlight-color:transparent;}@media (max-width:640px){#memberModal > div > div,#deleteModal > div > div,#eventDetailModal > div > div{max-height:90vh;overflow-y:auto;border-radius:1.5rem;}}.stick-head{border-collapse:separate;border-spacing:0;}.stick-head thead th{position:sticky;top:0;z-index:10;background:#f9fafb;}@media (max-width:640px){.analysis-summary-grid{grid-template-columns:1fr !important;}.analysis-mvp-grid{grid-template-columns:repeat(2,1fr) !important;}.analysis-table-wrap table{font-size:0.6rem;}.analysis-table-wrap table th,.analysis-table-wrap table td{padding:0.375rem 0.25rem !important;}}body.dark{background-color:#0f1117;color:#c9cdd4;}body.dark .bg-gray-50,body.dark main{background-color:#0f1117 !important;}body.dark .bg-white{background-color:#1c1f2b !important;color:#c9cdd4;border-color:#2a2d3a !important;}body.dark aside{background-color:#14161e !important;border-color:#2a2d3a !important;}body.dark header{background-color:#14161e !important;border-color:#2a2d3a !important;}body.dark .border-gray-100,body.dark .border-gray-200,body.dark .border-gray-50{border-color:#2a2d3a !important;}body.dark .text-gray-800,body.dark .text-slate-800{color:#e0e3ea !important;}body.dark .text-gray-700{color:#b8bcc6 !important;}body.dark .text-gray-600{color:#8b90a0 !important;}body.dark .text-gray-500{color:#6b7080 !important;}body.dark .text-gray-400{color:#555a6a !important;}body.dark .text-gray-300{color:#444a5a !important;}body.dark .bg-gray-100{background-color:#22252f !important;}body.dark .bg-gray-50{background-color:#1a1d27 !important;}body.dark input,body.dark select,body.dark textarea{background-color:#22252f !important;color:#c9cdd4 !important;border-color:#333848 !important;}body.dark input::placeholder,body.dark textarea::placeholder{color:#555a6a !important;}body.dark table thead{background-color:#14161e !important;}body.dark table thead th{background-color:#14161e !important;color:#6b7080 !important;border-color:#2a2d3a !important;}body.dark table tbody td{background-color:#1a1d27 !important;border-color:#22252f !important;}body.dark table tbody tr:hover td{background-color:#22252f !important;}body.dark .stick-head thead th{background:#14161e !important;}body.dark .nav-item:hover{background-color:#22252f !important;}body.dark .nav-item.active{background-color:#1e1a2e !important;color:#c084fc !important;box-shadow:inset 4px 0 0 #a855f7 !important;}body.dark .shadow-sm,body.dark .shadow-lg,body.dark .shadow-md,body.dark .shadow-2xl{box-shadow:none !important;}body.dark #loadingOverlay{background:#0f1117 !important;}body.dark .bg-pink-50,body.dark .bg-pink-50\/30{background-color:rgba(168,85,247,0.08) !important;}body.dark .text-pink-600,body.dark .text-pink-500,body.dark .text-pink-400{color:#a78bfa !important;}body.dark .border-pink-100,body.dark .border-pink-50{border-color:#2a2540 !important;}body.dark .bg-red-50,body.dark .bg-red-50\/20{background-color:rgba(239,68,68,0.08) !important;}body.dark .text-red-500,body.dark .text-red-600,body.dark .text-red-400{color:#f87171 !important;}body.dark .text-blue-500,body.dark .text-blue-600,body.dark .text-blue-400{color:#93c5fd !important;}body.dark .text-green-500,body.dark .text-green-600,body.dark .text-green-400{color:#86efac !important;}body.dark .text-amber-500,body.dark .text-amber-600{color:#fbbf24 !important;}body.dark .text-orange-500{color:#fb923c !important;}body.dark .text-purple-600,body.dark .text-purple-500{color:#c084fc !important;}body.dark .bg-pink-500{background-color:#7c3aed !important;}body.dark .bg-gradient-to-br,body.dark .bg-gradient-to-tr,body.dark .bg-gradient-to-r{background:#1a1d27 !important;}body.dark [class*="from-pink"],body.dark [class*="from-rose"],body.dark [class*="from-blue"],body.dark [class*="from-emerald"],body.dark [class*="from-purple"],body.dark [class*="from-yellow"],body.dark [class*="from-amber"],body.dark [class*="from-green"],body.dark [class*="from-red"],body.dark [class*="from-indigo"],body.dark [class*="from-orange"],body.dark [class*="from-cyan"]{background:#1a1d27 !important;}body.dark [class*="border-pink-100"],body.dark [class*="border-rose-100"],body.dark [class*="border-blue-100"],body.dark [class*="border-emerald-100"],body.dark [class*="border-purple-100"],body.dark [class*="border-orange-100"],body.dark [class*="border-amber-100"],body.dark [class*="border-green-100"],body.dark [class*="border-red-100"]{border-color:#2a2d3a !important;}body.dark .bg-white\/40{background-color:rgba(255,255,255,0.05) !important;}body.dark .hover\:bg-pink-50\/30:hover,body.dark .hover\:bg-gray-50:hover{background-color:#22252f !important;}body.dark .hover\:bg-pink-100:hover,body.dark .hover\:bg-gray-100:hover{background-color:#22252f !important;}body.dark th.sortable:hover{background-color:#22252f !important;color:#a78bfa !important;}body.dark .batch-modified{background-color:rgba(251,146,60,0.1) !important;}body.dark .calendar-day{color:#8b90a0;}body.dark .calendar-day:hover{background-color:#22252f;border-color:#333848;}body.dark .calendar-day.today{background-color:#7c3aed;color:white;}body.dark .calendar-day.thursday{background-color:rgba(124,58,237,0.15);color:#c084fc;border-color:rgba(124,58,237,0.3);}body.dark .event-snippet{background-color:rgba(124,58,237,0.15);color:#c9cdd4;}body.dark .calendar-day.today .event-snippet{background-color:rgba(255,255,255,0.15);color:white;}body.dark .bg-green-50{background-color:rgba(34,197,94,0.08) !important;}body.dark .bg-amber-50{background-color:rgba(245,158,11,0.08) !important;}body.dark .bg-blue-50{background-color:rgba(59,130,246,0.08) !important;}body.dark .bg-emerald-50{background-color:rgba(16,185,129,0.08) !important;}body.dark .bg-purple-50{background-color:rgba(168,85,247,0.08) !important;}body.dark [style*="background:#fdf2f8"],body.dark [style*="background:#fff1f2"],body.dark [style*="background:#eef2ff"],body.dark [style*="background:#fefce8"],body.dark [style*="background:#eff6ff"],body.dark [style*="background:#fffbeb"]{background:#22252f !important;border-color:#333848 !important;}body.dark::-webkit-scrollbar-track{background:#14161e;}body.dark::-webkit-scrollbar-thumb{background:#333848;}body.dark::-webkit-scrollbar-thumb:hover{background:#444a5a;}body.dark #authOverlay{background:#0f1117 !important;}body.dark .bg-gradient-to-br.from-pink-50{background:#0f1117 !important;}body.dark .score-zero{background-color:rgba(239,68,68,0.08) !important;color:#f87171 !important;}body.dark .analysis-table-wrap table tbody tr td:nth-child(1),body.dark .analysis-table-wrap table tbody tr td:nth-child(2){background:#1a1d27 !important;}body.dark .analysis-table-wrap table tbody tr:hover td:nth-child(1),body.dark .analysis-table-wrap table tbody tr:hover td:nth-child(2){background:#22252f !important;}body.dark .analysis-table-wrap table thead th:nth-child(1),body.dark .analysis-table-wrap table thead th:nth-child(2){background:#14161e !important;}.mobile-tab{color:#9ca3af;transition:all 0.15s;}.mobile-tab.active{color:#ec4899;}.mobile-tab:active{transform:scale(0.92);}.safe-bottom{padding-bottom:env(safe-area-inset-bottom,0);}@media (max-width:1023px){#contentArea{padding-bottom:80px !important;}}body.font-sm #contentArea{font-size:0.8rem;}body.font-sm #contentArea table{font-size:0.6rem;}body.font-sm #contentArea .text-xs{font-size:0.65rem !important;}body.font-sm #contentArea .text-sm{font-size:0.75rem !important;}body.font-sm header .text-base{font-size:0.85rem !important;}body.font-sm header .text-\[9px\],body.font-sm header .text-\[10px\]{font-size:8px !important;}body.font-lg #contentArea{font-size:1.1rem;}body.font-lg #contentArea table{font-size:0.85rem;}body.font-lg #contentArea .text-xs{font-size:0.85rem !important;}body.font-lg #contentArea .text-sm{font-size:1rem !important;}body.font-lg #contentArea .text-\[10px\]{font-size:0.75rem !important;}body.font-lg #contentArea .text-\[11px\]{font-size:0.8rem !important;}body.font-lg #contentArea .text-\[9px\]{font-size:0.7rem !important;}body.font-lg header .text-base{font-size:1.15rem !important;}body.font-lg header .text-\[9px\]{font-size:11px !important;}body.font-lg header .text-\[10px\]{font-size:12px !important;}body.font-lg nav .text-sm{font-size:1rem !important;}body.font-lg nav .text-\[9px\]{font-size:11px !important;}body.dark #mobileTabBar{background:#14161e !important;border-color:#2a2d3a !important;}body.dark .mobile-tab{color:#6b7280;}body.dark .mobile-tab.active{color:#f472b6;}.home-guide-content .border,.home-guide-content .border-gray-100,.home-guide-content .border-gray-200,.home-guide-content .border-pink-100,.home-guide-content .border-pink-200,.home-guide-content .border-red-100,.home-guide-content .border-blue-100,.home-guide-content [class*="border-"]{border-color:#f3f4f6 !important;}body.dark .home-guide-content .border,body.dark .home-guide-content [class*="border-"]{border-color:#374151 !important;}</style>
+ <style> @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');body{font-family:'Noto Sans KR',sans-serif;}.chart-container{position:relative;width:100%;height:300px;}::-webkit-scrollbar{width:8px;height:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:#fbcfe8;border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#f472b6;}.fade-in{animation:fadeIn 0.3s ease-out;}@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}th.sortable{cursor:pointer;user-select:none;transition:background 0.2s;position:relative;}th.sortable:hover{background-color:#fdf2f8 !important;color:#db2777 !important;}.force-hide{display:none !important;}#loadingOverlay{position:fixed;inset:0;background:white;z-index:10000;display:flex;flex-direction:column;justify-content:center;align-items:center;}.nav-item.active{background-color:#fdf2f8;color:#ec4899;box-shadow:inset 4px 0 0 #ec4899;}#msgBox{transition:all 0.3s ease;transform:translateY(100px);opacity:0;pointer-events:none;}#msgBox.show{transform:translateY(0);opacity:1;}.batch-modified{background-color:#fff7ed !important;}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0.25rem;text-align:center;font-size:0.75rem;}.calendar-day{padding:0.25rem;border-radius:0.75rem;position:relative;transition:all 0.2s;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;aspect-ratio:1/1;cursor:pointer;border:1px solid transparent;}@media (min-width:1024px){.calendar-day{min-height:56px;}}.calendar-day:hover{background-color:#f9fafb;border-color:#fbcfe8;}.calendar-day.today{background-color:#ec4899;color:white;font-weight:bold;}.calendar-day.thursday{color:#db2777;background-color:#fdf2f8;border:1px solid #fbcfe8;font-weight:bold;}.calendar-day.not-current{opacity:0.2;pointer-events:none;}.calendar-head{font-size:0.7rem;font-weight:800;color:#9ca3af;text-transform:uppercase;padding-bottom:8px;}.event-dot{width:4px;height:4px;background-color:#ec4899;border-radius:50%;margin-top:2px;}.calendar-day.today .event-dot{background-color:white;}.event-snippet{font-size:10px;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;margin-top:3px;line-height:1.2;font-weight:800;background-color:rgba(236,72,153,0.18);border-radius:4px;padding:2px 4px;}@media (min-width:1024px){.event-snippet{font-size:11px;}}.calendar-day.today .event-snippet{color:white;background-color:rgba(255,255,255,0.2);}.calendar-day.thursday .event-snippet{color:#be123c;background-color:rgba(159,18,57,0.13);}.score-zero{background-color:#fee2e2 !important;color:#ef4444 !important;}.score-cell{transition:background 0.2s;}.score-cell:hover{background-color:#f8fafb;}.custom-checkbox{width:1.25rem;height:1.25rem;border-radius:0.5rem;border:2px solid #e5e7eb;appearance:none;cursor:pointer;transition:all 0.2s;}.custom-checkbox:checked{background-color:#ef4444;border-color:#ef4444;background-image:url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");}.event-item-active{background-color:#fdf2f8;border-color:#f472b6;color:#db2777;}@media (max-width:768px){.nav-item{min-height:44px;}button,select,input[type="checkbox"]{min-height:36px;}}.no-scrollbar::-webkit-scrollbar{display:none;}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}@supports (padding-top:env(safe-area-inset-top)){body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}}@media (max-width:640px){.calendar-grid{gap:0.125rem;font-size:0.65rem;}.calendar-day{min-height:38px;padding:0.125rem;}.calendar-head{font-size:0.6rem;padding-bottom:4px;}.event-snippet{font-size:8px;padding:0px 1px;}#msgBox{left:1rem;right:1rem;transform:translateX(0) translateY(100px) !important;width:auto;padding:0.75rem 1rem;bottom:calc(4.5rem + env(safe-area-inset-bottom,0px));}#msgBox.show{transform:translateX(0) translateY(0) !important;}}@media (max-width:1024px){.overflow-x-guard{overflow-x:auto;-webkit-overflow-scrolling:touch;}}@media (max-width:768px){table{font-size:0.65rem;}table th,table td{padding:0.5rem 0.375rem !important;}table th{font-size:9px;}}.overflow-y-auto,.overflow-x-auto{-webkit-overflow-scrolling:touch;}.nav-item,button{-webkit-tap-highlight-color:transparent;}@media (max-width:640px){#memberModal > div > div,#deleteModal > div > div,#eventDetailModal > div > div{max-height:90vh;overflow-y:auto;border-radius:1.5rem;}}.stick-head{border-collapse:separate;border-spacing:0;}.stick-head thead th{position:sticky;top:0;z-index:10;background:#f9fafb;}@media (max-width:640px){.analysis-summary-grid{grid-template-columns:1fr !important;}.analysis-mvp-grid{grid-template-columns:repeat(2,1fr) !important;}.analysis-table-wrap table{font-size:0.6rem;}.analysis-table-wrap table th,.analysis-table-wrap table td{padding:0.375rem 0.25rem !important;}}body.dark{background-color:#0f1117;color:#c9cdd4;}body.dark .bg-gray-50,body.dark main{background-color:#0f1117 !important;}body.dark .bg-white{background-color:#1c1f2b !important;color:#c9cdd4;border-color:#2a2d3a !important;}body.dark aside{background-color:#14161e !important;border-color:#2a2d3a !important;}body.dark header{background-color:#14161e !important;border-color:#2a2d3a !important;}body.dark .border-gray-100,body.dark .border-gray-200,body.dark .border-gray-50{border-color:#2a2d3a !important;}body.dark .text-gray-800,body.dark .text-slate-800{color:#e0e3ea !important;}body.dark .text-gray-700{color:#b8bcc6 !important;}body.dark .text-gray-600{color:#8b90a0 !important;}body.dark .text-gray-500{color:#6b7080 !important;}body.dark .text-gray-400{color:#555a6a !important;}body.dark .text-gray-300{color:#444a5a !important;}body.dark .bg-gray-100{background-color:#22252f !important;}body.dark .bg-gray-50{background-color:#1a1d27 !important;}body.dark input,body.dark select,body.dark textarea{background-color:#22252f !important;color:#c9cdd4 !important;border-color:#333848 !important;}body.dark input::placeholder,body.dark textarea::placeholder{color:#555a6a !important;}body.dark table thead{background-color:#14161e !important;}body.dark table thead th{background-color:#14161e !important;color:#6b7080 !important;border-color:#2a2d3a !important;}body.dark table tbody td{background-color:#1a1d27 !important;border-color:#22252f !important;}body.dark table tbody tr:hover td{background-color:#22252f !important;}body.dark .stick-head thead th{background:#14161e !important;}body.dark .nav-item:hover{background-color:#22252f !important;}body.dark .nav-item.active{background-color:#1e1a2e !important;color:#c084fc !important;box-shadow:inset 4px 0 0 #a855f7 !important;}body.dark .shadow-sm,body.dark .shadow-lg,body.dark .shadow-md,body.dark .shadow-2xl{box-shadow:none !important;}body.dark #loadingOverlay{background:#0f1117 !important;}body.dark .bg-pink-50,body.dark .bg-pink-50\/30{background-color:rgba(168,85,247,0.08) !important;}body.dark .text-pink-600,body.dark .text-pink-500,body.dark .text-pink-400{color:#a78bfa !important;}body.dark .border-pink-100,body.dark .border-pink-50{border-color:#2a2540 !important;}body.dark .bg-red-50,body.dark .bg-red-50\/20{background-color:rgba(239,68,68,0.08) !important;}body.dark .text-red-500,body.dark .text-red-600,body.dark .text-red-400{color:#f87171 !important;}body.dark .text-blue-500,body.dark .text-blue-600,body.dark .text-blue-400{color:#93c5fd !important;}body.dark .text-green-500,body.dark .text-green-600,body.dark .text-green-400{color:#86efac !important;}body.dark .text-amber-500,body.dark .text-amber-600{color:#fbbf24 !important;}body.dark .text-orange-500{color:#fb923c !important;}body.dark .text-purple-600,body.dark .text-purple-500{color:#c084fc !important;}body.dark .bg-pink-500{background-color:#7c3aed !important;}body.dark .bg-gradient-to-br,body.dark .bg-gradient-to-tr,body.dark .bg-gradient-to-r{background:#1a1d27 !important;}body.dark [class*="from-pink"],body.dark [class*="from-rose"],body.dark [class*="from-blue"],body.dark [class*="from-emerald"],body.dark [class*="from-purple"],body.dark [class*="from-yellow"],body.dark [class*="from-amber"],body.dark [class*="from-green"],body.dark [class*="from-red"],body.dark [class*="from-indigo"],body.dark [class*="from-orange"],body.dark [class*="from-cyan"]{background:#1a1d27 !important;}body.dark [class*="border-pink-100"],body.dark [class*="border-rose-100"],body.dark [class*="border-blue-100"],body.dark [class*="border-emerald-100"],body.dark [class*="border-purple-100"],body.dark [class*="border-orange-100"],body.dark [class*="border-amber-100"],body.dark [class*="border-green-100"],body.dark [class*="border-red-100"]{border-color:#2a2d3a !important;}body.dark .bg-white\/40{background-color:rgba(255,255,255,0.05) !important;}body.dark .hover\:bg-pink-50\/30:hover,body.dark .hover\:bg-gray-50:hover{background-color:#22252f !important;}body.dark .hover\:bg-pink-100:hover,body.dark .hover\:bg-gray-100:hover{background-color:#22252f !important;}body.dark th.sortable:hover{background-color:#22252f !important;color:#a78bfa !important;}body.dark .batch-modified{background-color:rgba(251,146,60,0.1) !important;}body.dark .calendar-day{color:#8b90a0;}body.dark .calendar-day:hover{background-color:#22252f;border-color:#333848;}body.dark .calendar-day.today{background-color:#7c3aed;color:white;}body.dark .calendar-day.thursday{background-color:rgba(124,58,237,0.15);color:#c084fc;border-color:rgba(124,58,237,0.3);}body.dark .event-snippet{background-color:rgba(124,58,237,0.15);color:#c9cdd4;}body.dark .calendar-day.today .event-snippet{background-color:rgba(255,255,255,0.15);color:white;}body.dark .bg-green-50{background-color:rgba(34,197,94,0.08) !important;}body.dark .bg-amber-50{background-color:rgba(245,158,11,0.08) !important;}body.dark .bg-blue-50{background-color:rgba(59,130,246,0.08) !important;}body.dark .bg-emerald-50{background-color:rgba(16,185,129,0.08) !important;}body.dark .bg-purple-50{background-color:rgba(168,85,247,0.08) !important;}body.dark [style*="background:#fdf2f8"],body.dark [style*="background:#fff1f2"],body.dark [style*="background:#eef2ff"],body.dark [style*="background:#fefce8"],body.dark [style*="background:#eff6ff"],body.dark [style*="background:#fffbeb"]{background:#22252f !important;border-color:#333848 !important;}body.dark::-webkit-scrollbar-track{background:#14161e;}body.dark::-webkit-scrollbar-thumb{background:#333848;}body.dark::-webkit-scrollbar-thumb:hover{background:#444a5a;}body.dark #authOverlay{background:#0f1117 !important;}body.dark .bg-gradient-to-br.from-pink-50{background:#0f1117 !important;}body.dark .score-zero{background-color:rgba(239,68,68,0.08) !important;color:#f87171 !important;}body.dark .analysis-table-wrap table tbody tr td:nth-child(1),body.dark .analysis-table-wrap table tbody tr td:nth-child(2){background:#1a1d27 !important;}body.dark .analysis-table-wrap table tbody tr:hover td:nth-child(1),body.dark .analysis-table-wrap table tbody tr:hover td:nth-child(2){background:#22252f !important;}body.dark .analysis-table-wrap table thead th:nth-child(1),body.dark .analysis-table-wrap table thead th:nth-child(2){background:#14161e !important;}.mobile-tab{color:#9ca3af;transition:all 0.15s;}.mobile-tab.active{color:#ec4899;}.mobile-tab:active{transform:scale(0.92);}.safe-bottom{padding-bottom:env(safe-area-inset-bottom,0);}@media (max-width:1023px){#contentArea{padding-bottom:80px !important;}}body.font-sm #contentArea{font-size:0.8rem;}body.font-sm #contentArea table{font-size:0.6rem;}body.font-sm #contentArea .text-xs{font-size:0.65rem !important;}body.font-sm #contentArea .text-sm{font-size:0.75rem !important;}body.font-sm header .text-base{font-size:0.85rem !important;}body.font-sm header .text-\[9px\],body.font-sm header .text-\[10px\]{font-size:8px !important;}body.font-lg #contentArea{font-size:1.1rem;}body.font-lg #contentArea table{font-size:0.85rem;}body.font-lg #contentArea .text-xs{font-size:0.85rem !important;}body.font-lg #contentArea .text-sm{font-size:1rem !important;}body.font-lg #contentArea .text-\[10px\]{font-size:0.75rem !important;}body.font-lg #contentArea .text-\[11px\]{font-size:0.8rem !important;}body.font-lg #contentArea .text-\[9px\]{font-size:0.7rem !important;}body.font-lg header .text-base{font-size:1.15rem !important;}body.font-lg header .text-\[9px\]{font-size:11px !important;}body.font-lg header .text-\[10px\]{font-size:12px !important;}body.font-lg nav .text-sm{font-size:1rem !important;}body.font-lg nav .text-\[9px\]{font-size:11px !important;}body.dark #mobileTabBar{background:#14161e !important;border-color:#2a2d3a !important;}body.dark .mobile-tab{color:#6b7280;}body.dark .mobile-tab.active{color:#f472b6;}</style>
 </head>
 <body class="bg-gray-50 text-slate-800 h-screen overflow-hidden flex font-medium">
 
- <div id="authOverlay" class="fixed inset-0 z-[20000] bg-gradient-to-br from-pink-50 via-white to-rose-50 flex items-center justify-center hidden">
+ <!-- Tailwind CDN 사전 클래스 등록 (가이드 콘텐츠 동적 로딩용) -->
+<div class="hidden" aria-hidden="true">
+<span class="font-black font-bold font-semibold font-extrabold font-medium"></span>
+<span class="text-xs text-sm text-base text-lg text-xl text-2xl text-3xl text-[8px] text-[9px] text-[10px] text-[11px]"></span>
+<span class="rounded-xl rounded-2xl rounded-full rounded-lg shadow-sm overflow-hidden"></span>
+<span class="grid grid-cols-2 grid-cols-3 grid-cols-5 gap-1 gap-1.5 gap-2 gap-3 gap-4"></span>
+<span class="p-2 p-3 p-4 p-5 p-6 px-2 px-3 px-4 px-5 py-0.5 py-1 py-1.5 py-2 py-3"></span>
+<span class="mb-0.5 mb-1 mb-2 mb-3 mb-4 mb-20 mt-0.5 mt-1 mt-2 mt-4 ml-1 ml-3 ml-auto"></span>
+<span class="space-y-2 space-y-3 flex flex-wrap flex-1 items-center justify-between self-center min-w-0 shrink-0"></span>
+<span class="border border-2 leading-relaxed line-through cursor-pointer truncate"></span>
+<span class="bg-white bg-gray-50 bg-red-50 bg-pink-50 bg-rose-50 bg-amber-50 bg-yellow-50 bg-green-50 bg-emerald-50 bg-blue-50 bg-indigo-50 bg-purple-50 bg-violet-50"></span>
+<span class="text-white text-gray-400 text-gray-500 text-gray-600 text-gray-700 text-gray-800"></span>
+<span class="text-red-500 text-red-600 text-pink-500 text-pink-600 text-blue-500 text-blue-600 text-green-600 text-amber-600 text-indigo-500 text-indigo-600 text-purple-500 text-purple-600 text-emerald-600 text-orange-500"></span>
+<span class="border-gray-100 border-gray-200 border-red-100 border-pink-100 border-pink-200 border-blue-200 border-indigo-100 border-indigo-200 border-purple-100 border-emerald-200 border-amber-200 border-green-200"></span>
+<span class="bg-gradient-to-r bg-gradient-to-br from-red-50 from-pink-50 from-rose-50 from-amber-50 from-yellow-50 from-green-50 from-emerald-50 from-blue-50 from-indigo-50 from-purple-50 from-violet-50"></span>
+<span class="to-rose-50 to-pink-50 to-yellow-50 to-emerald-50 to-purple-50 to-violet-50 to-indigo-50"></span>
+<span class="dark:bg-gray-700 dark:bg-gray-800 dark:bg-gray-900 dark:text-gray-100 dark:text-gray-300 dark:text-gray-400 dark:border-gray-600 dark:border-gray-700"></span>
+<span class="hover:scale-[1.02] transition-transform opacity-50 divide-y divide-gray-100"></span>
+</div>
+
+<div id="authOverlay" class="fixed inset-0 z-[20000] bg-gradient-to-br from-pink-50 via-white to-rose-50 flex items-center justify-center hidden">
   <div class="text-center w-80 p-8">
    <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-pink-400 to-rose-400 flex items-center justify-center text-white font-bold shadow-lg shadow-pink-200 text-3xl mx-auto mb-6">뚠</div>
    <h1 class="text-2xl font-black text-gray-800 tracking-tight mb-2">뚠카롱 길드 관리</h1>
@@ -523,7 +543,7 @@
             overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem;';
             overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
             function statCard(label,value,colorName){ return '<div class="text-center p-3 rounded-xl '+(dk?'bg-'+colorName+'-900/30 border border-'+colorName+'-800/30':'bg-'+colorName+'-50 border border-'+colorName+'-100')+'"><p class="text-[8px] '+(dk?'text-'+colorName+'-300':'text-'+colorName+'-500')+' font-bold uppercase">'+label+'</p><p class="text-lg font-black '+(dk?'text-'+colorName+'-300':'text-'+colorName+'-600')+'">'+value+'</p></div>'; }
-            overlay.innerHTML = '<div style="background:'+(dk?'#1a1d27':'white')+';border-radius:1.5rem;width:100%;max-width:500px;max-height:85vh;box-shadow:0 25px 50px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;">'+'<div class="p-5 border-b '+(dk?'border-gray-700':'border-gray-100')+' flex justify-between items-center shrink-0"><div class="flex items-center gap-3">'+window.getNicknameIcon(member.role)+'<div><h3 class="text-lg font-bold '+(dk?'text-gray-100':'text-gray-800')+'">'+member.name+'</h3><p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+'">'+member.guild+' \xB7 '+(member.class||'-')+' \xB7 '+(member.role||'-')+'</p></div></div><button onclick="this.closest(\'[style*=position\\:fixed]\')" class="w-8 h-8 rounded-full '+(dk?'bg-gray-700 hover:bg-gray-600 text-gray-300':'bg-gray-100 hover:bg-gray-200 text-gray-500')+' flex items-center justify-center transition-colors" id="pSuroClose"><i class="fas fa-times"></i></button></div>'+'<div class="p-5 flex-1 overflow-y-auto">'+'<div class="grid grid-cols-4 gap-2 mb-5">'+statCard('\uD3C9\uADE0',avg.toLocaleString(),'pink')+statCard('\uCD5C\uACE0',mx.toLocaleString(),'blue')+statCard('\uCD5C\uC800',mn.toLocaleString(),'amber')+statCard('\uCC38\uC5EC\uC728',participation+'%','green')+'</div>'+'<div class="mb-5"><p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+' font-bold uppercase tracking-widest mb-3">\uCD5C\uADFC \uCD94\uC138</p><div class="space-y-2">'+trendHtml+'</div></div>'+'<div><p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+' font-bold uppercase tracking-widest mb-3">\uC804\uCCB4 \uAE30\uB85D ('+headers.length+'\uC8FC\uCC28)</p><div class="max-h-[200px] overflow-y-auto space-y-1">'+allHtml+'</div></div>'+'</div></div>';
+            overlay.innerHTML = '<div style="background:'+(dk?'#1a1d27':'white')+';border-radius:1.5rem;width:100%;max-width:500px;max-height:85vh;box-shadow:0 25px 50px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;">'+'<div class="p-5 border-b '+(dk?'border-gray-700':'border-gray-100')+' flex justify-between items-center shrink-0"><div class="flex items-center gap-3">'+window.getNicknameIcon(member.role, member)+'<div><h3 class="text-lg font-bold '+(dk?'text-gray-100':'text-gray-800')+'">'+member.name+'</h3><p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+'">'+member.guild+' \xB7 '+(member.class||'-')+' \xB7 '+(member.role||'-')+'</p></div></div><button onclick="this.closest(\'[style*=position\\:fixed]\')" class="w-8 h-8 rounded-full '+(dk?'bg-gray-700 hover:bg-gray-600 text-gray-300':'bg-gray-100 hover:bg-gray-200 text-gray-500')+' flex items-center justify-center transition-colors" id="pSuroClose"><i class="fas fa-times"></i></button></div>'+'<div class="p-5 flex-1 overflow-y-auto">'+'<div class="grid grid-cols-4 gap-2 mb-5">'+statCard('\uD3C9\uADE0',avg.toLocaleString(),'pink')+statCard('\uCD5C\uACE0',mx.toLocaleString(),'blue')+statCard('\uCD5C\uC800',mn.toLocaleString(),'amber')+statCard('\uCC38\uC5EC\uC728',participation+'%','green')+'</div>'+'<div class="mb-5"><p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+' font-bold uppercase tracking-widest mb-3">\uCD5C\uADFC \uCD94\uC138</p><div class="space-y-2">'+trendHtml+'</div></div>'+'<div><p class="text-[10px] '+(dk?'text-gray-400':'text-gray-500')+' font-bold uppercase tracking-widest mb-3">\uC804\uCCB4 \uAE30\uB85D ('+headers.length+'\uC8FC\uCC28)</p><div class="max-h-[200px] overflow-y-auto space-y-1">'+allHtml+'</div></div>'+'</div></div>';
             document.body.appendChild(overlay);
             document.getElementById('pSuroClose').onclick = function(){ overlay.remove(); };
         };
@@ -598,12 +618,60 @@
             return order === 'asc' ? res : -res;
         }
 
-        window.getNicknameIcon = (role) => {
+        window.getNicknameIcon = (role, member) => {
             const rd = SITE_CONFIG?.roleDisplay?.[role] || {};
             if (rd.emoji) return `<span class="mr-1.5 text-sm">${rd.emoji}</span>`;
-            if (role === '마카롱') return '<i class="fas fa-crown text-blue-500 mr-2 shadow-sm"></i>';
-            if (role === '다쿠아즈') return '<i class="fas fa-crown text-pink-500 mr-2 shadow-sm"></i>';
-            return '<span class="w-3 h-3 rounded-full bg-gray-200 mr-2 inline-block"></span>';
+            if (role === '마카롱') return '<i class="fas fa-crown text-blue-500 mr-1.5 shadow-sm"></i>';
+            if (role === '다쿠아즈') return '<i class="fas fa-crown text-pink-500 mr-1.5 shadow-sm"></i>';
+            return '<span class="w-3 h-3 rounded-full bg-gray-200 mr-1.5 inline-block"></span>';
+        };
+
+        // 마카롱/다쿠아즈 간부의 수로 기반 가상 직위 계산
+        window.getComputedRank = (member) => {
+            if (!member || !['마카롱','다쿠아즈'].includes(member.role)) return null;
+            if (member.isMain === false) {
+              // 부캐 간부: 본캐 이름으로 순위 찾기
+              const guild = member.guild;
+              const headers = appState.suroHeaders || [];
+              const latestH = headers.length > 0 ? headers[headers.length - 1] : null;
+              if (!latestH) return null;
+              const allMembers = appState.members.filter(m => m.guild === guild && m.isMain !== false)
+                .map(m => ({ name: m.name, score: Math.round(Number(m.suro?.[latestH])) || 0 })).sort((a,b) => b.score - a.score);
+              const mainName = member.mainCharName || member.name;
+              const myIdx = allMembers.findIndex(m => m.name === mainName);
+              if (myIdx < 0) return '와플';
+              const myScore = allMembers[myIdx].score;
+              const rules = SITE_CONFIG?.autoRankRules?.[guild] || [];
+              const SUB_EXCLUDE = ['와플','아인슈페너','부팬케이크','수플레','부케이크','반죽(휴면)'];
+              const filtered = rules.filter(r => !SUB_EXCLUDE.includes(r.rank));
+              const topNR = filtered.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
+              const scoreR = filtered.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
+              let rank = null, cumTop = 0;
+              for (const r of topNR) { cumTop += (r.topN||0); if (myIdx < cumTop && myScore > 0) { rank = r.rank; break; } }
+              if (!rank) for (const r of scoreR) { if (myScore >= (r.min||0)) { rank = r.rank; break; } }
+              return rank ? rank + ' · 와플' : '와플';
+            }
+            const guild = member.guild;
+            const headers = appState.suroHeaders || [];
+            const latestH = headers.length > 0 ? headers[headers.length - 1] : null;
+            if (!latestH) return null;
+            const allMembers = appState.members.filter(m => m.guild === guild && m.isMain !== false)
+              .map(m => ({ name: m.name, score: Math.round(Number(m.suro?.[latestH])) || 0 })).sort((a,b) => b.score - a.score);
+            const myIdx = allMembers.findIndex(m => m.name === member.name);
+            if (myIdx < 0) return null;
+            const myScore = allMembers[myIdx].score;
+            const rules = SITE_CONFIG?.autoRankRules?.[guild] || [];
+            const SUB_EXCLUDE = ['와플','아인슈페너','부팬케이크','수플레','부케이크','반죽(휴면)'];
+            const filtered = rules.filter(r => !SUB_EXCLUDE.includes(r.rank));
+            const topNR = filtered.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
+            const bottomNR = filtered.filter(r => r.bottomN > 0);
+            const scoreR = filtered.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
+            const totalM = allMembers.length;
+            for (const r of bottomNR) { if (myIdx >= totalM - (r.bottomN||0)) return r.rank; }
+            let cumTop = 0;
+            for (const r of topNR) { cumTop += (r.topN||0); if (myIdx < cumTop && myScore > 0) return r.rank; }
+            for (const r of scoreR) { if (myScore >= (r.min||0)) return r.rank; }
+            return null;
         };
 
         function formatRankWithSuffix(rank) {
@@ -993,30 +1061,42 @@
             const latestHeader = headers.length > 0 ? headers[headers.length - 1] : null;
             if(!latestHeader) return window.showMsg("수로 데이터가 없습니다.", "error");
 
-            const getRoleByScore = (score) => {
-                const rules = SITE_CONFIG?.autoRankRules?.['뚠카롱'] || [
-                    { min: 130000, rank: '파르페' }, { min: 95000, rank: '티라미슈' },
-                    { min: 72000, rank: '크로칸슈' }, { min: 50000, rank: '롤케이크' },
-                    { min: 38000, rank: '팬케이크' }, { min: 0, rank: '스콘' }
-                ];
-                const sorted = [...rules].sort((a,b) => b.min - a.min);
-                for (const r of sorted) { if (score >= r.min) return r.rank; }
-                return sorted.length > 0 ? sorted[sorted.length-1].rank : '스콘';
-            };
-
             const scored = targets.map(m => ({
                 ...m,
                 latestScore: Math.round(Number(m.suro?.[latestHeader])) || 0
             })).sort((a, b) => b.latestScore - a.latestScore);
 
-            const changes = [];
-            scored.forEach((m, idx) => {
-                let newRole;
-                if(idx < 3 && m.latestScore > 0) {
-                    newRole = '크라운';
-                } else {
-                    newRole = getRoleByScore(m.latestScore);
+            const mainOnly = scored.filter(m => m.isMain !== false);
+            const mainRankMap = {};
+            mainOnly.forEach((m, idx) => { mainRankMap[m.name] = idx; });
+
+            const rules = SITE_CONFIG?.autoRankRules?.['뚠카롱'] || [
+                { min: 130000, rank: '파르페' }, { min: 95000, rank: '티라미슈' },
+                { min: 72000, rank: '크로칸슈' }, { min: 50000, rank: '롤케이크' },
+                { min: 38000, rank: '팬케이크' }, { min: 0, rank: '스콘' }
+            ];
+            const topNRules = rules.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
+            const bottomNRules = rules.filter(r => r.bottomN > 0);
+            const scoreRules = rules.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
+            const totalMain = mainOnly.length;
+
+            const getRoleForMember = (m) => {
+                const score = m.latestScore;
+                if (m.isMain !== false) {
+                    const idx = mainRankMap[m.name];
+                    if (idx !== undefined) {
+                        for (const r of bottomNRules) { if (idx >= totalMain - (r.bottomN||0)) return r.rank; }
+                        let cumTop = 0;
+                        for (const r of topNRules) { cumTop += (r.topN||0); if (idx < cumTop && score > 0) return r.rank; }
+                    }
                 }
+                for (const r of scoreRules) { if (score >= (r.min||0)) return r.rank; }
+                return scoreRules.length > 0 ? scoreRules[scoreRules.length-1].rank : '스콘';
+            };
+
+            const changes = [];
+            scored.forEach((m) => {
+                const newRole = getRoleForMember(m);
                 if(m.role !== newRole) {
                     changes.push({ name: m.name, from: m.role, to: newRole, score: m.latestScore });
                 }
@@ -1652,23 +1732,9 @@
             processedList.sort((a, b) => {
                 if (f.startsWith('date_')) {
                     const targetHeader = f.replace('date_', '');
-                    const headerIdx = recentHeaders.indexOf(targetHeader);
-                    const prevHeader = headerIdx > 0 ? recentHeaders[headerIdx - 1] : null;
-                    const getIncRate = (m) => {
-                        const curr = Math.round(Number(m.suro?.[targetHeader])) || 0;
-                        if (!prevHeader) return curr > 0 ? -500 : -1000;
-                        const prev = Math.round(Number(m.suro?.[prevHeader])) || 0;
-                        if (curr === 0 && prev === 0) return -1000; 
-                        if (prev === 0 && curr > 0) return -500; 
-                        return ((curr - prev) / prev) * 100;
-                    };
-                    const rateA = getIncRate(a); const rateB = getIncRate(b);
-                    if (rateA === rateB) {
-                        const currA = Math.round(Number(a.suro?.[targetHeader])) || 0;
-                        const currB = Math.round(Number(b.suro?.[targetHeader])) || 0;
-                        return o === 'asc' ? currA - currB : currB - currA;
-                    }
-                    return o === 'asc' ? rateA - rateB : rateB - rateA;
+                    const currA = Math.round(Number(a.suro?.[targetHeader])) || 0;
+                    const currB = Math.round(Number(b.suro?.[targetHeader])) || 0;
+                    return o === 'asc' ? currA - currB : currB - currA;
                 }
                 if (f === 'avg') return o === 'asc' ? a.avg - b.avg : b.avg - a.avg;
                 if (f === 'score') {
@@ -1685,7 +1751,7 @@
                     <td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50 bg-white group-hover:bg-gray-50">${globalIndex}</td>
                     <td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50 bg-white group-hover:bg-gray-50">
                         <div class="flex items-center leading-none overflow-hidden text-ellipsis">
-                            ${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}${m.level>0?'<span class="text-[8px] text-gray-400 font-mono ml-1">Lv.'+m.level+'</span>':''}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div>
+                            ${window.getNicknameIcon(m.role, m)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}${m.level>0?'<span class="text-[8px] text-gray-400 font-mono ml-1">Lv.'+m.level+'</span>':''}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div>
                         </div>
                     </td>
                     <td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>
@@ -1821,24 +1887,9 @@
                     const headerIdx = recentHeaders.indexOf(targetHeader);
                     const prevHeader = headerIdx > 0 ? recentHeaders[headerIdx - 1] : null;
 
-                    const getIncRate = (m) => {
-                        const curr = Math.round(Number(m.suro?.[targetHeader])) || 0;
-                        if (!prevHeader) return curr > 0 ? -500 : -1000;
-                        const prev = Math.round(Number(m.suro?.[prevHeader])) || 0;
-                        if (curr === 0 && prev === 0) return -1000; 
-                        if (prev === 0 && curr > 0) return -500; 
-                        return ((curr - prev) / prev) * 100;
-                    };
-
-                    const rateA = getIncRate(a);
-                    const rateB = getIncRate(b);
-
-                    if (rateA === rateB) {
-                        const currA = Math.round(Number(a.suro?.[targetHeader])) || 0;
-                        const currB = Math.round(Number(b.suro?.[targetHeader])) || 0;
-                        return o === 'asc' ? currA - currB : currB - currA;
-                    }
-                    return o === 'asc' ? rateA - rateB : rateB - rateA;
+                    const currA = Math.round(Number(a.suro?.[targetHeader])) || 0;
+                    const currB = Math.round(Number(b.suro?.[targetHeader])) || 0;
+                    return o === 'asc' ? currA - currB : currB - currA;
                 }
 
                 if (f === 'avg') return o === 'asc' ? a.avg - b.avg : b.avg - a.avg;
@@ -1976,7 +2027,7 @@
                                             <td class="p-3 text-center text-gray-400 group-hover:bg-gray-50 border-r border-gray-50 bg-white group-hover:bg-gray-50">${globalIndex}</td>
                                             <td class="p-3 text-gray-800 group-hover:bg-gray-50 border-r border-gray-50 bg-white group-hover:bg-gray-50">
                                                 <div class="flex items-center leading-none overflow-hidden text-ellipsis">
-                                                    ${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}${m.level>0?'<span class="text-[8px] text-gray-400 font-mono ml-1">Lv.'+m.level+'</span>':''}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div>
+                                                    ${window.getNicknameIcon(m.role, m)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}${m.level>0?'<span class="text-[8px] text-gray-400 font-mono ml-1">Lv.'+m.level+'</span>':''}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div>
                                                 </div>
                                             </td>
                                             <td class="p-3 text-center text-pink-600 bg-pink-50/30 group-hover:bg-pink-100 border-r border-pink-50">${m.avg.toLocaleString()}</td>
@@ -2098,7 +2149,7 @@
                             <div class="flex justify-between items-center py-2 px-3 rounded-xl ${i < 3 ? 'bg-gradient-to-r ' + c[1] + ' border ' + c[2] : i % 2 === 0 ? 'bg-gray-50' : ''} transition-colors">
                                 <div class="flex items-center gap-3 overflow-hidden">
                                     <span class="font-black text-${c[0]}-500 w-7 text-center text-sm ${i < 3 ? '' : 'text-gray-400'}">${i+1}</span>
-                                    <div class="flex items-center gap-1.5">${window.getNicknameIcon(m.role)}<span class="font-bold text-gray-800 text-sm truncate" style="max-width:180px;">${m.name}</span></div>
+                                    <div class="flex items-center gap-1.5">${window.getNicknameIcon(m.role, m)}<span class="font-bold text-gray-800 text-sm truncate" style="max-width:180px;">${m.name}</span></div>
                                 </div>
                                 <span class="font-black text-${c[0]}-600 text-sm shrink-0 ${i >= 3 ? 'text-gray-600' : ''}">${formatVal(m)}</span>
                             </div>
@@ -2168,7 +2219,7 @@
                         tbody.innerHTML = processed.map((m,i) => {
                             let row = `<tr class="group h-11 hover:bg-gray-50 transition-colors border-b border-gray-50">
                                 <td class="p-3 text-center text-gray-400 bg-white">${i+1}</td>
-                                <td class="p-3 text-gray-800 bg-white"><div class="flex items-center leading-none">${window.getNicknameIcon(m.role)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}${m.level>0?'<span class="text-[8px] text-gray-400 font-mono ml-1">Lv.'+m.level+'</span>':''}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div></div></td>
+                                <td class="p-3 text-gray-800 bg-white"><div class="flex items-center leading-none">${window.getNicknameIcon(m.role, m)}<div class="flex flex-col min-w-0"><span class="truncate">${m.name}${m.level>0?'<span class="text-[8px] text-gray-400 font-mono ml-1">Lv.'+m.level+'</span>':''}</span><span class="text-[9px] text-gray-400 font-medium truncate">${m.class||''}</span></div></div></td>
                                 <td class="p-3 text-center text-pink-600 bg-pink-50/30">${m.avg.toLocaleString()}</td>`;
                             m.recentScores.forEach((s,si) => {
                                 let dh='',ps=si>0?m.recentScores[si-1]:0;
@@ -2413,7 +2464,16 @@
                     if (_rbc) { rstyle += 'background-color:' + _rbc + ';'; rstyle += 'color:' + (_rtc || 'white') + ';'; }
                     else if (_rtc) { rstyle += 'color:' + _rtc + ';background:#f3f4f6;'; }
                     else { rstyle += 'background:#f3f4f6;color:#6b7280;'; }
-                    roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-tight" style="${rstyle}">${m.role}</span>`;
+                    let roleText = m.role;
+                    const _isSub = m.isMain === false;
+                    const _SUB_ONLY = ['와플','아인슈페너','부팬케이크','수플레','부케이크','반죽(휴면)'];
+                    if (['마카롱','다쿠아즈'].includes(m.role)) {
+                      const subRole = window.getComputedRank(m);
+                      if (subRole) roleText = m.role + ' · ' + subRole;
+                    } else if (_isSub && !_SUB_ONLY.includes(m.role)) {
+                      roleText = m.role + ' · 와플';
+                    }
+                    roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-tight" style="${rstyle}">${roleText}</span>`;
                 } else {
                     roleHtml = `<span class="text-[10px]">${m.role}</span>`;
                 }
@@ -2424,7 +2484,7 @@
                             ? `<input type="checkbox" class="custom-checkbox" ${appState.kickSelection.has(m.id) ? 'checked' : ''} onchange="window.handleKickSelect('${m.id}')">`
                             : globalIndex}
                     </td>
-                    <td class="py-1.5 px-2 font-bold text-gray-800 flex items-center leading-none">${window.getNicknameIcon(m.role)}<span class="text-sm tracking-tight">${m.name}</span></td>
+                    <td class="py-1.5 px-2 font-bold text-gray-800 flex items-center leading-none">${window.getNicknameIcon(m.role, m)}<span class="text-sm tracking-tight">${m.name}</span></td>
                     <td class="py-1.5 px-2 leading-tight hidden sm:table-cell">
                         <span class="block text-[11px] font-bold text-gray-700">${mainName}</span>
                         <span class="text-[9px] font-medium text-gray-400">${mainRankHtml}</span>
@@ -6808,8 +6868,8 @@
      let previewStyle = '';
      if (tc) previewStyle += 'color:'+tc+';';
      if (bc) { previewStyle += 'background:'+bc+';padding:2px 10px;border-radius:6px;'; if (!tc) previewStyle += 'color:white;'; }
-     return '<div class="cfg-role-item flex items-center gap-3 bg-white rounded-xl px-3 py-2.5 border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow" draggable="true" data-role="'+rName+'" data-pri="'+ri+'">'
-     +'<span class="text-gray-300 text-xs drag-handle"><i class="fas fa-grip-vertical"></i></span>'
+     return '<div class="cfg-role-item flex items-center gap-2 bg-white rounded-xl px-2 py-2 border border-gray-200 hover:shadow-sm transition-shadow" draggable="true" data-role="'+rName+'" data-pri="'+ri+'">'
+     +'<div class="flex flex-col"><button onclick="window._cfgMoveRole(this,-1)" class="text-gray-300 hover:text-pink-500 text-[9px] leading-none px-1"><i class="fas fa-caret-up"></i></button><button onclick="window._cfgMoveRole(this,1)" class="text-gray-300 hover:text-pink-500 text-[9px] leading-none px-1"><i class="fas fa-caret-down"></i></button></div>'
      +'<input class="cfg-role-emoji w-9 text-center bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-sm outline-none" value="'+(rd.emoji||'')+'" data-role="'+rName+'">'
      +'<span class="text-sm font-bold min-w-[70px]" data-role-preview="'+rName+'" style="'+previewStyle+'">'+rName+'</span>'
      +'<div class="flex items-center gap-1.5"><span class="text-[9px] text-gray-400 font-bold">뱃지</span>'
@@ -6932,7 +6992,7 @@
    +'<div class="space-y-1.5" id="cfgBadgeList">'+badgeHtml+'</div></div>'
 
    +'<div class="mb-6"><h4 class="text-xs lg:text-sm text-gray-600 mb-1 flex items-center gap-2"><i class="fas fa-medal text-pink-400 text-[10px]"></i>직위 이모지 / 색상</h4>'
-   +'<p class="text-[8px] text-gray-400 mb-2"><i class="fas fa-grip-vertical text-gray-300 mr-1"></i>드래그로 순서 변경</p>'
+   +'<p class="text-[8px] text-gray-400 mb-2"><i class="fas fa-sort text-gray-300 mr-1"></i>▲▼ 버튼으로 순서 변경</p>'
    +'<div class="space-y-1" id="cfgRoleList">'+rolesHtml+'</div></div>'
 
    +'<div class="mb-6"><h4 class="text-xs lg:text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-shield-alt text-pink-400 text-[10px]"></i>수로 면제 직위</h4>'
@@ -6995,7 +7055,7 @@
    +'</div>';
 
    // 디자인 탭이면 드래그앤드롭 초기화
-   if (sTab === 'design') setTimeout(() => window._cfgInitRoleDrag?.(), 50);
+   
   };
 
 
@@ -7009,6 +7069,20 @@
     if (tc && tc !== '#374151') style += 'color:' + tc + ';';
     if (bc && bc !== '#f3f4f6') { style += 'background:' + bc + ';padding:2px 8px;border-radius:6px;'; if (!tc || tc === '#374151') style += 'color:white;'; }
     preview.style.cssText = style;
+  };
+
+  window._cfgMoveRole = (btn, dir) => {
+    const item = btn.closest('.cfg-role-item');
+    const list = item?.parentElement;
+    if (!item || !list) return;
+    const sibling = dir === -1 ? item.previousElementSibling : item.nextElementSibling;
+    if (!sibling || !sibling.classList.contains('cfg-role-item')) return;
+    if (dir === -1) list.insertBefore(item, sibling);
+    else list.insertBefore(sibling, item);
+    list.querySelectorAll('.cfg-role-item').forEach((el, i) => {
+      const p = el.querySelector('.cfg-role-priority');
+      if (p) p.value = i;
+    });
   };
 
   window._cfgShowCutoff = (gName) => {
@@ -7906,7 +7980,7 @@
    <tr class="hover:bg-pink-50/20 transition-colors">
    <td class="p-2 lg:p-3 text-center text-gray-400 text-[10px]">${globalIdx + 1}</td>
    <td class="p-2 lg:p-3 text-gray-800">
-   <div class="flex items-center">${window.getNicknameIcon(m.role)}<span class="text-[11px] lg:text-xs">${m.name}</span></div>
+   <div class="flex items-center">${window.getNicknameIcon(m.role, m)}<span class="text-[11px] lg:text-xs">${m.name}</span></div>
    </td>
    <td class="p-2 lg:p-3 text-gray-500 text-[10px] hidden sm:table-cell">${m.role}</td>
    <td class="p-2 lg:p-3 text-center ${currentScore === 0 ? 'text-red-400' : 'text-gray-700'} text-[10px] lg:text-xs">${currentScore.toLocaleString()}</td>
@@ -9644,22 +9718,11 @@
    return html;
    };
 
-   const stripBorder = (html) => {
-   if(!html) return '';
-   return html.replace(/\bborder\b/g, '')
-   .replace(/\bborder-gray-100\b/g, '')
-   .replace(/\bborder-gray-200\b/g, '')
-   .replace(/\bborder-pink-100\b/g, '')
-   .replace(/\bborder-pink-200\/50\b/g, '')
-   .replace(/\bborder-red-100\b/g, '')
-   .replace(/\bborder-blue-100\b/g, '');
-   };
-
    let noticeHtml = '', introHtml = '', ranksHtml = '', linksHtml = '';
    const guideData = {};
    try {
    const { data: allGuides } = await supaDb.from('guide_pages').select('*').order('id');
-   if (allGuides) allGuides.forEach(p => guideData[p.slug] = stripBorder(replacePlaceholders(p.content || '')));
+   if (allGuides) allGuides.forEach(p => guideData[p.slug] = replacePlaceholders(p.content || ''));
    introHtml = guideData['intro'] || '';
    ranksHtml = guideData['ranks'] || '';
    linksHtml = guideData['links'] || '';
@@ -9721,11 +9784,7 @@
    </div>` : ''}
    </div>`;
    setTimeout(() => {
-   container.querySelectorAll('.home-guide-content, .home-guide-content *').forEach(el => {
-   el.style.borderColor = 'transparent';
-   el.style.borderWidth = '0';
-   
-   });
+   // border 후처리 제거됨 (가이드 콘텐츠 스타일 보존)
    }, 50);
   };
 
