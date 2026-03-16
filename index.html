@@ -937,6 +937,14 @@
                 alert("🚨 Supabase 연결 실패\n\n" + (e.message || JSON.stringify(e)));
             } finally {
                 window.setLoadProgress(100, '완료!');
+                // 길드 로고 적용
+                const _logoUrl = SITE_CONFIG?.guildLogo;
+                if (_logoUrl) {
+                    const _sb = document.getElementById('sidebarLogo');
+                    const _ld = document.getElementById('loadingLogo');
+                    if (_sb) _sb.innerHTML = '<img src="'+_logoUrl+'" class="w-full h-full object-cover">';
+                    if (_ld) _ld.innerHTML = '<img src="'+_logoUrl+'" class="w-full h-full object-cover">';
+                }
                 setTimeout(() => window.showLoading(false), 300);
                 window.router(appState.activeTab);
             }
@@ -7148,7 +7156,6 @@
    if (!cfg.guilds) cfg.guilds = [...appState.guilds];
    cfg.guilds.push({ id: 'new_' + Date.now(), name: '새길드', type: '신규', color: '#9ca3af', icon: '⭐', max: 200 });
    SITE_CONFIG = cfg;
-                        if (window._cfgApplyLogo) window._cfgApplyLogo();
    window.renderSettings(document.getElementById('contentArea'));
   };
 
