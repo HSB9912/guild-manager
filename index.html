@@ -683,8 +683,14 @@
 
             const rules = SITE_CONFIG?.autoRankRules?.[guild] || [];
             const topNRules = rules.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
-            const scoreRules = rules.filter(r => !r.topN || r.topN <= 0).sort((a,b) => b.min - a.min);
+            const bottomNRules = rules.filter(r => r.bottomN > 0);
+            const scoreRules = rules.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
+            const totalMembers = allMembers.length;
 
+            // 하위 N명 체크
+            for (const r of bottomNRules) {
+              if (myIdx >= totalMembers - (r.bottomN || 0)) return r.rank;
+            }
             let cumTop = 0;
             for (const r of topNRules) {
               cumTop += (r.topN || 0);
@@ -1095,18 +1101,24 @@
                 { min: 38000, rank: '팬케이크' }, { min: 0, rank: '스콘' }
             ];
 
-            // topN 규칙 분리 (등수 기반) vs 점수 기반
+            // topN 규칙 분리 (등수 기반) vs 점수 기반 vs 하위N
             const topNRules = rules.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
-            const scoreRules = rules.filter(r => !r.topN || r.topN <= 0).sort((a,b) => b.min - a.min);
+            const bottomNRules = rules.filter(r => r.bottomN > 0);
+            const scoreRules = rules.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
+            const totalMembers = scored.length;
 
             const getRoleByRank = (idx, score) => {
-                // 1. 등수 기반 규칙 먼저 확인
+                // 1. 하위 N명 체크 (예: 하위 20명 = 팬케이크)
+                for (const r of bottomNRules) {
+                    if (idx >= totalMembers - (r.bottomN || 0)) return r.rank;
+                }
+                // 2. 등수 기반 규칙
                 let cumTop = 0;
                 for (const r of topNRules) {
                     cumTop += (r.topN || 0);
                     if (idx < cumTop && score > 0) return r.rank;
                 }
-                // 2. 점수 기반 규칙
+                // 3. 점수 기반 규칙
                 for (const r of scoreRules) {
                     if (score >= (r.min || 0)) return r.rank;
                 }
@@ -1199,9 +1211,14 @@
                 { min: 18000, rank: '뚠케이크' }, { min: 5000, rank: '뚠브레드' }, { min: 0, rank: '뚠스콘' }
             ];
             const topNRules = rules.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
-            const scoreRules = rules.filter(r => !r.topN || r.topN <= 0).sort((a,b) => b.min - a.min);
+            const bottomNRules = rules.filter(r => r.bottomN > 0);
+            const scoreRules = rules.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
+            const totalMembers = scored.length;
 
             const getRoleByRank = (idx, score) => {
+                for (const r of bottomNRules) {
+                    if (idx >= totalMembers - (r.bottomN || 0)) return r.rank;
+                }
                 let cumTop = 0;
                 for (const r of topNRules) {
                     cumTop += (r.topN || 0);
@@ -7381,11 +7398,11 @@
    const rules = autoRankRules[gn] || [];
    return `<div class="space-y-2 mb-4">
    <h4 class="text-xs font-bold text-gray-600">${gn}</h4>
-   <p class="text-[9px] text-gray-400 mb-1">topN: 상위 N명 등수 기반 (예: 5 = TOP 5명), 최소점수: 점수 구간 기반. topN 우선 적용 후 나머지는 점수로.</p>
+   <p class="text-[9px] text-gray-400 mb-1">topN: 상위 N명, bottomN: 하위 N명, 최소점수: 점수 구간 기반. 우선순위: bottomN → topN → 점수</p>
    <div class="space-y-1" id="autoRankList_${gn.replace(/[^a-zA-Z가-힣]/g,'')}">${rules.map((r, ri) => `
    <div class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-100">
-   <input type="number" class="cfg-autorule-topn w-14 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold outline-none text-center" value="${r.topN || ''}" data-guild="${gn}" data-ri="${ri}" placeholder="topN" title="상위 N명 (등수 기반)">
-   <span class="text-gray-300 text-[9px]">명 /</span>
+   <input type="number" class="cfg-autorule-topn w-14 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold outline-none text-center" value="${r.topN || ''}" data-guild="${gn}" data-ri="${ri}" placeholder="topN" title="상위 N명">
+   <input type="number" class="cfg-autorule-bottomn w-14 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold outline-none text-center" value="${r.bottomN || ''}" data-guild="${gn}" data-ri="${ri}" placeholder="btmN" title="하위 N명">
    <input type="number" class="cfg-autorule-min w-20 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold outline-none text-right" value="${r.min !== undefined ? r.min : ''}" data-guild="${gn}" data-ri="${ri}" placeholder="최소점수">
    <span class="text-gray-300 text-xs">→</span>
    <input class="cfg-autorule-rank flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold outline-none" value="${r.rank}" data-guild="${gn}" data-ri="${ri}" placeholder="직위명">
@@ -7736,6 +7753,14 @@
    if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
    const v = parseInt(el.value);
    cfg.autoRankRules[gn][ri].topN = v > 0 ? v : 0;
+   });
+   document.querySelectorAll('.cfg-autorule-bottomn').forEach(el => {
+   const gn = el.dataset.guild;
+   const ri = parseInt(el.dataset.ri);
+   if (!cfg.autoRankRules[gn]) cfg.autoRankRules[gn] = [];
+   if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
+   const v = parseInt(el.value);
+   cfg.autoRankRules[gn][ri].bottomN = v > 0 ? v : 0;
    });
    document.querySelectorAll('.cfg-autorule-min').forEach(el => {
    const gn = el.dataset.guild;
