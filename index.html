@@ -6841,7 +6841,7 @@
 
    // 길드 카드 (압축형)
    const guildsHtml = guilds.map((g, gi) => {
-     const icOpts = iconOptions.map(ic => '<span onclick="const d=this.closest(\'details\');d.previousElementSibling.value=\''+ic+'\';d.removeAttribute(\'open\');" style="cursor:pointer;font-size:16px;padding:2px;user-select:none" title="'+ic+'">'+ic+'</span>').join('');
+     const icOpts = iconOptions.map(ic => '<span onclick="this.closest(\'[data-guild-idx]\').querySelector(\'input.cfg-guild-icon\').value=\''+ic+'\';this.closest(\'details\').removeAttribute(\'open\');" style="cursor:pointer;font-size:16px;padding:2px;user-select:none" title="'+ic+'">'+ic+'</span>').join('');
      return '<div class="bg-gray-50 rounded-xl p-3 border border-gray-100" data-guild-idx="'+gi+'">'
      +'<div class="flex items-center gap-2 mb-2"><div class="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style="background:'+g.color+'15">'+g.icon+'</div><span class="font-bold text-gray-800 text-xs">'+g.name+'</span><button onclick="window._cfgRemoveGuild('+gi+')" class="ml-auto text-gray-300 hover:text-red-400 text-[10px]"><i class="fas fa-trash"></i></button></div>'
      +'<div class="grid grid-cols-5 gap-1.5 text-[10px]">'
