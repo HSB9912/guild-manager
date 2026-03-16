@@ -35,7 +35,7 @@
 
 <div id="authOverlay" class="fixed inset-0 z-[20000] bg-gradient-to-br from-pink-50 via-white to-rose-50 flex items-center justify-center hidden">
   <div class="text-center w-80 p-8">
-   <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-pink-400 to-rose-400 flex items-center justify-center text-white font-bold shadow-lg shadow-pink-200 text-3xl mx-auto mb-6">뚠</div>
+   <div id="sidebarLogo" class="w-10 h-10 rounded-2xl shadow-lg shadow-pink-100 overflow-hidden bg-gradient-to-tr from-pink-400 to-rose-400 flex items-center justify-center text-white font-bold text-xl">뚠</div>
    <h1 class="text-2xl font-black text-gray-800 tracking-tight mb-2">뚠카롱 길드 관리</h1>
    <p class="text-xs text-gray-400 font-bold mb-8">관리자 전용 페이지입니다</p>
 
@@ -84,7 +84,7 @@
 
  <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-[1000] w-64 bg-white border-r border-gray-100 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 flex flex-col shadow-sm">
   <div class="p-6 border-b border-gray-100 flex items-center gap-3">
-   <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-400 to-rose-400 flex items-center justify-center text-white font-bold shadow-lg shadow-pink-100 text-xl">뚠</div>
+   <div id="loadingLogo" class="w-20 h-20 rounded-3xl shadow-lg shadow-pink-200 overflow-hidden bg-gradient-to-tr from-pink-400 to-rose-400 flex items-center justify-center text-white font-bold text-3xl mx-auto mb-6">뚠</div>
    <div><h1 class="text-lg font-bold text-gray-800 tracking-tight">뚠카롱 길드 현황</h1><p id="publicViewLabel" class="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">PUBLIC VIEW</p></div>
    <button id="closeSidebar" class="lg:hidden ml-auto text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
   </div>
@@ -6977,6 +6977,13 @@
    +'<div><h3 class="text-base lg:text-lg text-gray-800">디자인 설정</h3></div></div>'
    +'<p class="text-[9px] text-pink-400 mb-6"><i class="fas fa-info-circle mr-1"></i>변경 후 하단 [저장] 필수</p>'
 
+   +'<div class="mb-6"><h4 class="text-xs lg:text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-image text-pink-400 text-[10px]"></i>길드 로고</h4>'
+   +'<div class="flex items-center gap-4 bg-gray-50 rounded-xl p-3 border border-gray-100">'
+   +'<div id="cfgLogoPreview" class="w-16 h-16 rounded-2xl shadow-md overflow-hidden bg-gradient-to-tr from-pink-400 to-rose-400 flex items-center justify-center text-white text-2xl font-bold shrink-0">'+(SITE_CONFIG?.guildLogo ? '<img src="'+SITE_CONFIG.guildLogo+'" class="w-full h-full object-cover">' : '뚠')+'</div>'
+   +'<div class="flex-1"><p class="text-[9px] text-gray-500 mb-2">PNG/JPG 이미지 업로드 (권장 200x200)</p>'
+   +'<div class="flex gap-2"><label class="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-[10px] font-bold cursor-pointer hover:bg-pink-600"><i class="fas fa-upload mr-1"></i>이미지 선택<input type="file" id="cfgLogoFile" accept="image/*" class="hidden" onchange="window._cfgUploadLogo(this)"></label>'
+   +'<button onclick="window._cfgRemoveLogo()" class="px-3 py-1.5 bg-gray-200 text-gray-500 rounded-lg text-[10px] font-bold hover:bg-gray-300"><i class="fas fa-times mr-1"></i>제거</button></div>'
+   +'</div></div></div>'
    +'<div class="mb-6"><h4 class="text-xs lg:text-sm text-gray-600 mb-2 flex items-center gap-2"><i class="fas fa-calendar text-pink-400 text-[10px]"></i>기본 정보</h4>'
    +'<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">'
    +'<div><label class="text-[8px] text-gray-400 block">길드 시작일</label><input type="date" id="cfgStartDate" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none" value="'+guildStartDate+'"></div>'
@@ -7071,6 +7078,49 @@
     preview.style.cssText = style;
   };
 
+  // 길드 로고 업로드
+  window._cfgUploadLogo = async (input) => {
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return window.showMsg('2MB 이하 이미지만 가능합니다', 'error');
+    const ext = file.name.split('.').pop().toLowerCase();
+    const safeName = 'guild_logo_' + Date.now() + '.' + ext;
+    try {
+      const { error } = await supaDb.storage.from('guide-images').upload(safeName, file, { cacheControl: '3600', upsert: true });
+      if (error) throw error;
+      const url = SUPABASE_URL + '/storage/v1/object/public/guide-images/' + safeName;
+      // SITE_CONFIG에 저장
+      const cfg = { ...SITE_CONFIG, guildLogo: url };
+      await supaDb.from('site_config').upsert({ id: 1, config: cfg });
+      SITE_CONFIG.guildLogo = url;
+      window._cfgApplyLogo();
+      // 미리보기 업데이트
+      const preview = document.getElementById('cfgLogoPreview');
+      if (preview) preview.innerHTML = '<img src="'+url+'" class="w-full h-full object-cover">';
+      window.showMsg('로고가 업로드되었습니다!', 'success');
+    } catch(e) { window.showMsg('업로드 실패: ' + e.message, 'error'); }
+    input.value = '';
+  };
+
+  window._cfgRemoveLogo = async () => {
+    if (!confirm('로고를 제거하시겠습니까?')) return;
+    const cfg = { ...SITE_CONFIG }; delete cfg.guildLogo;
+    await supaDb.from('site_config').upsert({ id: 1, config: cfg });
+    SITE_CONFIG.guildLogo = null;
+    window._cfgApplyLogo();
+    const preview = document.getElementById('cfgLogoPreview');
+    if (preview) preview.innerHTML = '뚠';
+    window.showMsg('로고가 제거되었습니다', 'info');
+  };
+
+  window._cfgApplyLogo = () => {
+    const url = SITE_CONFIG?.guildLogo;
+    const sidebar = document.getElementById('sidebarLogo');
+    const loading = document.getElementById('loadingLogo');
+    if (sidebar) sidebar.innerHTML = url ? '<img src="'+url+'" class="w-full h-full object-cover">' : '뚠';
+    if (loading) loading.innerHTML = url ? '<img src="'+url+'" class="w-full h-full object-cover">' : '뚠';
+  };
+
   window._cfgMoveRole = (btn, dir) => {
     const item = btn.closest('.cfg-role-item');
     const list = item?.parentElement;
@@ -7098,6 +7148,7 @@
    if (!cfg.guilds) cfg.guilds = [...appState.guilds];
    cfg.guilds.push({ id: 'new_' + Date.now(), name: '새길드', type: '신규', color: '#9ca3af', icon: '⭐', max: 200 });
    SITE_CONFIG = cfg;
+                        if (window._cfgApplyLogo) window._cfgApplyLogo();
    window.renderSettings(document.getElementById('contentArea'));
   };
 
