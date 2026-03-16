@@ -1088,7 +1088,7 @@
 
         window.autoAssignRoles = () => {
             const excludeRoles = ['마카롱', '다쿠아즈'];
-            const targets = appState.members.filter(m => m.guild === '뚠카롱' && !excludeRoles.includes(m.role) && m.isMain !== false);
+            const targets = appState.members.filter(m => m.guild === '뚠카롱' && !excludeRoles.includes(m.role));
 
             if(targets.length === 0) return window.showMsg("부여 대상이 없습니다.", "error");
 
@@ -1101,6 +1101,11 @@
                 latestScore: Math.round(Number(m.suro?.[latestHeader])) || 0
             })).sort((a, b) => b.latestScore - a.latestScore);
 
+            // 본캐만 순위 계산용 (topN/bottomN은 본캐 기준)
+            const mainOnly = scored.filter(m => m.isMain !== false);
+            const mainRankMap = {};
+            mainOnly.forEach((m, idx) => { mainRankMap[m.name] = idx; });
+
             // 설정에서 규칙 로드 (topN: 등수 기반, min: 점수 기반)
             const rules = SITE_CONFIG?.autoRankRules?.['뚠카롱'] || [
                 { min: 130000, rank: '파르페' }, { min: 95000, rank: '티라미슈' },
@@ -1112,20 +1117,27 @@
             const topNRules = rules.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
             const bottomNRules = rules.filter(r => r.bottomN > 0);
             const scoreRules = rules.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
-            const totalMembers = scored.length;
+            const totalMain = mainOnly.length;
 
-            const getRoleByRank = (idx, score) => {
-                // 1. 하위 N명 체크 (예: 하위 20명 = 팬케이크)
-                for (const r of bottomNRules) {
-                    if (idx >= totalMembers - (r.bottomN || 0)) return r.rank;
+            const getRoleForMember = (m) => {
+                const score = m.latestScore;
+                const isSub = m.isMain === false;
+                
+                if (!isSub) {
+                    // 본캐: topN/bottomN + 점수 기반
+                    const idx = mainRankMap[m.name];
+                    if (idx !== undefined) {
+                        for (const r of bottomNRules) {
+                            if (idx >= totalMain - (r.bottomN || 0)) return r.rank;
+                        }
+                        let cumTop = 0;
+                        for (const r of topNRules) {
+                            cumTop += (r.topN || 0);
+                            if (idx < cumTop && score > 0) return r.rank;
+                        }
+                    }
                 }
-                // 2. 등수 기반 규칙
-                let cumTop = 0;
-                for (const r of topNRules) {
-                    cumTop += (r.topN || 0);
-                    if (idx < cumTop && score > 0) return r.rank;
-                }
-                // 3. 점수 기반 규칙
+                // 부캐 or 본캐 점수 기반
                 for (const r of scoreRules) {
                     if (score >= (r.min || 0)) return r.rank;
                 }
@@ -1133,8 +1145,8 @@
             };
 
             const changes = [];
-            scored.forEach((m, idx) => {
-                const newRole = getRoleByRank(idx, m.latestScore);
+            scored.forEach((m) => {
+                const newRole = getRoleForMember(m);
                 if(m.role !== newRole) {
                     changes.push({ name: m.name, from: m.role, to: newRole, score: m.latestScore });
                 }
@@ -2546,12 +2558,19 @@
                     else if (_rtc) { rstyle += 'color:' + _rtc + ';background:#f3f4f6;'; }
                     else { rstyle += 'background:#f3f4f6;color:#6b7280;'; }
                     
-                    // 마카롱/다쿠아즈 간부: 서브 직위 표시
                     let roleText = m.role;
+                    const isSub = m.isMain === false;
+                    const SUB_ONLY_ROLES = ['와플','아인슈페너','부팬케이크','수플레','부케이크','반죽(휴면)'];
+                    
                     if (['마카롱','다쿠아즈'].includes(m.role)) {
+                      // 간부: 수로 순위 기반 서브 직위 (부캐면 ·와플 포함)
                       const subRole = window.getComputedRank(m);
                       if (subRole) roleText = m.role + ' · ' + subRole;
+                    } else if (isSub && !SUB_ONLY_ROLES.includes(m.role)) {
+                      // 일반 부캐: 원래 직위 + 와플
+                      roleText = m.role + ' · 와플';
                     }
+                    
                     roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-tight" style="${rstyle}">${roleText}</span>`;
                 } else {
                     roleHtml = `<span class="text-[10px]">${m.role}</span>`;
