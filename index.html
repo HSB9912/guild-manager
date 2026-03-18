@@ -2460,17 +2460,17 @@
             filtered.sort((a, b) => smartCompare(a, b, appState.filters.sortField, appState.filters.sortOrder));
 
             const totalItems = filtered.length;
-            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-            if (appState.pagination.members > totalPages && totalPages > 0) appState.pagination.members = totalPages;
-            if (appState.pagination.members < 1) appState.pagination.members = 1;
-
-            const pageData = filtered.slice((appState.pagination.members - 1) * ITEMS_PER_PAGE, appState.pagination.members * ITEMS_PER_PAGE);
+            const pageData = filtered;
             const sortIcon = (f) => appState.filters.sortField === f ? (appState.filters.sortOrder === 'asc' ? ' <i class="fas fa-sort-up"></i>' : ' <i class="fas fa-sort-down"></i>') : '';
 
             let html = `<div class="overflow-auto flex-1 relative -webkit-overflow-scrolling-touch"><table class="w-full text-left text-[10px] lg:text-xs whitespace-nowrap"><thead class="bg-gray-50 text-[9px] lg:text-[10px] font-bold text-gray-500 border-b border-gray-100 shadow-sm"><tr><th class="py-2 px-2 text-center w-8 lg:w-12">${appState.isKickMode ? '선택' : 'No.'}</th><th class="py-2 px-2 sortable" onclick="window.handleSort('name')">닉네임${sortIcon('name')}</th><th class="py-2 px-2 sortable hidden sm:table-cell" onclick="window.handleSort('mainInfo')">본캐${sortIcon('mainInfo')}</th><th class="py-2 px-2 sortable" onclick="window.handleSort('guild')">소속${sortIcon('guild')}</th><th class="py-2 px-2 sortable hidden sm:table-cell" onclick="window.handleSort('role')">직위${sortIcon('role')}</th><th class="py-2 px-2 sortable hidden md:table-cell" onclick="window.handleSort('class')">직업${sortIcon('class')}</th>${isAdmin() ? '<th class="py-2 px-2 text-right">관리</th>' : ''}</tr></thead><tbody class="divide-y divide-gray-50 text-gray-600 font-bold">`;
 
             pageData.forEach((m, idx) => {
-                const globalIndex = (appState.pagination.members - 1) * ITEMS_PER_PAGE + idx + 1;
+                const globalIndex = idx + 1;
+                // 17명마다 구분선
+                if (idx > 0 && idx % ITEMS_PER_PAGE === 0) {
+                    html += `<tr><td colspan="7" class="py-0"><div class="border-t-2 border-dashed border-pink-200 mx-2 relative"><span class="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-white px-2 text-[9px] font-bold text-pink-300">${idx}명</span></div></td></tr>`;
+                }
                 const mainName = m.isMain ? m.name : (m.mainCharName || '-'); 
                 const mainMem = appState.members.find(x => x.name === mainName);
                 const mainRankHtml = mainMem ? formatRankWithSuffix(mainMem.role) : '-';
@@ -2536,12 +2536,7 @@
                 </tr>`;
             });
             html += `</tbody></table></div>`;
-
-            html += `<div class="p-3 border-t border-gray-100 flex justify-center items-center gap-4 bg-gray-50/50 relative z-20">
-                <button onclick="changePage('members', -1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 hover:text-pink-500 hover:border-pink-200 disabled:opacity-30 disabled:hover:bg-white" ${appState.pagination.members <= 1 ? 'disabled' : ''}><i class="fas fa-chevron-left text-[10px]"></i></button>
-                <span class="text-xs font-bold text-gray-500">${appState.pagination.members} / ${totalPages || 1}</span>
-                <button onclick="changePage('members', 1)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-pink-50 hover:text-pink-500 hover:border-pink-200 disabled:opacity-30 disabled:hover:bg-white" ${appState.pagination.members >= totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right text-[10px]"></i></button>
-            </div>`;
+            html += `<div class="py-2 text-center text-[9px] text-gray-300 font-bold">총 ${totalItems}명</div>`;
 
             container.innerHTML = html;
         };
