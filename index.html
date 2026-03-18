@@ -1003,7 +1003,9 @@
                     case 'save_members': {
                         let current = [], pg = 0;
                         while (true) {
-                            const { data: b } = await supaDb.from('members').select('id, name').range(pg * 1000, (pg + 1) * 1000 - 1);
+                            const { data: b, error: bErr } = await supaDb.from('members').select('id, name').range(pg * 1000, (pg + 1) * 1000 - 1);
+                            if (bErr) throw bErr;
+                            if (!b) break;
                             current = current.concat(b);
                             if (b.length < 1000) break;
                             pg++;
@@ -1035,7 +1037,7 @@
                         const { error } = await supaDb.from('bail_history').insert({
                             date: data.date || new Date().toISOString().split('T')[0],
                             payer: data.payer, receiver: data.receiver,
-                            amount: parseInt(data.amount), memo: data.memo || ''
+                            amount: parseInt(data.amount) || 0, memo: data.memo || ''
                         });
                         if (error) throw error;
                         success = true; break;
@@ -1043,7 +1045,7 @@
                     case 'save_penalty': {
                         const { error } = await supaDb.from('penalty_history').insert({
                             date: data.date, name: data.name,
-                            points: parseInt(data.points), reason: data.reason || ''
+                            points: parseInt(data.points) || 0, reason: data.reason || ''
                         });
                         if (error) throw error;
                         success = true; break;
@@ -1055,8 +1057,9 @@
                             });
                             if (error) throw error;
                         } else {
-                            const { data: existing } = await supaDb.from('events')
-                                .select('id').eq('date', data.date).eq('title', data.originalTitle).single();
+                            const { data: existing, error: existErr } = await supaDb.from('events')
+                                .select('id').eq('date', data.date).eq('title', data.originalTitle).maybeSingle();
+                            if (existErr) throw existErr;
                             if (existing) {
                                 await supaDb.from('events').update({ title: data.title, content: data.content || '' }).eq('id', existing.id);
                             }
@@ -1582,6 +1585,7 @@
         window.selectEventForEdit = (eventObj) => {
             appState.currentEditingEvent = eventObj;
             const listContainer = document.getElementById('eventListForDate');
+            if (!listContainer) return;
             Array.from(listContainer.children).forEach(child => {
                 child.classList.remove('event-item-active');
                 if (child.innerText.includes(eventObj.title)) child.classList.add('event-item-active');
@@ -1597,10 +1601,11 @@
             appState.currentEditingEvent = null;
             document.getElementById('eventTitleInput').value = "";
             document.getElementById('eventContentInput').value = "";
-            document.getElementById('btnDeleteEvent').classList.add('hidden'); 
+            document.getElementById('btnDeleteEvent').classList.add('hidden');
             document.getElementById('btnSaveEvent').classList.add('col-span-2');
 
             const listContainer = document.getElementById('eventListForDate');
+            if (!listContainer) return;
             Array.from(listContainer.children).forEach(child => child.classList.remove('event-item-active'));
         };
 
@@ -3168,7 +3173,9 @@
 
                     let { data: period } = await supaDb.from('suro_periods').select('id').eq('period_label', periodLabel).maybeSingle();
                     if (!period) {
-                        const { data: np } = await supaDb.from('suro_periods').insert({ period_label: periodLabel, start_date: '', end_date: '' }).select().single();
+                        const { data: np, error: npErr } = await supaDb.from('suro_periods').insert({ period_label: periodLabel, start_date: '', end_date: '' }).select().single();
+                        if (npErr) throw npErr;
+                        if (!np) throw new Error(`수로 기간 생성 실패: ${periodLabel}`);
                         period = np;
                     }
 
@@ -4747,8 +4754,8 @@
       } else {
         const {error: insErr} = await supaDb.from('board_likes').insert({post_id: postId, user_email: CURRENT_USER.email});
         if (insErr) throw insErr;
-        const {error: upErr} = await supaDb.from('board_posts').update({like_count: (parseInt(document.getElementById('boardLikeCount')?.textContent)||0) + 1}).eq('id', postId);
-        if (upErr) throw upErr;
+        const {error: upErr2} = await supaDb.from('board_posts').update({like_count: (parseInt(document.getElementById('boardLikeCount')?.textContent)||0) + 1}).eq('id', postId);
+        if (upErr2) throw upErr2;
       }
       window._boardViewPost(postId);
     } catch(e) { window.showMsg('추천 실패: ' + e.message, 'error'); console.error('Like error:', e); }
