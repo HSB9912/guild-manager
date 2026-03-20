@@ -252,8 +252,8 @@
    </div>
 
    <div class="grid grid-cols-2 gap-3 lg:gap-4 mt-6 lg:mt-8 shrink-0">
-   <button onclick="deleteEvent()" id="btnDeleteEvent" class="py-3.5 lg:py-4 bg-rose-50 text-rose-500 rounded-xl lg:rounded-[1.5rem] font-bold text-[10px] lg:text-sm hover:bg-rose-100 transition-all hidden">삭제</button>
-   <button onclick="saveEvent()" id="btnSaveEvent" class="col-span-2 py-3.5 lg:py-4 bg-[#1e232d] text-white rounded-xl lg:rounded-[1.5rem] font-bold text-[10px] lg:text-sm shadow-xl hover:bg-black transition-all">저장</button>
+   <button onclick="window.deleteEvent()" id="btnDeleteEvent" class="py-3.5 lg:py-4 bg-rose-50 text-rose-500 rounded-xl lg:rounded-[1.5rem] font-bold text-[10px] lg:text-sm hover:bg-rose-100 transition-all hidden">삭제</button>
+   <button onclick="window.saveEvent()" id="btnSaveEvent" class="col-span-2 py-3.5 lg:py-4 bg-[#1e232d] text-white rounded-xl lg:rounded-[1.5rem] font-bold text-[10px] lg:text-sm shadow-xl hover:bg-black transition-all">저장</button>
    </div>
   </div>
  </div>
@@ -4780,8 +4780,8 @@
     const content = (input?.value || '').trim();
     if (!content) return;
     try {
-      const memberMatch = appState.members.find(m => m.name && CURRENT_USER.email && m.name === CURRENT_USER.user_metadata?.name) || null;
-      const authorName = CURRENT_USER.user_metadata?.name || CURRENT_USER.email.split('@')[0];
+      const memberMatch = appState.members.find(m => m.name && CURRENT_USER.email && m.name === CURRENT_USER.name) || null;
+      const authorName = CURRENT_USER.name || CURRENT_USER.email.split('@')[0];
       await supaDb.from('board_comments').insert({post_id: postId, content, author_email: CURRENT_USER.email, author_name: authorName});
       const {data: post} = await supaDb.from('board_posts').select('comment_count').eq('id', postId).single();
       await supaDb.from('board_posts').update({comment_count: (post?.comment_count || 0) + 1}).eq('id', postId);
@@ -4884,7 +4884,7 @@
         imageUrls = existing?.images || [];
       }
 
-      const authorName = CURRENT_USER.user_metadata?.name || CURRENT_USER.email.split('@')[0];
+      const authorName = CURRENT_USER.name || CURRENT_USER.email.split('@')[0];
       const postData = {
         board_type: boardType,
         title, content,
