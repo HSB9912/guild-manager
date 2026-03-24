@@ -8,6 +8,10 @@ import {
   Bold, Italic, Underline, Link, ImagePlus, X, Code2,
   ChevronDown, Type, List, ListOrdered, Quote, Minus,
   LayoutGrid, Hash, FileCode, Palette,
+  Strikethrough, AlignLeft, AlignCenter, AlignRight, IndentIncrease, IndentDecrease,
+  Table, Eraser, Superscript, Subscript, Highlighter,
+  ToggleLeft, CircleAlert, CircleCheck, CircleX, Info,
+  Undo2, Redo2,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -246,6 +250,48 @@ export default function GuideEditPage() {
     const url = prompt('링크 URL을 입력하세요:', 'https://')
     if (url) execCmd('createLink', url)
   }
+
+  const handleStrikethrough = () => execCmd('strikeThrough')
+  const handleSuperscript = () => execCmd('superscript')
+  const handleSubscript = () => execCmd('subscript')
+  const handleRemoveFormat = () => execCmd('removeFormat')
+  const handleIndent = () => execCmd('indent')
+  const handleOutdent = () => execCmd('outdent')
+  const handleAlignLeft = () => execCmd('justifyLeft')
+  const handleAlignCenter = () => execCmd('justifyCenter')
+  const handleAlignRight = () => execCmd('justifyRight')
+  const handleHR = () => execCmd('insertHorizontalRule')
+
+  const handleFontSize = (size: string) => execCmd('fontSize', size)
+  const handleForeColor = (color: string) => execCmd('foreColor', color)
+  const handleBackColor = (color: string) => execCmd('hiliteColor', color)
+  const handleFontName = (font: string) => execCmd('fontName', font)
+
+  const handleTable = () => {
+    const html = `<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:12px"><thead><tr><th style="border:1px solid #e5e7eb;padding:8px 12px;background:#f9fafb;font-weight:700;text-align:left">제목1</th><th style="border:1px solid #e5e7eb;padding:8px 12px;background:#f9fafb;font-weight:700;text-align:left">제목2</th><th style="border:1px solid #e5e7eb;padding:8px 12px;background:#f9fafb;font-weight:700;text-align:left">제목3</th></tr></thead><tbody><tr><td style="border:1px solid #e5e7eb;padding:8px 12px">내용</td><td style="border:1px solid #e5e7eb;padding:8px 12px">내용</td><td style="border:1px solid #e5e7eb;padding:8px 12px">내용</td></tr><tr><td style="border:1px solid #e5e7eb;padding:8px 12px">내용</td><td style="border:1px solid #e5e7eb;padding:8px 12px">내용</td><td style="border:1px solid #e5e7eb;padding:8px 12px">내용</td></tr></tbody></table>`
+    insertHTMLAtCursor(html)
+    syncContent()
+  }
+
+  const handleToggle = () => {
+    const html = `<details style="margin:8px 0;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden"><summary style="padding:12px 16px;font-weight:700;font-size:13px;cursor:pointer;background:#f9fafb;color:#374151">▶ 토글 제목 (클릭하면 열림)</summary><div style="padding:16px;font-size:12px;color:#4b5563;line-height:1.8">숨겨진 내용을 여기에 작성하세요</div></details>`
+    insertHTMLAtCursor(html)
+    syncContent()
+  }
+
+  const handleCalloutBox = (type: 'info' | 'success' | 'warning' | 'error') => {
+    const styles = {
+      info: { bg: '#eff6ff', border: '#bfdbfe', color: '#2563eb', icon: '💡' },
+      success: { bg: '#f0fdf4', border: '#bbf7d0', color: '#16a34a', icon: '✅' },
+      warning: { bg: '#fffbeb', border: '#fde68a', color: '#b45309', icon: '⚠️' },
+      error: { bg: '#fef2f2', border: '#fecaca', color: '#dc2626', icon: '🚫' },
+    }
+    const s = styles[type]
+    const html = `<div style="background:${s.bg};border:1px solid ${s.border};border-radius:12px;padding:14px 18px;margin:8px 0;font-size:12px;color:${s.color};font-weight:600;display:flex;align-items:flex-start;gap:8px"><span style="font-size:16px;flex-shrink:0">${s.icon}</span><div>내용을 입력하세요</div></div>`
+    insertHTMLAtCursor(html)
+    syncContent()
+  }
+
 
   /* ─── sync helpers ─── */
   const syncContent = useCallback(() => {
@@ -697,91 +743,215 @@ export default function GuideEditPage() {
             ) : (
               /* ─── WYSIWYG Editor ─── */
               <>
-                {/* Toolbar */}
-                <div className="flex items-center gap-0.5 border border-gray-100 rounded-t-xl p-1.5 bg-gray-50 flex-wrap">
-                  {/* Text formatting */}
-                  <ToolbarButton onClick={handleBold} title="Bold (Ctrl+B)" icon={<Bold size={14} />} />
-                  <ToolbarButton onClick={handleItalic} title="Italic (Ctrl+I)" icon={<Italic size={14} />} />
-                  <ToolbarButton onClick={handleUnderline} title="Underline (Ctrl+U)" icon={<Underline size={14} />} />
+                {/* Toolbar - Row 1: Main formatting */}
+                <div className="border border-gray-100 rounded-t-xl bg-gray-50 divide-y divide-gray-100">
+                  <div className="flex items-center gap-0.5 p-1.5 flex-wrap">
+                    {/* Undo/Redo */}
+                    <ToolbarButton onClick={() => execCmd('undo')} title="실행 취소 (Ctrl+Z)" icon={<Undo2 size={14} />} />
+                    <ToolbarButton onClick={() => execCmd('redo')} title="다시 실행 (Ctrl+Y)" icon={<Redo2 size={14} />} />
 
-                  <ToolbarDivider />
+                    <ToolbarDivider />
 
-                  {/* Headings */}
-                  <ToolbarButton onClick={() => execCmd('formatBlock', 'h2')} title="제목1" icon={<span className="text-[10px] font-black">H2</span>} />
-                  <ToolbarButton onClick={() => execCmd('formatBlock', 'h3')} title="제목2" icon={<span className="text-[10px] font-black">H3</span>} />
-                  <ToolbarButton onClick={() => execCmd('formatBlock', 'h4')} title="제목3" icon={<span className="text-[10px] font-black">H4</span>} />
-
-                  <ToolbarDivider />
-
-                  {/* Lists */}
-                  <ToolbarButton onClick={() => execCmd('insertUnorderedList')} title="글머리기호" icon={<List size={14} />} />
-                  <ToolbarButton onClick={() => execCmd('insertOrderedList')} title="번호목록" icon={<ListOrdered size={14} />} />
-
-                  <ToolbarDivider />
-
-                  {/* Link & Images */}
-                  <ToolbarButton onClick={handleLink} title="링크" icon={<Link size={14} />} />
-                  <label className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-600 cursor-pointer transition-colors flex items-center justify-center" title="이미지 업로드">
-                    <ImagePlus size={14} />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) handleImageUpload(e.target.files[0])
-                        e.target.value = ''
-                      }}
-                    />
-                  </label>
-                  <ToolbarButton onClick={() => setShowGallery(true)} title="이미지 갤러리" icon={<Image size={14} />} />
-
-                  <ToolbarDivider />
-
-                  {/* Block insertion */}
-                  <div className="relative" ref={blockMenuRef}>
-                    <button
-                      onClick={() => setShowBlockMenu(!showBlockMenu)}
-                      className={cn(
-                        'px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors',
-                        showBlockMenu
-                          ? 'bg-indigo-100 text-indigo-600'
-                          : 'bg-white text-gray-600 hover:bg-gray-200 border border-gray-200'
-                      )}
+                    {/* Font family */}
+                    <select
+                      onChange={(e) => handleFontName(e.target.value)}
+                      className="h-7 px-1.5 bg-white border border-gray-200 rounded-lg text-[10px] font-bold text-gray-600 outline-none cursor-pointer hover:border-indigo-300"
+                      defaultValue=""
                     >
-                      <LayoutGrid size={12} />
-                      블록 삽입
-                      <ChevronDown size={10} className={cn('transition-transform', showBlockMenu && 'rotate-180')} />
-                    </button>
+                      <option value="" disabled>글꼴</option>
+                      <option value="Noto Sans KR" style={{fontFamily:'Noto Sans KR'}}>노토 산스</option>
+                      <option value="Arial">Arial</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Courier New">Courier New</option>
+                      <option value="Verdana">Verdana</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                    </select>
 
-                    {/* Block Menu Popup */}
-                    {showBlockMenu && (
-                      <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="p-2 border-b border-gray-50">
-                          <p className="text-[10px] font-bold text-gray-400 px-2">블록 템플릿 (15개)</p>
-                        </div>
-                        <div className="max-h-80 overflow-y-auto p-1.5">
-                          {GUIDE_BLOCKS.map((block) => (
-                            <button
-                              key={block.id}
-                              onClick={() => handleInsertBlock(block)}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-indigo-50 transition-colors group"
-                            >
-                              <span className="text-base w-6 text-center flex-shrink-0">{block.icon}</span>
-                              <span className="text-xs font-bold text-gray-700 group-hover:text-indigo-600 transition-colors">
-                                {block.label}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    {/* Font size */}
+                    <select
+                      onChange={(e) => handleFontSize(e.target.value)}
+                      className="h-7 px-1.5 bg-white border border-gray-200 rounded-lg text-[10px] font-bold text-gray-600 outline-none cursor-pointer hover:border-indigo-300"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>크기</option>
+                      <option value="1">매우 작게</option>
+                      <option value="2">작게</option>
+                      <option value="3">보통</option>
+                      <option value="4">크게</option>
+                      <option value="5">매우 크게</option>
+                      <option value="6">아주 크게</option>
+                      <option value="7">최대</option>
+                    </select>
+
+                    <ToolbarDivider />
+
+                    {/* Headings */}
+                    <ToolbarButton onClick={() => execCmd('formatBlock', 'h1')} title="제목1" icon={<span className="text-[10px] font-black">H1</span>} />
+                    <ToolbarButton onClick={() => execCmd('formatBlock', 'h2')} title="제목2" icon={<span className="text-[10px] font-black">H2</span>} />
+                    <ToolbarButton onClick={() => execCmd('formatBlock', 'h3')} title="제목3" icon={<span className="text-[10px] font-black">H3</span>} />
+                    <ToolbarButton onClick={() => execCmd('formatBlock', 'p')} title="본문" icon={<span className="text-[10px] font-black">P</span>} />
+
+                    <ToolbarDivider />
+
+                    {/* Text formatting */}
+                    <ToolbarButton onClick={handleBold} title="굵게 (Ctrl+B)" icon={<Bold size={14} />} />
+                    <ToolbarButton onClick={handleItalic} title="기울임 (Ctrl+I)" icon={<Italic size={14} />} />
+                    <ToolbarButton onClick={handleUnderline} title="밑줄 (Ctrl+U)" icon={<Underline size={14} />} />
+                    <ToolbarButton onClick={handleStrikethrough} title="취소선" icon={<Strikethrough size={14} />} />
+                    <ToolbarButton onClick={handleSuperscript} title="위 첨자" icon={<Superscript size={14} />} />
+                    <ToolbarButton onClick={handleSubscript} title="아래 첨자" icon={<Subscript size={14} />} />
+
+                    <ToolbarDivider />
+
+                    {/* Text color */}
+                    <div className="relative group">
+                      <label className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-600 cursor-pointer transition-colors flex items-center gap-0.5" title="글자색">
+                        <Palette size={14} />
+                        <input
+                          type="color"
+                          className="w-0 h-0 opacity-0 absolute"
+                          onChange={(e) => handleForeColor(e.target.value)}
+                        />
+                      </label>
+                    </div>
+                    {/* Quick text colors */}
+                    {['#ef4444','#f59e0b','#22c55e','#3b82f6','#8b5cf6','#ec4899','#000000'].map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => handleForeColor(c)}
+                        className="w-5 h-5 rounded-md border border-gray-200 hover:scale-110 transition-transform"
+                        style={{ background: c }}
+                        title={`글자색 ${c}`}
+                      />
+                    ))}
+
+                    <ToolbarDivider />
+
+                    {/* Background color / highlight */}
+                    <div className="relative group">
+                      <label className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-600 cursor-pointer transition-colors flex items-center gap-0.5" title="형광펜">
+                        <Highlighter size={14} />
+                        <input
+                          type="color"
+                          className="w-0 h-0 opacity-0 absolute"
+                          defaultValue="#fde68a"
+                          onChange={(e) => handleBackColor(e.target.value)}
+                        />
+                      </label>
+                    </div>
+                    {['#fef08a','#bbf7d0','#bfdbfe','#e9d5ff','#fecdd3','transparent'].map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => handleBackColor(c)}
+                        className={cn(
+                          'w-5 h-5 rounded-md border border-gray-200 hover:scale-110 transition-transform',
+                          c === 'transparent' && 'bg-white relative after:content-[""] after:absolute after:inset-0 after:bg-[linear-gradient(135deg,transparent_45%,#ef4444_45%,#ef4444_55%,transparent_55%)] after:rounded-md'
+                        )}
+                        style={c !== 'transparent' ? { background: c } : undefined}
+                        title={c === 'transparent' ? '형광펜 제거' : `형광펜 ${c}`}
+                      />
+                    ))}
                   </div>
 
-                  {/* Slash hint */}
-                  <div className="ml-auto flex items-center gap-1 text-[10px] text-gray-400 select-none">
-                    <Hash size={10} />
-                    <span className="font-medium">/ 입력으로 빠른 삽입</span>
+                  {/* Row 2: Alignment, lists, indent, insert */}
+                  <div className="flex items-center gap-0.5 p-1.5 flex-wrap">
+                    {/* Alignment */}
+                    <ToolbarButton onClick={handleAlignLeft} title="왼쪽 정렬" icon={<AlignLeft size={14} />} />
+                    <ToolbarButton onClick={handleAlignCenter} title="가운데 정렬" icon={<AlignCenter size={14} />} />
+                    <ToolbarButton onClick={handleAlignRight} title="오른쪽 정렬" icon={<AlignRight size={14} />} />
+
+                    <ToolbarDivider />
+
+                    {/* Lists */}
+                    <ToolbarButton onClick={() => execCmd('insertUnorderedList')} title="글머리기호 목록" icon={<List size={14} />} />
+                    <ToolbarButton onClick={() => execCmd('insertOrderedList')} title="번호 목록" icon={<ListOrdered size={14} />} />
+
+                    {/* Indent */}
+                    <ToolbarButton onClick={handleOutdent} title="내어쓰기" icon={<IndentDecrease size={14} />} />
+                    <ToolbarButton onClick={handleIndent} title="들여쓰기" icon={<IndentIncrease size={14} />} />
+
+                    <ToolbarDivider />
+
+                    {/* Insert features */}
+                    <ToolbarButton onClick={handleLink} title="링크 삽입" icon={<Link size={14} />} />
+                    <label className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-600 cursor-pointer transition-colors flex items-center justify-center" title="이미지 업로드">
+                      <ImagePlus size={14} />
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) handleImageUpload(e.target.files[0])
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                    <ToolbarButton onClick={() => setShowGallery(true)} title="이미지 갤러리" icon={<Image size={14} />} />
+                    <ToolbarButton onClick={handleTable} title="표 삽입" icon={<Table size={14} />} />
+                    <ToolbarButton onClick={handleHR} title="구분선" icon={<Minus size={14} />} />
+                    <ToolbarButton onClick={handleToggle} title="토글 (접기/펼치기)" icon={<ToggleLeft size={14} />} />
+
+                    <ToolbarDivider />
+
+                    {/* Callout boxes */}
+                    <ToolbarButton onClick={() => handleCalloutBox('info')} title="💡 정보 박스" icon={<Info size={14} className="text-blue-500" />} />
+                    <ToolbarButton onClick={() => handleCalloutBox('success')} title="✅ 성공 박스" icon={<CircleCheck size={14} className="text-green-500" />} />
+                    <ToolbarButton onClick={() => handleCalloutBox('warning')} title="⚠️ 경고 박스" icon={<CircleAlert size={14} className="text-amber-500" />} />
+                    <ToolbarButton onClick={() => handleCalloutBox('error')} title="🚫 에러 박스" icon={<CircleX size={14} className="text-red-500" />} />
+
+                    <ToolbarDivider />
+
+                    {/* Clear formatting */}
+                    <ToolbarButton onClick={handleRemoveFormat} title="서식 지우기" icon={<Eraser size={14} />} />
+
+                    <ToolbarDivider />
+
+                    {/* Block insertion menu */}
+                    <div className="relative" ref={blockMenuRef}>
+                      <button
+                        onClick={() => setShowBlockMenu(!showBlockMenu)}
+                        className={cn(
+                          'px-2 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors',
+                          showBlockMenu
+                            ? 'bg-indigo-100 text-indigo-600'
+                            : 'bg-white text-gray-600 hover:bg-gray-200 border border-gray-200'
+                        )}
+                      >
+                        <LayoutGrid size={12} />
+                        블록 삽입
+                        <ChevronDown size={10} className={cn('transition-transform', showBlockMenu && 'rotate-180')} />
+                      </button>
+
+                      {/* Block Menu Popup */}
+                      {showBlockMenu && (
+                        <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="p-2 border-b border-gray-50">
+                            <p className="text-[10px] font-bold text-gray-400 px-2">블록 템플릿 (15개)</p>
+                          </div>
+                          <div className="max-h-80 overflow-y-auto p-1.5">
+                            {GUIDE_BLOCKS.map((block) => (
+                              <button
+                                key={block.id}
+                                onClick={() => handleInsertBlock(block)}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-indigo-50 transition-colors group"
+                              >
+                                <span className="text-base w-6 text-center flex-shrink-0">{block.icon}</span>
+                                <span className="text-xs font-bold text-gray-700 group-hover:text-indigo-600 transition-colors">
+                                  {block.label}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Slash hint */}
+                    <div className="ml-auto flex items-center gap-1 text-[10px] text-gray-400 select-none">
+                      <Hash size={10} />
+                      <span className="font-medium">/ 입력으로 빠른 삽입</span>
+                    </div>
                   </div>
                 </div>
 
