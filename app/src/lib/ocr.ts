@@ -13,7 +13,7 @@ export async function initOcr(): Promise<void> {
   if (worker) return
 
   return new Promise((resolve, reject) => {
-    const BASE = new URL('/ocr/', window.location.href).href
+    const BASE = new URL(import.meta.env.BASE_URL + 'ocr/', window.location.origin).href
     const workerCode = buildWorkerCode(BASE)
     const blob = new Blob([workerCode], { type: 'application/javascript' })
     worker = new Worker(URL.createObjectURL(blob))
