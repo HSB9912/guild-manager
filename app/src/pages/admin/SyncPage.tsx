@@ -601,6 +601,60 @@ export default function SyncPage() {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // NOT A NICK CHANGE - Delete old member, move to new members
+  // ═══════════════════════════════════════════════════════════
+
+  const handleNotNickChange = async (idx: number) => {
+    const suspect = nickSuspects[idx]
+    if (!suspect) return
+    if (!confirm(
+      `"${suspect.oldName}" → "${suspect.newName}"는 닉변이 아닌 것으로 처리합니다.\n\n` +
+      `• "${suspect.oldName}" (기존 멤버)를 DB에서 삭제합니다\n` +
+      `• "${suspect.newName}"는 신규 멤버로 등록 대기됩니다\n\n계속하시겠습니까?`
+    )) return
+
+    try {
+      // Delete old member from DB
+      const { error } = await supabase.from('members').delete().eq('id', Number(suspect.id))
+      if (error) throw error
+
+      // Log the deletion
+      await supabase.from('operation_history').insert({
+        date: getKSTDateStr(),
+        category: '삭제',
+        name: suspect.oldName,
+        content: `닉변 아님 처리로 DB 삭제 (${suspect.guild}/${suspect.class}). 신규: ${suspect.newName}`,
+      })
+
+      // Remove from nick suspects list
+      setNickSuspects((prev) => prev.filter((_, i) => i !== idx))
+
+      // Add to new members list
+      setNewMembers((prev) => [
+        ...prev,
+        {
+          name: suspect.newName,
+          guild: suspect.guild,
+          selectedGuild: suspect.guild,
+          selectedRole: getDefaultRole(suspect.guild),
+          selectedClass: suspect.class || '',
+          selectedLevel: suspect.level || 0,
+          isMain: true,
+          mainCharName: '',
+          guessedMain: null,
+          guessStatus: 'idle' as const,
+          promoWish: false,
+        },
+      ])
+
+      toast(`"${suspect.oldName}" 삭제 완료. "${suspect.newName}"는 신규 멤버로 이동했습니다.`, 'success')
+      await invalidateMembers()
+    } catch (e) {
+      toast('처리 실패: ' + (e as Error).message, 'error')
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // ADD NEW MEMBERS
   // ═══════════════════════════════════════════════════════════
 
@@ -1185,7 +1239,8 @@ export default function SyncPage() {
                       <Pencil size={14} className="inline mr-2" />닉네임 변경 의심 ({nickSuspects.length}명)
                     </h4>
                     <p className="text-[10px] text-gray-400 mb-4">
-                      탈퇴 멤버와 신규 멤버의 직업/길드가 일치하여 닉변으로 추정됩니다. 확인 후 닉네임을 변경하면 수로 데이터가 유지됩니다.
+                      탈퇴 멤버와 신규 멤버의 직업/길드가 일치하여 닉변으로 추정됩니다. 확인 후 닉네임을 변경하면 수로 데이터가 유지됩니다.<br />
+                      <span className="text-red-400">닉변이 아닌 경우 (길탈 후 다른 사람 가입): "닉변 아님" 버튼으로 기존 멤버를 DB에서 삭제하고 신규 등록으로 전환합니다.</span>
                     </p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
@@ -1204,6 +1259,7 @@ export default function SyncPage() {
                             <th className="p-2 text-left">소속</th>
                             <th className="p-2 text-left">직업</th>
                             <th className="p-2 text-center">레벨</th>
+                            <th className="p-2 text-center">처리</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1220,6 +1276,14 @@ export default function SyncPage() {
                               <td className="p-1.5 text-gray-500">{s.guild}</td>
                               <td className="p-1.5 text-gray-500">{s.class}</td>
                               <td className="p-1.5 text-center text-gray-500">{s.level || '-'}</td>
+                              <td className="p-1.5 text-center">
+                                <button
+                                  onClick={() => handleNotNickChange(i)}
+                                  className="px-2 py-1 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors whitespace-nowrap"
+                                >
+                                  닉변 아님
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
