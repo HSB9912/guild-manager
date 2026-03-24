@@ -119,6 +119,7 @@ export default function RoleAssignPage() {
     // Get rules from config or use defaults
     const rawConfig = (config as any) || {}
     const autoRankRules = (rawConfig as any).autoRankRules?.[selectedGuild] || [
+      { topN: 5, rank: '크라운' },
       { min: 130000, rank: '파르페' },
       { min: 95000, rank: '티라미슈' },
       { min: 72000, rank: '크로칸슈' },

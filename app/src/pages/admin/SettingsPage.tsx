@@ -45,9 +45,9 @@ interface AutoRankRule {
 type SettingsTab = 'guilds' | 'roles' | 'autorules' | 'exempt' | 'admin' | 'json'
 
 /* ─── shared styles ─── */
-const cardClass = 'bg-white rounded-2xl border border-gray-100 shadow-sm p-5'
-const inputClass = 'bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold outline-none focus:border-indigo-300 transition-colors'
-const btnPrimary = 'bg-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg hover:bg-indigo-600 transition-colors flex items-center gap-1.5'
+const cardClass = 'bg-white rounded-2xl border border-gray-100 shadow-sm p-6'
+const inputClass = 'bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold outline-none focus:border-indigo-300 transition-colors'
+const btnPrimary = 'bg-indigo-500 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-600 transition-colors flex items-center gap-1.5'
 const btnSecondary = 'text-indigo-500 hover:text-indigo-700 font-bold flex items-center gap-1 transition-colors'
 
 export default function SettingsPage() {
@@ -145,7 +145,7 @@ export default function SettingsPage() {
 
   return (
     <div className="fade-in space-y-5">
-      <h2 className="text-lg font-black text-gray-800 tracking-tight">설정</h2>
+      <h2 className="text-xl font-black text-gray-800 tracking-tight">설정</h2>
 
       {/* Tab navigation */}
       <div className="flex gap-1.5 overflow-x-auto pb-0.5">
@@ -156,13 +156,13 @@ export default function SettingsPage() {
               key={t.key}
               onClick={() => setActiveTab(t.key)}
               className={cn(
-                'px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 shrink-0',
+                'px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0',
                 activeTab === t.key
                   ? 'bg-indigo-500 text-white shadow-md shadow-indigo-200'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               )}
             >
-              <Icon size={12} />
+              <Icon size={14} />
               {t.label}
             </button>
           )
@@ -193,7 +193,7 @@ export default function SettingsPage() {
       {activeTab === 'admin' && (
         <div className="space-y-4">
           <div className={cardClass}>
-            <h3 className="font-bold text-sm text-gray-700 flex items-center gap-1.5 mb-4">
+            <h3 className="font-bold text-base text-gray-700 flex items-center gap-1.5 mb-4">
               <Shield size={14} className="text-indigo-500" />
               관리자 허용 목록
             </h3>
@@ -212,9 +212,9 @@ export default function SettingsPage() {
                 onClick={() => {
                   if (newEmail.trim()) addAdmin.mutate(newEmail.trim())
                 }}
-                className="px-3 py-2 bg-indigo-500 text-white rounded-xl text-xs font-bold hover:bg-indigo-600 transition-colors flex items-center gap-1"
+                className="px-4 py-2 bg-indigo-500 text-white rounded-xl text-sm font-bold hover:bg-indigo-600 transition-colors flex items-center gap-1.5"
               >
-                <Plus size={13} /> 추가
+                <Plus size={14} /> 추가
               </button>
             </div>
             <div className="space-y-1.5">
@@ -223,11 +223,11 @@ export default function SettingsPage() {
                   key={a.id}
                   className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100"
                 >
-                  <span className="text-xs font-bold text-gray-800 flex-1">{a.email}</span>
-                  <span className="text-[9px] font-bold text-gray-400">{a.name || ''}</span>
+                  <span className="text-sm font-bold text-gray-800 flex-1">{a.email}</span>
+                  <span className="text-xs font-bold text-gray-400">{a.name || ''}</span>
                   <span
                     className={cn(
-                      'text-[8px] font-bold px-1.5 py-0.5 rounded-md',
+                      'text-xs font-bold px-1.5 py-0.5 rounded-md',
                       a.status === 'approved'
                         ? 'bg-green-50 text-green-600'
                         : a.status === 'pending'
@@ -267,7 +267,7 @@ export default function SettingsPage() {
                 </div>
               ))}
               {admins.length === 0 && (
-                <p className="text-center text-[10px] text-gray-400 py-6">등록된 관리자가 없습니다</p>
+                <p className="text-center text-xs text-gray-400 py-6">등록된 관리자가 없습니다</p>
               )}
             </div>
           </div>
@@ -278,22 +278,22 @@ export default function SettingsPage() {
       {activeTab === 'json' && (
         <div className={cardClass}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-sm text-gray-700 flex items-center gap-1.5">
+            <h3 className="font-bold text-base text-gray-700 flex items-center gap-1.5">
               <Code size={14} className="text-indigo-500" />
               사이트 설정 (JSON)
             </h3>
             <button
               onClick={() => saveConfig.mutate(undefined)}
-              className="px-3 py-1.5 bg-indigo-500 text-white rounded-xl text-[10px] font-bold hover:bg-indigo-600 transition-colors flex items-center gap-1"
+              className="px-4 py-2 bg-indigo-500 text-white rounded-xl text-sm font-bold hover:bg-indigo-600 transition-colors flex items-center gap-1.5"
             >
-              <Save size={12} /> 저장
+              <Save size={14} /> 저장
             </button>
           </div>
           <textarea
             value={configJson}
             onChange={(e) => setConfigJson(e.target.value)}
             rows={24}
-            className={cn(inputClass, 'w-full px-4 py-3 text-[11px] font-mono resize-none leading-relaxed')}
+            className={cn(inputClass, 'w-full px-4 py-3 text-sm font-mono resize-none leading-relaxed')}
             spellCheck={false}
           />
         </div>
@@ -398,7 +398,7 @@ function GuildManagement({
     <div className="space-y-4">
       {/* Logo */}
       <div className={cardClass}>
-        <h3 className="font-bold text-sm text-gray-700 flex items-center gap-1.5 mb-3">
+        <h3 className="font-bold text-base text-gray-700 flex items-center gap-1.5 mb-3">
           <Image size={14} className="text-indigo-500" />
           길드 로고
         </h3>
@@ -411,9 +411,9 @@ function GuildManagement({
             )}
           </div>
           <div className="flex-1">
-            <p className="text-[9px] text-gray-500 mb-2">PNG/JPG 이미지 업로드 (권장 200x200)</p>
+            <p className="text-xs text-gray-500 mb-2">PNG/JPG 이미지 업로드 (권장 200x200)</p>
             <div className="flex gap-2 flex-wrap">
-              <label className="px-3 py-1.5 bg-indigo-500 text-white rounded-lg text-[10px] font-bold cursor-pointer hover:bg-indigo-600 transition-colors flex items-center gap-1">
+              <label className="px-3 py-1.5 bg-indigo-500 text-white rounded-lg text-xs font-bold cursor-pointer hover:bg-indigo-600 transition-colors flex items-center gap-1">
                 <Upload size={10} />
                 {uploading ? '업로드 중...' : '새 이미지 업로드'}
                 <input
@@ -427,14 +427,14 @@ function GuildManagement({
               </label>
               <button
                 onClick={() => setShowLogoGallery(true)}
-                className="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-[10px] font-bold hover:bg-purple-600 transition-colors flex items-center gap-1"
+                className="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-xs font-bold hover:bg-purple-600 transition-colors flex items-center gap-1"
               >
                 <Image size={10} />
                 R2 갤러리에서 선택
               </button>
               <button
                 onClick={handleLogoRemove}
-                className="px-3 py-1.5 bg-gray-200 text-gray-500 rounded-lg text-[10px] font-bold hover:bg-gray-300 transition-colors"
+                className="px-3 py-1.5 bg-gray-200 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
               >
                 제거
               </button>
@@ -453,7 +453,7 @@ function GuildManagement({
 
       {/* Piece price */}
       <div className={cardClass}>
-        <h3 className="font-bold text-sm text-gray-700 mb-3">조각 가격 설정</h3>
+        <h3 className="font-bold text-base text-gray-700 mb-3">조각 가격 설정</h3>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -462,18 +462,18 @@ function GuildManagement({
             placeholder="조각 가격 (메소)"
             className={cn(inputClass, 'w-48 px-3 py-2')}
           />
-          <span className="text-[10px] text-gray-400 font-bold">메소 / 조각</span>
+          <span className="text-xs text-gray-400 font-bold">메소 / 조각</span>
         </div>
       </div>
 
       {/* Guild cards */}
       <div className={cardClass}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-sm text-gray-700 flex items-center gap-1.5">
+          <h3 className="font-bold text-base text-gray-700 flex items-center gap-1.5">
             <Users size={14} className="text-indigo-500" />
             길드 목록
           </h3>
-          <button onClick={addGuild} className={cn(btnSecondary, 'text-[10px]')}>
+          <button onClick={addGuild} className={cn(btnSecondary, 'text-xs')}>
             <Plus size={12} /> 길드 추가
           </button>
         </div>
@@ -498,34 +498,34 @@ function GuildManagement({
                   <Trash2 size={12} />
                 </button>
               </div>
-              <div className="grid grid-cols-5 gap-1.5 text-[10px]">
+              <div className="grid grid-cols-5 gap-2 text-sm">
                 <div>
-                  <label className="text-[8px] text-gray-400 block mb-0.5">이름</label>
+                  <label className="text-xs text-gray-400 block mb-0.5">이름</label>
                   <input
-                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-indigo-300 transition-colors"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-300 transition-colors"
                     value={g.name}
                     onChange={(e) => updateGuild(gi, 'name', e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="text-[8px] text-gray-400 block mb-0.5">타입</label>
+                  <label className="text-xs text-gray-400 block mb-0.5">타입</label>
                   <input
-                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-indigo-300 transition-colors"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-300 transition-colors"
                     value={g.type || ''}
                     onChange={(e) => updateGuild(gi, 'type', e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="text-[8px] text-gray-400 block mb-0.5">색상</label>
+                  <label className="text-xs text-gray-400 block mb-0.5">색상</label>
                   <input
                     type="color"
-                    className="w-6 h-6 rounded border-0 cursor-pointer"
+                    className="w-7 h-7 rounded border-0 cursor-pointer"
                     value={g.color || '#9ca3af'}
                     onChange={(e) => updateGuild(gi, 'color', e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="text-[8px] text-gray-400 block mb-0.5">아이콘</label>
+                  <label className="text-xs text-gray-400 block mb-0.5">아이콘</label>
                   <div className="flex items-center gap-1">
                     <input
                       className="w-10 text-center bg-white border border-gray-200 rounded-lg py-1 text-sm outline-none"
@@ -533,7 +533,7 @@ function GuildManagement({
                       onChange={(e) => updateGuild(gi, 'icon', e.target.value)}
                     />
                     <details className="relative">
-                      <summary className="text-[8px] text-gray-400 cursor-pointer hover:text-indigo-500 transition-colors">
+                      <summary className="text-xs text-gray-400 cursor-pointer hover:text-indigo-500 transition-colors">
                         선택
                       </summary>
                       <div className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-2 flex flex-wrap gap-0.5 w-48 mt-1 max-h-[120px] overflow-y-auto">
@@ -551,10 +551,10 @@ function GuildManagement({
                   </div>
                 </div>
                 <div>
-                  <label className="text-[8px] text-gray-400 block mb-0.5">인원</label>
+                  <label className="text-xs text-gray-400 block mb-0.5">인원</label>
                   <input
                     type="number"
-                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-indigo-300 transition-colors"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-300 transition-colors"
                     value={g.max || 200}
                     onChange={(e) => updateGuild(gi, 'max', Number(e.target.value))}
                   />
@@ -564,7 +564,7 @@ function GuildManagement({
           ))}
         </div>
         {guilds.length === 0 && (
-          <p className="text-center text-[10px] text-gray-400 py-8">길드를 추가해주세요</p>
+          <p className="text-center text-xs text-gray-400 py-8">길드를 추가해주세요</p>
         )}
       </div>
 
@@ -671,13 +671,13 @@ function RoleDisplaySettings({
     <div className="space-y-4">
       {/* Role styling */}
       <div className={cardClass}>
-        <h3 className="font-bold text-sm text-gray-700 flex items-center gap-1.5 mb-1">
+        <h3 className="font-bold text-base text-gray-700 flex items-center gap-1.5 mb-1">
           <Palette size={14} className="text-indigo-500" />
           직위 이모지 / 색상
         </h3>
-        <p className="text-[9px] text-gray-400 mb-4">각 직위별 이모지, 뱃지 색상, 행 배경색을 설정합니다. 화살표로 우선순위를 조정할 수 있습니다.</p>
+        <p className="text-xs text-gray-400 mb-4">각 직위별 이모지, 뱃지 색상, 행 배경색을 설정합니다. 화살표로 우선순위를 조정할 수 있습니다.</p>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2.5">
           {displayRoles.map((rName, rIdx) => {
             const rd = roleDisplay[rName] || {}
             const tc = rd.textColor || '#374151'
@@ -716,7 +716,7 @@ function RoleDisplaySettings({
                 </div>
 
                 {/* Priority number */}
-                <span className="text-[8px] text-gray-300 font-mono w-4 text-center shrink-0">{rIdx + 1}</span>
+                <span className="text-xs text-gray-300 font-mono w-4 text-center shrink-0">{rIdx + 1}</span>
 
                 {/* Emoji input */}
                 <input
@@ -729,7 +729,7 @@ function RoleDisplaySettings({
                 {/* Role name + badge preview */}
                 <div className="min-w-[90px] flex items-center gap-1.5">
                   <span
-                    className="text-[11px] font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1"
+                    className="text-sm font-bold px-2.5 py-1 rounded-lg inline-flex items-center gap-1"
                     style={{
                       color: tc,
                       background: bc,
@@ -742,24 +742,24 @@ function RoleDisplaySettings({
 
                 {/* Color controls */}
                 <div className="flex items-center gap-1.5 ml-auto">
-                  <span className="text-[9px] text-gray-400 font-bold">글자</span>
+                  <span className="text-xs text-gray-400 font-bold">글자</span>
                   <input
                     type="color"
-                    className="w-6 h-6 border border-gray-200 rounded cursor-pointer p-0"
+                    className="w-7 h-7 border border-gray-200 rounded cursor-pointer p-0"
                     value={tc}
                     onChange={(e) => updateRole(rName, 'textColor', e.target.value)}
                   />
-                  <span className="text-[9px] text-gray-400 font-bold">배경</span>
+                  <span className="text-xs text-gray-400 font-bold">배경</span>
                   <input
                     type="color"
-                    className="w-6 h-6 border border-gray-200 rounded cursor-pointer p-0"
+                    className="w-7 h-7 border border-gray-200 rounded cursor-pointer p-0"
                     value={bc}
                     onChange={(e) => updateRole(rName, 'bgColor', e.target.value)}
                   />
-                  <span className="text-[9px] text-gray-400 font-bold">행</span>
+                  <span className="text-xs text-gray-400 font-bold">행</span>
                   <input
                     type="color"
-                    className="w-6 h-6 border border-gray-200 rounded cursor-pointer p-0"
+                    className="w-7 h-7 border border-gray-200 rounded cursor-pointer p-0"
                     value={rd.rowColor || '#ffffff'}
                     onChange={(e) => updateRole(rName, 'rowColor', e.target.value)}
                   />
@@ -785,7 +785,7 @@ function RoleDisplaySettings({
             onKeyDown={(e) => { if (e.key === 'Enter') addNewRole() }}
             className={cn(inputClass, 'px-3 py-1.5 w-40')}
           />
-          <button onClick={addNewRole} className={cn(btnSecondary, 'text-[10px]')}>
+          <button onClick={addNewRole} className={cn(btnSecondary, 'text-xs')}>
             <Plus size={12} /> 직위 추가
           </button>
         </div>
@@ -869,11 +869,11 @@ function AutoRankRulesSettings({
   return (
     <div className="space-y-4">
       <div className={cardClass}>
-        <h3 className="font-bold text-sm text-gray-700 flex items-center gap-1.5 mb-1">
+        <h3 className="font-bold text-base text-gray-700 flex items-center gap-1.5 mb-1">
           <Target size={14} className="text-indigo-500" />
           자동 직위 규칙
         </h3>
-        <p className="text-[9px] text-gray-400 mb-4">수로 점수 기반으로 자동 직위를 부여하는 규칙을 길드별로 설정합니다</p>
+        <p className="text-xs text-gray-400 mb-4">수로 점수 기반으로 자동 직위를 부여하는 규칙을 길드별로 설정합니다</p>
 
         {/* Guild selector */}
         {guilds.length > 0 ? (
@@ -884,7 +884,7 @@ function AutoRankRulesSettings({
                   key={g.name}
                   onClick={() => setSelectedGuild(g.name)}
                   className={cn(
-                    'px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 shrink-0',
+                    'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shrink-0',
                     selectedGuild === g.name
                       ? 'bg-indigo-50 text-indigo-600 border border-indigo-200'
                       : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-transparent'
@@ -898,11 +898,11 @@ function AutoRankRulesSettings({
 
             {/* Rules table header */}
             <div className="grid grid-cols-[60px_60px_70px_1fr_1fr_36px] gap-2 px-3 mb-1.5">
-              <span className="text-[8px] text-gray-400 font-bold">Top N</span>
-              <span className="text-[8px] text-gray-400 font-bold">Bottom N</span>
-              <span className="text-[8px] text-gray-400 font-bold">최소 점수</span>
-              <span className="text-[8px] text-gray-400 font-bold">직위명</span>
-              <span className="text-[8px] text-gray-400 font-bold">비고</span>
+              <span className="text-xs text-gray-400 font-bold">Top N</span>
+              <span className="text-xs text-gray-400 font-bold">Bottom N</span>
+              <span className="text-xs text-gray-400 font-bold">최소 점수</span>
+              <span className="text-xs text-gray-400 font-bold">직위명</span>
+              <span className="text-xs text-gray-400 font-bold">비고</span>
               <span />
             </div>
 
@@ -918,35 +918,35 @@ function AutoRankRulesSettings({
                     placeholder="-"
                     value={rule.topN ?? ''}
                     onChange={(e) => updateRule(ri, 'topN', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-indigo-300 transition-colors text-center"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-300 transition-colors text-center"
                   />
                   <input
                     type="number"
                     placeholder="-"
                     value={rule.bottomN ?? ''}
                     onChange={(e) => updateRule(ri, 'bottomN', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-indigo-300 transition-colors text-center"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-300 transition-colors text-center"
                   />
                   <input
                     type="number"
                     placeholder="-"
                     value={rule.min ?? ''}
                     onChange={(e) => updateRule(ri, 'min', e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-indigo-300 transition-colors text-center"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-300 transition-colors text-center"
                   />
                   <input
                     type="text"
                     placeholder="직위명"
                     value={rule.rank}
                     onChange={(e) => updateRule(ri, 'rank', e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold outline-none focus:border-indigo-300 transition-colors"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-indigo-300 transition-colors"
                   />
                   <input
                     type="text"
                     placeholder="메모 (선택)"
                     value={rule.note || ''}
                     onChange={(e) => updateRule(ri, 'note', e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] text-gray-500 outline-none focus:border-indigo-300 transition-colors"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 outline-none focus:border-indigo-300 transition-colors"
                   />
                   <button
                     onClick={() => removeRule(ri)}
@@ -959,17 +959,17 @@ function AutoRankRulesSettings({
             </div>
 
             {currentRules.length === 0 && (
-              <p className="text-center text-[10px] text-gray-400 py-6">규칙이 없습니다. 아래 버튼으로 추가하세요.</p>
+              <p className="text-center text-xs text-gray-400 py-6">규칙이 없습니다. 아래 버튼으로 추가하세요.</p>
             )}
 
             <div className="mt-3 pt-3 border-t border-gray-100">
-              <button onClick={addRule} className={cn(btnSecondary, 'text-[10px]')}>
+              <button onClick={addRule} className={cn(btnSecondary, 'text-xs')}>
                 <Plus size={12} /> 규칙 추가
               </button>
             </div>
           </>
         ) : (
-          <p className="text-center text-[10px] text-gray-400 py-8">길드를 먼저 등록해주세요 (길드 관리 탭)</p>
+          <p className="text-center text-xs text-gray-400 py-8">길드를 먼저 등록해주세요 (길드 관리 탭)</p>
         )}
       </div>
 
@@ -1020,11 +1020,11 @@ function SuroExemptSettings({
   return (
     <div className="space-y-4">
       <div className={cardClass}>
-        <h3 className="font-bold text-sm text-gray-700 flex items-center gap-1.5 mb-1">
+        <h3 className="font-bold text-base text-gray-700 flex items-center gap-1.5 mb-1">
           <ShieldOff size={14} className="text-indigo-500" />
           수로 면제 직위
         </h3>
-        <p className="text-[9px] text-gray-400 mb-4">수로 미참여 시에도 불이익이 없는 직위를 선택합니다</p>
+        <p className="text-xs text-gray-400 mb-4">수로 미참여 시에도 불이익이 없는 직위를 선택합니다</p>
 
         {allRoleNames.length > 0 ? (
           <div className="space-y-1.5">
@@ -1058,7 +1058,7 @@ function SuroExemptSettings({
                     </span>
                   </span>
                   {isExempt && (
-                    <span className="ml-auto text-[8px] font-bold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded-md">
+                    <span className="ml-auto text-xs font-bold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded-md">
                       면제
                     </span>
                   )}
@@ -1067,7 +1067,7 @@ function SuroExemptSettings({
             })}
           </div>
         ) : (
-          <p className="text-center text-[10px] text-gray-400 py-8">직위 데이터가 없습니다. 직위 디자인 탭에서 직위를 추가하세요.</p>
+          <p className="text-center text-xs text-gray-400 py-8">직위 데이터가 없습니다. 직위 디자인 탭에서 직위를 추가하세요.</p>
         )}
       </div>
 
@@ -1119,7 +1119,7 @@ function LogoGalleryModal({
                   key={b}
                   onClick={() => setBucket(b)}
                   className={cn(
-                    'px-2.5 py-1 rounded-lg text-[9px] font-bold transition-all',
+                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all',
                     bucket === b
                       ? 'bg-indigo-500 text-white'
                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
@@ -1158,7 +1158,7 @@ function LogoGalleryModal({
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                      <span className="opacity-0 group-hover:opacity-100 text-white text-[10px] font-bold bg-black/50 px-2 py-1 rounded-lg">
+                      <span className="opacity-0 group-hover:opacity-100 text-white text-xs font-bold bg-black/50 px-2 py-1 rounded-lg">
                         선택
                       </span>
                     </div>

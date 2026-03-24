@@ -23,7 +23,6 @@ export const router = createBrowserRouter([
       { path: 'rewards', element: Lazy(() => import('@/pages/RewardsPage')) },
       { path: 'board', element: Lazy(() => import('@/pages/BoardPage')) },
       { path: 'buddy', element: Lazy(() => import('@/pages/BuddyPage')) },
-      { path: 'calendar', element: Lazy(() => import('@/pages/CalendarPage')) },
       { path: 'bail', element: Lazy(() => import('@/pages/BailPage')) },
       { path: 'penalty', element: Lazy(() => import('@/pages/PenaltyPage')) },
       // Admin

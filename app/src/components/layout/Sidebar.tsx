@@ -6,7 +6,7 @@ import { useSiteConfig } from '@/hooks/useSiteConfig'
 import {
   Home, Users, BarChart3, ArrowUpDown,
   PieChart, Gift, ClipboardList, Handshake,
-  Calendar, X, ChevronDown, Gem, AlertTriangle,
+  X, ChevronDown, Gem, AlertTriangle,
   History, Keyboard, Medal, FileEdit, RefreshCw, Database, Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -20,7 +20,6 @@ const NAV_ITEMS = [
   { to: '/rewards', icon: Gift, label: '수로 보상' },
   { to: '/board', icon: ClipboardList, label: '게시판' },
   { to: '/buddy', icon: Handshake, label: '뚠뚠 버디' },
-  { to: '/calendar', icon: Calendar, label: '캘린더' },
   { to: '/bail', icon: Gem, label: '보석금' },
   { to: '/penalty', icon: AlertTriangle, label: '벌점' },
 ]
