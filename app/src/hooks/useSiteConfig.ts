@@ -42,7 +42,11 @@ export function useSiteConfig() {
       const cfg = data.config as Record<string, unknown>
       return {
         guilds: (cfg.guilds as GuildInfo[]) || DEFAULT_CONFIG.guilds,
-        ranks: (cfg.ranks as string[]) || DEFAULT_CONFIG.ranks,
+        ranks: Array.isArray(cfg.ranks)
+          ? (cfg.ranks as string[])
+          : cfg.ranks
+            ? [...new Set(Object.values(cfg.ranks as Record<string, string[]>).flat())]
+            : DEFAULT_CONFIG.ranks,
         rolePriority: (cfg.rolePriority as Record<string, number>) || DEFAULT_CONFIG.rolePriority,
         guildStartDate: (cfg.guildStartDate as string) || null,
         guildLogo: (cfg.guildLogo as string) || null,

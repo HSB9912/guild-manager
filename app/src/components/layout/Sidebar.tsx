@@ -151,7 +151,7 @@ export function Sidebar() {
                     : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                 )}
               >
-                {size === 'sm' ? '가' : size === 'md' ? '가' : '가'}
+                {size === 'sm' ? <span className="text-[8px]">가</span> : size === 'md' ? <span className="text-[10px]">가</span> : <span className="text-[12px]">가</span>}
               </button>
             ))}
           </div>
@@ -159,6 +159,7 @@ export function Sidebar() {
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             Supabase Connected
           </div>
+          <div className="text-center text-[7px] text-gray-300">v2026.03.24</div>
         </div>
       </aside>
     </>

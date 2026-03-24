@@ -30,7 +30,7 @@ export default function GuideEditPage() {
   const { data: pages = [], isLoading } = useQuery({
     queryKey: ['guide-pages'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('guide_pages').select('*').order('sort_order')
+      const { data, error } = await supabase.from('guide_pages').select('*').order('id')
       if (error) throw error
       return (data || []) as GuidePage[]
     },

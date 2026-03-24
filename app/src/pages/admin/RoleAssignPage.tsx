@@ -44,7 +44,7 @@ export default function RoleAssignPage() {
   )
 
   const guilds = config?.guilds.map((g) => g.name) || ['뚠카롱']
-  const ranks = config?.ranks || ['마스터', '부마스터', '길드원']
+  const ranks = Array.isArray(config?.ranks) ? config.ranks : ['마스터', '부마스터', '길드원']
   const changedCount = Object.keys(changes).length
 
   /* ─── Manual save ─── */

@@ -32,7 +32,9 @@ export function TopBar() {
     if (config?.guildStartDate) {
       const start = new Date(config.guildStartDate)
       const diff = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24))
-      setAnniversary(`뚠카롱 ${diff}일`)
+      const years = Math.floor(diff / 365)
+      const days = diff % 365
+      setAnniversary(years > 0 ? `${years}년 ${days}일` : `${diff}일`)
     }
   }, [config])
 
@@ -71,6 +73,13 @@ export function TopBar() {
             </span>
           ))}
         </div>
+
+        {/* Total members */}
+        {members.length > 0 && (
+          <span className="hidden sm:inline text-[9px] bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-md font-black border border-indigo-100">
+            👥 {members.length}
+          </span>
+        )}
 
         {/* Anniversary */}
         {anniversary && (
