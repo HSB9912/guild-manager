@@ -38,4 +38,4 @@ export const router = createBrowserRouter([
       { path: '*', element: Lazy(() => import('@/pages/NotFoundPage')) },
     ],
   },
-])
+], { basename: import.meta.env.BASE_URL })
