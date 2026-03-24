@@ -52,24 +52,35 @@ export function OcrModal({ onApply, onClose }: Props) {
 
       mediaStream.getVideoTracks()[0].onended = () => stopCapture(mediaStream)
 
-      // Process frames every 1.5s
-      let processing = false
-      intervalRef.current = setInterval(async () => {
-        if (processing || video.readyState < 2) return
-        processing = true
-        try {
-          const bitmap = await createImageBitmap(video)
-          const results = await processImage(bitmap)
-          if (results.length > 0) {
-            setRecords((prev) => {
-              const map = new Map(prev.map((r) => [r.name, r]))
-              results.forEach((r) => map.set(r.name, r))
-              return Array.from(map.values())
-            })
+      // Wait for video to be ready, then explicitly play
+      video.onloadedmetadata = () => {
+        video.play()
+
+        // Process frames using recursive setTimeout (same pattern as legacy)
+        let processing = false
+        const processFrame = async () => {
+          if (!mediaStream.active) return
+          if (processing || video.readyState < 2) {
+            setTimeout(processFrame, 200)
+            return
           }
-        } catch { /* ignore */ }
-        processing = false
-      }, 1500)
+          processing = true
+          try {
+            const bitmap = await createImageBitmap(video)
+            const results = await processImage(bitmap)
+            if (results.length > 0) {
+              setRecords((prev) => {
+                const map = new Map(prev.map((r) => [r.name, r]))
+                results.forEach((r) => map.set(r.name, r))
+                return Array.from(map.values())
+              })
+            }
+          } catch { /* ignore */ }
+          processing = false
+          setTimeout(processFrame, 200)
+        }
+        processFrame()
+      }
     } catch {
       setStatusText('캡처 취소됨')
       setStatus('ready')
