@@ -2833,49 +2833,49 @@
                 ? rawSearchTerm.toLowerCase().split(/[\s,]+/).filter(t => t.length > 0)
                 : [];
 
-            const filtered = appState.members.filter(m => {
-                const gMatch = appState.filters.guild === 'all' || m.guild === appState.filters.guild;
-                if (searchTokens.length === 0) return gMatch;
-                const sMatch = searchTokens.some(token => {
-                    return m.name.toLowerCase().includes(token) ||
-                           (m.class||'').toLowerCase().includes(token) ||
-                           (m.role||'').toLowerCase().includes(token) ||
-                           (m.mainCharName || '').toLowerCase().includes(token) ||
-                           (m.isMain && m.name.toLowerCase().includes(token));
-                });
-                return gMatch && sMatch;
-            });
-
-            // 본캐 기준 그룹핑
+            // Step 1: 본캐만 먼저 추출 (본캐 기준으로 길드/검색 필터)
+            const allMembers = appState.members;
             const headers = appState.suroHeaders || [];
             const latestH = headers.length > 0 ? headers[headers.length - 1] : null;
             const prevH = headers.length > 1 ? headers[headers.length - 2] : null;
             const getScore = (m) => latestH ? (Math.round(Number(m.suro?.[latestH])) || 0) : 0;
             const getPrev = (m) => prevH ? (Math.round(Number(m.suro?.[prevH])) || 0) : 0;
 
-            const mainMap = new Map();
-            filtered.forEach(m => {
-                if (m.isMain !== false) {
-                    if (!mainMap.has(m.name)) mainMap.set(m.name, { main: m, subs: [] });
-                    else mainMap.get(m.name).main = m;
-                } else {
-                    const mn = m.mainCharName || '';
-                    if (mn) {
-                        if (!mainMap.has(mn)) mainMap.set(mn, { main: null, subs: [] });
-                        mainMap.get(mn).subs.push(m);
-                    } else {
-                        mainMap.set(m.name, { main: m, subs: [] });
-                    }
-                }
+            // Step 2: 본캐 목록 구성 (isMain !== false인 것들)
+            const mains = allMembers.filter(m => m.isMain !== false);
+
+            // Step 3: 본캐별 부캐 맵 (mainCharName으로 연결, 모든 길드에서)
+            const subsByMain = {};
+            allMembers.filter(m => m.isMain === false && m.mainCharName).forEach(m => {
+                const mn = m.mainCharName;
+                if (!subsByMain[mn]) subsByMain[mn] = [];
+                subsByMain[mn].push(m);
             });
 
-            let groups = [...mainMap.entries()].map(([key, val]) => {
-                if (!val.main) {
-                    const found = appState.members.find(x => x.name === key && x.isMain !== false);
-                    if (found) val.main = found;
-                }
-                return val;
-            }).filter(g => g.main);
+            // Step 4: 본캐에 길드/검색 필터 적용
+            const guildFilter = appState.filters.guild;
+            const matchSearch = (m) => {
+                if (searchTokens.length === 0) return true;
+                // 본캐 이름, 직업, 직위, 부캐 이름까지 검색 대상
+                const subs = subsByMain[m.name] || [];
+                return searchTokens.some(token =>
+                    m.name.toLowerCase().includes(token) ||
+                    (m.class||'').toLowerCase().includes(token) ||
+                    (m.role||'').toLowerCase().includes(token) ||
+                    subs.some(s => s.name.toLowerCase().includes(token) || (s.class||'').toLowerCase().includes(token))
+                );
+            };
+
+            const filteredMains = mains.filter(m => {
+                const gMatch = guildFilter === 'all' || m.guild === guildFilter;
+                return gMatch && matchSearch(m);
+            });
+
+            // Step 5: 그룹 구성 (본캐 + 해당 본캐의 모든 부캐)
+            let groups = filteredMains.map(m => ({
+                main: m,
+                subs: subsByMain[m.name] || []
+            }));
 
             const sf = appState.filters.sortField, so = appState.filters.sortOrder;
             groups.sort((a, b) => {
@@ -2884,7 +2884,7 @@
             });
 
             const totalMain = groups.length;
-            const totalAll = filtered.length;
+            const totalAll = groups.reduce((s, g) => s + 1 + g.subs.length, 0);
             const _rd = (role) => SITE_CONFIG?.roleDisplay?.[role] || {};
             const sortIcon = (f) => sf === f ? (so === 'asc' ? ' <i class="fas fa-sort-up"></i>' : ' <i class="fas fa-sort-down"></i>') : '';
 
