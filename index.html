@@ -3,7 +3,8 @@
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>뚠카롱 길드 관리 시스템</title>
+ <title>뚠카롱</title>
+ <link rel="icon" type="image/png" href="favicon.png">
  <script src="https://cdn.tailwindcss.com"></script>
  <script>tailwind.config = { darkMode: 'class' }</script>
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11956,7 +11957,7 @@ function M(c){const e=c.channels();let l=R,u="",w=[];for(let t=0;t<12;t++)w.push
    initSidebar();
    const ve = document.getElementById('appVersion');
    if (ve) ve.textContent = 'v' + APP_VERSION;
-   document.title = '뚠카롱 길드 관리 시스템 (v' + APP_VERSION + ')';
+   document.title = '뚠카롱 (v' + APP_VERSION + ')';
    await window._authCheck();
    window.fetchMembers();
   });
