@@ -10692,14 +10692,12 @@
     const resultDiv = document.getElementById('mainGuessResult');
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>추론 중...'; }
 
-    // 대상: 본캐로 체크되어 있지만 본캐닉이 비어있는 멤버, 또는 부캐길드에서 본캐로 체크된 멤버
-    const subGuilds = appState.guilds.filter(g => g.type && (g.type.includes('부캐') || g.type.includes('부'))).map(g => g.name);
+    // 대상: 부캐길드에서 본캐로 체크되어 있고 본캐닉이 비어있는 멤버만
+    const mainGuilds = ['뚠카롱', '뚱카롱'];
     const targets = appState.members.filter(m => {
-      // 1) 본캐 체크인데 본캐닉 미입력
-      const noMainName = m.isMain !== false && (!m.mainCharName || m.mainCharName.trim() === '');
-      // 2) 부캐길드에서 본캐로 체크됨
-      const subGuildMain = m.isMain !== false && subGuilds.includes(m.guild);
-      return noMainName || subGuildMain;
+      if (mainGuilds.includes(m.guild)) return false; // 메인길드는 스킵
+      // 부캐길드에서 본캐로 체크됐는데 본캐닉 미입력
+      return m.isMain !== false && (!m.mainCharName || m.mainCharName.trim() === '');
     });
 
     if (targets.length === 0) {
