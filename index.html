@@ -5497,30 +5497,41 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const guildSummary = {};
     subGuilds.forEach(g => { guildSummary[g.name] = members.filter(m => m.guild === g.name).length; });
 
+    // 본캐 기준으로 꿀카롱 멤버를 버킷에 모은다 (카드 총원과 항상 일치하도록)
+    // - 정상 본캐: mainMap에서 찾은 main 정보 사용, 부캐는 같은 길드 멤버만
+    // - 고스트 본캐(mainMap에 없음): 여러 멤버가 동일 고스트를 가리켜도 하나의 버킷으로 합침
+    // - orphan(본캐닉 비어있음): 각각 단독 행
     const treeData = [];
-    const processedMains = new Set();
+    const bucketOrder = [];
+    const buckets = {}; // mainName → { main, subs[], isGhost }
     selectedMembers.forEach(m => {
       const mainName = m.isMain ? m.name : (m.mainCharName || '');
-      // 본캐닉이 비어있는 부캐(orphan)는 그 자체를 단독 행으로 표시
-      // (상단 카드 카운트와 시트 복사 결과가 어긋나던 버그 수정)
       if (!mainName) {
         treeData.push({ main: { name: '(본캐미입력)', guild: m.guild, role: m.role || '', class: '' }, subs: [m] });
         return;
       }
-      if (processedMains.has(mainName)) return;
-      processedMains.add(mainName);
-      const mainInfo = mainMap[mainName];
-      if (mainInfo) {
-        const subsInGuild = mainInfo.subs.filter(s => s.guild === ss.guild);
-        // 본캐 자신이 이 길드에 직접 가입한 경우 → 부캐1에 본캐도 포함
-        const mainInThisGuild = mainInfo.main.guild === ss.guild;
-        if (mainInThisGuild && !subsInGuild.some(s => s.name === mainInfo.main.name)) {
-          subsInGuild.unshift(mainInfo.main);
+      if (!buckets[mainName]) {
+        const mainInfo = mainMap[mainName];
+        if (mainInfo) {
+          buckets[mainName] = { main: mainInfo.main, subs: [], isGhost: false };
+        } else {
+          buckets[mainName] = { main: { name: mainName, guild: '?', role: '', class: '' }, subs: [], isGhost: true };
         }
-        treeData.push({ main: mainInfo.main, subs: subsInGuild });
-      } else {
-        treeData.push({ main: { name: mainName, guild: '?', role: '', class: '' }, subs: [m] });
+        bucketOrder.push(mainName);
       }
+      const bucket = buckets[mainName];
+      // 본캐 자체는 subs 에 중복으로 넣지 않음 (mainInThisGuild 처리에서 한 번만 unshift)
+      if (!(bucket.main === m)) {
+        if (!bucket.subs.some(s => s.name === m.name)) bucket.subs.push(m);
+      }
+    });
+    // 본캐가 이 길드에 직접 가입해 있는 경우 → 부캐1 칸에 본캐도 포함
+    bucketOrder.forEach(name => {
+      const b = buckets[name];
+      if (!b.isGhost && b.main.guild === ss.guild && !b.subs.some(s => s.name === b.main.name)) {
+        b.subs.unshift(b.main);
+      }
+      treeData.push({ main: b.main, subs: b.subs });
     });
 
     // 검색
