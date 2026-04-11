@@ -5650,12 +5650,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     let html = '<table border="1" cellpadding="4" style="border-collapse:collapse;font-size:11px;font-family:sans-serif">';
     table.querySelectorAll('tr').forEach(tr => {
       const rowBg = tr.style.background || tr.style.backgroundColor || '';
-      const rowStyle = rowBg ? `background:${rowBg};` : '';
-      html += `<tr style="${rowStyle}">`;
+      // tr 자체에는 배경을 넣지 않는다 (빈 셀까지 색칠되는 버그 방지)
+      html += '<tr>';
       tr.querySelectorAll('th, td').forEach(cell => {
         const tag = cell.tagName.toLowerCase();
+        const text = cell.innerText.trim();
         let cellBg = '', cellColor = '';
-        // 1. 셀 안의 span style 확인
+        // 1. 셀 안의 span style 확인 (역할 뱃지 등)
         const spans = cell.querySelectorAll('span[style]');
         spans.forEach(span => {
           const s = span.style;
@@ -5666,11 +5667,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         });
         // 2. 셀 자체 style
         if (!cellBg && cell.style.backgroundColor) { cellBg = cell.style.backgroundColor; cellColor = cell.style.color || ''; }
-        // 3. 행 배경 상속
-        if (!cellBg && rowBg) { cellBg = rowBg; }
+        // 3. 행 배경 상속 — 단, 텍스트가 있는 셀에만 적용 (빈 부캐 칸은 색 없이)
+        if (!cellBg && rowBg && text) { cellBg = rowBg; }
 
         const style = `border:1px solid #ccc;padding:2px 5px;font-weight:bold;${cellBg ? 'background:'+cellBg+';' : ''}${cellColor ? 'color:'+cellColor+';' : ''}`;
-        html += `<${tag} style="${style}">${cell.innerText.trim()}</${tag}>`;
+        html += `<${tag} style="${style}">${text}</${tag}>`;
       });
       html += '</tr>';
     });
