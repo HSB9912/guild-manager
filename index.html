@@ -2931,6 +2931,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             // - 메인길드/전체: 본캐 기준 그룹핑 (본캐 + 부캐 패널)
             // - 부캐길드(밤/별/달/꿀카롱): 그룹핑 없이 해당 길드 소속 멤버를 개별 행으로 나열
             //   (부캐길드 멤버는 대부분 isMain=false라 본캐 목록에서 걸러져 안 보이던 버그 수정)
+            // - 본캐닉이 비었거나 오타로 존재하지 않는 본캐를 가리키는 orphan 부캐도
+            //   단독 행으로 표시하여 전체/메인길드 탭에서 누락되지 않도록 함
             let groups;
             if (isSubGuild) {
                 groups = allMembers
@@ -2945,6 +2947,18 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                     main: m,
                     subs: subsByMain[m.name] || []
                 }));
+                // Orphan 부캐: isMain=false 이면서
+                //   (a) mainCharName이 비어있거나
+                //   (b) 존재하지 않는 본캐 이름을 가리키는 경우
+                // 정상적으로는 어느 본캐 그룹에도 매달리지 않아 탭에서 증발하므로 단독 행으로 추가
+                const validMainNames = new Set(mains.map(m => m.name));
+                allMembers.forEach(m => {
+                    if (m.isMain !== false) return;
+                    if (m.mainCharName && validMainNames.has(m.mainCharName)) return;
+                    const gMatch = guildFilter === 'all' || m.guild === guildFilter;
+                    if (!gMatch || !matchSearch(m)) return;
+                    groups.push({ main: m, subs: [] });
+                });
             }
 
             const sf = appState.filters.sortField, so = appState.filters.sortOrder;
