@@ -5501,7 +5501,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const processedMains = new Set();
     selectedMembers.forEach(m => {
       const mainName = m.isMain ? m.name : (m.mainCharName || '');
-      if (!mainName || processedMains.has(mainName)) return;
+      // 본캐닉이 비어있는 부캐(orphan)는 그 자체를 단독 행으로 표시
+      // (상단 카드 카운트와 시트 복사 결과가 어긋나던 버그 수정)
+      if (!mainName) {
+        treeData.push({ main: { name: '(본캐미입력)', guild: m.guild, role: m.role || '', class: '' }, subs: [m] });
+        return;
+      }
+      if (processedMains.has(mainName)) return;
       processedMains.add(mainName);
       const mainInfo = mainMap[mainName];
       if (mainInfo) {
