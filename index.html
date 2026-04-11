@@ -2912,6 +2912,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
             // Step 4: 본캐에 길드/검색 필터 적용
             const guildFilter = appState.filters.guild;
+            const selectedGuild = appState.guilds.find(g => g.name === guildFilter);
+            const isSubGuild = !!(selectedGuild && (selectedGuild.type || '').startsWith('부캐'));
             const matchSearch = (m) => {
                 if (searchTokens.length === 0) return true;
                 // 본캐 이름, 직업, 직위, 부캐 이름까지 검색 대상
@@ -2920,20 +2922,30 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                     m.name.toLowerCase().includes(token) ||
                     (m.class||'').toLowerCase().includes(token) ||
                     (m.role||'').toLowerCase().includes(token) ||
+                    (m.mainCharName||'').toLowerCase().includes(token) ||
                     subs.some(s => s.name.toLowerCase().includes(token) || (s.class||'').toLowerCase().includes(token))
                 );
             };
 
-            const filteredMains = mains.filter(m => {
-                const gMatch = guildFilter === 'all' || m.guild === guildFilter;
-                return gMatch && matchSearch(m);
-            });
-
-            // Step 5: 그룹 구성 (본캐 + 해당 본캐의 모든 부캐)
-            let groups = filteredMains.map(m => ({
-                main: m,
-                subs: subsByMain[m.name] || []
-            }));
+            // Step 5: 그룹 구성
+            // - 메인길드/전체: 본캐 기준 그룹핑 (본캐 + 부캐 패널)
+            // - 부캐길드(밤/별/달/꿀카롱): 그룹핑 없이 해당 길드 소속 멤버를 개별 행으로 나열
+            //   (부캐길드 멤버는 대부분 isMain=false라 본캐 목록에서 걸러져 안 보이던 버그 수정)
+            let groups;
+            if (isSubGuild) {
+                groups = allMembers
+                    .filter(m => m.guild === guildFilter && matchSearch(m))
+                    .map(m => ({ main: m, subs: [] }));
+            } else {
+                const filteredMains = mains.filter(m => {
+                    const gMatch = guildFilter === 'all' || m.guild === guildFilter;
+                    return gMatch && matchSearch(m);
+                });
+                groups = filteredMains.map(m => ({
+                    main: m,
+                    subs: subsByMain[m.name] || []
+                }));
+            }
 
             const sf = appState.filters.sortField, so = appState.filters.sortOrder;
             groups.sort((a, b) => {
