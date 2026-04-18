@@ -891,10 +891,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             window.renderMembers(document.getElementById('contentArea')); 
         };
 
-        window.stageUpdate = (id, field, val) => { 
-            if(!appState.pendingUpdates[id]) appState.pendingUpdates[id] = { id }; 
-            appState.pendingUpdates[id][field] = val; 
-            window.updateMemberTable(); 
+        window.stageUpdate = (id, field, val) => {
+            if(!appState.pendingUpdates[id]) appState.pendingUpdates[id] = { id };
+            appState.pendingUpdates[id][field] = val;
         };
 
         window.saveBatchUpdates = async () => { 
@@ -2947,16 +2946,23 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                     main: m,
                     subs: subsByMain[m.name] || []
                 }));
-                // Orphan 부캐: isMain=false 이면서
-                //   (a) mainCharName이 비어있거나
-                //   (b) 존재하지 않는 본캐 이름을 가리키는 경우
-                // 정상적으로는 어느 본캐 그룹에도 매달리지 않아 탭에서 증발하므로 단독 행으로 추가
+                // Orphan/cross-guild 부캐 보완:
+                // (a) mainCharName이 비었거나 존재하지 않는 본캐를 가리키는 orphan → 단독 행
+                // (b) 특정 길드 필터 시, 해당 길드 소속이지만 본캐가 다른 길드에 있어 누락되는 부캐 → 단독 행
                 const validMainNames = new Set(mains.map(m => m.name));
+                const shownMainNames = new Set(filteredMains.map(m => m.name));
                 allMembers.forEach(m => {
                     if (m.isMain !== false) return;
-                    if (m.mainCharName && validMainNames.has(m.mainCharName)) return;
                     const gMatch = guildFilter === 'all' || m.guild === guildFilter;
                     if (!gMatch || !matchSearch(m)) return;
+                    // orphan: 본캐닉 없거나 존재하지 않는 본캐
+                    if (!m.mainCharName || !validMainNames.has(m.mainCharName)) {
+                        groups.push({ main: m, subs: [] });
+                        return;
+                    }
+                    // 본캐가 현재 필터에 포함되어 있으면 이미 subs에 들어가 있으므로 스킵
+                    if (shownMainNames.has(m.mainCharName)) return;
+                    // 본캐가 다른 길드에 있어서 현재 필터에서 누락된 부캐 → 단독 행
                     groups.push({ main: m, subs: [] });
                 });
             }
@@ -3020,16 +3026,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 const hasSubs = g.subs.length > 0;
                 const subBadge = hasSubs ? `<span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold bg-pink-50 text-pink-400">${g.subs.length}캐</span>` : '';
 
-                html += `<tr class="hover:bg-pink-50/20 transition-colors cursor-pointer group" style="border-bottom:1px solid #f3f4f6;height:38px;border-left:3px solid ${borderColor};" onclick="window._toggleMemberGroup(${gi})" id="mRow-${gi}">
+                html += `<tr class="hover:bg-pink-50/20 transition-colors cursor-pointer group" style="border-bottom:1px solid #f3f4f6;height:38px;border-left:3px solid ${borderColor};" onclick="${appState.isBatchMode ? '' : `window._toggleMemberGroup(${gi})`}" id="mRow-${gi}">
                     <td class="py-1.5 px-2 text-center text-gray-400 text-[11px]">${appState.isKickMode ? `<input type="checkbox" class="custom-checkbox" ${appState.kickSelection.has(m.id)?'checked':''} onclick="event.stopPropagation()" onchange="window.handleKickSelect('${m.id}')">` : (gi+1)}</td>
                     <td class="py-1.5 px-2">
                         <div class="flex items-center gap-1.5 leading-none">
                             ${emoji ? `<span class="text-sm">${emoji}</span>` : ''}<div><span class="text-[12px] font-black text-gray-800">${m.name}</span>${m.level > 0 ? `<span class="text-[8px] text-gray-400 font-mono ml-1">Lv.${m.level}</span>` : ''}${hasSubs ? `<div class="text-[9px] text-gray-400 leading-tight mt-0.5">${m.class || ''} · 부캐 ${g.subs.length}개</div>` : `<div class="text-[9px] text-gray-400 leading-tight mt-0.5">${m.class || ''}</div>`}</div>
                         </div>
                     </td>
-                    <td class="py-1.5 px-2 hidden sm:table-cell text-[10px] text-gray-500">${m.guild}</td>
-                    <td class="py-1.5 px-2 hidden sm:table-cell">${roleBadge(m.role)}</td>
-                    <td class="py-1.5 px-2 hidden md:table-cell text-[10px] text-gray-400">${m.class || '-'}</td>
+                    <td class="py-1.5 px-2 hidden sm:table-cell text-[10px] text-gray-500">${appState.isBatchMode ? `<select class="bg-gray-50 border border-gray-200 rounded px-1 py-0.5 text-[10px] font-bold outline-none focus:ring-1 focus:ring-pink-300" onclick="event.stopPropagation()" onchange="window.stageUpdate('${m.id}','guild',this.value)">${appState.guilds.map(g => `<option value="${g.name}" ${m.guild===g.name?'selected':''}>${g.name}</option>`).join('')}</select>` : m.guild}</td>
+                    <td class="py-1.5 px-2 hidden sm:table-cell">${appState.isBatchMode ? `<select class="bg-gray-50 border border-gray-200 rounded px-1 py-0.5 text-[10px] font-bold outline-none focus:ring-1 focus:ring-pink-300" onclick="event.stopPropagation()" onchange="window.stageUpdate('${m.id}','role',this.value)">${(appState.guildRanks[m.guild] || initialGuildRanks[m.guild] || initialGuildRanks['뚠카롱']).map(r => `<option value="${r}" ${m.role===r?'selected':''}>${r}</option>`).join('')}</select>` : roleBadge(m.role)}</td>
+                    <td class="py-1.5 px-2 hidden md:table-cell text-[10px] text-gray-400">${appState.isBatchMode ? `<select class="bg-gray-50 border border-gray-200 rounded px-1 py-0.5 text-[10px] font-bold outline-none focus:ring-1 focus:ring-pink-300" onclick="event.stopPropagation()" onchange="window.stageUpdate('${m.id}','class',this.value)"><option value="">-</option>${MAPLE_JOBS.map(j => `<option value="${j}" ${m.class===j?'selected':''}>${j}</option>`).join('')}</select>` : (m.class || '-')}</td>
                     <td class="py-1.5 px-2 text-right font-mono ${score === 0 ? 'text-red-400' : 'text-gray-800'}" style="font-weight:800;">${score > 0 ? score.toLocaleString() : '0'}</td>
                     <td class="py-1.5 px-2 text-right hidden sm:table-cell">${diffBadge(score, prev)}</td>
                     <td class="py-1.5 px-2 text-center">${subBadge}${isAdmin() && !appState.isBatchMode && !appState.isKickMode ? `<span class="opacity-0 group-hover:opacity-100 transition-opacity inline-flex gap-0.5 ml-1"><button onclick="event.stopPropagation();window.openEditModal('${m.id}')" class="text-blue-400 hover:text-blue-600 text-[9px]"><i class="fas fa-edit"></i></button><button onclick="event.stopPropagation();window.openDeleteModal('${m.id}')" class="text-red-400 hover:text-red-600 text-[9px]"><i class="fas fa-trash"></i></button></span>` : ''}</td>
