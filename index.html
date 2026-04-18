@@ -820,10 +820,12 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
               const rules = SITE_CONFIG?.autoRankRules?.[guild] || [];
               const SUB_EXCLUDE = ['와플','아인슈페너','부팬케이크','수플레','부케이크','반죽(휴면)'];
               const filtered = rules.filter(r => !SUB_EXCLUDE.includes(r.rank));
-              const topNR = filtered.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
-              const scoreR = filtered.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
-              let rank = null, cumTop = 0;
-              for (const r of topNR) { cumTop += (r.topN||0); if (myIdx < cumTop && myScore > 0) { rank = r.rank; break; } }
+              const exactR = filtered.filter(r => r.exactScore != null);
+              const topNR = filtered.filter(r => r.topN > 0 && r.exactScore == null).sort((a,b) => a.topN - b.topN);
+              const scoreR = filtered.filter(r => !r.topN && !r.bottomN && r.exactScore == null).sort((a,b) => (b.min||0) - (a.min||0));
+              let rank = null;
+              for (const r of exactR) { if (myScore === r.exactScore && r.rank) { rank = r.rank; break; } }
+              if (!rank) { let cumTop = 0; for (const r of topNR) { cumTop += (r.topN||0); if (myIdx < cumTop && myScore > 0) { rank = r.rank; break; } } }
               if (!rank) for (const r of scoreR) { if (myScore >= (r.min||0)) { rank = r.rank; break; } }
               return rank ? rank + ' · 와플' : '와플';
             }
@@ -839,10 +841,12 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const rules = SITE_CONFIG?.autoRankRules?.[guild] || [];
             const SUB_EXCLUDE = ['와플','아인슈페너','부팬케이크','수플레','부케이크','반죽(휴면)'];
             const filtered = rules.filter(r => !SUB_EXCLUDE.includes(r.rank));
-            const topNR = filtered.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
-            const bottomNR = filtered.filter(r => r.bottomN > 0);
-            const scoreR = filtered.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
+            const exactR = filtered.filter(r => r.exactScore != null);
+            const topNR = filtered.filter(r => r.topN > 0 && r.exactScore == null).sort((a,b) => a.topN - b.topN);
+            const bottomNR = filtered.filter(r => r.bottomN > 0 && r.exactScore == null);
+            const scoreR = filtered.filter(r => !r.topN && !r.bottomN && r.exactScore == null).sort((a,b) => (b.min||0) - (a.min||0));
             const totalM = allMembers.length;
+            for (const r of exactR) { if (myScore === r.exactScore && r.rank) return r.rank; }
             for (const r of bottomNR) { if (myIdx >= totalM - (r.bottomN||0)) return r.rank; }
             let cumTop = 0;
             for (const r of topNR) { cumTop += (r.topN||0); if (myIdx < cumTop && myScore > 0) return r.rank; }
@@ -1274,13 +1278,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 { min: 72000, rank: '크로칸슈' }, { min: 50000, rank: '롤케이크' },
                 { min: 38000, rank: '팬케이크' }, { min: 0, rank: '스콘' }
             ];
-            const topNRules = rules.filter(r => r.topN > 0).sort((a,b) => a.topN - b.topN);
-            const bottomNRules = rules.filter(r => r.bottomN > 0);
-            const scoreRules = rules.filter(r => !r.topN && !r.bottomN).sort((a,b) => b.min - a.min);
+            const exactRules = rules.filter(r => r.exactScore != null);
+            const topNRules = rules.filter(r => r.topN > 0 && r.exactScore == null).sort((a,b) => a.topN - b.topN);
+            const bottomNRules = rules.filter(r => r.bottomN > 0 && r.exactScore == null);
+            const scoreRules = rules.filter(r => !r.topN && !r.bottomN && r.exactScore == null).sort((a,b) => (b.min||0) - (a.min||0));
             const totalMain = mainOnly.length;
 
             const getRoleForMember = (m) => {
                 const score = m.latestScore;
+                // exactScore 규칙 우선 체크
+                for (const r of exactRules) { if (score === r.exactScore && r.rank) return r.rank; }
                 if (m.isMain !== false) {
                     const idx = mainRankMap[m.name];
                     if (idx !== undefined) {
@@ -1374,9 +1381,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 const rules = SITE_CONFIG?.autoRankRules?.['뚱카롱'] || [
                     { min: 18000, rank: '뚠케이크' }, { min: 5000, rank: '뚠브레드' }, { min: 0, rank: '뚠스콘' }
                 ];
-                const sorted = [...rules].sort((a,b) => b.min - a.min);
-                for (const r of sorted) { if (score >= r.min) return r.rank; }
-                return sorted.length > 0 ? sorted[sorted.length-1].rank : '뚠스콘';
+                // exactScore 규칙 우선 체크 (정확히 해당 점수일 때 매칭)
+                for (const r of rules) {
+                    if (r.exactScore !== undefined && r.exactScore !== null && score === r.exactScore && r.rank) return r.rank;
+                }
+                const scoreR = rules.filter(r => !r.topN && !r.bottomN && (r.exactScore == null)).sort((a,b) => (b.min||0) - (a.min||0));
+                for (const r of scoreR) { if (score >= (r.min||0)) return r.rank; }
+                return scoreR.length > 0 ? scoreR[scoreR.length-1].rank : '뚠스콘';
             };
 
             const scored = targets.map(m => ({
@@ -3026,7 +3037,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 const hasSubs = g.subs.length > 0;
                 const subBadge = hasSubs ? `<span class="inline-block px-1 py-0.5 rounded text-[8px] font-bold bg-pink-50 text-pink-400">${g.subs.length}캐</span>` : '';
 
-                html += `<tr class="hover:bg-pink-50/20 transition-colors cursor-pointer group" style="border-bottom:1px solid #f3f4f6;height:38px;border-left:3px solid ${borderColor};" onclick="${appState.isBatchMode ? '' : `window._toggleMemberGroup(${gi})`}" id="mRow-${gi}">
+                html += `<tr class="hover:bg-pink-50/20 transition-colors cursor-pointer group" style="border-bottom:1px solid #f3f4f6;height:38px;border-left:3px solid ${borderColor};" onclick="window._toggleMemberGroup(${gi})" id="mRow-${gi}">
                     <td class="py-1.5 px-2 text-center text-gray-400 text-[11px]">${appState.isKickMode ? `<input type="checkbox" class="custom-checkbox" ${appState.kickSelection.has(m.id)?'checked':''} onclick="event.stopPropagation()" onchange="window.handleKickSelect('${m.id}')">` : (gi+1)}</td>
                     <td class="py-1.5 px-2">
                         <div class="flex items-center gap-1.5 leading-none">
@@ -8310,16 +8321,17 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
    const _buildRuleTable = (gn, rules) => {
      const rows = rules.map((r, ri) => {
-       return '<div class="grid grid-cols-[50px_50px_70px_1fr_60px_28px] gap-0 items-center px-2 py-1 hover:bg-purple-50/30">'
+       return '<div class="grid grid-cols-[50px_50px_70px_70px_1fr_60px_28px] gap-0 items-center px-2 py-1 hover:bg-purple-50/30">'
        +'<input type="number" class="cfg-autorule-topn w-11 bg-transparent border-b border-gray-200 px-1 py-0.5 text-[11px] font-bold outline-none text-center focus:border-purple-400" value="'+(r.topN||'')+'" data-guild="'+gn+'" data-ri="'+ri+'" placeholder="—">'
        +'<input type="number" class="cfg-autorule-bottomn w-11 bg-transparent border-b border-gray-200 px-1 py-0.5 text-[11px] font-bold outline-none text-center focus:border-purple-400" value="'+(r.bottomN||'')+'" data-guild="'+gn+'" data-ri="'+ri+'" placeholder="—">'
        +'<input type="number" class="cfg-autorule-min w-16 bg-transparent border-b border-gray-200 px-1 py-0.5 text-[11px] font-bold outline-none text-right focus:border-purple-400" value="'+(r.min !== undefined && r.min !== null ? r.min : '')+'" data-guild="'+gn+'" data-ri="'+ri+'" placeholder="—">'
+       +'<input type="number" class="cfg-autorule-exact w-16 bg-transparent border-b border-purple-300 px-1 py-0.5 text-[11px] font-bold outline-none text-right text-purple-600 focus:border-purple-500" value="'+(r.exactScore !== undefined && r.exactScore !== null ? r.exactScore : '')+'" data-guild="'+gn+'" data-ri="'+ri+'" placeholder="—">'
        +'<input class="cfg-autorule-rank bg-transparent border-b border-gray-200 px-1 py-0.5 text-[11px] font-bold outline-none focus:border-purple-400" value="'+r.rank+'" data-guild="'+gn+'" data-ri="'+ri+'" placeholder="직위명">'
        +'<input class="cfg-autorule-note w-14 bg-transparent border-b border-gray-200 px-1 py-0.5 text-[9px] outline-none text-gray-400 focus:border-purple-400" value="'+(r.note||'')+'" data-guild="'+gn+'" data-ri="'+ri+'" placeholder="비고">'
        +'<button onclick="window._cfgRemoveAutoRule(\''+gn+'\','+ri+')" class="text-gray-300 hover:text-red-400 text-xs text-center"><i class="fas fa-times"></i></button></div>';
      }).join('');
      return '<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">'
-     +'<div class="grid grid-cols-[50px_50px_70px_1fr_60px_28px] gap-0 text-[8px] font-bold text-gray-400 uppercase bg-gray-50 border-b border-gray-200 px-2 py-1.5"><span>topN</span><span>btmN</span><span>최소점수</span><span>직위명</span><span>비고</span><span></span></div>'
+     +'<div class="grid grid-cols-[50px_50px_70px_70px_1fr_60px_28px] gap-0 text-[8px] font-bold text-gray-400 uppercase bg-gray-50 border-b border-gray-200 px-2 py-1.5"><span>topN</span><span>btmN</span><span>최소점수</span><span class="text-purple-500">정확히</span><span>직위명</span><span>비고</span><span></span></div>'
      +'<div class="divide-y divide-gray-100" id="autoRankList_'+gn.replace(/[^a-zA-Z가-힣]/g,'')+'">'+rows+'</div></div>'
      +'<button onclick="window._cfgAddAutoRule(\''+gn+'\')" class="mt-1.5 text-[10px] text-purple-500 hover:text-purple-700 font-bold"><i class="fas fa-plus mr-1"></i>규칙 추가</button>';
    };
@@ -9013,6 +9025,14 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    const v = parseInt(el.value);
    if (!isNaN(v) && v > 0) cfg.autoRankRules[gn][ri].bottomN = v;
    else delete cfg.autoRankRules[gn][ri].bottomN;
+   });
+   document.querySelectorAll('.cfg-autorule-exact').forEach(el => {
+   const gn = el.dataset.guild;
+   const ri = parseInt(el.dataset.ri);
+   if (!cfg.autoRankRules[gn]) cfg.autoRankRules[gn] = [];
+   if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
+   if (el.value !== '' && el.value != null) cfg.autoRankRules[gn][ri].exactScore = parseInt(el.value);
+   else delete cfg.autoRankRules[gn][ri].exactScore;
    });
    document.querySelectorAll('.cfg-autorule-note').forEach(el => {
    const gn = el.dataset.guild;
