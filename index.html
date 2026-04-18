@@ -5534,7 +5534,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     let filtered = data;
     if (search) filtered = filtered.filter(d => d.main.name.toLowerCase().includes(search) || d.subs.some(s => s.name.toLowerCase().includes(search)));
     if (ss.guild !== 'all') filtered = filtered.filter(d => d.main.guild === ss.guild);
-    filtered = filtered.filter(d => d.totalSubs > 0);
+    filtered = filtered.filter(d => d.totalSubs > 0 && d.actualExempt > 0);
     // 상태 필터
     if (ss.filter === 'over') filtered = filtered.filter(d => d.overCount > 0);
     else if (ss.filter === 'full') filtered = filtered.filter(d => d.fullExempt);
