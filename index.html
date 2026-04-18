@@ -5498,7 +5498,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
 
   // ============ 수로 면제 현황 ============
-  window._suroExemptState = { sortField: 'score', sortOrder: 'desc', search: '', guild: 'all' };
+  window._suroExemptState = { sortField: 'score', sortOrder: 'desc', search: '', guild: 'all', filter: 'all' };
 
   window.renderSuroExempt = (container) => {
     const members = appState.members;
@@ -5507,46 +5507,45 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const ss = window._suroExemptState;
     const subGuilds = appState.guilds.filter(g => (g.type||'').startsWith('부캐'));
     const subGuildNames = new Set(subGuilds.map(g => g.name));
+    const EXEMPT_ROLE = '아인슈페너';
 
-    // 본캐 목록 (뚠카롱/뚱카롱 본캐)
+    // 본캐 목록 (뚠카롱/뚱카롱)
     const mainGuildNames = new Set(['뚠카롱','뚱카롱']);
     const mains = members.filter(m => mainGuildNames.has(m.guild) && m.isMain !== false);
 
-    // 본캐별 부캐길드 부캐 맵
     const data = mains.map(m => {
       const score = latestH ? (Math.round(Number(m.suro?.[latestH])) || 0) : 0;
       const subs = members.filter(s => s.isMain === false && s.mainCharName === m.name && subGuildNames.has(s.guild));
       const totalSubs = subs.length;
-
-      // 면제 규칙: 9만점 이상 → 전체면제, 미만 → 절반면제 (올림)
       const fullExempt = score >= 90000;
-      const exemptCount = fullExempt ? totalSubs : Math.ceil(totalSubs / 2);
-      const nonExemptCount = totalSubs - exemptCount;
+      // 면제 허용: 9만+ → 전부, 미만 → 절반(내림)
+      const allowedExempt = fullExempt ? totalSubs : Math.floor(totalSubs / 2);
+      // 실제 아인슈페너 수
+      const exemptSubs = subs.filter(s => s.role === EXEMPT_ROLE);
+      const actualExempt = exemptSubs.length;
+      const overCount = Math.max(0, actualExempt - allowedExempt);
+      const remainSlot = Math.max(0, allowedExempt - actualExempt);
 
-      // 길드별 부캐 수
-      const subsByGuild = {};
-      subGuilds.forEach(g => { subsByGuild[g.name] = subs.filter(s => s.guild === g.name).length; });
-
-      return { main: m, score, subs, totalSubs, exemptCount, nonExemptCount, fullExempt, subsByGuild };
+      return { main: m, score, subs, totalSubs, fullExempt, allowedExempt, actualExempt, overCount, remainSlot };
     });
 
     // 검색
     const search = (ss.search || '').toLowerCase().trim();
     let filtered = data;
     if (search) filtered = filtered.filter(d => d.main.name.toLowerCase().includes(search) || d.subs.some(s => s.name.toLowerCase().includes(search)));
-    // 길드 필터
     if (ss.guild !== 'all') filtered = filtered.filter(d => d.main.guild === ss.guild);
-    // 부캐 0명 제외
     filtered = filtered.filter(d => d.totalSubs > 0);
+    // 상태 필터
+    if (ss.filter === 'over') filtered = filtered.filter(d => d.overCount > 0);
+    else if (ss.filter === 'full') filtered = filtered.filter(d => d.fullExempt);
+    else if (ss.filter === 'half') filtered = filtered.filter(d => !d.fullExempt);
 
-    // 정렬
     const sf = ss.sortField, so = ss.sortOrder, dir = so === 'asc' ? 1 : -1;
     filtered.sort((a, b) => {
       if (sf === 'score') return (a.score - b.score) * dir;
       if (sf === 'name') return a.main.name.localeCompare(b.main.name) * dir;
       if (sf === 'subs') return (a.totalSubs - b.totalSubs) * dir;
-      if (sf === 'exempt') return (a.exemptCount - b.exemptCount) * dir;
-      if (sf === 'nonExempt') return (a.nonExemptCount - b.nonExemptCount) * dir;
+      if (sf === 'over') return (a.overCount - b.overCount) * dir || b.actualExempt - a.actualExempt;
       return 0;
     });
 
@@ -5556,17 +5555,18 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     // 통계
     const totalMains = filtered.length;
     const totalSubAll = filtered.reduce((s, d) => s + d.totalSubs, 0);
-    const totalExempt = filtered.reduce((s, d) => s + d.exemptCount, 0);
-    const totalNonExempt = filtered.reduce((s, d) => s + d.nonExemptCount, 0);
-    const fullExemptCount = filtered.filter(d => d.fullExempt).length;
+    const totalActualExempt = filtered.reduce((s, d) => s + d.actualExempt, 0);
+    const totalOver = filtered.filter(d => d.overCount > 0).length;
+    const maxSubs = Math.max(1, ...filtered.map(d => d.subs.length));
 
     const _rd = (role) => SITE_CONFIG?.roleDisplay?.[role] || {};
+    const fBtn = (key, label) => `<button onclick="window._suroExemptState.filter='${key}';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.filter===key?'bg-pink-500 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${label}</button>`;
 
     container.innerHTML = `
     <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
-      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div class="bg-white rounded-2xl border border-gray-100 p-3 text-center shadow-sm">
-          <div class="text-[9px] font-bold text-gray-400">부캐 보유 본캐</div>
+          <div class="text-[9px] font-bold text-gray-400">부캐 보유</div>
           <div class="text-xl font-black text-gray-800">${totalMains}<span class="text-[10px] text-gray-400">명</span></div>
         </div>
         <div class="bg-white rounded-2xl border border-gray-100 p-3 text-center shadow-sm">
@@ -5574,71 +5574,93 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           <div class="text-xl font-black text-blue-500">${totalSubAll}<span class="text-[10px] text-gray-400">캐</span></div>
         </div>
         <div class="bg-emerald-50 rounded-2xl border border-emerald-100 p-3 text-center shadow-sm">
-          <div class="text-[9px] font-bold text-emerald-500">면제</div>
-          <div class="text-xl font-black text-emerald-600">${totalExempt}<span class="text-[10px] text-gray-400">캐</span></div>
+          <div class="text-[9px] font-bold text-emerald-500">아인슈페너</div>
+          <div class="text-xl font-black text-emerald-600">${totalActualExempt}<span class="text-[10px] text-gray-400">캐</span></div>
         </div>
-        <div class="bg-red-50 rounded-2xl border border-red-100 p-3 text-center shadow-sm">
-          <div class="text-[9px] font-bold text-red-400">수로 필수</div>
-          <div class="text-xl font-black text-red-500">${totalNonExempt}<span class="text-[10px] text-gray-400">캐</span></div>
-        </div>
-        <div class="bg-blue-50 rounded-2xl border border-blue-100 p-3 text-center shadow-sm">
-          <div class="text-[9px] font-bold text-blue-400">전체면제(9만+)</div>
-          <div class="text-xl font-black text-blue-600">${fullExemptCount}<span class="text-[10px] text-gray-400">명</span></div>
+        <div class="${totalOver > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'} rounded-2xl border p-3 text-center shadow-sm">
+          <div class="text-[9px] font-bold ${totalOver > 0 ? 'text-red-500' : 'text-gray-400'}">초과 인원</div>
+          <div class="text-xl font-black ${totalOver > 0 ? 'text-red-600' : 'text-gray-300'}">${totalOver}<span class="text-[10px] text-gray-400">명</span></div>
         </div>
       </div>
 
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div class="p-3 border-b border-gray-100 flex items-center gap-3 flex-wrap">
-          <h3 class="text-xs font-bold text-gray-700"><i class="fas fa-shield-alt mr-1 text-pink-500"></i>수로 면제 현황</h3>
+        <div class="p-3 border-b border-gray-100 flex items-center gap-2 flex-wrap">
+          <h3 class="text-xs font-bold text-gray-700 mr-1"><i class="fas fa-shield-alt mr-1 text-pink-500"></i>수로 면제</h3>
           <div class="flex gap-1">
             <button onclick="window._suroExemptState.guild='all';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='all'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">전체</button>
-            <button onclick="window._suroExemptState.guild='뚠카롱';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚠카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚠카롱</button>
-            <button onclick="window._suroExemptState.guild='뚱카롱';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚱카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚱카롱</button>
+            <button onclick="window._suroExemptState.guild='뚠카롱';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚠카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚠</button>
+            <button onclick="window._suroExemptState.guild='뚱카롱';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚱카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚱</button>
           </div>
-          <input type="text" value="${ss.search||''}" placeholder="검색..." oninput="window._suroExemptState.search=this.value;window.renderSuroExempt(document.getElementById('contentArea'))" class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-[10px] font-bold outline-none w-32">
+          <span class="text-gray-200">|</span>
+          <div class="flex gap-1">
+            ${fBtn('all','전체')}${fBtn('over','초과만')}${fBtn('full','9만+')}${fBtn('half','9만-')}
+          </div>
+          <input type="text" value="${ss.search||''}" placeholder="검색..." oninput="window._suroExemptState.search=this.value;window.renderSuroExempt(document.getElementById('contentArea'))" class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-[10px] font-bold outline-none w-28">
           <button onclick="window._suroExemptCopy()" class="ml-auto px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[10px] font-bold shadow hover:bg-emerald-600 transition-all"><i class="fas fa-copy mr-1"></i>시트 복사</button>
         </div>
         <div class="p-2 bg-amber-50 border-b border-amber-100 text-[9px] text-amber-700 font-bold">
-          <i class="fas fa-info-circle mr-1"></i>9만점 이상: 부캐 전체 면제 · 9만점 미만(롤케이크 이하): 부캐 절반만 면제 (올림) · 기준: ${latestH || '데이터 없음'}
+          <i class="fas fa-info-circle mr-1"></i>9만+ 전체면제 · 9만- 절반면제(내림: 9캐→4, 7캐→3) · <span class="text-emerald-600">초록=아인슈페너(면제)</span> <span class="text-gray-500">회색=수로필수</span> <span class="text-red-500">빨강=초과</span> · 기준: ${latestH || '-'}
         </div>
         <div class="overflow-auto" style="max-height:65vh">
           <table class="w-full text-[10px] lg:text-xs whitespace-nowrap border-collapse" id="suroExemptTable">
             <thead class="bg-gray-50 text-[9px] font-bold text-gray-500 border-b border-gray-200 sticky top-0 z-10">
               <tr>
-                <th class="py-2 px-2 text-center" style="width:30px">No.</th>
-                <th class="py-2 px-2 text-left cursor-pointer hover:bg-pink-50 select-none" onclick="${sortClick('name')}">본캐${sortIcon('name')}</th>
-                <th class="py-2 px-2 text-left">소속</th>
-                <th class="py-2 px-2 text-left">직위</th>
-                <th class="py-2 px-2 text-right cursor-pointer hover:bg-pink-50 select-none" onclick="${sortClick('score')}">수로${sortIcon('score')}</th>
-                <th class="py-2 px-2 text-center cursor-pointer hover:bg-pink-50 select-none" onclick="${sortClick('subs')}">부캐수${sortIcon('subs')}</th>
-                ${subGuilds.map(g => `<th class="py-2 px-2 text-center text-[8px]">${g.name.replace('카롱','')}</th>`).join('')}
-                <th class="py-2 px-2 text-center cursor-pointer hover:bg-pink-50 select-none" style="color:#059669" onclick="${sortClick('exempt')}">면제${sortIcon('exempt')}</th>
-                <th class="py-2 px-2 text-center cursor-pointer hover:bg-pink-50 select-none" style="color:#ef4444" onclick="${sortClick('nonExempt')}">필수${sortIcon('nonExempt')}</th>
-                <th class="py-2 px-2 text-center">유형</th>
+                <th class="py-2 px-2 text-center border-r border-gray-200" style="width:28px">No.</th>
+                <th class="py-2 px-2 text-left border-r border-gray-200 cursor-pointer hover:bg-pink-50" onclick="${sortClick('name')}">본캐${sortIcon('name')}</th>
+                <th class="py-2 px-2 text-right border-r border-gray-200 cursor-pointer hover:bg-pink-50" onclick="${sortClick('score')}">수로${sortIcon('score')}</th>
+                <th class="py-2 px-2 text-center border-r border-gray-200">유형</th>
+                <th class="py-2 px-2 text-center border-r border-gray-200 cursor-pointer hover:bg-pink-50" onclick="${sortClick('subs')}">부캐${sortIcon('subs')}</th>
+                <th class="py-2 px-2 text-center border-r border-gray-200" style="color:#059669">허용</th>
+                <th class="py-2 px-2 text-center border-r border-gray-200" style="color:#059669">아인슈</th>
+                <th class="py-2 px-2 text-center border-r border-gray-200 cursor-pointer hover:bg-pink-50" style="color:#ef4444" onclick="${sortClick('over')}">초과${sortIcon('over')}</th>
+                ${Array.from({length: maxSubs}, (_, i) => `<th class="py-2 px-2 text-left border-r border-gray-200">부캐${i+1}</th>`).join('')}
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 font-bold text-gray-700">
               ${filtered.map((d, i) => {
                 const rd = _rd(d.main.role);
                 const badgeBg = rd.bgColor || '#f3f4f6', badgeTc = rd.textColor || '#6b7280';
-                const rowBg = d.fullExempt ? 'background:rgba(236,253,245,0.4)' : (d.nonExemptCount > 0 ? 'background:rgba(254,242,242,0.3)' : '');
+                const isOver = d.overCount > 0;
+                const rowBg = isOver ? 'background:#fef2f2' : (d.fullExempt ? 'background:rgba(236,253,245,0.3)' : '');
+                // 부캐 셀: 아인슈페너=초록, 일반=회색, 초과분=빨강
+                const subCells = Array.from({length: maxSubs}, (_, ci) => {
+                  const sub = d.subs[ci];
+                  if (!sub) return '<td class="py-1.5 px-2 border-r border-gray-100"></td>';
+                  const isExempt = sub.role === EXEMPT_ROLE;
+                  let cellStyle = '', cellText = sub.name;
+                  if (isExempt && !d.fullExempt) {
+                    // 절반면제: 아인슈페너 중 허용 초과분은 빨강
+                    const exemptIdx = d.subs.filter((s, si) => si <= ci && s.role === EXEMPT_ROLE).length;
+                    if (exemptIdx > d.allowedExempt) {
+                      cellStyle = 'background:#fee2e2;color:#dc2626;';
+                      cellText = sub.name + ' ⚠';
+                    } else {
+                      cellStyle = 'background:#d1fae5;color:#065f46;';
+                    }
+                  } else if (isExempt) {
+                    cellStyle = 'background:#d1fae5;color:#065f46;';
+                  } else {
+                    cellStyle = 'color:#9ca3af;';
+                  }
+                  const gBadge = sub.guild.replace('카롱','');
+                  return `<td class="py-1.5 px-2 border-r border-gray-100" style="${cellStyle}"><span style="font-weight:800">${sub.name}</span> <span style="font-size:8px;opacity:0.6">${gBadge}</span></td>`;
+                }).join('');
                 return `<tr class="hover:bg-gray-50/50" style="${rowBg}">
-                  <td class="py-1.5 px-2 text-center text-gray-400 text-[10px]">${i+1}</td>
-                  <td class="py-1.5 px-2 font-black text-gray-800">${d.main.name}</td>
-                  <td class="py-1.5 px-2 text-gray-500">${d.main.guild}</td>
-                  <td class="py-1.5 px-2"><span class="inline-block px-1.5 py-0.5 rounded text-[8px] font-bold" style="background:${badgeBg};color:${badgeTc};">${d.main.role}</span></td>
-                  <td class="py-1.5 px-2 text-right font-mono ${d.score >= 90000 ? 'text-emerald-600' : d.score === 0 ? 'text-red-400' : 'text-gray-800'}" style="font-weight:800">${d.score.toLocaleString()}</td>
-                  <td class="py-1.5 px-2 text-center">${d.totalSubs}</td>
-                  ${subGuilds.map(g => `<td class="py-1.5 px-2 text-center ${d.subsByGuild[g.name] > 0 ? 'text-gray-700' : 'text-gray-200'}">${d.subsByGuild[g.name] || '-'}</td>`).join('')}
-                  <td class="py-1.5 px-2 text-center font-black text-emerald-600">${d.exemptCount}</td>
-                  <td class="py-1.5 px-2 text-center font-black ${d.nonExemptCount > 0 ? 'text-red-500' : 'text-gray-300'}">${d.nonExemptCount > 0 ? d.nonExemptCount : '-'}</td>
-                  <td class="py-1.5 px-2 text-center">${d.fullExempt ? '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-100 text-emerald-700">전체</span>' : '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-100 text-amber-700">절반</span>'}</td>
+                  <td class="py-1.5 px-2 text-center text-gray-400 text-[10px] border-r border-gray-200">${i+1}</td>
+                  <td class="py-1.5 px-2 border-r border-gray-200"><span class="font-black text-gray-800">${d.main.name}</span> <span class="inline-block px-1 py-0.5 rounded text-[7px] font-bold" style="background:${badgeBg};color:${badgeTc};">${d.main.role}</span></td>
+                  <td class="py-1.5 px-2 text-right border-r border-gray-200 font-mono ${d.score >= 90000 ? 'text-emerald-600' : d.score === 0 ? 'text-red-400' : 'text-gray-800'}" style="font-weight:800">${d.score.toLocaleString()}</td>
+                  <td class="py-1.5 px-2 text-center border-r border-gray-200">${d.fullExempt ? '<span style="background:#d1fae5;color:#065f46;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700">전체</span>' : '<span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700">절반</span>'}</td>
+                  <td class="py-1.5 px-2 text-center border-r border-gray-200">${d.totalSubs}</td>
+                  <td class="py-1.5 px-2 text-center border-r border-gray-200 text-emerald-600">${d.allowedExempt}</td>
+                  <td class="py-1.5 px-2 text-center border-r border-gray-200 font-black ${d.actualExempt > d.allowedExempt ? 'text-red-500' : 'text-emerald-600'}">${d.actualExempt}</td>
+                  <td class="py-1.5 px-2 text-center border-r border-gray-200 font-black ${isOver ? 'text-red-600' : 'text-gray-300'}">${isOver ? '+'+d.overCount : '-'}</td>
+                  ${subCells}
                 </tr>`;
               }).join('')}
             </tbody>
           </table>
         </div>
-        <div class="py-2 text-center text-[9px] text-gray-300 font-bold border-t border-gray-100">${totalMains}명 · 부캐 ${totalSubAll}캐 · 면제 ${totalExempt} · 필수 ${totalNonExempt}</div>
+        <div class="py-2 text-center text-[9px] text-gray-300 font-bold border-t border-gray-100">${totalMains}명 · 부캐 ${totalSubAll}캐 · 아인슈페너 ${totalActualExempt}캐 · 초과 ${totalOver}명</div>
       </div>
     </div>`;
   };
@@ -5653,14 +5675,12 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   window._suroExemptCopy = () => {
     const table = document.getElementById('suroExemptTable');
     if (!table) return;
-
     let tsv = '';
     table.querySelectorAll('tr').forEach(tr => {
       const cells = [];
       tr.querySelectorAll('th, td').forEach(td => cells.push(td.innerText.trim()));
       tsv += cells.join('\t') + '\n';
     });
-
     let html = '<table border="1" cellpadding="4" style="border-collapse:collapse;font-size:11px;font-family:sans-serif">';
     table.querySelectorAll('tr').forEach(tr => {
       html += '<tr>';
@@ -5668,12 +5688,12 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         const tag = cell.tagName.toLowerCase();
         const text = cell.innerText.trim();
         let cellBg = '', cellColor = '';
+        if (cell.style.background || cell.style.backgroundColor) { cellBg = cell.style.background || cell.style.backgroundColor; cellColor = cell.style.color || ''; }
         const spans = cell.querySelectorAll('span[style]');
         spans.forEach(span => {
           const s = span.style;
           if (s.backgroundColor || s.background) { cellBg = s.backgroundColor || s.background; cellColor = s.color || ''; }
         });
-        if (!cellBg && cell.style.backgroundColor) { cellBg = cell.style.backgroundColor; cellColor = cell.style.color || ''; }
         const trBg = tr.style.background || '';
         if (!cellBg && trBg && text) cellBg = trBg;
         const style = 'border:1px solid #ccc;padding:2px 5px;font-weight:bold;' + (cellBg ? 'background:'+cellBg+';' : '') + (cellColor ? 'color:'+cellColor+';' : '');
@@ -5682,7 +5702,6 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       html += '</tr>';
     });
     html += '</table>';
-
     try {
       const blob = new Blob([html], { type: 'text/html' });
       const blobText = new Blob([tsv], { type: 'text/plain' });
@@ -5690,9 +5709,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         window.showMsg('서식+색상 포함 복사 완료! 시트에 Ctrl+V', 'success');
       });
     } catch(e) {
-      navigator.clipboard.writeText(tsv).then(() => {
-        window.showMsg('텍스트 복사 완료', 'success');
-      });
+      navigator.clipboard.writeText(tsv).then(() => window.showMsg('텍스트 복사 완료', 'success'));
     }
   };
 
