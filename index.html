@@ -2944,36 +2944,24 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             // - 본캐닉이 비었거나 오타로 존재하지 않는 본캐를 가리키는 orphan 부캐도
             //   단독 행으로 표시하여 전체/메인길드 탭에서 누락되지 않도록 함
             let groups;
-            if (isSubGuild) {
+            if (guildFilter !== 'all') {
+                // 특정 길드 필터: 해당 길드의 모든 멤버를 개별 행으로 표시
                 groups = allMembers
                     .filter(m => m.guild === guildFilter && matchSearch(m))
                     .map(m => ({ main: m, subs: [] }));
             } else {
-                const filteredMains = mains.filter(m => {
-                    const gMatch = guildFilter === 'all' || m.guild === guildFilter;
-                    return gMatch && matchSearch(m);
-                });
+                // 전체 보기: 본캐 기준 그룹핑 (본캐 행 + 부캐 아코디언)
+                const filteredMains = mains.filter(m => matchSearch(m));
                 groups = filteredMains.map(m => ({
                     main: m,
                     subs: subsByMain[m.name] || []
                 }));
-                // Orphan/cross-guild 부캐 보완:
-                // (a) mainCharName이 비었거나 존재하지 않는 본캐를 가리키는 orphan → 단독 행
-                // (b) 특정 길드 필터 시, 해당 길드 소속이지만 본캐가 다른 길드에 있어 누락되는 부캐 → 단독 행
+                // Orphan 부캐: isMain=false이면서 본캐닉이 없거나 존재하지 않는 본캐를 가리키는 경우
                 const validMainNames = new Set(mains.map(m => m.name));
-                const shownMainNames = new Set(filteredMains.map(m => m.name));
                 allMembers.forEach(m => {
                     if (m.isMain !== false) return;
-                    const gMatch = guildFilter === 'all' || m.guild === guildFilter;
-                    if (!gMatch || !matchSearch(m)) return;
-                    // orphan: 본캐닉 없거나 존재하지 않는 본캐
-                    if (!m.mainCharName || !validMainNames.has(m.mainCharName)) {
-                        groups.push({ main: m, subs: [] });
-                        return;
-                    }
-                    // 본캐가 현재 필터에 포함되어 있으면 이미 subs에 들어가 있으므로 스킵
-                    if (shownMainNames.has(m.mainCharName)) return;
-                    // 본캐가 다른 길드에 있어서 현재 필터에서 누락된 부캐 → 단독 행
+                    if (m.mainCharName && validMainNames.has(m.mainCharName)) return;
+                    if (!matchSearch(m)) return;
                     groups.push({ main: m, subs: [] });
                 });
             }
