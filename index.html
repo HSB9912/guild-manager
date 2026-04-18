@@ -8214,7 +8214,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
          if (!autoRule && r.rank === rName) { autoRule = r; autoGuild = gn; }
        });
      });
-     const ruleType = autoRule ? (autoRule.topN ? 'top' : autoRule.bottomN ? 'bottom' : 'score') : 'none';
+     const ruleType = autoRule ? (autoRule.exactScore != null ? 'exact' : autoRule.topN ? 'top' : autoRule.bottomN ? 'bottom' : (autoRule.min != null ? 'score' : 'none')) : 'none';
 
      const tc = rd.textColor || '';
      const bc = rd.bgColor || '';
@@ -8271,12 +8271,14 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
        + '<button class="role-rule-tab flex-1 py-1.5 rounded-lg '+(ruleType==='top'?'bg-amber-500 text-white':'bg-white text-gray-500 border border-gray-200')+'" onclick="window._setRoleRuleType(\''+rName.replace(/\'/g,"\\'")+'\',\'top\')">상위 N명</button>'
        + '<button class="role-rule-tab flex-1 py-1.5 rounded-lg '+(ruleType==='bottom'?'bg-amber-500 text-white':'bg-white text-gray-500 border border-gray-200')+'" onclick="window._setRoleRuleType(\''+rName.replace(/\'/g,"\\'")+'\',\'bottom\')">하위 N명</button>'
        + '<button class="role-rule-tab flex-1 py-1.5 rounded-lg '+(ruleType==='score'?'bg-amber-500 text-white':'bg-white text-gray-500 border border-gray-200')+'" onclick="window._setRoleRuleType(\''+rName.replace(/\'/g,"\\'")+'\',\'score\')">점수 기준</button>'
+       + '<button class="role-rule-tab flex-1 py-1.5 rounded-lg '+(ruleType==='exact'?'bg-purple-500 text-white':'bg-white text-gray-500 border border-gray-200')+'" onclick="window._setRoleRuleType(\''+rName.replace(/\'/g,"\\'")+'\',\'exact\')">정확히</button>'
        + '<button class="role-rule-tab flex-1 py-1.5 rounded-lg '+(ruleType==='none'?'bg-gray-500 text-white':'bg-white text-gray-500 border border-gray-200')+'" onclick="window._setRoleRuleType(\''+rName.replace(/\'/g,"\\'")+'\',\'none\')">없음</button>'
        + '</div>'
 
        + (ruleType==='top' ? '<div class="flex items-center gap-2 text-[11px]"><span class="font-bold text-gray-600">상위</span><input type="number" value="'+(autoRule?.topN||'')+'" onchange="window._updateRoleRule(\''+rName.replace(/\'/g,"\\'")+'\',\'topN\',this.value)" class="w-20 px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-center font-bold"><span class="font-bold text-gray-600">명 → 이 직위 부여</span></div>' : '')
        + (ruleType==='bottom' ? '<div class="flex items-center gap-2 text-[11px]"><span class="font-bold text-gray-600">하위</span><input type="number" value="'+(autoRule?.bottomN||'')+'" onchange="window._updateRoleRule(\''+rName.replace(/\'/g,"\\'")+'\',\'bottomN\',this.value)" class="w-20 px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-center font-bold"><span class="font-bold text-gray-600">명 → 이 직위 부여</span></div>' : '')
        + (ruleType==='score' ? '<div class="flex items-center gap-2 text-[11px]"><span class="font-bold text-gray-600">최소 점수</span><input type="number" value="'+(autoRule?.min!==undefined?autoRule.min:'')+'" onchange="window._updateRoleRule(\''+rName.replace(/\'/g,"\\'")+'\',\'min\',this.value)" class="w-28 px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-right font-bold"><span class="font-bold text-gray-600">이상</span></div>' : '')
+       + (ruleType==='exact' ? '<div class="flex items-center gap-2 text-[11px]"><span class="font-bold text-purple-600">점수가 정확히</span><input type="number" value="'+(autoRule?.exactScore!==undefined?autoRule.exactScore:'')+'" onchange="window._updateRoleRule(\''+rName.replace(/\'/g,"\\'")+'\',\'exactScore\',this.value)" class="w-28 px-3 py-1.5 bg-white border border-purple-300 rounded-lg text-right font-bold text-purple-600"><span class="font-bold text-purple-600">일 때 부여</span></div>' : '')
        + (ruleType==='none' ? '<div class="text-[10px] text-gray-500 italic">자동 배정 안 함</div>' : '')
        + '</div>'
 
@@ -8797,10 +8799,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       }
       const r = cfg.autoRankRules[target.gn][target.ri];
       // 기존 필드 정리
-      delete r.topN; delete r.bottomN; delete r.min;
+      delete r.topN; delete r.bottomN; delete r.min; delete r.exactScore;
       if (type === 'top') r.topN = 5;
       else if (type === 'bottom') r.bottomN = 10;
       else if (type === 'score') r.min = 50000;
+      else if (type === 'exact') r.exactScore = 0;
     }
     SITE_CONFIG = cfg;
     window.renderSettings(document.getElementById('contentArea'));
@@ -8819,7 +8822,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     if (!found) return;
     const r = cfg.autoRankRules[found.gn][found.ri];
     if (value === '' || value == null) delete r[field];
-    else r[field] = parseInt(value) || 0;
+    else { const n = parseInt(value); r[field] = isNaN(n) ? 0 : n; }
     SITE_CONFIG = cfg;
   };
 
@@ -8991,56 +8994,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    cfg.suroExempt = [];
    document.querySelectorAll('.cfg-exempt-check:checked').forEach(el => cfg.suroExempt.push(el.value));
 
-   cfg.autoRankRules = cfg.autoRankRules || {};
-   document.querySelectorAll('.cfg-autorule-min').forEach(el => {
-   const gn = el.dataset.guild;
-   const ri = parseInt(el.dataset.ri);
-   if (!cfg.autoRankRules[gn]) cfg.autoRankRules[gn] = [];
-   if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
-   // 빈칸=undefined, 0도 정상 저장
-   if (el.value === '' || el.value == null) delete cfg.autoRankRules[gn][ri].min;
-   else cfg.autoRankRules[gn][ri].min = parseInt(el.value) || 0;
-   });
-   document.querySelectorAll('.cfg-autorule-rank').forEach(el => {
-   const gn = el.dataset.guild;
-   const ri = parseInt(el.dataset.ri);
-   if (!cfg.autoRankRules[gn]) cfg.autoRankRules[gn] = [];
-   if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
-   cfg.autoRankRules[gn][ri].rank = el.value;
-   });
-   document.querySelectorAll('.cfg-autorule-topn').forEach(el => {
-   const gn = el.dataset.guild;
-   const ri = parseInt(el.dataset.ri);
-   if (!cfg.autoRankRules[gn]) cfg.autoRankRules[gn] = [];
-   if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
-   const v = parseInt(el.value);
-   if (!isNaN(v) && v > 0) cfg.autoRankRules[gn][ri].topN = v;
-   else delete cfg.autoRankRules[gn][ri].topN;
-   });
-   document.querySelectorAll('.cfg-autorule-bottomn').forEach(el => {
-   const gn = el.dataset.guild;
-   const ri = parseInt(el.dataset.ri);
-   if (!cfg.autoRankRules[gn]) cfg.autoRankRules[gn] = [];
-   if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
-   const v = parseInt(el.value);
-   if (!isNaN(v) && v > 0) cfg.autoRankRules[gn][ri].bottomN = v;
-   else delete cfg.autoRankRules[gn][ri].bottomN;
-   });
-   document.querySelectorAll('.cfg-autorule-exact').forEach(el => {
-   const gn = el.dataset.guild;
-   const ri = parseInt(el.dataset.ri);
-   if (!cfg.autoRankRules[gn]) cfg.autoRankRules[gn] = [];
-   if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
-   if (el.value !== '' && el.value != null) cfg.autoRankRules[gn][ri].exactScore = parseInt(el.value);
-   else delete cfg.autoRankRules[gn][ri].exactScore;
-   });
-   document.querySelectorAll('.cfg-autorule-note').forEach(el => {
-   const gn = el.dataset.guild;
-   const ri = parseInt(el.dataset.ri);
-   if (!cfg.autoRankRules[gn]) cfg.autoRankRules[gn] = [];
-   if (!cfg.autoRankRules[gn][ri]) cfg.autoRankRules[gn][ri] = {};
-   if (el.value.trim()) cfg.autoRankRules[gn][ri].note = el.value.trim();
-   });
+   // autoRankRules는 _updateRoleRule / _setRoleRuleType이 SITE_CONFIG를 직접 갱신하므로
+   // 숨김 DOM에서 다시 읽지 않고 deep-copy된 cfg 값을 그대로 사용
 
    cfg.guildBadgeStyles = cfg.guildBadgeStyles || {};
    document.querySelectorAll('.cfg-badge-bg').forEach(el => {
