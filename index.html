@@ -5837,9 +5837,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 const cells = Array.from({length: subCols}, (_, i) => {
                   const s = t.subs[i];
                   if (!s) return `<td class="py-1.5 px-2 border-r border-gray-100"></td>`;
-                  const srd = SITE_CONFIG?.roleDisplay?.[s.role] || {};
-                  const sBg = srd.bgColor ? `background:${srd.bgColor};color:${srd.textColor||'white'};padding:1px 6px;border-radius:4px;font-weight:700;` : '';
-                  return `<td class="py-1.5 px-2 border-r border-gray-100">${sBg ? `<span style="${sBg}">${s.name}</span>` : s.name}</td>`;
+                  const isEin = s.role === '아인슈페너';
+                  const cellBg = isEin ? '#ff99ff' : '#ffffff';
+                  const cellTc = '#000000';
+                  return `<td class="py-1.5 px-2 border-r border-gray-100" style="background:${cellBg};color:${cellTc};font-weight:700;">${s.name}</td>`;
                 }).join('');
                 return `<tr class="hover:bg-gray-50/50" style="${bgStyle}">
                   <td class="py-1.5 px-2 border-r border-gray-200"><span class="inline-block px-1.5 py-0.5 rounded text-[8px] font-bold" style="${badgeStyle}">${t.main.role||'-'}</span></td>
