@@ -5698,7 +5698,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         });
         const trBg = tr.style.background || '';
         if (!cellBg && trBg && text) cellBg = trBg;
-        const style = 'border:1px solid #ccc;padding:2px 5px;font-weight:bold;' + (cellBg ? 'background:'+cellBg+';' : '') + (cellColor ? 'color:'+cellColor+';' : '');
+        const style = 'border:1px solid #ccc;padding:2px 5px;font-weight:bold;text-align:center;font-size:11pt;' + (cellBg ? 'background:'+cellBg+';' : '') + (cellColor ? 'color:'+cellColor+';' : '');
         html += '<' + tag + ' style="' + style + '">' + text + '</' + tag + '>';
       });
       html += '</tr>';
@@ -5897,7 +5897,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         // 3. 행 배경 상속 — 단, 텍스트가 있는 셀에만 적용 (빈 부캐 칸은 색 없이)
         if (!cellBg && rowBg && text) { cellBg = rowBg; }
 
-        const style = `border:1px solid #ccc;padding:2px 5px;font-weight:bold;${cellBg ? 'background:'+cellBg+';' : ''}${cellColor ? 'color:'+cellColor+';' : ''}`;
+        const style = `border:1px solid #ccc;padding:2px 5px;font-weight:bold;text-align:center;font-size:11pt;${cellBg ? 'background:'+cellBg+';' : ''}${cellColor ? 'color:'+cellColor+';' : ''}`;
         html += `<${tag} style="${style}">${text}</${tag}>`;
       });
       html += '</tr>';
