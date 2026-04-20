@@ -1104,14 +1104,15 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                     appState.members.forEach(m => {
                         if (counts[m.guild] !== undefined) counts[m.guild]++;
                     });
-                    const aliases = { '뚠카롱': '뚠', '뚱카롱': '뚱', '밤카롱': '밤', '별카롱': '별', '달카롱': '달', '꿀카롱': '꿀' };
+                    const aliases = { '뚠카롱': '뚠', '뚱카롱': '뚱', '밤카롱': '밤', '별카롱': '별', '달카롱': '달', '꿀카롱': '꿀', '솜카롱': '솜' };
                     const guildBadgeStyles = {
                         '뚠카롱': 'background:#fdf2f8;color:#db2777;border-color:#fbcfe8',
                         '뚱카롱': 'background:#fff1f2;color:#e11d48;border-color:#fecdd3',
                         '밤카롱': 'background:#eef2ff;color:#4f46e5;border-color:#c7d2fe',
                         '별카롱': 'background:#fefce8;color:#ca8a04;border-color:#fef08a',
                         '달카롱': 'background:#eff6ff;color:#2563eb;border-color:#bfdbfe',
-                        '꿀카롱': 'background:#fffbeb;color:#d97706;border-color:#fde68a'
+                        '꿀카롱': 'background:#fffbeb;color:#d97706;border-color:#fde68a',
+                        '솜카롱': 'background:#fdf4ff;color:#c026d3;border-color:#f5d0fe'
                     };
                     countEl.innerHTML = appState.guilds.map(g => {
                         const name = aliases[g.name] || g.name.substring(0, 1);
@@ -2856,7 +2857,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 <div class="bg-white p-3 lg:p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3 shrink-0">
                     <div class="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto no-scrollbar w-full gap-1.5 lg:gap-2 shrink-0 pb-0.5">
                         <button onclick="window.filterByGuild('all')" class="shrink-0 px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-xs font-bold transition-all flex items-center gap-1.5 ${appState.filters.guild === 'all' ? 'bg-gray-800 text-white shadow-md' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">전체<span class="inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded-md text-[9px] font-black ${appState.filters.guild === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200/60 text-gray-400'}">${appState.members.length}</span></button>
-                        ${appState.guilds.map(g => { const gc = appState.members.filter(m => m.guild === g.name).length; const gColors = {'뚠카롱':['bg-pink-500','bg-pink-400/20'],'뚱카롱':['bg-rose-600','bg-rose-400/20'],'밤카롱':['bg-indigo-500','bg-indigo-400/20'],'별카롱':['bg-amber-500','bg-amber-400/20'],'달카롱':['bg-blue-500','bg-blue-400/20'],'꿀카롱':['bg-orange-500','bg-orange-400/20']}; const [activeBg, activeBadge] = gColors[g.name] || ['bg-pink-500','bg-pink-400/20']; return `<button onclick="window.filterByGuild('${g.name}')" class="shrink-0 px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-xs font-bold transition-all flex items-center gap-1.5 ${appState.filters.guild === g.name ? activeBg + ' text-white shadow-md' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">${g.name}<span class="inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded-md text-[9px] font-black ${appState.filters.guild === g.name ? 'bg-white/25 text-white' : 'bg-gray-200/60 text-gray-400'}">${gc}</span></button>`; }).join('')}
+                        ${appState.guilds.map(g => { const gc = appState.members.filter(m => m.guild === g.name).length; const gColors = {'뚠카롱':['bg-pink-500','bg-pink-400/20'],'뚱카롱':['bg-rose-600','bg-rose-400/20'],'밤카롱':['bg-indigo-500','bg-indigo-400/20'],'별카롱':['bg-amber-500','bg-amber-400/20'],'달카롱':['bg-blue-500','bg-blue-400/20'],'꿀카롱':['bg-orange-500','bg-orange-400/20'],'솜카롱':['bg-fuchsia-500','bg-fuchsia-400/20']}; const [activeBg, activeBadge] = gColors[g.name] || ['bg-pink-500','bg-pink-400/20']; return `<button onclick="window.filterByGuild('${g.name}')" class="shrink-0 px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl text-[10px] lg:text-xs font-bold transition-all flex items-center gap-1.5 ${appState.filters.guild === g.name ? activeBg + ' text-white shadow-md' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'}">${g.name}<span class="inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded-md text-[9px] font-black ${appState.filters.guild === g.name ? 'bg-white/25 text-white' : 'bg-gray-200/60 text-gray-400'}">${gc}</span></button>`; }).join('')}
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
@@ -5960,7 +5961,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
   window._extractGuild = (h) => {
     const c = (h.content || '') + ' ' + (h.name || '');
-    const m = c.match(/(뚠카롱|뚱카롱|밤카롱|별카롱|달카롱|꿀카롱)/);
+    const m = c.match(/(뚠카롱|뚱카롱|밤카롱|별카롱|달카롱|꿀카롱|솜카롱)/);
     return m ? m[1] : '';
   };
 
@@ -7408,7 +7409,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const pct = (cnt / MAX_GUILD * 100);
             const isFull = cnt >= MAX_GUILD;
             const isNearFull = cnt >= MAX_GUILD * 0.95;
-            const colors = {'뚠카롱':'bg-pink-400','뚱카롱':'bg-rose-500','밤카롱':'bg-indigo-400','별카롱':'bg-amber-400','달카롱':'bg-blue-400','꿀카롱':'bg-orange-400'};
+            const colors = {'뚠카롱':'bg-pink-400','뚱카롱':'bg-rose-500','밤카롱':'bg-indigo-400','별카롱':'bg-amber-400','달카롱':'bg-blue-400','꿀카롱':'bg-orange-400','솜카롱':'bg-fuchsia-400'};
             const barColor = isFull ? 'bg-red-500' : (colors[g.name]||'bg-pink-300');
             return `<div>
               <div class="flex items-center justify-between mb-1">
@@ -7550,7 +7551,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    const joinSources = ['인벤', '라운지', '지인', '인게임', '재가입', '고확', '오픈톡', '길드창', '길드랭킹 검색', '복귀', '추천', '마을', '지인소개', '검색'];
    const joinCategories = ['지인 추천', '길드 혜택/성장', '분위기/소통/체계', '홍보물/길드 이미지', '재가입/복귀', '부캐 육성', '기타'];
    const leaveCategories = ['해당 없음(또는 미기재)', '노블/스펙 한계', '관리/운영 부실 및 비활성화', '불화/폐쇄적 친목/사고', '솔플/임시길드 탈피', '지인 동반 이동', '기타', '해당 없음'];
-   const guilds = ['뚠카롱', '뚱카롱', '밤카롱', '별카롱', '달카롱', '꿀카롱'];
+   const guilds = (SITE_CONFIG?.guilds || appState.guilds || []).map(g => g.name);
 
    container.innerHTML = `
    <div class="h-full flex flex-col gap-3 fade-in">
@@ -7671,7 +7672,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    const joinSources = ['인벤', '라운지', '지인', '인게임', '재가입', '고확', '오픈톡', '길드창', '복귀', '추천', '마을', '검색', '디코', '지인소개'];
    const joinCategories = ['지인 추천', '길드 혜택/성장', '분위기/소통/체계', '홍보물/길드 이미지', '재가입/복귀', '부캐 육성', '기타'];
    const leaveCategories = ['해당 없음(또는 미기재)', '노블/스펙 한계', '관리/운영 부실 및 비활성화', '불화/폐쇄적 친목/사고', '솔플/임시길드 탈피', '지인 동반 이동', '기타', '해당 없음'];
-   const guilds = ['뚠카롱', '뚱카롱', '밤카롱', '별카롱', '달카롱', '꿀카롱'];
+   const guilds = (SITE_CONFIG?.guilds || appState.guilds || []).map(g => g.name);
 
    const sel = (name, val, opts) => `<select name="${name}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-300"><option value="">선택...</option>${opts.map(o => `<option value="${o}" ${val === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
    const inp = (name, val, ph, type='text') => `<input type="${type}" name="${name}" value="${val || ''}" placeholder="${ph}" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-purple-300">`;
@@ -7843,7 +7844,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    const prog = document.getElementById('recApiProgress');
    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>조회 중...'; }
 
-   const ourGuilds = new Set(['뚠카롱', '뚱카롱', '밤카롱', '별카롱', '달카롱', '꿀카롱']);
+   const ourGuilds = new Set((SITE_CONFIG?.guilds || appState.guilds || []).map(g => g.name));
    const rows = document.querySelectorAll('.sync-row');
    let done = 0;
 
@@ -8527,7 +8528,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    }).join('');
 
    // 직위 배정 규칙 (길드별 탭)
-   const subGuilds = ['밤카롱','별카롱','달카롱','꿀카롱'];
+   const subGuilds = ['밤카롱','별카롱','달카롱','꿀카롱','솜카롱'];
    const autoRankGuilds = Object.keys(autoRankRules);
    const mainAutoGuilds = autoRankGuilds.filter(g => !subGuilds.includes(g));
    const hasSubRules = subGuilds.some(g => (autoRankRules[g]||[]).length > 0);
@@ -12030,13 +12031,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   window.renderHome = async (container) => {
    const guilds = SITE_CONFIG?.guilds || [{name:'뚠카롱'},{name:'뚱카롱'},{name:'밤카롱'},{name:'별카롱'},{name:'달카롱'},{name:'꿀카롱'}];
-   const guildColors = {'뚠카롱':'#ec4899','뚱카롱':'#e11d48','밤카롱':'#6366f1','별카롱':'#ca8a04','달카롱':'#2563eb','꿀카롱':'#d97706'};
+   const guildColors = {'뚠카롱':'#ec4899','뚱카롱':'#e11d48','밤카롱':'#6366f1','별카롱':'#ca8a04','달카롱':'#2563eb','꿀카롱':'#d97706','솜카롱':'#c026d3'};
 
    const replacePlaceholders = (html) => {
    if(!html) return '';
    html = html.replace(/\{\{뚠카롱_count\}\}/g, appState.members.filter(m=>m.guild==='뚠카롱').length);
    html = html.replace(/\{\{뚱카롱_count\}\}/g, appState.members.filter(m=>m.guild==='뚱카롱').length);
-   html = html.replace(/\{\{부캐_count\}\}/g, appState.members.filter(m=>['밤카롱','별카롱','달카롱','꿀카롱'].includes(m.guild)).length);
+   html = html.replace(/\{\{부캐_count\}\}/g, appState.members.filter(m=>['밤카롱','별카롱','달카롱','꿀카롱','솜카롱'].includes(m.guild)).length);
    html = html.replace(/\{\{전체_count\}\}/g, appState.members.length);
    return html;
    };
@@ -12475,7 +12476,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    let body = data?.content || '<p class="text-gray-400 text-center">내용이 없습니다.</p>';
    body = body.replace(/\{\{뚠카롱_count\}\}/g, appState.members.filter(m=>m.guild==='뚠카롱').length);
    body = body.replace(/\{\{뚱카롱_count\}\}/g, appState.members.filter(m=>m.guild==='뚱카롱').length);
-   body = body.replace(/\{\{부캐_count\}\}/g, appState.members.filter(m=>['밤카롱','별카롱','달카롱','꿀카롱'].includes(m.guild)).length);
+   body = body.replace(/\{\{부캐_count\}\}/g, appState.members.filter(m=>['밤카롱','별카롱','달카롱','꿀카롱','솜카롱'].includes(m.guild)).length);
    body = body.replace(/\{\{전체_count\}\}/g, appState.members.length);
    container.innerHTML = `<div class="flex flex-col gap-4 fade-in h-full"><div class="flex-1 overflow-y-auto no-scrollbar">${body}</div></div>`;
    } catch(e) {
