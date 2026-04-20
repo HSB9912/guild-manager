@@ -8959,6 +8959,25 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     cfg.suroExempt = cfg.suroExempt || [];
     cfg.autoRankRules = cfg.autoRankRules || {};
 
+    // 길드 카드(편집 중 포함) 입력값을 cfg.guilds에 즉시 반영
+    const guildCards = document.querySelectorAll('[data-guild-idx]');
+    if (guildCards.length > 0 && cfg.guilds) {
+      guildCards.forEach(card => {
+        const idx = parseInt(card.dataset.guildIdx);
+        if (isNaN(idx) || !cfg.guilds[idx]) return;
+        const nameEl = card.querySelector('.cfg-guild-name');
+        const typeEl = card.querySelector('.cfg-guild-type');
+        const colorEl = card.querySelector('.cfg-guild-color');
+        const iconEl = card.querySelector('.cfg-guild-icon');
+        const maxEl = card.querySelector('.cfg-guild-max');
+        if (nameEl) cfg.guilds[idx].name = nameEl.value || cfg.guilds[idx].name;
+        if (typeEl) cfg.guilds[idx].type = typeEl.value || cfg.guilds[idx].type;
+        if (colorEl) cfg.guilds[idx].color = colorEl.value || cfg.guilds[idx].color;
+        if (iconEl) cfg.guilds[idx].icon = iconEl.value || cfg.guilds[idx].icon;
+        if (maxEl) { const m = parseInt(maxEl.value); if (!isNaN(m)) cfg.guilds[idx].max = m; }
+      });
+    }
+
     // 편집 패널의 현재 값을 cfg에 저장
     document.querySelectorAll('#roleEditorPanel .cfg-role-emoji').forEach(el => {
       const rn = el.dataset.role;
