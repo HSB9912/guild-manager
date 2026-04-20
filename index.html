@@ -195,7 +195,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('suro_reward')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="suro_reward"><i class="fas fa-gift w-5 text-center text-xs"></i><span>수로 보상</span></button>
    <button onclick="router('board')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="board"><i class="fas fa-clipboard w-5 text-center text-xs"></i><span>게시판</span></button>
    <button onclick="router('buddy')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="buddy"><i class="fas fa-handshake w-5 text-center text-xs"></i><span>뚠뚠 버디</span></button>
-   <button onclick="router('suro_exempt')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="suro_exempt"><i class="fas fa-shield-alt w-5 text-center text-xs"></i><span>수로 면제</span></button>
+   <button onclick="router('sheet_manage')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="sheet_manage"><i class="fas fa-table-list w-5 text-center text-xs"></i><span>시트 관리</span></button>
    <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금</span></button>
    <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
    <div class="admin-only hidden" id="adminMenuSection">
@@ -1518,7 +1518,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const content = document.getElementById('contentArea'); if(!content) return;
             content.innerHTML = '';
             document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab));
-            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영' };
+            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영' };
             document.getElementById('pageTitle').innerText = titles[tab] || '';
             if (tab === 'home') window.renderHome(content);
             else if (tab === 'members') window.renderMembers(content);
@@ -1530,6 +1530,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'buddy') window.renderBuddy(content);
             else if (tab === 'sub_chars') window.renderSubChars(content);
             else if (tab === 'suro_exempt') window.renderSuroExempt(content);
+            else if (tab === 'sheet_manage') window.renderSheetManage(content);
             else if (tab === 'weekly_log' && isAdmin()) window.renderWeeklyLog(content);
             else if (tab === 'all_history' && isAdmin()) window.renderAllHistory(content);
             else if (tab === 'suro_input' && isAdmin()) window.renderSuroInput(content);
@@ -5499,6 +5500,30 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     } catch(e) { window.showMsg('저장 실패: ' + e.message, 'error'); }
   };
 
+  // ============ 시트 관리 (통합 탭) ============
+  window._sheetManageTab = 'sub';
+
+  window.renderSheetManage = (container) => {
+    const st = window._sheetManageTab;
+    container.innerHTML = `
+    <div class="flex flex-col gap-3 fade-in h-full">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 shrink-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-table-list mr-2 text-pink-400"></i>시트 관리</h3>
+          <div class="flex gap-1.5 ml-4">
+            <button onclick="window._sheetManageTab='sub';window.renderSheetManage(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='sub' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas fa-sitemap mr-1"></i>부캐 분포</button>
+            <button onclick="window._sheetManageTab='exempt';window.renderSheetManage(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='exempt' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas fa-shield-alt mr-1"></i>수로 면제</button>
+          </div>
+          <span class="text-[9px] text-gray-400 ml-auto"><i class="fas fa-info-circle mr-1"></i>각 탭의 "시트 복사" 버튼으로 구글시트에 붙여넣기</span>
+        </div>
+      </div>
+      <div id="sheetManageContent" class="flex-1 min-h-0 overflow-y-auto no-scrollbar"></div>
+    </div>`;
+    const sub = document.getElementById('sheetManageContent');
+    if (st === 'sub') window.renderSubChars(sub);
+    else window.renderSuroExempt(sub);
+  };
+
   // ============ 수로 면제 현황 ============
   window._suroExemptState = { sortField: 'score', sortOrder: 'desc', search: '', guild: 'all', filter: 'all' };
 
@@ -7307,23 +7332,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
 
       window.renderGuildStatsUnified = (container) => {
-    const st = window._statsSubTab;
-    container.innerHTML = `
-    <div class="flex flex-col gap-3 fade-in h-full">
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 shrink-0">
-        <div class="flex items-center gap-2">
-          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-chart-pie mr-2 text-pink-400"></i>현황</h3>
-          <div class="flex gap-1.5 ml-4">
-            <button onclick="window._statsSubTab='guild';window.renderGuildStatsUnified(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='guild' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">길드 현황</button>
-            <button onclick="window._statsSubTab='sub';window.renderGuildStatsUnified(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='sub' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">부캐 현황</button>
-          </div>
-        </div>
-      </div>
-      <div id="statsContent" class="flex-1 min-h-0 overflow-y-auto no-scrollbar"></div>
-    </div>`;
-    const sub = document.getElementById('statsContent');
-    if (st === 'guild') window.renderGuildStats(sub);
-    else window.renderSubChars(sub);
+    container.innerHTML = `<div id="statsContent" class="h-full"></div>`;
+    window.renderGuildStats(document.getElementById('statsContent'));
   };
 
   window.renderGuildStats = (container) => {
