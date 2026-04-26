@@ -4098,9 +4098,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                         <p class="mt-1.5 text-[9px] text-blue-500">💡 위 텍스트를 클릭해서 복사 후 원하는 위치에 붙여넣으세요.</p>
                     </div>
                 </div>
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm flex-1 overflow-hidden flex flex-col min-h-0">
-                    <div id="guideEditor" contenteditable="true" class="flex-1 p-5 outline-none text-sm text-gray-700 leading-relaxed overflow-y-auto" style="min-height:300px;max-height:60vh">${gs.pages[gs.slug]?.content || '<p>내용을 입력하세요...</p>'}</div>
-                    <textarea id="guideSourceEditor" class="flex-1 w-full p-5 outline-none text-xs font-mono text-gray-700 hidden overflow-y-auto resize-none border-t border-gray-100" style="min-height:400px;max-height:60vh;display:none;box-sizing:border-box"></textarea>
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style="min-height:500px">
+                    <div id="guideEditor" contenteditable="true" class="p-5 outline-none text-sm text-gray-700 leading-relaxed overflow-y-auto" style="min-height:500px;max-height:70vh;width:100%;box-sizing:border-box">${gs.pages[gs.slug]?.content || '<p>내용을 입력하세요...</p>'}</div>
+                    <textarea id="guideSourceEditor" class="p-5 outline-none text-xs font-mono text-gray-700 overflow-y-auto resize-none" style="min-height:500px;max-height:70vh;display:none;width:100%;box-sizing:border-box;border:none"></textarea>
                 </div>
                 <div id="guidePreviewModal" class="hidden fixed inset-0 bg-black/30 z-[2000] flex items-center justify-center p-4">
                     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
