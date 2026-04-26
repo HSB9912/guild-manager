@@ -5540,7 +5540,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         <div class="flex items-center gap-2 flex-wrap">
           <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-table-list mr-2 text-pink-400"></i>시트 관리</h3>
           <div class="flex gap-1.5 ml-4">
-            <button onclick="window._sheetManageTab='sub';window.renderSheetManage(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='sub' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas fa-sitemap mr-1"></i>부캐 분포</button>
+            <button onclick="window._sheetManageTab='sub';window.renderSheetManage(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='sub' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas fa-sitemap mr-1"></i>길드 관리</button>
             <button onclick="window._sheetManageTab='exempt';window.renderSheetManage(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='exempt' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas fa-shield-alt mr-1"></i>수로 면제</button>
           </div>
           <span class="text-[9px] text-gray-400 ml-auto"><i class="fas fa-info-circle mr-1"></i>각 탭의 "시트 복사" 버튼으로 구글시트에 붙여넣기</span>
@@ -5778,7 +5778,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   window.renderSubChars = (container) => {
     const members = appState.members;
     const guilds = appState.guilds;
-    const subGuilds = guilds.filter(g => !['뚠카롱','뚱카롱'].includes(g.name));
+    // 모든 길드 표시 (뚠/뚱카롱 포함)
+    const subGuilds = guilds;
     const ss = window._subCharsState;
     if (!ss.guild) ss.guild = subGuilds[0]?.name || '';
 
@@ -5859,11 +5860,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
     container.innerHTML = `
     <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
         ${subGuilds.map(g => {
           const cnt = guildSummary[g.name] || 0;
           const isActive = g.name === ss.guild;
-          return `<div onclick="window._subCharsState.guild='${g.name}';window._subCharsState.search='';window.renderSubChars(document.getElementById('contentArea'))" class="cursor-pointer rounded-2xl border-2 p-3 text-center transition-all ${isActive ? 'border-pink-400 shadow-md bg-pink-50' : 'border-gray-100 bg-white hover:border-pink-200'}">
+          return `<div onclick="window._subCharsState.guild='${g.name}';window._subCharsState.search='';window.renderSubChars(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="cursor-pointer rounded-2xl border-2 p-3 text-center transition-all ${isActive ? 'border-pink-400 shadow-md bg-pink-50' : 'border-gray-100 bg-white hover:border-pink-200'}">
             <div class="text-[10px] font-bold ${isActive ? 'text-pink-600' : 'text-gray-500'}">${g.name}</div>
             <div class="text-xl font-black ${isActive ? 'text-pink-600' : 'text-gray-800'}">${cnt}<span class="text-[10px] font-bold text-gray-400">명</span></div>
           </div>`;
@@ -5873,7 +5874,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="p-3 border-b border-gray-100 flex items-center gap-3 flex-wrap">
           <h3 class="text-xs font-bold text-gray-700"><i class="fas fa-sitemap mr-1" style="color:${gInfo.color||'#ec4899'}"></i>${ss.guild} 부캐 명단 (${filtered.length}명)</h3>
-          <input type="text" value="${ss.search||''}" placeholder="검색..." oninput="window._subCharsState.search=this.value;window.renderSubChars(document.getElementById('contentArea'))" class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-[10px] font-bold outline-none w-32">
+          <input type="text" id="_subCharsSearchInput" value="${ss.search||''}" placeholder="검색..." oninput="window._subCharsSearchOnInput(this.value)" class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-[10px] font-bold outline-none w-32">
           <button onclick="window._subCharsCopy()" class="ml-auto px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[10px] font-bold shadow hover:bg-emerald-600 transition-all"><i class="fas fa-copy mr-1"></i>시트 복사</button>
         </div>
         <div class="overflow-auto" style="max-height:65vh">
@@ -5914,13 +5915,37 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         </div>
       </div>
     </div>`;
+
+    // 검색 input 포커스/커서 복원
+    if (window._subCharsSearchFocused) {
+      const inp = document.getElementById('_subCharsSearchInput');
+      if (inp) {
+        inp.focus();
+        const len = inp.value.length;
+        inp.setSelectionRange(len, len);
+      }
+    }
+  };
+
+  // 디바운스 검색 — 타이핑 중에는 렌더 안 함
+  window._subCharsSearchOnInput = (val) => {
+    window._subCharsState.search = val;
+    window._subCharsSearchFocused = true;
+    if (window._subCharsSearchTimer) clearTimeout(window._subCharsSearchTimer);
+    window._subCharsSearchTimer = setTimeout(() => {
+      const container = document.getElementById('sheetManageContent') || document.getElementById('contentArea');
+      window.renderSubChars(container);
+      // 렌더 후 한 번만 복원하고 플래그 해제
+      setTimeout(() => { window._subCharsSearchFocused = false; }, 100);
+    }, 300);
   };
 
   window._subCharsSort = (field) => {
     const ss = window._subCharsState;
     if (ss.sortField === field) { ss.sortOrder = ss.sortOrder === 'asc' ? 'desc' : 'asc'; }
     else { ss.sortField = field; ss.sortOrder = 'asc'; }
-    window.renderSubChars(document.getElementById('contentArea'));
+    const container = document.getElementById('sheetManageContent') || document.getElementById('contentArea');
+    window.renderSubChars(container);
   };
 
   window._subCharsCopy = () => {
