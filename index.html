@@ -4100,7 +4100,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 </div>
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style="min-height:500px">
                     <div id="guideEditor" contenteditable="true" class="p-5 outline-none text-sm text-gray-700 leading-relaxed overflow-y-auto" style="min-height:500px;max-height:70vh;width:100%;box-sizing:border-box">${gs.pages[gs.slug]?.content || '<p>내용을 입력하세요...</p>'}</div>
-                    <textarea id="guideSourceEditor" class="p-5 outline-none text-xs font-mono text-gray-700 overflow-y-auto resize-none" style="min-height:500px;max-height:70vh;display:none;width:100%;box-sizing:border-box;border:none"></textarea>
+                    <textarea id="_gmSourceEditor_x9" class="p-5 outline-none text-xs font-mono text-gray-700 overflow-y-auto resize-none" style="min-height:500px;max-height:70vh;display:none;width:100%;box-sizing:border-box;border:none"></textarea>
                 </div>
                 <div id="guidePreviewModal" class="hidden fixed inset-0 bg-black/30 z-[2000] flex items-center justify-center p-4">
                     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
@@ -4421,7 +4421,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    const block = window._guideBlocks.find(b => b.id === blockId);
    if (!block) return;
    const editor = document.getElementById('guideEditor');
-   const source = document.getElementById('guideSourceEditor');
+   const source = document.getElementById('_gmSourceEditor_x9');
    if (source && !source.classList.contains('hidden')) {
    source.value += '\n' + block.html;
    } else if (editor) {
@@ -4476,7 +4476,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   window._guideDoInsertNav = (route, icon, label, color, bg) => {
     const html = `<div style="margin-bottom:12px"><a href="#" onclick="router('${route}');return false" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,${bg},${bg});border:2px solid ${color};border-radius:16px;padding:16px 20px;text-decoration:none;color:inherit;cursor:pointer;transition:all 0.2s" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"><span style="font-size:24px">${icon}</span><div><p style="font-weight:900;font-size:14px;color:${color};margin:0">${label}</p><p style="font-size:11px;color:${color};margin:4px 0 0 0;font-weight:600;opacity:0.7">${label} 바로가기 →</p></div><i class="fas fa-chevron-right" style="color:${color};margin-left:auto;font-size:14px;opacity:0.5"></i></a></div>`;
     const editor = document.getElementById('guideEditor');
-    const source = document.getElementById('guideSourceEditor');
+    const source = document.getElementById('_gmSourceEditor_x9');
     if (source && !source.classList.contains('hidden')) {
       source.value += '\n' + html;
     } else if (editor) {
@@ -4532,11 +4532,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
 
   window._guideToggleSource = () => {
-   const editor = document.getElementById('guideEditor');
-   const source = document.getElementById('guideSourceEditor');
+   // contentArea 직속 자식만 정확히 잡아야 콘텐츠 안 잔존 textarea와 충돌하지 않음
+   const root = document.getElementById('contentArea');
+   const editor = root.querySelector(':scope #guideEditor, :scope div#guideEditor') || document.getElementById('guideEditor');
+   const source = root.querySelector('textarea#_gmSourceEditor_x9');
+   if (!source || !editor) return;
    const showingSource = source.style.display === 'none' || source.classList.contains('hidden');
    if (showingSource) {
-   source.value = editor.innerHTML;
+   // contenteditable 안 잔존 textarea 태그 제거 (오염 방지)
+   const cleaned = editor.innerHTML.replace(/<textarea[^>]*>[\s\S]*?<\/textarea>/gi, '');
+   source.value = cleaned;
    editor.classList.add('hidden');
    editor.style.display = 'none';
    source.classList.remove('hidden');
@@ -4553,7 +4558,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   window._guidePreview = () => {
    const editor = document.getElementById('guideEditor');
-   const source = document.getElementById('guideSourceEditor');
+   const source = document.getElementById('_gmSourceEditor_x9');
    const html = source.classList.contains('hidden') ? editor.innerHTML : source.value;
    document.getElementById('guidePreviewContent').innerHTML = html;
    document.getElementById('guidePreviewModal').classList.remove('hidden');
@@ -4562,7 +4567,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   window._guideSave = async () => {
    const gs = window._guideEditorState;
    const editor = document.getElementById('guideEditor');
-   const source = document.getElementById('guideSourceEditor');
+   const source = document.getElementById('_gmSourceEditor_x9');
    const html = source.classList.contains('hidden') ? editor.innerHTML : source.value;
    const btn = document.getElementById('guideSaveBtn');
 
@@ -4691,7 +4696,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   window._guideInsertImgTag = (url) => {
    const editor = document.getElementById('guideEditor');
-   const source = document.getElementById('guideSourceEditor');
+   const source = document.getElementById('_gmSourceEditor_x9');
    const imgHtml = `<div style="margin:12px 0;text-align:center"><img src="${url}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)" alt="이미지"></div>`;
 
    if (source && !source.classList.contains('hidden')) {
