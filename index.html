@@ -4098,9 +4098,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                         <p class="mt-1.5 text-[9px] text-blue-500">💡 위 텍스트를 클릭해서 복사 후 원하는 위치에 붙여넣으세요.</p>
                     </div>
                 </div>
-                <div id="_gmGuideEditorBox_x9" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style="min-height:500px">
-                    <div id="_gmEditorWrap_x9" style="min-height:500px"><div id="guideEditor" contenteditable="true" class="p-5 outline-none text-sm text-gray-700 leading-relaxed overflow-y-auto" style="min-height:500px;max-height:70vh;width:100%;box-sizing:border-box" data-clean-on-load="1">${(gs.pages[gs.slug]?.content || '<p>내용을 입력하세요...</p>').replace(/<textarea[^>]*>[\s\S]*?<\/textarea>/gi, '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<\/?(html|head|body|meta|link|style|iframe|script|textarea)[^>]*>/gi, '')}</div></div>
-                    <div id="_gmSourceWrap_x9" style="display:none;min-height:500px"><textarea data-gm-source-editor="true" class="p-5 outline-none text-xs font-mono text-gray-700 overflow-y-auto resize-none" style="min-height:500px;max-height:70vh;width:100%;box-sizing:border-box;border:none;display:block"></textarea></div>
+                <div id="_gmEditorBox_x9" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style="min-height:500px">
+                    <div id="guideEditor" contenteditable="true" class="p-5 outline-none text-sm text-gray-700 leading-relaxed overflow-y-auto" style="min-height:500px;max-height:70vh;width:100%;box-sizing:border-box" data-clean-on-load="1"><p>로딩 중...</p></div>
+                </div>
+                <div id="_gmSourceBox_x9" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style="display:none;min-height:500px">
+                    <textarea data-gm-source-editor="true" class="p-5 outline-none text-xs font-mono text-gray-700 overflow-y-auto resize-none" style="min-height:500px;max-height:70vh;width:100%;box-sizing:border-box;border:none;display:block"></textarea>
                 </div>
                 <div id="guidePreviewModal" class="hidden fixed inset-0 bg-black/30 z-[2000] flex items-center justify-center p-4">
                     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
@@ -4124,6 +4126,15 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             setTimeout(() => {
                 const editor = document.getElementById('guideEditor');
                 if (!editor) return;
+
+                // 콘텐츠 안전 주입: 임시 div로 sanitize → 닫힘 태그 자동 보정 → 외부 형제 흡수 방지
+                const rawContent = gs.pages[gs.slug]?.content || '<p>내용을 입력하세요...</p>';
+                const cleaned = rawContent
+                    .replace(/<\/?(html|head|body|meta|link|style|iframe|script|textarea)[^>]*>/gi, '')
+                    .replace(/<!DOCTYPE[^>]*>/gi, '');
+                const tmp = document.createElement('div');
+                tmp.innerHTML = cleaned;
+                editor.innerHTML = tmp.innerHTML;
 
                 editor.addEventListener('click', (e) => {
                     const target = e.target.closest('div');
@@ -4421,7 +4432,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    const block = window._guideBlocks.find(b => b.id === blockId);
    if (!block) return;
    const editor = document.getElementById('guideEditor');
-   const sourceWrap = document.getElementById('_gmSourceWrap_x9');
+   const sourceWrap = document.getElementById('_gmSourceBox_x9');
    const source = sourceWrap?.querySelector('textarea[data-gm-source-editor]');
    const sourceVisible = sourceWrap && sourceWrap.style.display !== 'none';
    if (source && sourceVisible) {
@@ -4478,7 +4489,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   window._guideDoInsertNav = (route, icon, label, color, bg) => {
     const html = `<div style="margin-bottom:12px"><a href="#" onclick="router('${route}');return false" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,${bg},${bg});border:2px solid ${color};border-radius:16px;padding:16px 20px;text-decoration:none;color:inherit;cursor:pointer;transition:all 0.2s" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"><span style="font-size:24px">${icon}</span><div><p style="font-weight:900;font-size:14px;color:${color};margin:0">${label}</p><p style="font-size:11px;color:${color};margin:4px 0 0 0;font-weight:600;opacity:0.7">${label} 바로가기 →</p></div><i class="fas fa-chevron-right" style="color:${color};margin-left:auto;font-size:14px;opacity:0.5"></i></a></div>`;
     const editor = document.getElementById('guideEditor');
-    const sourceWrap = document.getElementById('_gmSourceWrap_x9');
+    const sourceWrap = document.getElementById('_gmSourceBox_x9');
     const source = sourceWrap?.querySelector('textarea[data-gm-source-editor]');
     const sourceVisible = sourceWrap && sourceWrap.style.display !== 'none';
     if (source && sourceVisible) {
@@ -4536,8 +4547,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
 
   window._guideToggleSource = () => {
-   const editorWrap = document.getElementById('_gmEditorWrap_x9');
-   const sourceWrap = document.getElementById('_gmSourceWrap_x9');
+   const editorWrap = document.getElementById('_gmEditorBox_x9');
+   const sourceWrap = document.getElementById('_gmSourceBox_x9');
    const editor = document.getElementById('guideEditor');
    const source = sourceWrap?.querySelector('textarea[data-gm-source-editor]');
    if (!editorWrap || !sourceWrap || !editor || !source) {
@@ -4560,7 +4571,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   window._guidePreview = () => {
    const editor = document.getElementById('guideEditor');
-   const sourceWrap = document.getElementById('_gmSourceWrap_x9');
+   const sourceWrap = document.getElementById('_gmSourceBox_x9');
    const source = sourceWrap?.querySelector('textarea[data-gm-source-editor]');
    const sourceVisible = sourceWrap && sourceWrap.style.display !== 'none';
    const html = sourceVisible ? source.value : editor.innerHTML;
@@ -4571,7 +4582,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   window._guideSave = async () => {
    const gs = window._guideEditorState;
    const editor = document.getElementById('guideEditor');
-   const sourceWrap = document.getElementById('_gmSourceWrap_x9');
+   const sourceWrap = document.getElementById('_gmSourceBox_x9');
    const source = sourceWrap?.querySelector('textarea[data-gm-source-editor]');
    const sourceVisible = sourceWrap && sourceWrap.style.display !== 'none';
    const html = sourceVisible ? source.value : editor.innerHTML;
@@ -4702,7 +4713,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   window._guideInsertImgTag = (url) => {
    const editor = document.getElementById('guideEditor');
-   const sourceWrap = document.getElementById('_gmSourceWrap_x9');
+   const sourceWrap = document.getElementById('_gmSourceBox_x9');
    const source = sourceWrap?.querySelector('textarea[data-gm-source-editor]');
    const sourceVisible = sourceWrap && sourceWrap.style.display !== 'none';
    const imgHtml = `<div style="margin:12px 0;text-align:center"><img src="${url}" style="max-width:100%;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)" alt="이미지"></div>`;
