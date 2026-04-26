@@ -5616,7 +5616,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const maxSubs = Math.max(1, ...filtered.map(d => d.subs.length));
 
     const _rd = (role) => SITE_CONFIG?.roleDisplay?.[role] || {};
-    const fBtn = (key, label) => `<button onclick="window._suroExemptState.filter='${key}';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.filter===key?'bg-pink-500 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${label}</button>`;
+    const fBtn = (key, label) => `<button onclick="window._suroExemptState.filter='${key}';window.renderSuroExempt(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.filter===key?'bg-pink-500 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${label}</button>`;
 
     container.innerHTML = `
     <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
@@ -5643,15 +5643,15 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         <div class="p-3 border-b border-gray-100 flex items-center gap-2 flex-wrap">
           <h3 class="text-xs font-bold text-gray-700 mr-1"><i class="fas fa-shield-alt mr-1 text-pink-500"></i>수로 면제</h3>
           <div class="flex gap-1">
-            <button onclick="window._suroExemptState.guild='all';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='all'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">전체</button>
-            <button onclick="window._suroExemptState.guild='뚠카롱';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚠카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚠</button>
-            <button onclick="window._suroExemptState.guild='뚱카롱';window.renderSuroExempt(document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚱카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚱</button>
+            <button onclick="window._suroExemptState.guild='all';window.renderSuroExempt(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='all'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">전체</button>
+            <button onclick="window._suroExemptState.guild='뚠카롱';window.renderSuroExempt(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚠카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚠</button>
+            <button onclick="window._suroExemptState.guild='뚱카롱';window.renderSuroExempt(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚱카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚱</button>
           </div>
           <span class="text-gray-200">|</span>
           <div class="flex gap-1">
             ${fBtn('all','전체')}${fBtn('over','초과만')}${fBtn('full','9만+')}${fBtn('half','9만-')}
           </div>
-          <input type="text" value="${ss.search||''}" placeholder="검색..." oninput="window._suroExemptState.search=this.value;window.renderSuroExempt(document.getElementById('contentArea'))" class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-[10px] font-bold outline-none w-28">
+          <input type="text" id="_suroExemptSearchInput" value="${ss.search||''}" placeholder="검색..." oninput="window._suroExemptSearchOnInput(this.value)" class="bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1 text-[10px] font-bold outline-none w-28">
           <button onclick="window._suroExemptCopy()" class="ml-auto px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[10px] font-bold shadow hover:bg-emerald-600 transition-all"><i class="fas fa-copy mr-1"></i>시트 복사</button>
         </div>
         <div class="p-2 bg-amber-50 border-b border-amber-100 text-[9px] text-amber-700 font-bold">
@@ -5722,13 +5722,36 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         <div class="py-2 text-center text-[9px] text-gray-300 font-bold border-t border-gray-100">${totalMains}명 · 부캐 ${totalSubAll}캐 · 아인슈페너 ${totalActualExempt}캐 · 초과 ${totalOver}명</div>
       </div>
     </div>`;
+
+    // 검색 input 포커스/커서 복원
+    if (window._suroExemptSearchFocused) {
+      const inp = document.getElementById('_suroExemptSearchInput');
+      if (inp) {
+        inp.focus();
+        const len = inp.value.length;
+        inp.setSelectionRange(len, len);
+      }
+    }
+  };
+
+  // 디바운스 검색
+  window._suroExemptSearchOnInput = (val) => {
+    window._suroExemptState.search = val;
+    window._suroExemptSearchFocused = true;
+    if (window._suroExemptSearchTimer) clearTimeout(window._suroExemptSearchTimer);
+    window._suroExemptSearchTimer = setTimeout(() => {
+      const container = document.getElementById('sheetManageContent') || document.getElementById('contentArea');
+      window.renderSuroExempt(container);
+      setTimeout(() => { window._suroExemptSearchFocused = false; }, 100);
+    }, 300);
   };
 
   window._suroExemptSort = (field) => {
     const ss = window._suroExemptState;
     if (ss.sortField === field) ss.sortOrder = ss.sortOrder === 'asc' ? 'desc' : 'asc';
     else { ss.sortField = field; ss.sortOrder = (field === 'name') ? 'asc' : 'desc'; }
-    window.renderSuroExempt(document.getElementById('contentArea'));
+    const container = document.getElementById('sheetManageContent') || document.getElementById('contentArea');
+    window.renderSuroExempt(container);
   };
 
   window._suroExemptCopy = () => {
