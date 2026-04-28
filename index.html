@@ -6550,6 +6550,14 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     setTimeout(() => document.getElementById('_consultingImportName')?.focus(), 50);
   };
 
+  // 슬롯 매칭 후보 (반지/펜던트는 카테고리 전체)
+  window._consultingSlotCandidates = (slot) => {
+    if (!slot) return [slot];
+    if (/^반지\d?$/.test(slot)) return ['반지1','반지2','반지3','반지4'];
+    if (/^펜던트\d?$/.test(slot)) return ['펜던트','펜던트2'];
+    return [slot];
+  };
+
   window._consultingImportSearch = async () => {
     const slot = window._consultingTargetEditingSlot;
     const name = document.getElementById('_consultingImportName')?.value.trim();
@@ -6567,23 +6575,38 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       const presetSlots = new Set(preset.map(e => e.item_equipment_slot || e.item_equipment_part));
       const extras = legacy.filter(e => !presetSlots.has(e.item_equipment_slot || e.item_equipment_part));
       const equips = preset.length ? [...preset, ...extras] : legacy;
-      const found = equips.find(e => (e.item_equipment_slot || e.item_equipment_part) === slot);
-      if (!found) {
-        result.innerHTML = `<div class="text-center py-3 text-amber-600 text-xs"><i class="fas fa-exclamation-circle mr-1"></i>${esc(name)} 캐릭터에 ${esc(slot)} 슬롯 장비가 없습니다</div>`;
+      const candidates = window._consultingSlotCandidates(slot);
+      const matches = equips.filter(e => candidates.includes(e.item_equipment_slot || e.item_equipment_part));
+      if (!matches.length) {
+        result.innerHTML = `<div class="text-center py-3 text-amber-600 text-xs"><i class="fas fa-exclamation-circle mr-1"></i>${esc(name)} 캐릭터에 ${esc(candidates.join('/'))} 슬롯 장비가 없습니다</div>`;
         return;
       }
-      // 미리보기 카드 + 적용 버튼
-      const previewData = window._consultingNormalizeEq(found);
-      window._consultingImportFound = found;
+      // 후보 여러 개 → 카드 그리드 + 각 카드에 "이걸로 채우기" 버튼
+      window._consultingImportPool = matches;
+      const isMulti = matches.length > 1;
       result.innerHTML = `
-        <div class="text-[10px] text-gray-500 font-bold mb-2">↓ 이 장비를 AFTER로 복사할까요?</div>
-        ${window._consultingItemCardHtml(previewData, { slot })}
-        <button onclick="window._consultingImportApply()" class="w-full mt-3 px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"><i class="fas fa-check mr-1"></i>이 장비로 AFTER 채우기</button>`;
+        <div class="text-[10px] text-gray-500 font-bold mb-2">${isMulti ? `↓ ${matches.length}개 중 어느 장비를 복사할까요? 클릭하여 선택` : '↓ 이 장비를 AFTER로 복사할까요?'}</div>
+        <div class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+        ${matches.map((eq, i) => {
+          const data = window._consultingNormalizeEq(eq);
+          const realSlot = eq.item_equipment_slot || eq.item_equipment_part;
+          return `<div class="cursor-pointer hover:scale-[1.01] transition" onclick="window._consultingImportPick(${i})">${window._consultingItemCardHtml(data, { slot: realSlot, extraCls: 'hover:ring-2 hover:ring-emerald-400' })}</div>`;
+        }).join('')}
+        </div>
+        ${isMulti ? '' : `<button onclick="window._consultingImportPick(0)" class="w-full mt-3 px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"><i class="fas fa-check mr-1"></i>이 장비로 AFTER 채우기</button>`}`;
     } catch (e) {
       result.innerHTML = `<div class="text-center py-3 text-red-500 text-xs"><i class="fas fa-times-circle mr-1"></i>${esc(e.message || '검색 실패')}</div>`;
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = '검색'; }
     }
+  };
+
+  window._consultingImportPick = (idx) => {
+    const pool = window._consultingImportPool || [];
+    const eq = pool[idx];
+    if (!eq) return;
+    window._consultingImportFound = eq;
+    window._consultingImportApply();
   };
 
   window._consultingImportApply = () => {
