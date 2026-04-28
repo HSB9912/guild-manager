@@ -5847,9 +5847,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       </div>
 
       <div class="bg-gradient-to-br from-pink-50 via-white to-blue-50 rounded-2xl border border-gray-100 shadow-sm p-6">
-        <div class="flex items-start gap-4 flex-wrap">
-          <div class="w-20 h-20 rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
-            ${c.character_image ? `<img src="${esc(c.character_image)}" class="w-full h-full object-cover" onerror="this.style.display='none'">` : '<i class="fas fa-user text-pink-300 text-3xl"></i>'}
+        <div class="flex items-start gap-5 flex-wrap">
+          <div class="w-40 h-52 rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
+            ${c.character_image ? `<img src="${esc(c.character_image)}" class="w-full h-full object-contain" onerror="this.style.display='none'">` : '<i class="fas fa-user text-pink-300 text-6xl"></i>'}
           </div>
           <div class="flex-1 min-w-0">
             <div class="text-[10px] text-pink-500 font-bold uppercase tracking-widest mb-1">CHARACTER</div>
@@ -6090,24 +6090,24 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const onClick = opts.onClick || '';
     const extraCls = opts.extraCls || '';
     const interactive = opts.interactive ? `cursor-pointer hover:bg-slate-900 hover:scale-[1.005] active:scale-100` : '';
-    return `<div class="bg-slate-950/60 rounded-lg border ${potG.border} ${potG.glow} p-2.5 flex gap-2.5 transition ${interactive} ${extraCls}" ${onClick} title="${esc(opts.title || data.name || '')}">
-      <div class="flex-shrink-0 w-14 h-14 bg-slate-900/80 rounded-md border border-slate-700/40 flex items-center justify-center relative">
-        ${data.icon ? `<img src="${esc(data.icon)}" class="w-12 h-12" style="image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges" onerror="this.style.display='none'">` : `<i class="fas fa-image text-slate-600 text-lg"></i>`}
+    return `<div class="bg-slate-950/60 rounded-lg border ${potG.border} ${potG.glow} p-2 flex gap-2 transition ${interactive} ${extraCls}" ${onClick} title="${esc(opts.title || data.name || '')}">
+      <div class="flex-shrink-0 w-11 h-11 bg-slate-900/80 rounded-md border border-slate-700/40 flex items-center justify-center relative">
+        ${data.icon ? `<img src="${esc(data.icon)}" class="w-9 h-9" style="image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges" onerror="this.style.display='none'">` : `<i class="fas fa-image text-slate-600 text-base"></i>`}
         ${stateBadge}
       </div>
       <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-1.5 text-[10px] mb-0.5 flex-wrap">
+        <div class="flex items-center gap-1 text-[10px] mb-0.5 flex-wrap leading-none">
           ${isSpecialRing
-            ? `<span class="text-cyan-300 font-black whitespace-nowrap bg-cyan-500/15 px-1.5 py-0.5 rounded">Lv.${data.special_ring_level}<span class="text-cyan-500/60 text-[9px] ml-0.5">/6</span></span>`
-            : `${stars > 0 ? `<span class="text-amber-400 font-black whitespace-nowrap"><i class="fas fa-star text-[9px] mr-0.5"></i>${stars}</span>` : ''}${upgrade > 0 ? `<span class="text-emerald-400 font-black whitespace-nowrap">+${upgrade}</span>` : ''}`}
+            ? `<span class="text-cyan-300 font-black whitespace-nowrap bg-cyan-500/15 px-1 py-0.5 rounded">Lv.${data.special_ring_level}<span class="text-cyan-500/60 text-[9px] ml-0.5">/6</span></span>`
+            : `${stars > 0 ? `<span class="text-amber-400 font-black whitespace-nowrap"><i class="fas fa-star text-[8px] mr-0.5"></i>${stars}</span>` : ''}${upgrade > 0 ? `<span class="text-emerald-400 font-black whitespace-nowrap">+${upgrade}</span>` : ''}`}
           ${slotBadge}
         </div>
-        <div class="text-white font-bold text-xs truncate mb-1">${esc(data.name || '-')}</div>
+        <div class="text-white font-bold text-xs truncate leading-tight">${esc(data.name || '-')}</div>
         ${isSpecialRing
-          ? `<div class="text-[10px] text-cyan-200/70 leading-snug">특수 반지 · 게임 내 레벨업</div>`
-          : `${pots.length ? `<div class="text-[10px] leading-snug mb-0.5"><span class="${potG.color} font-black mr-1">${potG.short}</span><span class="text-slate-300">${esc(pots.join(', '))}</span></div>` : ''}
-             ${adds.length ? `<div class="text-[10px] leading-snug"><span class="${addG.color} font-black mr-1">${addG.short}</span><span class="text-slate-300">${esc(adds.join(', '))}</span></div>` : ''}
-             ${data.soul_name ? `<div class="text-[10px] text-slate-400 mt-0.5 truncate"><span class="text-pink-400 font-black mr-1">소울</span>${esc(data.soul_name)}${data.soul_option ? ', ' + esc(data.soul_option) : ''}</div>` : ''}`}
+          ? `<div class="text-[9px] text-cyan-200/70 leading-tight mt-0.5">특수 반지 · 게임 내 레벨업</div>`
+          : `${pots.length ? `<div class="text-[9px] leading-tight mt-0.5"><span class="${potG.color} font-black mr-0.5">${potG.short}</span><span class="text-slate-300">${esc(pots.join(', '))}</span></div>` : ''}
+             ${adds.length ? `<div class="text-[9px] leading-tight"><span class="${addG.color} font-black mr-0.5">${addG.short}</span><span class="text-slate-300">${esc(adds.join(', '))}</span></div>` : ''}
+             ${data.soul_name ? `<div class="text-[9px] text-slate-400 mt-0.5 truncate"><span class="text-pink-400 font-black mr-0.5">소울</span>${esc(data.soul_name)}${data.soul_option ? ', ' + esc(data.soul_option) : ''}</div>` : ''}`}
       </div>
     </div>`;
   };
@@ -6144,7 +6144,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const targetCount = Object.keys(tgtMap).length;
     return `<div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-3 border border-slate-700/50">
       ${editable && targetCount > 0 ? `<div class="flex items-center gap-2 mb-3 px-3 py-2 bg-emerald-500/15 border border-emerald-400/30 rounded-lg"><i class="fas fa-bullseye text-emerald-300"></i><span class="text-xs font-bold text-emerald-200">${targetCount}개 교체 목표 설정됨</span><span class="text-[10px] text-emerald-300/70 ml-auto">목표 설정 카드는 초록 테두리 + 🎯 라벨</span></div>` : ''}
-      <div class="grid gap-2" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">
+      <div class="grid gap-1.5" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
       ${equips.map((eq, idx) => {
         const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
         const hasTarget = !!tgtMap[slot];
