@@ -5965,7 +5965,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   // 단일 장비 카드 HTML (재사용)
   window._consultingItemCardHtml = (data, opts = {}) => {
-    const potG = window._consultingGradeStyle(data.pot_grade);
+    const isSpecialRing = (data.special_ring_level || 0) > 0;
+    const potG = isSpecialRing
+      ? { short: '특수', color: 'text-cyan-300', border: 'border-cyan-400/40', glow: 'shadow-[0_0_12px_rgba(103,232,249,0.18)]' }
+      : window._consultingGradeStyle(data.pot_grade);
     const addG = window._consultingGradeStyle(data.add_grade);
     const pots = [data.pot_1, data.pot_2, data.pot_3].filter(Boolean);
     const adds = [data.add_1, data.add_2, data.add_3].filter(Boolean);
@@ -5983,14 +5986,17 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       </div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-1.5 text-[10px] mb-0.5 flex-wrap">
-          ${stars > 0 ? `<span class="text-amber-400 font-black whitespace-nowrap"><i class="fas fa-star text-[9px] mr-0.5"></i>${stars}</span>` : ''}
-          ${upgrade > 0 ? `<span class="text-emerald-400 font-black whitespace-nowrap">+${upgrade}</span>` : ''}
+          ${isSpecialRing
+            ? `<span class="text-cyan-300 font-black whitespace-nowrap bg-cyan-500/15 px-1.5 py-0.5 rounded">Lv.${data.special_ring_level}<span class="text-cyan-500/60 text-[9px] ml-0.5">/6</span></span>`
+            : `${stars > 0 ? `<span class="text-amber-400 font-black whitespace-nowrap"><i class="fas fa-star text-[9px] mr-0.5"></i>${stars}</span>` : ''}${upgrade > 0 ? `<span class="text-emerald-400 font-black whitespace-nowrap">+${upgrade}</span>` : ''}`}
           ${slotBadge}
         </div>
         <div class="text-white font-bold text-xs truncate mb-1">${esc(data.name || '-')}</div>
-        ${pots.length ? `<div class="text-[10px] leading-snug mb-0.5"><span class="${potG.color} font-black mr-1">${potG.short}</span><span class="text-slate-300">${esc(pots.join(', '))}</span></div>` : ''}
-        ${adds.length ? `<div class="text-[10px] leading-snug"><span class="${addG.color} font-black mr-1">${addG.short}</span><span class="text-slate-300">${esc(adds.join(', '))}</span></div>` : ''}
-        ${data.soul_name ? `<div class="text-[10px] text-slate-400 mt-0.5 truncate"><span class="text-pink-400 font-black mr-1">소울</span>${esc(data.soul_name)}${data.soul_option ? ', ' + esc(data.soul_option) : ''}</div>` : ''}
+        ${isSpecialRing
+          ? `<div class="text-[10px] text-cyan-200/70 leading-snug">특수 반지 · 게임 내 레벨업</div>`
+          : `${pots.length ? `<div class="text-[10px] leading-snug mb-0.5"><span class="${potG.color} font-black mr-1">${potG.short}</span><span class="text-slate-300">${esc(pots.join(', '))}</span></div>` : ''}
+             ${adds.length ? `<div class="text-[10px] leading-snug"><span class="${addG.color} font-black mr-1">${addG.short}</span><span class="text-slate-300">${esc(adds.join(', '))}</span></div>` : ''}
+             ${data.soul_name ? `<div class="text-[10px] text-slate-400 mt-0.5 truncate"><span class="text-pink-400 font-black mr-1">소울</span>${esc(data.soul_name)}${data.soul_option ? ', ' + esc(data.soul_option) : ''}</div>` : ''}`}
       </div>
     </div>`;
   };
@@ -6005,7 +6011,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     pot_1: eq.potential_option_1, pot_2: eq.potential_option_2, pot_3: eq.potential_option_3,
     add_grade: eq.additional_potential_option_grade || '',
     add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
-    soul_name: eq.soul_name, soul_option: eq.soul_option
+    soul_name: eq.soul_name, soul_option: eq.soul_option,
+    special_ring_level: parseInt(eq.special_ring_level) || 0
   });
 
   window._consultingRenderEquipPreview = (equips, editable, targets) => {
@@ -6289,14 +6296,17 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     if (!Array.isArray(d.target_items)) d.target_items = [];
     let existing = d.target_items.find(t => t.slot === slot);
     if (!existing) {
+      const srLv = parseInt(eq.special_ring_level) || 0;
       existing = {
         slot,
         before_name: eq.item_name || '',
         before_icon: eq.item_icon || '',
         before_stars: parseInt(eq.starforce) || 0,
+        before_special_ring_level: srLv,
         after_name: eq.item_name || '',
         after_icon: eq.item_icon || '',
         after_stars: parseInt(eq.starforce) || 0,
+        after_special_ring_level: srLv > 0 ? Math.min(6, srLv + 1) : 0,
         after_pot_grade: '',
         after_pot_1: '', after_pot_2: '', after_pot_3: '',
         after_add_grade: '',
@@ -6322,6 +6332,12 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const grades = ['','레전드리','유니크','에픽','레어'];
     const gradeOpts = (cur) => grades.map(g => `<option value="${g}" ${(cur||'')===g?'selected':''}>${g||'없음'}</option>`).join('');
 
+    // 특수 반지 여부 판정 (eq + target 양쪽 확인)
+    const eqLookup = (d.equipment_data || []).find(e => (e.item_equipment_slot || e.item_equipment_part) === slot);
+    const isSpecialRing = (parseInt(eqLookup?.special_ring_level) || parseInt(t.before_special_ring_level) || 0) > 0;
+    const beforeSrLv = parseInt(eqLookup?.special_ring_level) || parseInt(t.before_special_ring_level) || 0;
+    const lvOpts = (cur) => Array.from({length: 7}, (_, i) => `<option value="${i}" ${Number(cur||0)===i?'selected':''}>${i === 0 ? '미장착' : 'Lv.' + i}</option>`).join('');
+
     const div = document.createElement('div');
     div.id = '_consultingTargetModal';
     div.className = 'fixed inset-0 z-50 flex items-start justify-center p-4 pt-8';
@@ -6338,20 +6354,22 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         </div>
         <div class="p-5 space-y-4">
           <div class="bg-red-50 p-3 rounded-xl">
-            <div class="text-[10px] text-red-500 font-black uppercase mb-2">BEFORE (현재)</div>
+            <div class="text-[10px] text-red-500 font-black uppercase mb-2">BEFORE (현재)${isSpecialRing ? ' · 특수 반지' : ''}</div>
             <div class="flex gap-3">
               <div class="flex-shrink-0 w-14 h-14 bg-white rounded border-2 border-red-200 flex items-center justify-center">
                 ${t.before_icon ? `<img src="${esc(t.before_icon)}" class="w-12 h-12" style="image-rendering:pixelated">` : '<i class="fas fa-image text-gray-300 text-lg"></i>'}
               </div>
               <div class="flex-1 grid grid-cols-2 gap-2">
                 <div><label class="text-[10px] text-gray-500 font-bold">아이템</label><input type="text" value="${esc(t.before_name)}" oninput="window._consultingUpdateTarget('before_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
-                <div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.before_stars||0}" oninput="window._consultingUpdateTarget('before_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+                ${isSpecialRing
+                  ? `<div><label class="text-[10px] text-cyan-500 font-bold">현재 레벨</label><select onchange="window._consultingUpdateTarget('before_special_ring_level',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs">${lvOpts(beforeSrLv)}</select></div>`
+                  : `<div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.before_stars||0}" oninput="window._consultingUpdateTarget('before_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>`}
               </div>
             </div>
           </div>
 
           <div class="bg-emerald-50 p-3 rounded-xl space-y-3">
-            <div class="text-[10px] text-emerald-500 font-black uppercase">AFTER (목표)</div>
+            <div class="text-[10px] text-emerald-500 font-black uppercase">AFTER (목표)${isSpecialRing ? ' · 특수 반지' : ''}</div>
             <div class="flex gap-3">
               <div class="flex-shrink-0">
                 <button type="button" onclick="window._consultingChangeAfterIcon()" class="w-14 h-14 bg-white rounded border-2 border-emerald-300 hover:border-emerald-500 flex items-center justify-center cursor-pointer transition group" title="클릭하여 아이콘 변경">
@@ -6361,10 +6379,17 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
               </div>
               <div class="flex-1 grid grid-cols-2 gap-2">
                 <div><label class="text-[10px] text-gray-500 font-bold">아이템명</label><input type="text" value="${esc(t.after_name)}" oninput="window._consultingUpdateTarget('after_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
-                <div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.after_stars||0}" oninput="window._consultingUpdateTarget('after_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+                ${isSpecialRing
+                  ? `<div><label class="text-[10px] text-cyan-500 font-bold">목표 레벨</label><select onchange="window._consultingUpdateTarget('after_special_ring_level',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs">${lvOpts(t.after_special_ring_level||0)}</select></div>`
+                  : `<div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.after_stars||0}" oninput="window._consultingUpdateTarget('after_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>`}
               </div>
             </div>
 
+            ${isSpecialRing ? `
+            <div class="bg-cyan-50 border border-cyan-100 rounded p-2.5 text-[10px] text-cyan-700 leading-relaxed">
+              <i class="fas fa-info-circle mr-1 text-cyan-500"></i>특수 반지(컨티뉴어스/리스트레인트/웨폰퍼프)는 레벨 1~6 게임 내 강화입니다. 잠재 옵션 없음.
+            </div>
+            ` : `
             <div>
               <div class="flex items-center justify-between mb-1">
                 <span class="text-[10px] text-purple-500 font-black uppercase">잠재능력</span>
@@ -6387,7 +6412,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 ${window._consultingPotDropdown('after_add_2', t.after_add_2, slot, t.after_add_grade, true)}
                 ${window._consultingPotDropdown('after_add_3', t.after_add_3, slot, t.after_add_grade, true)}
               </div>
-            </div>
+            </div>`}
 
             <div class="grid grid-cols-2 gap-2 pt-2 border-t border-emerald-200">
               <div><label class="text-[10px] text-amber-500 font-bold">헥사 환산 기여</label><input type="number" value="${t.hexa_contrib||0}" oninput="window._consultingUpdateTarget('hexa_contrib',Number(this.value))" placeholder="예: 1500" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
@@ -6516,7 +6541,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           pot_1: eq.potential_option_1, pot_2: eq.potential_option_2, pot_3: eq.potential_option_3,
           add_grade: eq.additional_potential_option_grade || '',
           add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
-          soul_name: eq.soul_name, soul_option: eq.soul_option
+          soul_name: eq.soul_name, soul_option: eq.soul_option,
+          special_ring_level: parseInt(eq.special_ring_level) || parseInt(t.before_special_ring_level) || 0
         };
         const afterData = {
           name: t.after_name || '',
@@ -6526,7 +6552,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           pot_grade: t.after_pot_grade || '',
           pot_1: t.after_pot_1, pot_2: t.after_pot_2, pot_3: t.after_pot_3,
           add_grade: t.after_add_grade || '',
-          add_1: t.after_add_1, add_2: t.after_add_2, add_3: t.after_add_3
+          add_1: t.after_add_1, add_2: t.after_add_2, add_3: t.after_add_3,
+          special_ring_level: parseInt(t.after_special_ring_level) || 0
         };
         return `
           <div class="bg-slate-800/40 rounded-lg border border-slate-700/40 p-2.5">
@@ -6650,13 +6677,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         }
       } catch(e) {}
 
-      // 장비
+      // 장비 (preset + 예비 특수 반지 같은 legacy 전용 슬롯 합치기)
       let equips = [];
       try {
         const equipData = await window._nexonFetch('/maplestory/v1/character/item-equipment', { ocid });
         const presetNo = Number(equipData.preset_no) || 1;
-        const list = equipData[`item_equipment_preset_${presetNo}`] || equipData.item_equipment || [];
-        equips = list;
+        const preset = equipData[`item_equipment_preset_${presetNo}`] || [];
+        const legacy = equipData.item_equipment || [];
+        const presetSlots = new Set(preset.map(e => e.item_equipment_slot || e.item_equipment_part));
+        const extras = legacy.filter(e => !presetSlots.has(e.item_equipment_slot || e.item_equipment_part));
+        equips = preset.length ? [...preset, ...extras] : legacy;
       } catch(e) { console.warn('장비 로드 실패:', e); }
 
       const d = window._consultingState.draft;
