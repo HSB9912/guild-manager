@@ -6130,20 +6130,25 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     if (!equips || !equips.length) return '<p class="text-xs text-gray-400 italic">장비 정보 없음</p>';
     const tgtMap = {};
     if (Array.isArray(targets)) targets.forEach(t => { if (t.slot) tgtMap[t.slot] = t; });
+    const targetCount = Object.keys(tgtMap).length;
     return `<div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-3 border border-slate-700/50">
+      ${editable && targetCount > 0 ? `<div class="flex items-center gap-2 mb-3 px-3 py-2 bg-emerald-500/15 border border-emerald-400/30 rounded-lg"><i class="fas fa-bullseye text-emerald-300"></i><span class="text-xs font-bold text-emerald-200">${targetCount}개 교체 목표 설정됨</span><span class="text-[10px] text-emerald-300/70 ml-auto">목표 설정 카드는 초록 테두리 + 🎯 라벨</span></div>` : ''}
       <div class="grid gap-2" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">
       ${equips.map((eq, idx) => {
         const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
         const hasTarget = !!tgtMap[slot];
         const data = window._consultingNormalizeEq(eq);
-        const stateBadge = hasTarget ? '<span class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-emerald-500 text-white rounded-full text-[8px] flex items-center justify-center font-black shadow"><i class="fas fa-check"></i></span>' : '';
+        // 교체 목표 설정된 카드는 큼지막한 라벨 + 두꺼운 링 + 어두운 emerald 배경
+        const stateBadge = hasTarget
+          ? '<span class="absolute -top-2 -right-2 px-1.5 py-0.5 bg-emerald-500 text-white rounded-md text-[9px] flex items-center gap-0.5 font-black shadow-lg whitespace-nowrap"><i class="fas fa-bullseye text-[8px]"></i>교체</span>'
+          : '';
         return window._consultingItemCardHtml(data, {
           slot,
           stateBadge,
           interactive: editable,
           onClick: editable ? `onclick="window._consultingOpenTarget(${idx})"` : '',
-          title: `${data.name || slot}${editable ? ' (클릭하여 교체 목표 설정)' : ''}`,
-          extraCls: hasTarget && editable ? 'ring-1 ring-emerald-400/60' : ''
+          title: `${data.name || slot}${hasTarget ? ' · 교체 목표 설정됨 (다시 클릭하여 수정)' : (editable ? ' (클릭하여 교체 목표 설정)' : '')}`,
+          extraCls: hasTarget && editable ? 'ring-2 ring-emerald-400 bg-emerald-500/10' : ''
         });
       }).join('')}
       </div>
