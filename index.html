@@ -5614,7 +5614,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 flex-wrap">
         <h3 class="text-sm font-bold text-gray-700"><i class="fas fa-stethoscope mr-1 text-pink-500"></i>아이템 컨설팅 게시판</h3>
         <span class="text-[10px] text-gray-400">총 ${list.length}건 · 길드원 컨설팅 결과를 모아봅니다</span>
-        ${isAdmin() ? `<button onclick="window._consultingNew()" class="ml-auto px-3 py-1.5 bg-pink-500 text-white rounded-lg text-[11px] font-bold shadow hover:bg-pink-600 transition-all"><i class="fas fa-plus mr-1"></i>새 컨설팅 작성</button>` : ''}
+        ${isAdmin() ? `
+          <label class="ml-auto px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold shadow-sm hover:bg-blue-100 transition-all cursor-pointer" title="다른 진단 도구의 JSON 파일 불러오기">
+            <i class="fas fa-file-import mr-1"></i>JSON 가져오기
+            <input type="file" accept="application/json,.json" class="hidden" onchange="window._consultingImportJsonFile(event)">
+          </label>
+          <button onclick="window._consultingNew()" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-[11px] font-bold shadow hover:bg-pink-600 transition-all"><i class="fas fa-plus mr-1"></i>새 컨설팅 작성</button>
+        ` : ''}
       </div>
 
       ${list.length === 0 ? `
@@ -5690,6 +5696,115 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       diagnosis: [], tips: [], target_items: [], summary: '', character_image: ''
     };
     window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  // 외부 진단 도구의 JSON 파일을 우리 컨설팅 draft로 변환
+  window._consultingImportJsonFile = (ev) => {
+    if (!isAdmin()) return window.showMsg('관리자만 가능합니다.', 'error');
+    const file = ev.target?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const json = JSON.parse(reader.result);
+        const draft = window._consultingMapJsonToDraft(json);
+        window._consultingState.view = 'new';
+        window._consultingState.draft = draft;
+        window._consultingState.currentId = null;
+        window.showMsg(`${draft.member_name || '캐릭터'} 컨설팅 가져옴 (장비 ${draft.equipment_data.length}개, 목표 ${draft.target_items.length}개)`, 'success');
+        window.renderConsulting(document.getElementById('contentArea'));
+      } catch (e) {
+        window.showMsg('JSON 파싱 실패: ' + e.message, 'error');
+      } finally {
+        ev.target.value = ''; // 같은 파일 재선택 가능하게
+      }
+    };
+    reader.onerror = () => window.showMsg('파일 읽기 실패', 'error');
+    reader.readAsText(file, 'utf-8');
+  };
+
+  // JSON → draft 매핑 (외부 도구 포맷 호환)
+  window._consultingMapJsonToDraft = (json) => {
+    const u = json.user || {};
+    // 사용된 프리셋 결정: usePresetNo > activePreset > 점수 가장 높은 것 > 1
+    const presets = json.presets || {};
+    let usedNo = json.usePresetNo || json.activePreset;
+    if (!usedNo || !presets[usedNo]) {
+      // 점수 자동 산정
+      const scored = Object.keys(presets).map(k => ({
+        no: k,
+        items: presets[k] || [],
+        score: window._consultingPresetScore((presets[k] || []).map(p => ({
+          starforce: p.stars, scroll_upgrade: p.scrollUpgrade,
+          potential_option_grade: p.potentialGrade,
+          additional_potential_option_grade: p.additionalGrade
+        })))
+      })).filter(x => x.items.length > 0);
+      scored.sort((a, b) => b.score - a.score);
+      usedNo = scored[0]?.no || Object.keys(presets)[0] || '1';
+    }
+    const presetItems = presets[usedNo] || [];
+    const equipment_data = presetItems.map(p => ({
+      item_equipment_slot: p.slot,
+      item_equipment_part: p.slot,
+      item_name: p.name || '',
+      item_icon: p.icon || '',
+      starforce: String(p.stars || 0),
+      scroll_upgrade: String(p.scrollUpgrade || 0),
+      potential_option_grade: p.potentialGrade || '',
+      potential_option_1: p.potential1 || '',
+      potential_option_2: p.potential2 || '',
+      potential_option_3: p.potential3 || '',
+      additional_potential_option_grade: p.additionalGrade || '',
+      additional_potential_option_1: p.additional1 || '',
+      additional_potential_option_2: p.additional2 || '',
+      additional_potential_option_3: p.additional3 || ''
+    }));
+    // 타깃 아이템 — 슬롯으로 before 매칭
+    const target_items = (json.targetItems || []).map(t => {
+      const beforeEq = equipment_data.find(e => e.item_equipment_slot === t.slot) || {};
+      return {
+        slot: t.slot,
+        before_name: beforeEq.item_name || '',
+        before_icon: beforeEq.item_icon || '',
+        before_stars: parseInt(beforeEq.starforce) || 0,
+        after_name: t.name || '',
+        after_icon: t.icon || '',
+        after_stars: parseInt(t.stars) || 0,
+        after_pot_grade: t.potentialGrade || '',
+        after_pot_1: t.potential1 || '',
+        after_pot_2: t.potential2 || '',
+        after_pot_3: t.potential3 || '',
+        after_add_grade: t.additionalGrade || '',
+        after_add_1: t.additional1 || '',
+        after_add_2: t.additional2 || '',
+        after_add_3: t.additional3 || '',
+        hexa_contrib: parseInt(t.hexaContrib) || 0,
+        cost: t.estimatedCost || '',
+        ref_from: t.refFrom || ''
+      };
+    });
+    return {
+      member_name: u.name || '',
+      member_class: u.class || '',
+      member_server: u.server || '루나',
+      consultant_name: json.consultant || '',
+      diagnosis_date: new Date().toISOString().slice(0, 10),
+      combat_power: u.combatPower || '',
+      main_stat: u.stat || '',
+      hexa_stat: u.hexaStat || '',
+      character_image: u.characterImage || '',
+      goal: json.goal || { targetHexa: '', budget: '', period: '' },
+      diagnosis: (json.diagnosis || []).map(d => ({
+        title: d.title || '',
+        content: d.content || '',
+        priority: d.priority || '중간'
+      })),
+      tips: Array.isArray(json.tips) ? json.tips : [],
+      target_items,
+      summary: json.summary || '',
+      equipment_data
+    };
   };
 
   window._consultingEdit = async (id) => {
