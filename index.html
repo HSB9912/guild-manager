@@ -5531,6 +5531,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     } catch(e) { window.showMsg('저장 실패: ' + e.message, 'error'); }
   };
 
+  // 전역 esc 헬퍼 (컨설팅 모듈에서 사용)
+  if (typeof window.esc !== 'function') {
+    window.esc = (str) => String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  // 로컬 변수 esc도 동일하게 (스코프 안에서 호출)
+  const esc = window.esc;
+
   // ============ 아이템 컨설팅 (게시판 + 작성/뷰어) ============
   // Supabase 테이블 'item_consultings' 필요. 아래 SQL을 한 번 실행:
   /*
