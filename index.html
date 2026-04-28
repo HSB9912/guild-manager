@@ -5726,23 +5726,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   // JSON → draft 매핑 (외부 도구 포맷 호환)
   window._consultingMapJsonToDraft = (json) => {
     const u = json.user || {};
-    // 사용된 프리셋 결정: usePresetNo > activePreset > 점수 가장 높은 것 > 1
+    // 항상 가장 점수 높은 프리셋 사용 (재획 프리셋 회피, 보스 프리셋 우선)
     const presets = json.presets || {};
-    let usedNo = json.usePresetNo || json.activePreset;
-    if (!usedNo || !presets[usedNo]) {
-      // 점수 자동 산정
-      const scored = Object.keys(presets).map(k => ({
-        no: k,
-        items: presets[k] || [],
-        score: window._consultingPresetScore((presets[k] || []).map(p => ({
-          starforce: p.stars, scroll_upgrade: p.scrollUpgrade,
-          potential_option_grade: p.potentialGrade,
-          additional_potential_option_grade: p.additionalGrade
-        })))
-      })).filter(x => x.items.length > 0);
-      scored.sort((a, b) => b.score - a.score);
-      usedNo = scored[0]?.no || Object.keys(presets)[0] || '1';
-    }
+    const scored = Object.keys(presets).map(k => ({
+      no: k,
+      items: presets[k] || [],
+      score: window._consultingPresetScore((presets[k] || []).map(p => ({
+        starforce: p.stars, scroll_upgrade: p.scrollUpgrade,
+        potential_option_grade: p.potentialGrade,
+        additional_potential_option_grade: p.additionalGrade
+      })))
+    })).filter(x => x.items.length > 0);
+    scored.sort((a, b) => b.score - a.score);
+    const usedNo = scored[0]?.no || Object.keys(presets)[0] || '1';
     const presetItems = presets[usedNo] || [];
     const equipment_data = presetItems.map(p => ({
       item_equipment_slot: p.slot,
