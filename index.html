@@ -5783,7 +5783,18 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       ${(Array.isArray(c.equipment_data) && c.equipment_data.length) ? `
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <h3 class="text-base font-black mb-4 flex items-center gap-2 text-blue-500"><i class="fas fa-shield-alt"></i>현재 장비 (${c.equipment_data.length}개)</h3>
-        ${window._consultingRenderEquipPreview(c.equipment_data)}
+        ${window._consultingRenderEquipPreview(c.equipment_data, false, c.target_items)}
+      </div>` : ''}
+
+      ${(Array.isArray(c.target_items) && c.target_items.length) ? `
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 class="text-base font-black mb-4 flex items-center gap-2 text-indigo-500"><i class="fas fa-exchange-alt"></i>장비 교체 목표 (${c.target_items.length}개)</h3>
+        ${window._consultingRenderCompareCards(c.target_items, c.equipment_data)}
+      </div>
+
+      <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-100 shadow-sm p-6">
+        <h3 class="text-base font-black mb-4 flex items-center gap-2 text-amber-600"><i class="fas fa-calculator"></i>교체 효율 분석</h3>
+        ${window._consultingRenderEfficiency(c.target_items)}
       </div>` : ''}
 
       ${diagnosis.length ? `
@@ -5925,24 +5936,284 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
       ${equipCount > 0 ? `
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3"><i class="fas fa-shield-alt mr-1 text-pink-400"></i>장비 미리보기 (${equipCount}개)</h4>
-        ${window._consultingRenderEquipPreview(d.equipment_data)}
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2"><i class="fas fa-shield-alt mr-1 text-pink-400"></i>현재 장비 (${equipCount}개)</h4>
+        <p class="text-[10px] text-gray-400 mb-3"><i class="fas fa-mouse-pointer mr-1"></i>장비를 클릭하면 교체 목표를 설정할 수 있습니다 ${(d.target_items || []).length > 0 ? `<span class="text-emerald-500 font-bold ml-2">· 현재 ${d.target_items.length}개 교체 목표 설정됨</span>` : ''}</p>
+        ${window._consultingRenderEquipPreview(d.equipment_data, true, d.target_items)}
       </div>` : ''}
     </div>`;
   };
 
   // 장비 그리드 (메이플 인게임 스타일 간소화 버전)
-  window._consultingRenderEquipPreview = (equips) => {
+  // editable=true면 클릭 시 교체 목표 설정 모달
+  window._consultingRenderEquipPreview = (equips, editable, targets) => {
     if (!equips || !equips.length) return '<p class="text-xs text-gray-400 italic">장비 정보 없음</p>';
+    const tgtMap = {};
+    if (Array.isArray(targets)) targets.forEach(t => { if (t.slot) tgtMap[t.slot] = t; });
     return `<div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-2">
-      ${equips.map(eq => {
+      ${equips.map((eq, idx) => {
         const stars = parseInt(eq.starforce) || 0;
-        return `<div class="bg-gray-50 rounded-lg p-2 border border-gray-100 hover:border-pink-200 transition-all text-center" title="${esc(eq.item_name || '')}">
+        const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
+        const hasTarget = !!tgtMap[slot];
+        const clickAttr = editable ? `onclick="window._consultingOpenTarget(${idx})"` : '';
+        const cls = editable
+          ? `bg-gray-50 rounded-lg p-2 border-2 ${hasTarget ? 'border-emerald-400 bg-emerald-50' : 'border-gray-100'} hover:border-pink-300 transition-all text-center cursor-pointer relative`
+          : 'bg-gray-50 rounded-lg p-2 border border-gray-100 text-center';
+        return `<div class="${cls}" ${clickAttr} title="${esc(eq.item_name || '')}${editable ? ' (클릭하여 교체 목표 설정)' : ''}">
+          ${hasTarget ? '<span class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-white rounded-full text-[8px] flex items-center justify-center font-bold"><i class="fas fa-check"></i></span>' : ''}
           ${eq.item_icon ? `<img src="${esc(eq.item_icon)}" class="w-10 h-10 mx-auto" style="image-rendering:pixelated" onerror="this.style.display='none'">` : '<div class="w-10 h-10 mx-auto bg-gray-200 rounded"></div>'}
-          <div class="text-[8px] text-gray-500 font-bold mt-1 truncate">${esc((eq.item_equipment_slot || eq.item_equipment_part || '').substring(0, 8))}</div>
+          <div class="text-[8px] text-gray-500 font-bold mt-1 truncate">${esc(slot.substring(0, 8))}</div>
           ${stars > 0 ? `<div class="text-[8px] font-bold text-amber-500"><i class="fas fa-star"></i> ${stars}</div>` : ''}
         </div>`;
       }).join('')}
+    </div>`;
+  };
+
+  // 교체 목표 설정 모달 (관리자가 작성 폼에서 장비 클릭 시)
+  window._consultingOpenTarget = (equipIdx) => {
+    const d = window._consultingState.draft;
+    if (!d || !Array.isArray(d.equipment_data)) return;
+    const eq = d.equipment_data[equipIdx];
+    if (!eq) return;
+    const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
+
+    // 기존 target 찾기
+    if (!Array.isArray(d.target_items)) d.target_items = [];
+    let existing = d.target_items.find(t => t.slot === slot);
+    if (!existing) {
+      existing = {
+        slot,
+        before_name: eq.item_name || '',
+        before_icon: eq.item_icon || '',
+        before_stars: parseInt(eq.starforce) || 0,
+        after_name: eq.item_name || '',
+        after_icon: eq.item_icon || '',
+        after_stars: parseInt(eq.starforce) || 0,
+        after_pot_grade: '',
+        after_pot_1: '', after_pot_2: '', after_pot_3: '',
+        after_add_grade: '',
+        after_add_1: '', after_add_2: '', after_add_3: '',
+        hexa_contrib: 0,
+        cost: ''
+      };
+      d.target_items.push(existing);
+    }
+    window._consultingTargetEditingSlot = slot;
+    window._consultingShowTargetModal();
+  };
+
+  window._consultingShowTargetModal = () => {
+    const d = window._consultingState.draft;
+    const slot = window._consultingTargetEditingSlot;
+    const t = d.target_items.find(x => x.slot === slot);
+    if (!t) return;
+
+    const old = document.getElementById('_consultingTargetModal');
+    if (old) old.remove();
+
+    const grades = ['','레전드리','유니크','에픽','레어'];
+    const gradeOpts = (cur) => grades.map(g => `<option value="${g}" ${(cur||'')===g?'selected':''}>${g||'없음'}</option>`).join('');
+
+    const div = document.createElement('div');
+    div.id = '_consultingTargetModal';
+    div.className = 'fixed inset-0 z-50 flex items-start justify-center p-4 pt-8';
+    div.style.background = 'rgba(0,0,0,0.5)';
+    div.style.backdropFilter = 'blur(4px)';
+    div.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white">
+          <h3 class="text-base font-black text-pink-500"><i class="fas fa-bullseye mr-2"></i>${esc(slot)} 교체 목표</h3>
+          <button onclick="window._consultingCloseTargetModal()" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-2 gap-3 bg-red-50 p-3 rounded-xl">
+            <div class="col-span-2"><div class="text-[10px] text-red-500 font-black uppercase mb-1">BEFORE (현재)</div></div>
+            <div><label class="text-[10px] text-gray-500 font-bold">아이템</label><input type="text" value="${esc(t.before_name)}" oninput="window._consultingUpdateTarget('before_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+            <div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.before_stars||0}" oninput="window._consultingUpdateTarget('before_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+          </div>
+
+          <div class="bg-emerald-50 p-3 rounded-xl space-y-3">
+            <div class="text-[10px] text-emerald-500 font-black uppercase">AFTER (목표)</div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="text-[10px] text-gray-500 font-bold">아이템명</label><input type="text" value="${esc(t.after_name)}" oninput="window._consultingUpdateTarget('after_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+              <div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.after_stars||0}" oninput="window._consultingUpdateTarget('after_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] text-purple-500 font-black uppercase">잠재능력</span>
+                <select onchange="window._consultingUpdateTarget('after_pot_grade',this.value)" class="bg-white border border-gray-200 rounded px-2 py-0.5 text-[10px]">${gradeOpts(t.after_pot_grade)}</select>
+              </div>
+              <div class="space-y-1">
+                <input type="text" value="${esc(t.after_pot_1)}" oninput="window._consultingUpdateTarget('after_pot_1',this.value)" placeholder="잠재 1줄" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs">
+                <input type="text" value="${esc(t.after_pot_2)}" oninput="window._consultingUpdateTarget('after_pot_2',this.value)" placeholder="잠재 2줄" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs">
+                <input type="text" value="${esc(t.after_pot_3)}" oninput="window._consultingUpdateTarget('after_pot_3',this.value)" placeholder="잠재 3줄" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs">
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] text-cyan-500 font-black uppercase">에디셔널</span>
+                <select onchange="window._consultingUpdateTarget('after_add_grade',this.value)" class="bg-white border border-gray-200 rounded px-2 py-0.5 text-[10px]">${gradeOpts(t.after_add_grade)}</select>
+              </div>
+              <div class="space-y-1">
+                <input type="text" value="${esc(t.after_add_1)}" oninput="window._consultingUpdateTarget('after_add_1',this.value)" placeholder="에디 1줄" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs">
+                <input type="text" value="${esc(t.after_add_2)}" oninput="window._consultingUpdateTarget('after_add_2',this.value)" placeholder="에디 2줄" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs">
+                <input type="text" value="${esc(t.after_add_3)}" oninput="window._consultingUpdateTarget('after_add_3',this.value)" placeholder="에디 3줄" class="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-emerald-200">
+              <div><label class="text-[10px] text-amber-500 font-bold">헥사 환산 기여</label><input type="number" value="${t.hexa_contrib||0}" oninput="window._consultingUpdateTarget('hexa_contrib',Number(this.value))" placeholder="예: 1500" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+              <div><label class="text-[10px] text-amber-500 font-bold">예상 비용</label><input type="text" value="${esc(t.cost)}" oninput="window._consultingUpdateTarget('cost',this.value)" placeholder="예: 30억" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 border-t border-gray-100 flex gap-2 sticky bottom-0 bg-white">
+          <button onclick="window._consultingRemoveTarget()" class="px-4 py-2 bg-red-100 text-red-500 rounded-lg text-xs font-bold hover:bg-red-200"><i class="fas fa-trash mr-1"></i>이 목표 제거</button>
+          <button onclick="window._consultingCloseTargetModal()" class="ml-auto px-6 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"><i class="fas fa-check mr-1"></i>완료</button>
+        </div>
+      </div>`;
+    div.onclick = () => window._consultingCloseTargetModal();
+    document.body.appendChild(div);
+  };
+
+  window._consultingUpdateTarget = (field, value) => {
+    const d = window._consultingState.draft;
+    const slot = window._consultingTargetEditingSlot;
+    const t = d.target_items.find(x => x.slot === slot);
+    if (t) t[field] = value;
+  };
+
+  window._consultingRemoveTarget = () => {
+    const d = window._consultingState.draft;
+    const slot = window._consultingTargetEditingSlot;
+    d.target_items = d.target_items.filter(x => x.slot !== slot);
+    window._consultingCloseTargetModal();
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingCloseTargetModal = () => {
+    const m = document.getElementById('_consultingTargetModal');
+    if (m) m.remove();
+    window._consultingTargetEditingSlot = null;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  // Before/After 비교 카드 (상세 뷰)
+  window._consultingRenderCompareCards = (targets, equipsBefore) => {
+    if (!Array.isArray(targets) || !targets.length) return '';
+    const eqMap = {};
+    if (Array.isArray(equipsBefore)) {
+      equipsBefore.forEach(e => {
+        const slot = e.item_equipment_slot || e.item_equipment_part || '';
+        if (slot) eqMap[slot] = e;
+      });
+    }
+    return `<div class="space-y-3">
+      ${targets.map(t => {
+        const eq = eqMap[t.slot];
+        return `
+          <div class="bg-gray-50/40 rounded-xl border border-gray-100 p-4">
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_40px_1fr] gap-3 items-stretch">
+              <div class="bg-red-50/60 border-l-4 border-red-300 rounded-lg p-3">
+                <div class="text-[10px] font-black text-red-500 uppercase mb-2">BEFORE · ${esc(t.slot)}</div>
+                <div class="flex items-center gap-3 mb-2">
+                  ${eq?.item_icon ? `<img src="${esc(eq.item_icon)}" class="w-10 h-10 rounded" style="image-rendering:pixelated" onerror="this.style.display='none'">` : (t.before_icon ? `<img src="${esc(t.before_icon)}" class="w-10 h-10 rounded" style="image-rendering:pixelated">` : '')}
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-sm text-gray-800 truncate">${esc(t.before_name || eq?.item_name || '-')}</div>
+                    ${t.before_stars > 0 ? `<div class="text-[10px] text-amber-500 font-bold"><i class="fas fa-star"></i> ${t.before_stars}성</div>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div class="hidden md:flex items-center justify-center"><i class="fas fa-arrow-right text-pink-400"></i></div>
+              <div class="bg-emerald-50/60 border-l-4 border-emerald-400 rounded-lg p-3">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-[10px] font-black text-emerald-500 uppercase">AFTER (목표)</div>
+                  ${t.hexa_contrib > 0 ? `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">+${Number(t.hexa_contrib).toLocaleString()} 헥사</span>` : ''}
+                </div>
+                <div class="flex items-center gap-3 mb-2">
+                  ${t.after_icon ? `<img src="${esc(t.after_icon)}" class="w-10 h-10 rounded" style="image-rendering:pixelated" onerror="this.style.display='none'">` : ''}
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-sm text-gray-800 truncate">${esc(t.after_name)}</div>
+                    ${t.after_stars > 0 ? `<div class="text-[10px] text-amber-500 font-bold"><i class="fas fa-star"></i> ${t.after_stars}성</div>` : ''}
+                  </div>
+                </div>
+                ${(t.after_pot_1 || t.after_pot_2 || t.after_pot_3) ? `
+                <div class="bg-white/60 rounded p-2 mb-1">
+                  <div class="text-[9px] text-purple-500 font-bold mb-0.5">${esc(t.after_pot_grade || '잠재')}</div>
+                  ${[t.after_pot_1, t.after_pot_2, t.after_pot_3].filter(Boolean).map(l => `<div class="text-[10px] text-gray-700">• ${esc(l)}</div>`).join('')}
+                </div>` : ''}
+                ${(t.after_add_1 || t.after_add_2 || t.after_add_3) ? `
+                <div class="bg-white/60 rounded p-2 mb-1">
+                  <div class="text-[9px] text-cyan-500 font-bold mb-0.5">${esc(t.after_add_grade || '에디')}</div>
+                  ${[t.after_add_1, t.after_add_2, t.after_add_3].filter(Boolean).map(l => `<div class="text-[10px] text-gray-700">• ${esc(l)}</div>`).join('')}
+                </div>` : ''}
+                ${t.cost ? `<div class="text-[10px] text-amber-600 font-bold mt-1"><i class="fas fa-coins mr-1"></i>예상: ${esc(t.cost)}</div>` : ''}
+              </div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+  };
+
+  // 효율 분석 표 (상세 뷰)
+  window._consultingRenderEfficiency = (targets) => {
+    if (!Array.isArray(targets) || !targets.length) return '';
+    const parseCost = (s) => {
+      if (!s) return 0;
+      const m = String(s).replace(/,/g,'').match(/([\d.]+)\s*억?/);
+      return m ? parseFloat(m[1]) : 0;
+    };
+    const ranked = targets.map(t => ({
+      slot: t.slot,
+      name: t.after_name,
+      hexa: Number(t.hexa_contrib) || 0,
+      cost: parseCost(t.cost),
+      efficiency: parseCost(t.cost) > 0 ? (Number(t.hexa_contrib) || 0) / parseCost(t.cost) : 0
+    })).sort((a, b) => b.efficiency - a.efficiency);
+
+    const totalHexa = ranked.reduce((s, r) => s + r.hexa, 0);
+    const totalCost = ranked.reduce((s, r) => s + r.cost, 0);
+
+    return `<div class="space-y-3">
+      <div class="grid grid-cols-3 gap-2">
+        <div class="bg-emerald-50 rounded-lg p-3 text-center border border-emerald-100">
+          <div class="text-[10px] text-emerald-500 font-bold uppercase">총 헥사 상승</div>
+          <div class="text-base font-black text-emerald-600 mt-1">+${totalHexa.toLocaleString()}</div>
+        </div>
+        <div class="bg-amber-50 rounded-lg p-3 text-center border border-amber-100">
+          <div class="text-[10px] text-amber-500 font-bold uppercase">총 비용</div>
+          <div class="text-base font-black text-amber-600 mt-1">${totalCost.toFixed(1)}억</div>
+        </div>
+        <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-100">
+          <div class="text-[10px] text-blue-500 font-bold uppercase">교체 부위</div>
+          <div class="text-base font-black text-blue-600 mt-1">${ranked.length}개</div>
+        </div>
+      </div>
+      <div class="bg-white border border-gray-100 rounded-xl overflow-hidden">
+        <div class="grid grid-cols-[40px_1fr_80px_80px_90px] gap-0 text-[11px]">
+          <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-center">#</div>
+          <div class="bg-gray-50 px-3 py-2 font-bold text-gray-500">부위</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-right">헥사 상승</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-right">비용</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-amber-500 text-right">효율 ↓</div>
+          ${ranked.map((r, i) => {
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1);
+            const effColor = r.efficiency >= 100 ? 'text-emerald-500' : r.efficiency >= 30 ? 'text-blue-500' : 'text-amber-500';
+            const bg = i === 0 ? 'bg-amber-50/40' : '';
+            return `
+              <div class="px-2 py-2.5 border-t border-gray-100 text-center font-bold ${bg}">${medal}</div>
+              <div class="px-3 py-2.5 border-t border-gray-100 ${bg}">
+                <span class="text-gray-700 font-bold">${esc(r.slot)}</span>
+                ${r.name ? `<span class="text-gray-400 ml-1">${esc(r.name)}</span>` : ''}
+              </div>
+              <div class="px-2 py-2.5 border-t border-gray-100 text-right font-bold text-emerald-500 ${bg}">+${r.hexa.toLocaleString()}</div>
+              <div class="px-2 py-2.5 border-t border-gray-100 text-right text-gray-700 ${bg}">${r.cost > 0 ? r.cost + '억' : '-'}</div>
+              <div class="px-2 py-2.5 border-t border-gray-100 text-right font-black ${effColor} ${bg}">${r.efficiency > 0 ? r.efficiency.toFixed(1) : '-'}</div>`;
+          }).join('')}
+        </div>
+      </div>
+      <p class="text-[10px] text-gray-400 text-right">💡 효율 = 헥사 상승 ÷ 비용(억) · 높을수록 가성비 좋음</p>
     </div>`;
   };
 
