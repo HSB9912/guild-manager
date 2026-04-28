@@ -6112,19 +6112,30 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     </div>`;
   };
 
+  // 아이템명으로 특수반지 검출 (Nexon API 필드가 없는 외부 데이터에서도 작동)
+  window._consultingDetectSpecialRing = (name) => /(컨티뉴어스|리스트레인트|웨폰\s*퍼프|웨퍼)/i.test(name || '');
+
   // Nexon API 응답 → 카드 데이터 정규화
-  window._consultingNormalizeEq = (eq) => ({
-    name: eq.item_name || '',
-    icon: eq.item_icon || '',
-    stars: parseInt(eq.starforce) || 0,
-    upgrade: parseInt(eq.scroll_upgrade) || 0,
-    pot_grade: eq.potential_option_grade || '',
-    pot_1: eq.potential_option_1, pot_2: eq.potential_option_2, pot_3: eq.potential_option_3,
-    add_grade: eq.additional_potential_option_grade || '',
-    add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
-    soul_name: eq.soul_name, soul_option: eq.soul_option,
-    special_ring_level: parseInt(eq.special_ring_level) || 0
-  });
+  window._consultingNormalizeEq = (eq) => {
+    const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
+    const isSlotSpecial = slot.includes('특수');
+    const isNameSpecial = window._consultingDetectSpecialRing(eq.item_name);
+    let srLv = parseInt(eq.special_ring_level) || 0;
+    // 외부 데이터 (special_ring_level 없음) 보정: 슬롯/이름으로 특수반지 인식되면 최소 1
+    if (srLv === 0 && (isSlotSpecial || isNameSpecial)) srLv = 1;
+    return {
+      name: eq.item_name || '',
+      icon: eq.item_icon || '',
+      stars: parseInt(eq.starforce) || 0,
+      upgrade: parseInt(eq.scroll_upgrade) || 0,
+      pot_grade: eq.potential_option_grade || '',
+      pot_1: eq.potential_option_1, pot_2: eq.potential_option_2, pot_3: eq.potential_option_3,
+      add_grade: eq.additional_potential_option_grade || '',
+      add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
+      soul_name: eq.soul_name, soul_option: eq.soul_option,
+      special_ring_level: srLv
+    };
+  };
 
   window._consultingRenderEquipPreview = (equips, editable, targets) => {
     if (!equips || !equips.length) return '<p class="text-xs text-gray-400 italic">장비 정보 없음</p>';
@@ -6448,10 +6459,14 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const grades = ['','레전드리','유니크','에픽','레어'];
     const gradeOpts = (cur) => grades.map(g => `<option value="${g}" ${(cur||'')===g?'selected':''}>${g||'없음'}</option>`).join('');
 
-    // 특수 반지 여부 판정 (eq + target 양쪽 확인)
+    // 특수 반지 여부 판정: special_ring_level 필드 + 슬롯명("예비 특수 반지") + 아이템명(컨티뉴어스/리스트레인트/웨폰퍼프)
     const eqLookup = (d.equipment_data || []).find(e => (e.item_equipment_slot || e.item_equipment_part) === slot);
-    const isSpecialRing = (parseInt(eqLookup?.special_ring_level) || parseInt(t.before_special_ring_level) || 0) > 0;
-    const beforeSrLv = parseInt(eqLookup?.special_ring_level) || parseInt(t.before_special_ring_level) || 0;
+    const eqLv = parseInt(eqLookup?.special_ring_level) || 0;
+    const tLv = parseInt(t.before_special_ring_level) || 0;
+    const isSlotSpecial = (slot || '').includes('특수');
+    const isNameSpecial = window._consultingDetectSpecialRing(eqLookup?.item_name) || window._consultingDetectSpecialRing(t.before_name) || window._consultingDetectSpecialRing(t.after_name);
+    const isSpecialRing = eqLv > 0 || tLv > 0 || isSlotSpecial || isNameSpecial;
+    const beforeSrLv = eqLv || tLv || (isSpecialRing ? 1 : 0);
     const lvOpts = (cur) => Array.from({length: 7}, (_, i) => `<option value="${i}" ${Number(cur||0)===i?'selected':''}>${i === 0 ? '미장착' : 'Lv.' + i}</option>`).join('');
 
     const div = document.createElement('div');
