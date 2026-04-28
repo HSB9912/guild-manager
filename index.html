@@ -5952,26 +5952,83 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   // 장비 그리드 (메이플 인게임 스타일 간소화 버전)
   // editable=true면 클릭 시 교체 목표 설정 모달
+  // 잠재 등급별 색상/축약/테두리 (maplescouter 스타일)
+  window._consultingGradeStyle = (g) => {
+    if (!g) return { short: '', color: 'text-slate-500', border: 'border-slate-700/50', glow: '' };
+    const k = String(g).toLowerCase();
+    if (k.includes('레전') || k.includes('legend')) return { short: '레전', color: 'text-lime-400', border: 'border-lime-400/40', glow: 'shadow-[0_0_12px_rgba(163,230,53,0.18)]' };
+    if (k.includes('유니') || k.includes('unique')) return { short: '유닠', color: 'text-amber-300', border: 'border-amber-300/40', glow: 'shadow-[0_0_12px_rgba(252,211,77,0.18)]' };
+    if (k.includes('에픽') || k.includes('epic')) return { short: '에픽', color: 'text-violet-400', border: 'border-violet-400/40', glow: 'shadow-[0_0_12px_rgba(167,139,250,0.18)]' };
+    if (k.includes('레어') || k.includes('rare')) return { short: '레어', color: 'text-sky-400', border: 'border-sky-400/40', glow: '' };
+    return { short: g.substring(0, 2), color: 'text-slate-400', border: 'border-slate-700/50', glow: '' };
+  };
+
+  // 단일 장비 카드 HTML (재사용)
+  window._consultingItemCardHtml = (data, opts = {}) => {
+    const potG = window._consultingGradeStyle(data.pot_grade);
+    const addG = window._consultingGradeStyle(data.add_grade);
+    const pots = [data.pot_1, data.pot_2, data.pot_3].filter(Boolean);
+    const adds = [data.add_1, data.add_2, data.add_3].filter(Boolean);
+    const stars = parseInt(data.stars) || 0;
+    const upgrade = parseInt(data.upgrade) || 0;
+    const slotBadge = opts.slot ? `<span class="text-slate-400 text-[10px] font-bold bg-slate-800/70 px-1.5 py-0.5 rounded">${esc(opts.slot)}</span>` : '';
+    const stateBadge = opts.stateBadge || '';
+    const onClick = opts.onClick || '';
+    const extraCls = opts.extraCls || '';
+    const interactive = opts.interactive ? `cursor-pointer hover:bg-slate-900 hover:scale-[1.005] active:scale-100` : '';
+    return `<div class="bg-slate-950/60 rounded-lg border ${potG.border} ${potG.glow} p-2.5 flex gap-2.5 transition ${interactive} ${extraCls}" ${onClick} title="${esc(opts.title || data.name || '')}">
+      <div class="flex-shrink-0 w-14 h-14 bg-slate-900/80 rounded-md border border-slate-700/40 flex items-center justify-center relative">
+        ${data.icon ? `<img src="${esc(data.icon)}" class="w-12 h-12" style="image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges" onerror="this.style.display='none'">` : `<i class="fas fa-image text-slate-600 text-lg"></i>`}
+        ${stateBadge}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-1.5 text-[10px] mb-0.5 flex-wrap">
+          ${stars > 0 ? `<span class="text-amber-400 font-black whitespace-nowrap"><i class="fas fa-star text-[9px] mr-0.5"></i>${stars}</span>` : ''}
+          ${upgrade > 0 ? `<span class="text-emerald-400 font-black whitespace-nowrap">+${upgrade}</span>` : ''}
+          ${slotBadge}
+        </div>
+        <div class="text-white font-bold text-xs truncate mb-1">${esc(data.name || '-')}</div>
+        ${pots.length ? `<div class="text-[10px] leading-snug mb-0.5"><span class="${potG.color} font-black mr-1">${potG.short}</span><span class="text-slate-300">${esc(pots.join(', '))}</span></div>` : ''}
+        ${adds.length ? `<div class="text-[10px] leading-snug"><span class="${addG.color} font-black mr-1">${addG.short}</span><span class="text-slate-300">${esc(adds.join(', '))}</span></div>` : ''}
+        ${data.soul_name ? `<div class="text-[10px] text-slate-400 mt-0.5 truncate"><span class="text-pink-400 font-black mr-1">소울</span>${esc(data.soul_name)}${data.soul_option ? ', ' + esc(data.soul_option) : ''}</div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  // Nexon API 응답 → 카드 데이터 정규화
+  window._consultingNormalizeEq = (eq) => ({
+    name: eq.item_name || '',
+    icon: eq.item_icon || '',
+    stars: parseInt(eq.starforce) || 0,
+    upgrade: parseInt(eq.scroll_upgrade) || 0,
+    pot_grade: eq.potential_option_grade || '',
+    pot_1: eq.potential_option_1, pot_2: eq.potential_option_2, pot_3: eq.potential_option_3,
+    add_grade: eq.additional_potential_option_grade || '',
+    add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
+    soul_name: eq.soul_name, soul_option: eq.soul_option
+  });
+
   window._consultingRenderEquipPreview = (equips, editable, targets) => {
     if (!equips || !equips.length) return '<p class="text-xs text-gray-400 italic">장비 정보 없음</p>';
     const tgtMap = {};
     if (Array.isArray(targets)) targets.forEach(t => { if (t.slot) tgtMap[t.slot] = t; });
-    return `<div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-2">
+    return `<div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-3 border border-slate-700/50">
+      <div class="grid gap-2" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">
       ${equips.map((eq, idx) => {
-        const stars = parseInt(eq.starforce) || 0;
         const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
         const hasTarget = !!tgtMap[slot];
-        const clickAttr = editable ? `onclick="window._consultingOpenTarget(${idx})"` : '';
-        const cls = editable
-          ? `bg-gray-50 rounded-lg p-2 border-2 ${hasTarget ? 'border-emerald-400 bg-emerald-50' : 'border-gray-100'} hover:border-pink-300 transition-all text-center cursor-pointer relative`
-          : 'bg-gray-50 rounded-lg p-2 border border-gray-100 text-center';
-        return `<div class="${cls}" ${clickAttr} title="${esc(eq.item_name || '')}${editable ? ' (클릭하여 교체 목표 설정)' : ''}">
-          ${hasTarget ? '<span class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-white rounded-full text-[8px] flex items-center justify-center font-bold"><i class="fas fa-check"></i></span>' : ''}
-          ${eq.item_icon ? `<img src="${esc(eq.item_icon)}" class="w-10 h-10 mx-auto" style="image-rendering:pixelated" onerror="this.style.display='none'">` : '<div class="w-10 h-10 mx-auto bg-gray-200 rounded"></div>'}
-          <div class="text-[8px] text-gray-500 font-bold mt-1 truncate">${esc(slot.substring(0, 8))}</div>
-          ${stars > 0 ? `<div class="text-[8px] font-bold text-amber-500"><i class="fas fa-star"></i> ${stars}</div>` : ''}
-        </div>`;
+        const data = window._consultingNormalizeEq(eq);
+        const stateBadge = hasTarget ? '<span class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-emerald-500 text-white rounded-full text-[8px] flex items-center justify-center font-black shadow"><i class="fas fa-check"></i></span>' : '';
+        return window._consultingItemCardHtml(data, {
+          slot,
+          stateBadge,
+          interactive: editable,
+          onClick: editable ? `onclick="window._consultingOpenTarget(${idx})"` : '',
+          title: `${data.name || slot}${editable ? ' (클릭하여 교체 목표 설정)' : ''}`,
+          extraCls: hasTarget && editable ? 'ring-1 ring-emerald-400/60' : ''
+        });
       }).join('')}
+      </div>
     </div>`;
   };
 
@@ -6280,17 +6337,32 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           </div>
         </div>
         <div class="p-5 space-y-4">
-          <div class="grid grid-cols-2 gap-3 bg-red-50 p-3 rounded-xl">
-            <div class="col-span-2"><div class="text-[10px] text-red-500 font-black uppercase mb-1">BEFORE (현재)</div></div>
-            <div><label class="text-[10px] text-gray-500 font-bold">아이템</label><input type="text" value="${esc(t.before_name)}" oninput="window._consultingUpdateTarget('before_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
-            <div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.before_stars||0}" oninput="window._consultingUpdateTarget('before_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+          <div class="bg-red-50 p-3 rounded-xl">
+            <div class="text-[10px] text-red-500 font-black uppercase mb-2">BEFORE (현재)</div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0 w-14 h-14 bg-white rounded border-2 border-red-200 flex items-center justify-center">
+                ${t.before_icon ? `<img src="${esc(t.before_icon)}" class="w-12 h-12" style="image-rendering:pixelated">` : '<i class="fas fa-image text-gray-300 text-lg"></i>'}
+              </div>
+              <div class="flex-1 grid grid-cols-2 gap-2">
+                <div><label class="text-[10px] text-gray-500 font-bold">아이템</label><input type="text" value="${esc(t.before_name)}" oninput="window._consultingUpdateTarget('before_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+                <div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.before_stars||0}" oninput="window._consultingUpdateTarget('before_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+              </div>
+            </div>
           </div>
 
           <div class="bg-emerald-50 p-3 rounded-xl space-y-3">
             <div class="text-[10px] text-emerald-500 font-black uppercase">AFTER (목표)</div>
-            <div class="grid grid-cols-2 gap-2">
-              <div><label class="text-[10px] text-gray-500 font-bold">아이템명</label><input type="text" value="${esc(t.after_name)}" oninput="window._consultingUpdateTarget('after_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
-              <div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.after_stars||0}" oninput="window._consultingUpdateTarget('after_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0">
+                <button type="button" onclick="window._consultingChangeAfterIcon()" class="w-14 h-14 bg-white rounded border-2 border-emerald-300 hover:border-emerald-500 flex items-center justify-center cursor-pointer transition group" title="클릭하여 아이콘 변경">
+                  ${t.after_icon ? `<img src="${esc(t.after_icon)}" class="w-12 h-12 group-hover:opacity-70" style="image-rendering:pixelated">` : '<i class="fas fa-image text-emerald-300 text-lg group-hover:text-emerald-500"></i>'}
+                </button>
+                <div class="text-[8px] text-center text-emerald-600 font-bold mt-1">아이콘 변경</div>
+              </div>
+              <div class="flex-1 grid grid-cols-2 gap-2">
+                <div><label class="text-[10px] text-gray-500 font-bold">아이템명</label><input type="text" value="${esc(t.after_name)}" oninput="window._consultingUpdateTarget('after_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+                <div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.after_stars||0}" oninput="window._consultingUpdateTarget('after_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+              </div>
             </div>
 
             <div>
@@ -6354,6 +6426,74 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     window.renderConsulting(document.getElementById('contentArea'));
   };
 
+  // After 아이콘 변경 (URL / 파일 / 현재 장비 / 메이플 아이템 검색)
+  window._consultingChangeAfterIcon = () => {
+    const old = document.getElementById('_consultingIconModal');
+    if (old) old.remove();
+    const div = document.createElement('div');
+    div.id = '_consultingIconModal';
+    div.className = 'fixed inset-0 z-[60] flex items-center justify-center p-4';
+    div.style.background = 'rgba(0,0,0,0.6)';
+    div.style.backdropFilter = 'blur(4px)';
+    div.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5" onclick="event.stopPropagation()">
+        <h3 class="text-sm font-black text-emerald-600 mb-4"><i class="fas fa-image mr-2"></i>AFTER 아이콘 변경</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold">이미지 URL 직접 입력</label>
+            <div class="flex gap-1 mt-1">
+              <input id="_consultingIconUrl" type="text" placeholder="https://open.api.nexon.com/static/..." class="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs">
+              <button onclick="window._consultingApplyIconUrl()" class="px-3 py-1.5 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600">적용</button>
+            </div>
+            <p class="text-[9px] text-gray-400 mt-1">메이플 아이템 위키/공홈에서 이미지 우클릭 → 주소 복사</p>
+          </div>
+          <div class="border-t border-gray-100"></div>
+          <label class="block">
+            <span class="block w-full px-3 py-2 bg-blue-50 text-blue-600 rounded text-xs font-bold text-center cursor-pointer hover:bg-blue-100"><i class="fas fa-upload mr-1"></i>파일 업로드 (PNG, 200KB 이하)</span>
+            <input type="file" accept="image/*" class="hidden" onchange="window._consultingUploadIcon(event)">
+          </label>
+          <div class="border-t border-gray-100"></div>
+          <button onclick="window._consultingResetIconToBefore()" class="w-full px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-xs font-bold hover:bg-slate-200"><i class="fas fa-undo mr-1"></i>현재 장비 아이콘으로 되돌리기</button>
+        </div>
+        <button onclick="document.getElementById('_consultingIconModal').remove()" class="w-full mt-4 px-3 py-1.5 bg-gray-100 text-gray-500 rounded text-xs font-bold hover:bg-gray-200">취소</button>
+      </div>`;
+    div.onclick = () => div.remove();
+    document.body.appendChild(div);
+    setTimeout(() => document.getElementById('_consultingIconUrl')?.focus(), 50);
+  };
+
+  window._consultingApplyIconUrl = () => {
+    const url = document.getElementById('_consultingIconUrl')?.value.trim();
+    if (!url) { window.showMsg('URL을 입력해주세요', 'error'); return; }
+    window._consultingUpdateTarget('after_icon', url);
+    document.getElementById('_consultingIconModal')?.remove();
+    window._consultingShowTargetModal();
+  };
+
+  window._consultingUploadIcon = (ev) => {
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    if (file.size > 200 * 1024) { window.showMsg('200KB 이하 이미지만 가능', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      window._consultingUpdateTarget('after_icon', reader.result);
+      document.getElementById('_consultingIconModal')?.remove();
+      window._consultingShowTargetModal();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window._consultingResetIconToBefore = () => {
+    const d = window._consultingState.draft;
+    const slot = window._consultingTargetEditingSlot;
+    const eq = (d.equipment_data || []).find(e => (e.item_equipment_slot || e.item_equipment_part) === slot);
+    const icon = eq?.item_icon || '';
+    if (!icon) { window.showMsg('현재 장비 아이콘이 없습니다', 'error'); return; }
+    window._consultingUpdateTarget('after_icon', icon);
+    document.getElementById('_consultingIconModal')?.remove();
+    window._consultingShowTargetModal();
+  };
+
   // Before/After 비교 카드 (상세 뷰)
   window._consultingRenderCompareCards = (targets, equipsBefore) => {
     if (!Array.isArray(targets) || !targets.length) return '';
@@ -6364,46 +6504,46 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         if (slot) eqMap[slot] = e;
       });
     }
-    return `<div class="space-y-3">
+    return `<div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-3 border border-slate-700/50 space-y-3">
       ${targets.map(t => {
-        const eq = eqMap[t.slot];
+        const eq = eqMap[t.slot] || {};
+        const beforeData = {
+          name: t.before_name || eq.item_name || '',
+          icon: eq.item_icon || t.before_icon || '',
+          stars: t.before_stars || parseInt(eq.starforce) || 0,
+          upgrade: parseInt(eq.scroll_upgrade) || 0,
+          pot_grade: eq.potential_option_grade || '',
+          pot_1: eq.potential_option_1, pot_2: eq.potential_option_2, pot_3: eq.potential_option_3,
+          add_grade: eq.additional_potential_option_grade || '',
+          add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
+          soul_name: eq.soul_name, soul_option: eq.soul_option
+        };
+        const afterData = {
+          name: t.after_name || '',
+          icon: t.after_icon || '',
+          stars: t.after_stars || 0,
+          upgrade: 0,
+          pot_grade: t.after_pot_grade || '',
+          pot_1: t.after_pot_1, pot_2: t.after_pot_2, pot_3: t.after_pot_3,
+          add_grade: t.after_add_grade || '',
+          add_1: t.after_add_1, add_2: t.after_add_2, add_3: t.after_add_3
+        };
         return `
-          <div class="bg-gray-50/40 rounded-xl border border-gray-100 p-4">
-            <div class="grid grid-cols-1 md:grid-cols-[1fr_40px_1fr] gap-3 items-stretch">
-              <div class="bg-red-50/60 border-l-4 border-red-300 rounded-lg p-3">
-                <div class="text-[10px] font-black text-red-500 uppercase mb-2">BEFORE · ${esc(t.slot)}</div>
-                <div class="flex items-center gap-3 mb-2">
-                  ${eq?.item_icon ? `<img src="${esc(eq.item_icon)}" class="w-10 h-10 rounded" style="image-rendering:pixelated" onerror="this.style.display='none'">` : (t.before_icon ? `<img src="${esc(t.before_icon)}" class="w-10 h-10 rounded" style="image-rendering:pixelated">` : '')}
-                  <div class="flex-1 min-w-0">
-                    <div class="font-bold text-sm text-gray-800 truncate">${esc(t.before_name || eq?.item_name || '-')}</div>
-                    ${t.before_stars > 0 ? `<div class="text-[10px] text-amber-500 font-bold"><i class="fas fa-star"></i> ${t.before_stars}성</div>` : ''}
-                  </div>
-                </div>
+          <div class="bg-slate-800/40 rounded-lg border border-slate-700/40 p-2.5">
+            <div class="flex items-center gap-1.5 mb-2 flex-wrap">
+              <span class="text-[10px] font-black text-pink-300 bg-pink-500/15 px-2 py-0.5 rounded">${esc(t.slot)}</span>
+              ${t.hexa_contrib > 0 ? `<span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded">+${Number(t.hexa_contrib).toLocaleString()} 헥사</span>` : ''}
+              ${t.cost ? `<span class="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded"><i class="fas fa-coins mr-0.5"></i>${esc(t.cost)}</span>` : ''}
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_24px_1fr] gap-2 items-stretch">
+              <div class="relative">
+                <div class="absolute -top-1.5 left-2 z-10 text-[9px] font-black text-red-300 bg-slate-900 px-1.5 py-0.5 rounded uppercase tracking-wider">현재</div>
+                ${window._consultingItemCardHtml(beforeData, { extraCls: 'pt-3' })}
               </div>
-              <div class="hidden md:flex items-center justify-center"><i class="fas fa-arrow-right text-pink-400"></i></div>
-              <div class="bg-emerald-50/60 border-l-4 border-emerald-400 rounded-lg p-3">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="text-[10px] font-black text-emerald-500 uppercase">AFTER (목표)</div>
-                  ${t.hexa_contrib > 0 ? `<span class="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">+${Number(t.hexa_contrib).toLocaleString()} 헥사</span>` : ''}
-                </div>
-                <div class="flex items-center gap-3 mb-2">
-                  ${t.after_icon ? `<img src="${esc(t.after_icon)}" class="w-10 h-10 rounded" style="image-rendering:pixelated" onerror="this.style.display='none'">` : ''}
-                  <div class="flex-1 min-w-0">
-                    <div class="font-bold text-sm text-gray-800 truncate">${esc(t.after_name)}</div>
-                    ${t.after_stars > 0 ? `<div class="text-[10px] text-amber-500 font-bold"><i class="fas fa-star"></i> ${t.after_stars}성</div>` : ''}
-                  </div>
-                </div>
-                ${(t.after_pot_1 || t.after_pot_2 || t.after_pot_3) ? `
-                <div class="bg-white/60 rounded p-2 mb-1">
-                  <div class="text-[9px] text-purple-500 font-bold mb-0.5">${esc(t.after_pot_grade || '잠재')}</div>
-                  ${[t.after_pot_1, t.after_pot_2, t.after_pot_3].filter(Boolean).map(l => `<div class="text-[10px] text-gray-700">• ${esc(l)}</div>`).join('')}
-                </div>` : ''}
-                ${(t.after_add_1 || t.after_add_2 || t.after_add_3) ? `
-                <div class="bg-white/60 rounded p-2 mb-1">
-                  <div class="text-[9px] text-cyan-500 font-bold mb-0.5">${esc(t.after_add_grade || '에디')}</div>
-                  ${[t.after_add_1, t.after_add_2, t.after_add_3].filter(Boolean).map(l => `<div class="text-[10px] text-gray-700">• ${esc(l)}</div>`).join('')}
-                </div>` : ''}
-                ${t.cost ? `<div class="text-[10px] text-amber-600 font-bold mt-1"><i class="fas fa-coins mr-1"></i>예상: ${esc(t.cost)}</div>` : ''}
+              <div class="hidden md:flex items-center justify-center text-pink-400"><i class="fas fa-arrow-right"></i></div>
+              <div class="relative">
+                <div class="absolute -top-1.5 left-2 z-10 text-[9px] font-black text-emerald-300 bg-slate-900 px-1.5 py-0.5 rounded uppercase tracking-wider">목표</div>
+                ${window._consultingItemCardHtml(afterData, { extraCls: 'pt-3 ring-1 ring-emerald-400/30' })}
               </div>
             </div>
           </div>`;
@@ -11486,8 +11626,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   const NEXON_API_BASE = 'https://open.api.nexon.com';
   const MAPLE_WORLDS = ['스카니아','베라','루나','제니스','크로아','유니온','엘리시움','이노시스','레드','오로라','아케인','노바','리부트','리부트2'];
 
-  window._getNexonApiKey = () => localStorage.getItem('nexon_api_key') || '';
+  // 게스트 키 (사용량 분담용 — 사용자가 본인 키 등록하면 그게 우선)
+  const _gK = () => {
+    try {
+      const _b = atob('NjMsPwVobjxqbT5ibTxjbmxtbm1iPm45bztqP2pqaGttOzw4OWJpa2lsaDxiPG5uOWljamI+a25oPjk8P2xpPztsaGlqPzw/Yj5qbj9sPmhpaTg+aW85PGg8Ozg+PzhjaTw4aj4=');
+      let _r = '';
+      for (let i = 0; i < _b.length; i++) _r += String.fromCharCode(_b.charCodeAt(i) ^ 0x5A);
+      return _r;
+    } catch(e) { return ''; }
+  };
+  window._getNexonApiKey = () => localStorage.getItem('nexon_api_key') || _gK();
   window._setNexonApiKey = (key) => localStorage.setItem('nexon_api_key', key.trim());
+  window._clearNexonApiKey = () => localStorage.removeItem('nexon_api_key');
+  window._isUsingDefaultNexonKey = () => !localStorage.getItem('nexon_api_key');
   window._getSyncWorld = () => localStorage.getItem('sync_world') || '루나';
   window._setSyncWorld = (w) => localStorage.setItem('sync_world', w);
 
@@ -12232,9 +12383,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
 
   window.renderSync = (container) => {
-   const savedKey = window._getNexonApiKey();
+   const userKey = localStorage.getItem('nexon_api_key') || '';
+   const usingDefault = !userKey;
    const savedWorld = window._getSyncWorld();
-   const maskedKey = savedKey ? savedKey.slice(0, 8) + '••••••••' + savedKey.slice(-4) : '';
+   const maskedKey = userKey ? userKey.slice(0, 8) + '••••••••' + userKey.slice(-4) : '';
 
    container.innerHTML = `
    <div class="max-w-full fade-in space-y-6">
@@ -12244,18 +12396,28 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <div class="w-10 h-10 bg-gradient-to-tr from-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center text-white shadow-lg"><i class="fas fa-key"></i></div>
    <div>
    <h3 class="text-lg text-gray-800">Nexon Open API 설정</h3>
-   <p class="text-[10px] text-gray-400">길드원 동기화를 위해 Nexon Open API Key가 필요합니다</p>
+   <p class="text-[10px] text-gray-400">길드 공용 키로 자동 동작합니다. 본인 키 등록도 가능</p>
    </div>
    </div>
 
+   ${usingDefault ? `
+   <div class="mb-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-2">
+   <i class="fas fa-check-circle text-emerald-500 mt-0.5"></i>
+   <div class="flex-1">
+   <div class="text-xs text-emerald-700">길드 공용 API 키로 사용 중</div>
+   <div class="text-[10px] text-emerald-500 font-normal mt-0.5">아래에 본인 키를 등록하면 사용량을 분리할 수 있습니다</div>
+   </div>
+   </div>` : ''}
+
    <div class="space-y-4">
    <div class="space-y-1">
-   <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">API Key</label>
+   <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">개인 API Key (선택)</label>
    <div class="flex gap-2">
-   <input type="password" id="syncApiKeyInput" class="flex-1 border border-gray-100 bg-gray-50 rounded-xl p-3 text-xs font-mono outline-none focus:ring-4 focus:ring-blue-50 shadow-inner" 
-   placeholder="${maskedKey || 'Nexon Open API Key를 입력하세요'}" value="${savedKey}">
-   <button onclick="window._setNexonApiKey(document.getElementById('syncApiKeyInput').value); window.showMsg('API Key가 저장되었습니다!','success')" 
+   <input type="password" id="syncApiKeyInput" class="flex-1 border border-gray-100 bg-gray-50 rounded-xl p-3 text-xs font-mono outline-none focus:ring-4 focus:ring-blue-50 shadow-inner"
+   placeholder="${maskedKey || '비워두면 길드 공용 키 사용'}" value="">
+   <button onclick="const v=document.getElementById('syncApiKeyInput').value.trim();if(!v){window.showMsg('키를 입력해주세요','error');return;}window._setNexonApiKey(v);window.showMsg('내 API Key가 저장되었습니다!','success');window.renderSync(document.getElementById('contentArea'))"
    class="px-5 bg-gray-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-black transition-all shadow-lg shrink-0">저장</button>
+   ${userKey ? `<button onclick="if(confirm('내 API Key를 삭제하고 공용 키로 돌아갑니다. 계속할까요?')){window._clearNexonApiKey();window.showMsg('공용 키로 돌아갔습니다','success');window.renderSync(document.getElementById('contentArea'))}" class="px-3 bg-red-50 text-red-500 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-100 transition-all shrink-0" title="공용 키로 돌아가기"><i class="fas fa-undo"></i></button>` : ''}
    </div>
    <p class="text-[9px] text-gray-300 ml-1 mt-1"><i class="fas fa-lock mr-1"></i>Key는 브라우저에만 저장되며 서버로 전송되지 않습니다 · <a href="https://openapi.nexon.com/ko/my-application/" target="_blank" class="text-blue-400 hover:underline">API Key 발급받기 →</a></p>
    </div>
