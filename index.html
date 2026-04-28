@@ -196,6 +196,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('board')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="board"><i class="fas fa-clipboard w-5 text-center text-xs"></i><span>게시판</span></button>
    <button onclick="router('buddy')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="buddy"><i class="fas fa-handshake w-5 text-center text-xs"></i><span>뚠뚠 버디</span></button>
    <button onclick="router('sheet_manage')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="sheet_manage"><i class="fas fa-table-list w-5 text-center text-xs"></i><span>시트 관리</span></button>
+   <button onclick="router('consulting')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="consulting"><i class="fas fa-stethoscope w-5 text-center text-xs"></i><span>아이템 컨설팅</span></button>
    <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금</span></button>
    <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
    <div class="admin-only hidden" id="adminMenuSection">
@@ -1518,7 +1519,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const content = document.getElementById('contentArea'); if(!content) return;
             content.innerHTML = '';
             document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab));
-            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영' };
+            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', consulting: '아이템 컨설팅', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영' };
             document.getElementById('pageTitle').innerText = titles[tab] || '';
             if (tab === 'home') window.renderHome(content);
             else if (tab === 'members') window.renderMembers(content);
@@ -1531,6 +1532,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'sub_chars') window.renderSubChars(content);
             else if (tab === 'suro_exempt') window.renderSuroExempt(content);
             else if (tab === 'sheet_manage') window.renderSheetManage(content);
+            else if (tab === 'consulting') window.renderConsulting(content);
             else if (tab === 'weekly_log' && isAdmin()) window.renderWeeklyLog(content);
             else if (tab === 'all_history' && isAdmin()) window.renderAllHistory(content);
             else if (tab === 'suro_input' && isAdmin()) window.renderSuroInput(content);
@@ -5527,6 +5529,442 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       window._boardState.tab = boardType;
       window._boardBack();
     } catch(e) { window.showMsg('저장 실패: ' + e.message, 'error'); }
+  };
+
+  // ============ 아이템 컨설팅 (게시판 + 작성/뷰어) ============
+  // Supabase 테이블 'item_consultings' 필요. 아래 SQL을 한 번 실행:
+  /*
+    CREATE TABLE IF NOT EXISTS item_consultings (
+      id BIGSERIAL PRIMARY KEY,
+      member_name TEXT NOT NULL,
+      member_class TEXT,
+      member_server TEXT,
+      consultant_name TEXT,
+      diagnosis_date DATE DEFAULT CURRENT_DATE,
+      combat_power TEXT,
+      main_stat TEXT,
+      hexa_stat TEXT,
+      goal JSONB DEFAULT '{}'::jsonb,
+      diagnosis JSONB DEFAULT '[]'::jsonb,
+      tips JSONB DEFAULT '[]'::jsonb,
+      target_items JSONB DEFAULT '[]'::jsonb,
+      summary TEXT,
+      character_image TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  */
+  window._consultingState = { view: 'list', currentId: null, draft: null, list: null, loading: false };
+
+  window.renderConsulting = async (container) => {
+    const cs = window._consultingState;
+    container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
+
+    if (cs.view === 'list') return window._consultingRenderList(container);
+    if (cs.view === 'detail') return window._consultingRenderDetail(container);
+    if (cs.view === 'edit' || cs.view === 'new') return window._consultingRenderEdit(container);
+  };
+
+  window._consultingFetchList = async () => {
+    try {
+      const { data, error } = await supaDb.from('item_consultings')
+        .select('id, member_name, member_class, member_server, consultant_name, diagnosis_date, combat_power, main_stat, hexa_stat, summary, character_image, updated_at')
+        .order('updated_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      window.showMsg('컨설팅 목록 로드 실패: ' + e.message, 'error');
+      return null;
+    }
+  };
+
+  window._consultingRenderList = async (container) => {
+    const list = await window._consultingFetchList();
+    if (list === null) {
+      container.innerHTML = `<div class="bg-white rounded-2xl border border-red-100 shadow-sm p-8 text-center">
+        <i class="fas fa-exclamation-circle text-3xl text-red-400 mb-3"></i>
+        <h3 class="text-base font-bold text-gray-800 mb-2">테이블이 없거나 권한이 부족합니다</h3>
+        <p class="text-xs text-gray-500 mb-4">Supabase에서 <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-500">item_consultings</code> 테이블을 만들어주세요.</p>
+        <pre class="text-[10px] text-left bg-gray-50 p-3 rounded overflow-x-auto text-gray-600">CREATE TABLE item_consultings (
+  id BIGSERIAL PRIMARY KEY,
+  member_name TEXT NOT NULL,
+  member_class TEXT, member_server TEXT, consultant_name TEXT,
+  diagnosis_date DATE DEFAULT CURRENT_DATE,
+  combat_power TEXT, main_stat TEXT, hexa_stat TEXT,
+  goal JSONB DEFAULT '{}'::jsonb,
+  diagnosis JSONB DEFAULT '[]'::jsonb,
+  tips JSONB DEFAULT '[]'::jsonb,
+  target_items JSONB DEFAULT '[]'::jsonb,
+  summary TEXT, character_image TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);</pre></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+    <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 flex-wrap">
+        <h3 class="text-sm font-bold text-gray-700"><i class="fas fa-stethoscope mr-1 text-pink-500"></i>아이템 컨설팅 게시판</h3>
+        <span class="text-[10px] text-gray-400">총 ${list.length}건 · 길드원 컨설팅 결과를 모아봅니다</span>
+        ${isAdmin() ? `<button onclick="window._consultingNew()" class="ml-auto px-3 py-1.5 bg-pink-500 text-white rounded-lg text-[11px] font-bold shadow hover:bg-pink-600 transition-all"><i class="fas fa-plus mr-1"></i>새 컨설팅 작성</button>` : ''}
+      </div>
+
+      ${list.length === 0 ? `
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <i class="fas fa-stethoscope text-5xl text-gray-200 mb-4"></i>
+          <p class="text-sm text-gray-400 font-bold">아직 등록된 컨설팅이 없습니다</p>
+          ${isAdmin() ? '<p class="text-[10px] text-gray-300 mt-2">상단 "새 컨설팅 작성" 버튼으로 시작하세요</p>' : ''}
+        </div>
+      ` : `
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${list.map(c => {
+            const date = c.diagnosis_date || (c.updated_at || '').slice(0, 10);
+            return `
+              <div onclick="window._consultingOpen(${c.id})" class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-pink-300 hover:shadow-md transition-all cursor-pointer overflow-hidden group">
+                <div class="p-4">
+                  <div class="flex items-center gap-3 mb-3">
+                    <div class="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      ${c.character_image ? `<img src="${esc(c.character_image)}" class="w-full h-full object-cover" onerror="this.style.display='none'">` : '<i class="fas fa-user text-pink-300 text-lg"></i>'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-black text-gray-800 text-sm truncate">${esc(c.member_name)}<span class="text-gray-400 font-normal text-[10px] ml-1">님의 컨설팅</span></div>
+                      <div class="text-[10px] text-gray-500 truncate">${esc(c.member_class || '')}${c.member_server ? ' · ' + esc(c.member_server) : ''}</div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 text-center mb-3">
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-2">
+                      <div class="text-[8px] text-blue-400 font-bold uppercase">전투력</div>
+                      <div class="text-[11px] font-black text-blue-600 truncate">${esc(c.combat_power || '-')}</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-2">
+                      <div class="text-[8px] text-gray-400 font-bold uppercase">환산</div>
+                      <div class="text-[11px] font-black text-gray-700 truncate">${esc(c.main_stat || '-')}</div>
+                    </div>
+                    <div class="bg-orange-50 rounded-lg p-2">
+                      <div class="text-[8px] text-orange-400 font-bold uppercase">헥사</div>
+                      <div class="text-[11px] font-black text-orange-600 truncate">${esc(c.hexa_stat || '-')}</div>
+                    </div>
+                  </div>
+                  ${c.summary ? `<p class="text-[10px] text-gray-500 line-clamp-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc((c.summary || '').substring(0, 120))}</p>` : ''}
+                  <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    <span class="text-[9px] text-gray-400"><i class="fas fa-calendar mr-1"></i>${esc(date)}</span>
+                    <span class="text-[9px] text-pink-400 font-bold group-hover:text-pink-600">자세히 →</span>
+                  </div>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      `}
+    </div>`;
+  };
+
+  window._consultingOpen = (id) => {
+    window._consultingState.view = 'detail';
+    window._consultingState.currentId = id;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingBack = () => {
+    window._consultingState.view = 'list';
+    window._consultingState.currentId = null;
+    window._consultingState.draft = null;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingNew = () => {
+    if (!isAdmin()) return window.showMsg('관리자만 작성 가능합니다.', 'error');
+    window._consultingState.view = 'new';
+    window._consultingState.draft = {
+      member_name: '', member_class: '', member_server: '루나', consultant_name: '',
+      diagnosis_date: new Date().toISOString().slice(0, 10),
+      combat_power: '', main_stat: '', hexa_stat: '',
+      goal: { targetHexa: '', budget: '', period: '' },
+      diagnosis: [], tips: [], target_items: [], summary: '', character_image: ''
+    };
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingEdit = async (id) => {
+    if (!isAdmin()) return window.showMsg('관리자만 수정 가능합니다.', 'error');
+    const { data, error } = await supaDb.from('item_consultings').select('*').eq('id', id).maybeSingle();
+    if (error || !data) return window.showMsg('데이터 로드 실패', 'error');
+    window._consultingState.view = 'edit';
+    window._consultingState.currentId = id;
+    window._consultingState.draft = data;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingDelete = async (id) => {
+    if (!isAdmin()) return;
+    if (!confirm('이 컨설팅을 삭제하시겠습니까?')) return;
+    const { error } = await supaDb.from('item_consultings').delete().eq('id', id);
+    if (error) return window.showMsg('삭제 실패: ' + error.message, 'error');
+    window.showMsg('삭제 완료', 'success');
+    window._consultingBack();
+  };
+
+  window._consultingRenderDetail = async (container) => {
+    const id = window._consultingState.currentId;
+    const { data, error } = await supaDb.from('item_consultings').select('*').eq('id', id).maybeSingle();
+    if (error || !data) {
+      container.innerHTML = '<div class="text-center py-12 text-red-400">컨설팅을 불러올 수 없습니다.</div>';
+      return;
+    }
+
+    const c = data;
+    const tips = Array.isArray(c.tips) ? c.tips : [];
+    const diagnosis = Array.isArray(c.diagnosis) ? c.diagnosis : [];
+    const goal = c.goal || {};
+
+    container.innerHTML = `
+    <div class="flex flex-col gap-4 fade-in pb-20 lg:pb-0">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex items-center gap-2 flex-wrap">
+        <button onclick="window._consultingBack()" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-200"><i class="fas fa-arrow-left mr-1"></i>목록</button>
+        <h3 class="text-sm font-bold text-gray-800 ml-1"><i class="fas fa-stethoscope mr-1 text-pink-500"></i>${esc(c.member_name)}님의 아이템 컨설팅</h3>
+        ${isAdmin() ? `
+          <button onclick="window._consultingEdit(${c.id})" class="ml-auto px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[11px] font-bold hover:bg-blue-600"><i class="fas fa-edit mr-1"></i>수정</button>
+          <button onclick="window._consultingDelete(${c.id})" class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-[11px] font-bold hover:bg-red-600"><i class="fas fa-trash mr-1"></i>삭제</button>
+        ` : ''}
+      </div>
+
+      <div class="bg-gradient-to-br from-pink-50 via-white to-blue-50 rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div class="flex items-start gap-4 flex-wrap">
+          <div class="w-20 h-20 rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
+            ${c.character_image ? `<img src="${esc(c.character_image)}" class="w-full h-full object-cover" onerror="this.style.display='none'">` : '<i class="fas fa-user text-pink-300 text-3xl"></i>'}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[10px] text-pink-500 font-bold uppercase tracking-widest mb-1">CHARACTER</div>
+            <h2 class="text-2xl font-black text-gray-800">${esc(c.member_name)}</h2>
+            <div class="flex gap-3 mt-1 text-xs flex-wrap">
+              <span class="text-gray-600">${esc(c.member_class || '-')}</span>
+              <span class="text-gray-300">·</span>
+              <span class="text-blue-500 font-bold">${esc(c.member_server || '-')}</span>
+              ${c.diagnosis_date ? `<span class="text-gray-300">·</span><span class="text-gray-500"><i class="fas fa-calendar mr-1"></i>${esc(c.diagnosis_date)}</span>` : ''}
+              ${c.consultant_name ? `<span class="text-gray-300">·</span><span class="text-purple-500"><i class="fas fa-user-tie mr-1"></i>${esc(c.consultant_name)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
+          <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">전투력</div>
+            <div class="text-base font-black text-blue-600 mt-1">${esc(c.combat_power || '-')}</div>
+          </div>
+          <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">환산 주스탯</div>
+            <div class="text-base font-black text-gray-800 mt-1">${esc(c.main_stat || '-')}</div>
+          </div>
+          <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">헥사 환산</div>
+            <div class="text-base font-black text-orange-500 mt-1">${esc(c.hexa_stat || '-')}</div>
+          </div>
+        </div>
+
+        ${(goal.targetHexa || goal.budget || goal.period) ? `
+        <div class="mt-4 bg-white/60 rounded-xl p-3 border border-pink-100">
+          <div class="text-[10px] text-pink-500 font-bold uppercase tracking-wider mb-2"><i class="fas fa-target mr-1"></i>목표</div>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            ${goal.targetHexa ? `<div><div class="text-[9px] text-gray-400 font-bold mb-0.5">목표 헥사</div><div class="font-bold text-gray-800">${esc(goal.targetHexa)}</div></div>` : ''}
+            ${goal.budget ? `<div><div class="text-[9px] text-gray-400 font-bold mb-0.5">예산</div><div class="font-bold text-gray-800">${esc(goal.budget)}</div></div>` : ''}
+            ${goal.period ? `<div><div class="text-[9px] text-gray-400 font-bold mb-0.5">기간</div><div class="font-bold text-gray-800">${esc(goal.period)}</div></div>` : ''}
+          </div>
+        </div>` : ''}
+
+        ${tips.length ? `
+        <div class="mt-4 bg-amber-50/60 rounded-xl p-3 border border-amber-100">
+          <div class="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-2"><i class="fas fa-info-circle mr-1"></i>주의사항</div>
+          <ul class="space-y-1">
+            ${tips.map(t => `<li class="text-xs text-amber-800 flex gap-1.5"><span class="text-amber-400">•</span><span>${esc(t)}</span></li>`).join('')}
+          </ul>
+        </div>` : ''}
+      </div>
+
+      ${diagnosis.length ? `
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 class="text-base font-black mb-4 flex items-center gap-2 text-emerald-500"><i class="fas fa-route"></i>스펙업 로드맵</h3>
+        <div class="space-y-3">
+          ${diagnosis.map((d, i) => {
+            const pColor = d.priority === '매우 높음' ? 'bg-red-50 text-red-500 border-red-200' :
+                          d.priority === '높음' ? 'bg-orange-50 text-orange-500 border-orange-200' :
+                          'bg-blue-50 text-blue-500 border-blue-200';
+            return `
+              <div class="flex gap-3 p-3 rounded-xl bg-gray-50/50 hover:bg-pink-50/30 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-white border-2 border-pink-200 flex items-center justify-center font-black text-pink-500 text-sm flex-shrink-0">${i + 1}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <h4 class="font-bold text-gray-800">${esc(d.title || '')}</h4>
+                    ${d.priority ? `<span class="text-[9px] font-bold px-2 py-0.5 rounded border ${pColor}">${esc(d.priority)}</span>` : ''}
+                  </div>
+                  <p class="text-xs text-gray-600 leading-relaxed whitespace-pre-line">${esc(d.content || '')}</p>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
+
+      ${c.summary ? `
+      <div class="bg-gradient-to-r from-blue-50 to-pink-50 border border-blue-100 rounded-2xl p-6">
+        <div class="text-[10px] text-blue-500 font-bold uppercase tracking-widest mb-3"><i class="fas fa-comment-dots mr-1"></i>종합 코멘트</div>
+        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">${esc(c.summary)}</p>
+      </div>` : ''}
+    </div>`;
+  };
+
+  window._consultingRenderEdit = (container) => {
+    const d = window._consultingState.draft || {};
+    const tips = Array.isArray(d.tips) ? d.tips : [];
+    const diagnosis = Array.isArray(d.diagnosis) ? d.diagnosis : [];
+    const goal = d.goal || {};
+    const isNew = window._consultingState.view === 'new';
+
+    container.innerHTML = `
+    <div class="flex flex-col gap-4 fade-in pb-20 lg:pb-0">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex items-center gap-2 flex-wrap">
+        <button onclick="if(confirm('변경사항이 사라집니다. 계속하시겠습니까?')) window._consultingBack()" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-200"><i class="fas fa-times mr-1"></i>취소</button>
+        <h3 class="text-sm font-bold text-gray-800 ml-1"><i class="fas fa-edit mr-1 text-pink-500"></i>${isNew ? '새 컨설팅 작성' : '컨설팅 수정'}</h3>
+        <button onclick="window._consultingSave()" class="ml-auto px-4 py-1.5 bg-pink-500 text-white rounded-lg text-[11px] font-bold shadow hover:bg-pink-600"><i class="fas fa-save mr-1"></i>저장</button>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-id-card mr-1 text-pink-400"></i>기본 정보</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">캐릭명 *</label><input type="text" value="${esc(d.member_name || '')}" oninput="window._consultingState.draft.member_name=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">직업</label><input type="text" value="${esc(d.member_class || '')}" oninput="window._consultingState.draft.member_class=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">서버</label><input type="text" value="${esc(d.member_server || '')}" oninput="window._consultingState.draft.member_server=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">컨설턴트</label><input type="text" value="${esc(d.consultant_name || '')}" oninput="window._consultingState.draft.consultant_name=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">진단일</label><input type="date" value="${esc(d.diagnosis_date || '')}" oninput="window._consultingState.draft.diagnosis_date=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">캐릭 이미지 URL (선택)</label><input type="text" value="${esc(d.character_image || '')}" oninput="window._consultingState.draft.character_image=this.value" placeholder="https://..." class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-pink-300"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-chart-bar mr-1 text-pink-400"></i>스펙</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">전투력</label><input type="text" value="${esc(d.combat_power || '')}" oninput="window._consultingState.draft.combat_power=this.value" placeholder="예: 8억 2955만" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">환산 주스탯</label><input type="text" value="${esc(d.main_stat || '')}" oninput="window._consultingState.draft.main_stat=this.value" placeholder="예: 116,141" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">헥사 환산</label><input type="text" value="${esc(d.hexa_stat || '')}" oninput="window._consultingState.draft.hexa_stat=this.value" placeholder="예: 116,141" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+        </div>
+        <p class="text-[10px] text-gray-400"><i class="fas fa-info-circle mr-1"></i>환산값은 <a href="https://maplescouter.com/ko/info?name=${encodeURIComponent(d.member_name || '')}" target="_blank" class="text-blue-500 hover:underline">환산주스탯 사이트</a>에서 확인 후 입력</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-target mr-1 text-pink-400"></i>목표</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">목표 헥사</label><input type="text" value="${esc(goal.targetHexa || '')}" oninput="window._consultingState.draft.goal.targetHexa=this.value" placeholder="예: 12만+" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">예산</label><input type="text" value="${esc(goal.budget || '')}" oninput="window._consultingState.draft.goal.budget=this.value" placeholder="예: 주식 100억" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">기간</label><input type="text" value="${esc(goal.period || '')}" oninput="window._consultingState.draft.goal.period=this.value" placeholder="예: 2개월" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-route mr-1 text-pink-400"></i>스펙업 로드맵</h4>
+          <button onclick="window._consultingAddDiagnosis()" class="text-[10px] bg-pink-50 text-pink-500 px-2 py-1 rounded-lg font-bold hover:bg-pink-100"><i class="fas fa-plus mr-1"></i>단계 추가</button>
+        </div>
+        <div id="consultingDiagnosisList" class="space-y-2">
+          ${diagnosis.map((step, i) => `
+            <div class="bg-gray-50/50 rounded-xl p-3 space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-pink-400 font-black text-sm">${i + 1}.</span>
+                <input type="text" value="${esc(step.title || '')}" oninput="window._consultingState.draft.diagnosis[${i}].title=this.value" placeholder="단계 제목" class="flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none focus:border-pink-300">
+                <select onchange="window._consultingState.draft.diagnosis[${i}].priority=this.value" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold w-24">
+                  <option value="매우 높음" ${step.priority==='매우 높음'?'selected':''}>매우 높음</option>
+                  <option value="높음" ${step.priority==='높음'?'selected':''}>높음</option>
+                  <option value="중간" ${step.priority==='중간'?'selected':''}>중간</option>
+                </select>
+                <button onclick="window._consultingRemoveDiagnosis(${i})" class="text-red-400 hover:text-red-600 text-xs"><i class="fas fa-times"></i></button>
+              </div>
+              <textarea oninput="window._consultingState.draft.diagnosis[${i}].content=this.value" placeholder="설명" class="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-pink-300 h-20 resize-none">${esc(step.content || '')}</textarea>
+            </div>
+          `).join('')}
+          ${!diagnosis.length ? '<p class="text-xs text-gray-400 italic text-center py-3">단계를 추가해주세요.</p>' : ''}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-info-circle mr-1 text-pink-400"></i>주의사항</h4>
+          <button onclick="window._consultingAddTip()" class="text-[10px] bg-pink-50 text-pink-500 px-2 py-1 rounded-lg font-bold hover:bg-pink-100"><i class="fas fa-plus mr-1"></i>항목 추가</button>
+        </div>
+        <div class="space-y-2">
+          ${tips.map((t, i) => `
+            <div class="flex items-center gap-2">
+              <i class="fas fa-circle text-amber-300 text-[6px]"></i>
+              <input type="text" value="${esc(t)}" oninput="window._consultingState.draft.tips[${i}]=this.value" class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-pink-300">
+              <button onclick="window._consultingRemoveTip(${i})" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+            </div>
+          `).join('')}
+          ${!tips.length ? '<p class="text-xs text-gray-400 italic text-center py-2">항목을 추가해주세요.</p>' : ''}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3"><i class="fas fa-comment-dots mr-1 text-pink-400"></i>종합 코멘트</h4>
+        <textarea oninput="window._consultingState.draft.summary=this.value" placeholder="컨설팅 종합 의견을 자유롭게 작성하세요..." class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300 h-40 resize-none">${esc(d.summary || '')}</textarea>
+      </div>
+    </div>`;
+  };
+
+  window._consultingAddDiagnosis = () => {
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.diagnosis)) d.diagnosis = [];
+    d.diagnosis.push({ title: '새 단계', content: '', priority: '중간' });
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingRemoveDiagnosis = (i) => {
+    window._consultingState.draft.diagnosis.splice(i, 1);
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingAddTip = () => {
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.tips)) d.tips = [];
+    d.tips.push('');
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingRemoveTip = (i) => {
+    window._consultingState.draft.tips.splice(i, 1);
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingSave = async () => {
+    const d = window._consultingState.draft;
+    if (!d.member_name?.trim()) return window.showMsg('캐릭명을 입력해주세요.', 'error');
+
+    const payload = {
+      member_name: d.member_name.trim(),
+      member_class: d.member_class || null,
+      member_server: d.member_server || null,
+      consultant_name: d.consultant_name || null,
+      diagnosis_date: d.diagnosis_date || null,
+      combat_power: d.combat_power || null,
+      main_stat: d.main_stat || null,
+      hexa_stat: d.hexa_stat || null,
+      goal: d.goal || {},
+      diagnosis: d.diagnosis || [],
+      tips: d.tips || [],
+      target_items: d.target_items || [],
+      summary: d.summary || null,
+      character_image: d.character_image || null,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      let res;
+      if (window._consultingState.view === 'new') {
+        res = await supaDb.from('item_consultings').insert(payload).select().single();
+      } else {
+        res = await supaDb.from('item_consultings').update(payload).eq('id', window._consultingState.currentId).select().single();
+      }
+      if (res.error) throw res.error;
+      window.showMsg('저장 완료!', 'success');
+      window._consultingState.view = 'detail';
+      window._consultingState.currentId = res.data.id;
+      window._consultingState.draft = null;
+      window.renderConsulting(document.getElementById('contentArea'));
+    } catch (e) {
+      window.showMsg('저장 실패: ' + e.message, 'error');
+    }
   };
 
   // ============ 시트 관리 (통합 탭) ============
