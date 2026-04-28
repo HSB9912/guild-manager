@@ -6369,7 +6369,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           </div>
 
           <div class="bg-emerald-50 p-3 rounded-xl space-y-3">
-            <div class="text-[10px] text-emerald-500 font-black uppercase">AFTER (목표)${isSpecialRing ? ' · 특수 반지' : ''}</div>
+            <div class="flex items-center justify-between">
+              <div class="text-[10px] text-emerald-500 font-black uppercase">AFTER (목표)${isSpecialRing ? ' · 특수 반지' : ''}</div>
+              <button type="button" onclick="window._consultingOpenImportFromUser()" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold hover:bg-blue-100 transition" title="다른 유저의 같은 슬롯 장비를 통째로 복사"><i class="fas fa-user-plus mr-1"></i>다른 캐릭터에서 가져오기</button>
+            </div>
             <div class="flex gap-3">
               <div class="flex-shrink-0">
                 <button type="button" onclick="window._consultingChangeAfterIcon()" class="w-14 h-14 bg-white rounded border-2 border-emerald-300 hover:border-emerald-500 flex items-center justify-center cursor-pointer transition group" title="클릭하여 아이콘 변경">
@@ -6516,6 +6519,96 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     if (!icon) { window.showMsg('현재 장비 아이콘이 없습니다', 'error'); return; }
     window._consultingUpdateTarget('after_icon', icon);
     document.getElementById('_consultingIconModal')?.remove();
+    window._consultingShowTargetModal();
+  };
+
+  // ===== 다른 캐릭터의 같은 슬롯 장비를 AFTER로 통째 복사 =====
+  window._consultingOpenImportFromUser = () => {
+    const slot = window._consultingTargetEditingSlot;
+    const old = document.getElementById('_consultingImportModal');
+    if (old) old.remove();
+    const div = document.createElement('div');
+    div.id = '_consultingImportModal';
+    div.className = 'fixed inset-0 z-[60] flex items-center justify-center p-4';
+    div.style.background = 'rgba(0,0,0,0.6)';
+    div.style.backdropFilter = 'blur(4px)';
+    div.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5" onclick="event.stopPropagation()">
+        <h3 class="text-sm font-black text-blue-600 mb-1"><i class="fas fa-user-plus mr-2"></i>다른 캐릭터에서 ${esc(slot)} 가져오기</h3>
+        <p class="text-[10px] text-gray-400 mb-4">목표로 삼을 풀템 유저의 캐릭명을 입력하면 같은 슬롯 장비를 통째로 복사합니다. 옵션은 가져온 후 손보세요.</p>
+        <div class="space-y-3">
+          <div class="flex gap-1">
+            <input id="_consultingImportName" type="text" placeholder="캐릭터명 입력" class="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs" onkeydown="if(event.key==='Enter')window._consultingImportSearch()">
+            <button onclick="window._consultingImportSearch()" id="_consultingImportSearchBtn" class="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold hover:bg-blue-600 disabled:opacity-50">검색</button>
+          </div>
+          <div id="_consultingImportResult" class="min-h-[40px]"></div>
+        </div>
+        <button onclick="document.getElementById('_consultingImportModal').remove()" class="w-full mt-4 px-3 py-1.5 bg-gray-100 text-gray-500 rounded text-xs font-bold hover:bg-gray-200">취소</button>
+      </div>`;
+    div.onclick = () => div.remove();
+    document.body.appendChild(div);
+    setTimeout(() => document.getElementById('_consultingImportName')?.focus(), 50);
+  };
+
+  window._consultingImportSearch = async () => {
+    const slot = window._consultingTargetEditingSlot;
+    const name = document.getElementById('_consultingImportName')?.value.trim();
+    if (!name) { window.showMsg('캐릭터명을 입력해주세요', 'error'); return; }
+    const btn = document.getElementById('_consultingImportSearchBtn');
+    const result = document.getElementById('_consultingImportResult');
+    if (btn) { btn.disabled = true; btn.textContent = '검색 중...'; }
+    if (result) result.innerHTML = '<div class="text-center py-3 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-1"></i>장비 정보 가져오는 중...</div>';
+    try {
+      const idRes = await window._nexonFetch('/maplestory/v1/id', { character_name: name });
+      const equipData = await window._nexonFetch('/maplestory/v1/character/item-equipment', { ocid: idRes.ocid });
+      const presetNo = Number(equipData.preset_no) || 1;
+      const preset = equipData[`item_equipment_preset_${presetNo}`] || [];
+      const legacy = equipData.item_equipment || [];
+      const presetSlots = new Set(preset.map(e => e.item_equipment_slot || e.item_equipment_part));
+      const extras = legacy.filter(e => !presetSlots.has(e.item_equipment_slot || e.item_equipment_part));
+      const equips = preset.length ? [...preset, ...extras] : legacy;
+      const found = equips.find(e => (e.item_equipment_slot || e.item_equipment_part) === slot);
+      if (!found) {
+        result.innerHTML = `<div class="text-center py-3 text-amber-600 text-xs"><i class="fas fa-exclamation-circle mr-1"></i>${esc(name)} 캐릭터에 ${esc(slot)} 슬롯 장비가 없습니다</div>`;
+        return;
+      }
+      // 미리보기 카드 + 적용 버튼
+      const previewData = window._consultingNormalizeEq(found);
+      window._consultingImportFound = found;
+      result.innerHTML = `
+        <div class="text-[10px] text-gray-500 font-bold mb-2">↓ 이 장비를 AFTER로 복사할까요?</div>
+        ${window._consultingItemCardHtml(previewData, { slot })}
+        <button onclick="window._consultingImportApply()" class="w-full mt-3 px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"><i class="fas fa-check mr-1"></i>이 장비로 AFTER 채우기</button>`;
+    } catch (e) {
+      result.innerHTML = `<div class="text-center py-3 text-red-500 text-xs"><i class="fas fa-times-circle mr-1"></i>${esc(e.message || '검색 실패')}</div>`;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '검색'; }
+    }
+  };
+
+  window._consultingImportApply = () => {
+    const eq = window._consultingImportFound;
+    if (!eq) return;
+    const slot = window._consultingTargetEditingSlot;
+    const d = window._consultingState.draft;
+    const t = d.target_items.find(x => x.slot === slot);
+    if (!t) return;
+    // 핵심 필드 통째 복사
+    t.after_name = eq.item_name || '';
+    t.after_icon = eq.item_icon || '';
+    t.after_stars = parseInt(eq.starforce) || 0;
+    t.after_special_ring_level = parseInt(eq.special_ring_level) || 0;
+    t.after_pot_grade = eq.potential_option_grade || '';
+    t.after_pot_1 = eq.potential_option_1 || '';
+    t.after_pot_2 = eq.potential_option_2 || '';
+    t.after_pot_3 = eq.potential_option_3 || '';
+    t.after_add_grade = eq.additional_potential_option_grade || '';
+    t.after_add_1 = eq.additional_potential_option_1 || '';
+    t.after_add_2 = eq.additional_potential_option_2 || '';
+    t.after_add_3 = eq.additional_potential_option_3 || '';
+    window._consultingImportFound = null;
+    document.getElementById('_consultingImportModal')?.remove();
+    window.showMsg('AFTER에 장비 복사 완료. 옵션을 손봐주세요.', 'success');
     window._consultingShowTargetModal();
   };
 
