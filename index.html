@@ -7044,11 +7044,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         };
         return `
           <div class="bg-slate-800/40 rounded-lg border border-slate-700/40 p-2.5">
-            <div class="flex items-center gap-1.5 mb-2 flex-wrap">
-              <span class="text-[10px] font-black text-pink-300 bg-pink-500/15 px-2 py-0.5 rounded">${esc(t.slot)}</span>
-              ${t.hexa_contrib > 0 ? `<span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded">+${Number(t.hexa_contrib).toLocaleString()} 헥사</span>` : ''}
-              ${t.cost ? `<span class="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded"><i class="fas fa-coins mr-0.5"></i>${esc(t.cost)}</span>` : ''}
-              ${t.after_add_tier ? `<span class="text-[10px] font-bold text-cyan-300 bg-cyan-500/15 px-1.5 py-0.5 rounded">추옵 ${esc(t.after_add_tier)}</span>` : ''}
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_24px_1fr] gap-2 mb-2 items-center">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black text-pink-300 bg-pink-500/15 px-2 py-0.5 rounded">${esc(t.slot)}</span>
+              </div>
+              <div></div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${t.hexa_contrib > 0 ? `<span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded">+${Number(t.hexa_contrib).toLocaleString()} 헥사</span>` : ''}
+                ${t.cost ? `<span class="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded"><i class="fas fa-coins mr-0.5"></i>${esc(t.cost)}</span>` : ''}
+                ${t.after_add_tier ? `<span class="text-[10px] font-bold text-cyan-300 bg-cyan-500/15 px-1.5 py-0.5 rounded">추옵 ${esc(t.after_add_tier)}</span>` : ''}
+              </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-[1fr_24px_1fr] gap-2 items-stretch">
               <div class="relative">
