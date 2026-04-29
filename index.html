@@ -5739,10 +5739,31 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     window.renderConsulting(document.getElementById('contentArea'));
   };
 
-  // 파일 업로드 핸들러는 추후 Cloudflare 토큰 받으면 자동 업로드로 연결 예정
-  window._consultingAddAttachments = (ev) => {
-    window.showMsg('지금은 URL 붙여넣기만 가능. Cloudflare 업로드 토큰 등록되면 파일 업로드도 활성화됩니다.', 'info');
+  // 파일 → Cloudflare R2 자동 업로드 → URL을 attachments에 추가
+  window._consultingAddAttachments = async (ev) => {
+    const files = Array.from(ev.target?.files || []);
+    if (!files.length) return;
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.attachments)) d.attachments = [];
+    let added = 0, failed = 0;
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) { failed++; continue; }
+      try {
+        const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const safeName = `consulting-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        window.showMsg(`업로드 중... (${added + failed + 1}/${files.length})`, 'info');
+        const publicUrl = await window._r2Upload('guide-images', safeName, file);
+        d.attachments.push({ kind: 'kakao', caption: '', url: publicUrl, _r2name: safeName });
+        added++;
+      } catch (e) {
+        console.warn('R2 업로드 실패:', e);
+        failed++;
+      }
+    }
     if (ev?.target) ev.target.value = '';
+    if (added) window.showMsg(`${added}장 업로드 완료${failed ? ` (${failed}장 실패)` : ''}`, 'success');
+    else window.showMsg('업로드 실패', 'error');
+    window.renderConsulting(document.getElementById('contentArea'));
   };
 
   window._consultingUpdateAttachment = (idx, field, value) => {
@@ -5751,10 +5772,15 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     d.attachments[idx][field] = value;
   };
 
-  window._consultingRemoveAttachment = (idx) => {
+  window._consultingRemoveAttachment = async (idx) => {
     const d = window._consultingState.draft;
     if (!Array.isArray(d.attachments)) return;
+    const removed = d.attachments[idx];
     d.attachments.splice(idx, 1);
+    // R2에 올린 파일이면 같이 삭제 (best-effort, 실패해도 무시)
+    if (removed?._r2name) {
+      try { await window._r2Delete('guide-images', removed._r2name); } catch (e) {}
+    }
     window.renderConsulting(document.getElementById('contentArea'));
   };
 
@@ -6162,7 +6188,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             <input type="file" accept="image/*" multiple class="hidden" onchange="window._consultingAddAttachments(event)">
           </label>
         </div>
-        <p class="text-[10px] text-gray-400 mb-3"><i class="fas fa-info-circle mr-1"></i>장당 최대 1.5MB · 종류 라벨(카톡/마침/기타) + 캡션 입력 가능</p>
+        <p class="text-[10px] text-gray-400 mb-3"><i class="fas fa-info-circle mr-1"></i>파일 선택 시 Cloudflare R2에 자동 업로드 · URL 붙여넣기도 가능 · 종류(카톡/마침/기타) + 캡션 입력</p>
         ${window._consultingRenderAttachmentsEditor(d.attachments)}
       </div>
 
