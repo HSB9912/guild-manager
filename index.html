@@ -5879,7 +5879,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       additional_potential_option_grade: p.additionalGrade || '',
       additional_potential_option_1: p.additional1 || '',
       additional_potential_option_2: p.additional2 || '',
-      additional_potential_option_3: p.additional3 || ''
+      additional_potential_option_3: p.additional3 || '',
+      addStr: p.addStr, addDex: p.addDex, addInt: p.addInt, addLuk: p.addLuk,
+      addAllStat: p.addAllStat, addAtk: p.addAtk, addMatk: p.addMatk,
+      addBossDmg: p.addBossDmg, addDmg: p.addDmg, addHp: p.addHp, addDef: p.addDef
     }));
     // 타깃 아이템 — 슬롯으로 before 매칭
     const target_items = (json.targetItems || []).map(t => {
@@ -5900,6 +5903,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         after_add_1: t.additional1 || '',
         after_add_2: t.additional2 || '',
         after_add_3: t.additional3 || '',
+        after_add_tier: t.addTier || t.addOptionRank || '',
         hexa_contrib: parseInt(t.hexaContrib) || 0,
         cost: t.estimatedCost || '',
         ref_from: t.refFrom || ''
@@ -6247,6 +6251,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           ? `<div class="text-[9px] text-cyan-200/70 leading-tight mt-0.5">특수 반지 · 게임 내 레벨업</div>`
           : `${pots.length ? `<div class="text-[9px] leading-tight mt-0.5"><span class="${potG.color} font-black mr-0.5">${potG.short}</span><span class="text-slate-300">${esc(pots.join(', '))}</span></div>` : ''}
              ${adds.length ? `<div class="text-[9px] leading-tight"><span class="${addG.color} font-black mr-0.5">${addG.short}</span><span class="text-slate-300">${esc(adds.join(', '))}</span></div>` : ''}
+             ${(data.add_opts || []).length ? `<div class="text-[9px] leading-tight"><span class="text-cyan-400 font-black mr-0.5">추옵</span><span class="text-slate-400">${esc(data.add_opts.join(' · '))}</span></div>` : ''}
              ${data.soul_name ? `<div class="text-[9px] text-slate-400 mt-0.5 truncate"><span class="text-pink-400 font-black mr-0.5">소울</span>${esc(data.soul_name)}${data.soul_option ? ', ' + esc(data.soul_option) : ''}</div>` : ''}`}
       </div>
     </div>`;
@@ -6263,6 +6268,26 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     let srLv = parseInt(eq.special_ring_level) || 0;
     // 외부 데이터 (special_ring_level 없음) 보정: 슬롯/이름으로 특수반지 인식되면 최소 1
     if (srLv === 0 && (isSlotSpecial || isNameSpecial)) srLv = 1;
+    // 추옵(추가옵션) 수치 정리: JSON의 addStr/addInt 등 또는 Nexon API의 item_add_option 구조
+    const ao = eq.item_add_option || {};
+    const addOpts = [];
+    const aoMap = [
+      ['STR', eq.addStr ?? ao.str],
+      ['DEX', eq.addDex ?? ao.dex],
+      ['INT', eq.addInt ?? ao.int],
+      ['LUK', eq.addLuk ?? ao.luk],
+      ['올스탯', eq.addAllStat ?? ao.all_stat],
+      ['공격력', eq.addAtk ?? ao.attack_power],
+      ['마력', eq.addMatk ?? ao.magic_power],
+      ['보스', eq.addBossDmg ?? ao.boss_damage, '%'],
+      ['데미지', eq.addDmg ?? ao.damage, '%'],
+      ['HP', eq.addHp ?? ao.max_hp],
+      ['방어', eq.addDef ?? ao.max_hp_rate]
+    ];
+    for (const [label, val, suffix] of aoMap) {
+      const n = parseInt(val) || 0;
+      if (n > 0) addOpts.push(`${label}+${n}${suffix || ''}`);
+    }
     return {
       name: eq.item_name || '',
       icon: eq.item_icon || '',
@@ -6273,7 +6298,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       add_grade: eq.additional_potential_option_grade || '',
       add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
       soul_name: eq.soul_name, soul_option: eq.soul_option,
-      special_ring_level: srLv
+      special_ring_level: srLv,
+      add_opts: addOpts
     };
   };
 
@@ -6688,7 +6714,12 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
               </div>
             </div>`}
 
-            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-emerald-200">
+            <div class="pt-2 border-t border-emerald-200">
+              <label class="text-[10px] text-cyan-600 font-bold">추옵 (추가옵션) 목표</label>
+              <input type="text" value="${esc(t.after_add_tier || '')}" oninput="window._consultingUpdateTarget('after_add_tier',this.value)" placeholder="예: 85급, 100급, INT 80~100, 풀추옵 등" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
               <div><label class="text-[10px] text-amber-500 font-bold">헥사 환산 기여</label><input type="number" value="${t.hexa_contrib||0}" oninput="window._consultingUpdateTarget('hexa_contrib',Number(this.value))" placeholder="예: 1500" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
               <div><label class="text-[10px] text-amber-500 font-bold">예상 비용</label><input type="text" value="${esc(t.cost)}" oninput="window._consultingUpdateTarget('cost',this.value)" placeholder="예: 30억" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
             </div>
@@ -7017,6 +7048,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
               <span class="text-[10px] font-black text-pink-300 bg-pink-500/15 px-2 py-0.5 rounded">${esc(t.slot)}</span>
               ${t.hexa_contrib > 0 ? `<span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded">+${Number(t.hexa_contrib).toLocaleString()} 헥사</span>` : ''}
               ${t.cost ? `<span class="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded"><i class="fas fa-coins mr-0.5"></i>${esc(t.cost)}</span>` : ''}
+              ${t.after_add_tier ? `<span class="text-[10px] font-bold text-cyan-300 bg-cyan-500/15 px-1.5 py-0.5 rounded">추옵 ${esc(t.after_add_tier)}</span>` : ''}
             </div>
             <div class="grid grid-cols-1 md:grid-cols-[1fr_24px_1fr] gap-2 items-stretch">
               <div class="relative">
