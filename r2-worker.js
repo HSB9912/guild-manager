@@ -77,6 +77,25 @@ export default {
         return json({ mainCharacterName: data.mainCharacterName || null });
       }
 
+      // POST /discord-notify — 디스코드 웹훅 프록시 (수로 면제 신청 알림)
+      // body: { content?, embeds?: [{title, description, color, fields, footer, timestamp}] }
+      if (request.method === 'POST' && path === '/discord-notify') {
+        if (!env.DISCORD_WEBHOOK_URL) {
+          return json({ error: 'DISCORD_WEBHOOK_URL not configured' }, 500);
+        }
+        const payload = await request.json();
+        const dcRes = await fetch(env.DISCORD_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!dcRes.ok) {
+          const text = await dcRes.text();
+          return json({ error: 'Discord rejected', status: dcRes.status, detail: text }, 502);
+        }
+        return json({ success: true });
+      }
+
       return new Response('Not Found', { status: 404, headers: cors });
     } catch (e) {
       return json({ error: e.message }, 500);

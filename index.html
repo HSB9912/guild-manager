@@ -199,6 +199,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('consulting')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="consulting"><i class="fas fa-stethoscope w-5 text-center text-xs"></i><span>아이템 컨설팅</span></button>
    <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금</span></button>
    <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
+   <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form"><i class="fas fa-shield-alt w-5 text-center text-xs"></i><span>면제 신청</span></button>
    <div class="admin-only hidden" id="adminMenuSection">
    <button onclick="const el=document.getElementById('adminMenuList');el.classList.toggle('hidden');this.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-4 pt-4 pb-2 cursor-pointer hover:bg-pink-50/50 rounded-xl transition-all">
      <span class="text-[9px] font-bold text-gray-300 uppercase tracking-widest">관리자</span>
@@ -1538,6 +1539,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'suro_input' && isAdmin()) window.renderSuroInput(content);
             else if (tab === 'bail') window.renderBail(content);
             else if (tab === 'penalty') window.renderPenalty(content);
+            else if (tab === 'exempt_form') window.renderExemptForm(content);
             else if (tab === 'sheet' && isAdmin()) window.renderSheet(content);
             else if (tab === 'guide_edit' && isAdmin()) window.renderGuideEditor(content);
             else if (tab === 'history' && isAdmin()) window.renderHistory(content);
@@ -7271,6 +7273,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           <div class="flex gap-1.5 ml-4">
             <button onclick="window._sheetManageTab='sub';window.renderSheetManage(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='sub' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas fa-sitemap mr-1"></i>길드 관리</button>
             <button onclick="window._sheetManageTab='exempt';window.renderSheetManage(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='exempt' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"><i class="fas fa-shield-alt mr-1"></i>수로 면제</button>
+            ${isAdmin() ? `<button onclick="window._sheetManageTab='exempt_req';window.renderSheetManage(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${st==='exempt_req' ? 'bg-pink-500 text-white shadow' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'} relative"><i class="fas fa-inbox mr-1"></i>면제 신청<span id="exemptPendingBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">!</span></button>` : ''}
           </div>
           <span class="text-[9px] text-gray-400 ml-auto"><i class="fas fa-info-circle mr-1"></i>각 탭의 "시트 복사" 버튼으로 구글시트에 붙여넣기</span>
         </div>
@@ -7279,7 +7282,238 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     </div>`;
     const sub = document.getElementById('sheetManageContent');
     if (st === 'sub') window.renderSubChars(sub);
+    else if (st === 'exempt_req' && isAdmin()) window.renderExemptRequest(sub);
     else window.renderSuroExempt(sub);
+  };
+
+  // ============ 수로 면제 신청 처리 (관리자) ============
+  window._exemptReqState = { tab: 'pending', list: [], loaded: false };
+
+  window._fetchExemptRequests = async () => {
+    const { data, error } = await supaDb.from('exempt_requests')
+      .select('*').order('created_at', { ascending: false });
+    if (error) { window.showMsg('면제 신청 로드 실패: ' + error.message, 'error'); return []; }
+    return data || [];
+  };
+
+  window._exemptUpdatePendingBadge = async () => {
+    try {
+      const { count } = await supaDb.from('exempt_requests')
+        .select('*', { count: 'exact', head: true }).eq('status', 'pending');
+      const badge = document.getElementById('exemptPendingBadge');
+      if (badge) {
+        if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+        else badge.classList.add('hidden');
+      }
+    } catch(e){ console.warn(e); }
+  };
+
+  window.renderExemptRequest = async (container) => {
+    const st = window._exemptReqState;
+    container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
+    st.list = await window._fetchExemptRequests();
+    st.loaded = true;
+    window._exemptUpdatePendingBadge();
+
+    const counts = { pending: 0, active: 0, rejected: 0, revoked: 0 };
+    st.list.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+
+    const tabBtn = (key, label, icon, color) => {
+      const isActive = st.tab === key;
+      const cnt = counts[key] || 0;
+      return `<button onclick="window._exemptReqState.tab='${key}';window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1.5 ${isActive ? `bg-${color}-500 text-white shadow` : `bg-${color}-50 text-${color}-600 hover:bg-${color}-100`}">
+        <i class="fas fa-${icon}"></i>${label}
+        <span class="${isActive ? 'bg-white/30 text-white' : `bg-${color}-100 text-${color}-700`} px-1.5 rounded-full text-[10px]">${cnt}</span>
+      </button>`;
+    };
+
+    const filtered = st.list.filter(r => r.status === st.tab);
+
+    container.innerHTML = `
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 fade-in">
+      <div class="flex items-center gap-2 flex-wrap mb-4 pb-3 border-b border-gray-100">
+        ${tabBtn('pending', '처리 대기', 'clock', 'amber')}
+        ${tabBtn('active', '면제 적용 중', 'check-circle', 'emerald')}
+        ${tabBtn('rejected', '거절됨', 'times-circle', 'red')}
+        ${tabBtn('revoked', '면제 해제', 'rotate-left', 'gray')}
+        <button onclick="window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="ml-auto px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-[10px] font-bold text-gray-500" title="새로고침"><i class="fas fa-sync-alt"></i></button>
+      </div>
+      <div id="exemptReqList" class="space-y-3">
+        ${filtered.length === 0 ? `<div class="text-center py-12 text-gray-300 text-xs"><i class="fas fa-inbox text-3xl mb-2 block"></i>해당 상태의 신청이 없습니다</div>` : filtered.map(r => window._exemptReqCard(r)).join('')}
+      </div>
+    </div>`;
+  };
+
+  window._exemptReqCard = (r) => {
+    const subList = (r.sub_chars || []).map(s => `<span class="inline-block bg-white border border-gray-200 rounded-lg px-2 py-0.5 text-[10px] font-bold text-gray-700 mr-1 mb-1">${esc(s.name)} <span class="text-gray-400">${esc(s.guild || '')}</span>${s.was_mapped === false ? ' <span class="text-amber-600 text-[9px]">신규</span>' : ''}</span>`).join('');
+    const typeLabel = r.request_type === 'full' ? '<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md text-[10px] font-black">전체 면제</span>' : '<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md text-[10px] font-black">절반 면제</span>';
+    const scoreLabel = `${(r.main_score || 0).toLocaleString()} ${r.is_score_manual ? '<span class="text-[9px] text-amber-600">(수동)</span>' : '<span class="text-[9px] text-gray-400">(자동)</span>'}`;
+    const newBadge = r.is_new_member ? '<span class="bg-pink-100 text-pink-700 px-2 py-0.5 rounded-md text-[10px] font-black"><i class="fas fa-user-plus mr-0.5"></i>신규 가입 동시</span>' : '';
+    const dateStr = new Date(r.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+    let actions = '';
+    if (r.status === 'pending') {
+      actions = `
+        <div class="flex gap-2 mt-3">
+          <button onclick="window._exemptApprove(${r.id})" class="flex-1 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-black hover:bg-emerald-600 shadow-sm"><i class="fas fa-check mr-1"></i>승인</button>
+          <button onclick="window._exemptReject(${r.id})" class="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded-xl text-xs font-bold hover:bg-red-50"><i class="fas fa-times mr-1"></i>거절</button>
+          ${r.kakao_nick ? `<button onclick="navigator.clipboard.writeText('${esc(r.kakao_nick)}');window.showMsg('카톡 닉 복사됨','success')" class="px-3 py-1.5 bg-white border border-gray-200 text-gray-500 rounded-xl text-xs font-bold hover:bg-gray-50" title="${esc(r.kakao_nick)}"><i class="fas fa-message"></i></button>` : ''}
+        </div>`;
+    } else if (r.status === 'active') {
+      actions = `
+        <div class="flex gap-2 mt-3">
+          <button onclick="window._exemptRevoke(${r.id})" class="flex-1 px-3 py-1.5 bg-white border border-amber-300 text-amber-600 rounded-xl text-xs font-bold hover:bg-amber-50"><i class="fas fa-rotate-left mr-1"></i>면제 해제</button>
+        </div>`;
+    } else if (r.status === 'rejected' || r.status === 'revoked') {
+      actions = `
+        <div class="flex gap-2 mt-3">
+          <button onclick="window._exemptDelete(${r.id})" class="px-3 py-1.5 bg-white border border-gray-200 text-gray-400 rounded-xl text-[10px] font-bold hover:bg-red-50 hover:text-red-500 hover:border-red-200"><i class="fas fa-trash mr-1"></i>이력 삭제</button>
+        </div>`;
+    }
+
+    const processedInfo = r.processed_at
+      ? `<div class="text-[10px] text-gray-400 mt-1"><i class="fas fa-user-shield mr-1"></i>${esc(r.processed_by || '?')} · ${new Date(r.processed_at).toLocaleString('ko-KR')}${r.admin_note ? ' · ' + esc(r.admin_note) : ''}</div>`
+      : '';
+    const revokedInfo = r.revoked_at
+      ? `<div class="text-[10px] text-amber-500 mt-1"><i class="fas fa-rotate-left mr-1"></i>${esc(r.revoked_by || '?')} · ${new Date(r.revoked_at).toLocaleString('ko-KR')}${r.revoke_reason ? ' · ' + esc(r.revoke_reason) : ''}</div>`
+      : '';
+
+    return `
+      <div class="border ${r.status === 'pending' ? (r.is_new_member ? 'border-2 border-pink-300 bg-gradient-to-br from-pink-50/40 to-white' : 'border-amber-200 bg-gradient-to-br from-amber-50/40 to-white') : 'border-gray-200 bg-white'} rounded-2xl p-4">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl ${r.is_new_member ? 'bg-pink-100' : 'bg-gray-100'} flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-${r.is_new_member ? 'user-plus text-pink-500' : 'user text-gray-400'}"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <span class="font-black text-gray-800 text-sm">${esc(r.main_char)}</span>
+              <span class="text-[10px] text-gray-400">·</span>
+              <span class="text-[11px] text-gray-500">${esc(r.main_class || '?')} · ${esc(r.main_guild || '?')}</span>
+              ${typeLabel}
+              ${newBadge}
+              <span class="text-[10px] text-gray-400 ml-auto">${dateStr}</span>
+            </div>
+            <div class="text-[11px] text-gray-500 mb-2">점수: <strong class="text-gray-700">${scoreLabel}</strong></div>
+            <div class="flex flex-wrap mb-2">${subList || '<span class="text-[10px] text-gray-400">부캐 없음</span>'}</div>
+            ${r.reason ? `<div class="text-[11px] text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg italic">"${esc(r.reason)}"</div>` : ''}
+            ${r.kakao_nick ? `<div class="text-[10px] text-gray-500 mt-1"><i class="fas fa-comment-dots text-pink-400 mr-1"></i>오픈챗: <strong>${esc(r.kakao_nick)}</strong></div>` : ''}
+            ${processedInfo}
+            ${revokedInfo}
+            ${actions}
+          </div>
+        </div>
+      </div>`;
+  };
+
+  window._exemptApprove = async (id) => {
+    if (!isAdmin()) return window.showMsg('관리자만 가능합니다.', 'error');
+    if (!confirm('이 신청을 승인합니다. 부캐들이 면제 적용 상태로 전환됩니다.\n\n진행할까요?')) return;
+    const note = prompt('처리 메모 (선택)') || null;
+    try {
+      const { data, error } = await supaDb.from('exempt_requests').update({
+        status: 'active',
+        admin_note: note,
+        processed_by: CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
+        processed_at: new Date().toISOString()
+      }).eq('id', id).select().single();
+      if (error) throw error;
+      window.showMsg('승인 처리 완료', 'success');
+      window._exemptDiscordNotify(data, '✅ 면제 신청 승인');
+      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('승인 실패: ' + e.message, 'error'); }
+  };
+
+  window._exemptReject = async (id) => {
+    if (!isAdmin()) return window.showMsg('관리자만 가능합니다.', 'error');
+    const reason = prompt('거절 사유 (신청자에게 표시됨)');
+    if (reason === null) return;
+    try {
+      const { data, error } = await supaDb.from('exempt_requests').update({
+        status: 'rejected',
+        admin_note: reason,
+        processed_by: CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
+        processed_at: new Date().toISOString()
+      }).eq('id', id).select().single();
+      if (error) throw error;
+      window.showMsg('거절 처리 완료', 'success');
+      window._exemptDiscordNotify(data, '❌ 면제 신청 거절');
+      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('거절 실패: ' + e.message, 'error'); }
+  };
+
+  window._exemptRevoke = async (id) => {
+    if (!isAdmin()) return window.showMsg('관리자만 가능합니다.', 'error');
+    const reason = prompt('면제 해제 사유 (예: 점수 떨어짐)');
+    if (reason === null) return;
+    try {
+      const { data, error } = await supaDb.from('exempt_requests').update({
+        status: 'revoked',
+        revoke_reason: reason,
+        revoked_by: CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
+        revoked_at: new Date().toISOString()
+      }).eq('id', id).select().single();
+      if (error) throw error;
+      window.showMsg('면제 해제 완료. 신청자가 재신청 가능합니다.', 'success');
+      window._exemptDiscordNotify(data, '🔓 면제 해제');
+      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('해제 실패: ' + e.message, 'error'); }
+  };
+
+  window._exemptDelete = async (id) => {
+    if (!isAdmin()) return window.showMsg('관리자만 가능합니다.', 'error');
+    if (!confirm('이 이력을 영구 삭제합니다.\n\n진행할까요?')) return;
+    try {
+      const { error } = await supaDb.from('exempt_requests').delete().eq('id', id);
+      if (error) throw error;
+      window.showMsg('삭제 완료', 'success');
+      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
+  };
+
+  window._exemptDiscordNotify = async (req, title) => {
+    try {
+      const subList = (req.sub_chars || []).map(s => `${s.name} (${s.guild})`).join(', ') || '없음';
+      const colorMap = { active: 0x10b981, rejected: 0xef4444, revoked: 0x6b7280 };
+      const payload = {
+        embeds: [{
+          title,
+          description: `**${req.main_char}** 님의 면제 신청`,
+          color: colorMap[req.status] || 0x6b7280,
+          fields: [
+            { name: '본캐', value: `${req.main_char} (${req.main_class || '?'} · ${req.main_guild || '?'})`, inline: true },
+            { name: '신청 타입', value: req.request_type === 'full' ? '전체 면제' : '절반 면제', inline: true },
+            { name: '부캐', value: subList, inline: false },
+            { name: '처리자', value: req.processed_by || req.revoked_by || '-', inline: true },
+          ],
+          footer: { text: req.admin_note || req.revoke_reason || '' },
+          timestamp: new Date().toISOString()
+        }]
+      };
+      await fetch(R2_WORKER_URL + '/discord-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': R2_API_KEY },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) { console.warn('Discord notify failed:', e); }
+  };
+
+  // 페이지 로드 시 pending 카운트 갱신 (사이드바 뱃지용)
+  setTimeout(() => { window._exemptUpdatePendingBadge?.(); }, 3000);
+  setInterval(() => { window._exemptUpdatePendingBadge?.(); }, 60000);
+
+  // ============ 길드원용 면제 신청 폼 (iframe 임베드) ============
+  window.renderExemptForm = (container) => {
+    container.innerHTML = `
+      <div class="flex flex-col gap-3 fade-in h-full">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 shrink-0 flex items-center gap-3 flex-wrap">
+          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-shield-alt mr-2 text-pink-400"></i>수로 면제 신청</h3>
+          <span class="text-[10px] text-gray-400">본캐닉만 입력하면 자동 분류됩니다</span>
+          <a href="exempt/" target="_blank" class="ml-auto px-3 py-1 bg-pink-50 text-pink-500 rounded-lg text-[10px] font-bold hover:bg-pink-100 flex items-center gap-1"><i class="fas fa-external-link-alt text-[9px]"></i>새 창에서 열기</a>
+        </div>
+        <div class="flex-1 min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <iframe src="exempt/" class="w-full h-full border-0" allow="clipboard-write" title="수로 면제 신청"></iframe>
+        </div>
+      </div>`;
   };
 
   // ============ 수로 면제 현황 ============
