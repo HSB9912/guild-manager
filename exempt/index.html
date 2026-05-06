@@ -561,6 +561,7 @@
   function renderHistoryRow(r) {
     const statusMap = {
       pending: { color: 'amber', label: '처리 중', icon: 'clock' },
+      hold: { color: 'amber', label: '보류 중', icon: 'pause' },
       active: { color: 'emerald', label: '면제 적용 중', icon: 'check-circle' },
       rejected: { color: 'red', label: '거절됨', icon: 'times-circle' },
       revoked: { color: 'gray', label: '면제 해제됨', icon: 'rotate-left' }
@@ -569,6 +570,7 @@
     const subList = (r.sub_chars || []).map(x => x.name).join(', ');
     const dateLabel = r.processed_at ? new Date(r.processed_at).toLocaleString('ko-KR') : new Date(r.created_at).toLocaleString('ko-KR');
     const noteHtml = r.status === 'rejected' && r.admin_note ? `<div class="text-[11px] text-red-600 mt-1">사유: ${esc(r.admin_note)}</div>`
+                  : r.status === 'hold' && r.admin_note ? `<div class="text-[11px] text-amber-600 mt-1">보류 사유: ${esc(r.admin_note)}</div>`
                   : r.status === 'revoked' && r.revoke_reason ? `<div class="text-[11px] text-gray-500 mt-1">해제 사유: ${esc(r.revoke_reason)}</div>` : '';
     return `
       <div class="bg-${s.color}-50 border border-${s.color}-200 rounded-2xl p-3">

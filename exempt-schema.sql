@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS exempt_requests (
 
   -- 처리 상태
   status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'active', 'rejected', 'revoked')),
+    CHECK (status IN ('pending', 'hold', 'active', 'rejected', 'revoked')),
   admin_note TEXT,                             -- 운영진 메모
   processed_by TEXT,                           -- 승인/거절한 관리자
   processed_at TIMESTAMPTZ,
