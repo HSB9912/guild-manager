@@ -201,6 +201,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
    <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form"><i class="fas fa-shield-alt w-5 text-center text-xs"></i><span>면제 신청</span></button>
    <button onclick="router('bail_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail_form"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금 신청</span></button>
+   <button onclick="router('requests')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="requests"><i class="fas fa-inbox w-5 text-center text-xs"></i><span>신청 처리</span><span id="reqQueueBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
    <div class="admin-only hidden" id="adminMenuSection">
    <button onclick="const el=document.getElementById('adminMenuList');el.classList.toggle('hidden');this.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-4 pt-4 pb-2 cursor-pointer hover:bg-pink-50/50 rounded-xl transition-all">
      <span class="text-[9px] font-bold text-gray-300 uppercase tracking-widest">관리자</span>
@@ -1543,6 +1544,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'penalty') window.renderPenalty(content);
             else if (tab === 'exempt_form') window.renderExemptForm(content);
             else if (tab === 'bail_form') window.renderBailForm(content);
+            else if (tab === 'requests' && isAdmin()) window.renderRequestQueue(content);
             else if (tab === 'sheet' && isAdmin()) window.renderSheet(content);
             else if (tab === 'guide_edit' && isAdmin()) window.renderGuideEditor(content);
             else if (tab === 'history' && isAdmin()) window.renderHistory(content);
@@ -1553,7 +1555,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const _sb = document.getElementById('sidebar'), _ov = document.getElementById('sidebarOverlay');
             if (window.innerWidth < 1024 && _sb) { _sb.classList.add('-translate-x-full'); _ov?.classList.add('hidden'); }
             if (window._updateMobileTab) window._updateMobileTab(tab);
-            const adminTabs = ['weekly_log','all_history','suro_input','role_assign','guide_edit','sync','sheet','history','records','settings'];
+            const adminTabs = ['weekly_log','all_history','suro_input','role_assign','guide_edit','sync','sheet','history','records','settings','requests'];
             const adminList = document.getElementById('adminMenuList');
             if (adminList && adminTabs.includes(tab)) adminList.classList.remove('hidden');
         };
@@ -7303,11 +7305,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     try {
       const { count } = await supaDb.from('exempt_requests')
         .select('*', { count: 'exact', head: true }).eq('status', 'pending');
+      window._exemptPendingCount = count || 0;
       const badge = document.getElementById('exemptPendingBadge');
       if (badge) {
         if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
         else badge.classList.add('hidden');
       }
+      window._refreshReqQueueBadge?.();
     } catch(e){ console.warn(e); }
   };
 
@@ -7324,7 +7328,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const tabBtn = (key, label, icon, color) => {
       const isActive = st.tab === key;
       const cnt = counts[key] || 0;
-      return `<button onclick="window._exemptReqState.tab='${key}';window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1.5 ${isActive ? `bg-${color}-500 text-white shadow` : `bg-${color}-50 text-${color}-600 hover:bg-${color}-100`}">
+      return `<button onclick="window._exemptReqState.tab='${key}';window.renderExemptRequest(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1.5 ${isActive ? `bg-${color}-500 text-white shadow` : `bg-${color}-50 text-${color}-600 hover:bg-${color}-100`}">
         <i class="fas fa-${icon}"></i>${label}
         <span class="${isActive ? 'bg-white/30 text-white' : `bg-${color}-100 text-${color}-700`} px-1.5 rounded-full text-[10px]">${cnt}</span>
       </button>`;
@@ -7340,7 +7344,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         ${tabBtn('active', '면제 적용 중', 'check-circle', 'emerald')}
         ${tabBtn('rejected', '거절됨', 'times-circle', 'red')}
         ${tabBtn('revoked', '면제 해제', 'rotate-left', 'gray')}
-        <button onclick="window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="ml-auto px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-[10px] font-bold text-gray-500" title="새로고침"><i class="fas fa-sync-alt"></i></button>
+        <button onclick="window.renderExemptRequest(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="ml-auto px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-[10px] font-bold text-gray-500" title="새로고침"><i class="fas fa-sync-alt"></i></button>
       </div>
       <div id="exemptReqList" class="space-y-3">
         ${filtered.length === 0 ? `<div class="text-center py-12 text-gray-300 text-xs"><i class="fas fa-inbox text-3xl mb-2 block"></i>해당 상태의 신청이 없습니다</div>` : filtered.map(r => window._exemptReqCard(r)).join('')}
@@ -7507,7 +7511,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         try { await window.fetchMembers(); } catch(e){}
       }
 
-      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+      window.renderExemptRequest(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('승인 실패: ' + e.message, 'error'); }
   };
 
@@ -7525,7 +7529,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       if (error) throw error;
       window.showMsg('거절 처리 완료', 'success');
       window._exemptDiscordNotify(data, '❌ 면제 신청 거절');
-      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+      window.renderExemptRequest(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('거절 실패: ' + e.message, 'error'); }
   };
 
@@ -7543,7 +7547,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       if (error) throw error;
       window.showMsg('면제 해제 완료. 신청자가 재신청 가능합니다.', 'success');
       window._exemptDiscordNotify(data, '🔓 면제 해제');
-      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+      window.renderExemptRequest(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('해제 실패: ' + e.message, 'error'); }
   };
 
@@ -7554,7 +7558,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       const { error } = await supaDb.from('exempt_requests').delete().eq('id', id);
       if (error) throw error;
       window.showMsg('삭제 완료', 'success');
-      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+      window.renderExemptRequest(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
   };
 
@@ -7571,7 +7575,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       }).eq('id', id);
       if (error) throw error;
       window.showMsg('보류 처리 완료', 'success');
-      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+      window.renderExemptRequest(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('보류 실패: ' + e.message, 'error'); }
   };
 
@@ -7586,7 +7590,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       }).eq('id', id);
       if (error) throw error;
       window.showMsg('대기 큐로 복귀', 'success');
-      window.renderExemptRequest(document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
+      window.renderExemptRequest(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('복귀 실패: ' + e.message, 'error'); }
   };
 
@@ -7651,6 +7655,279 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       </div>`;
   };
 
+  // ============================================================
+  // 신청 처리 통합 큐 (관리자) — 아인슈페너 신청(면제) + 수로 보석금
+  // ============================================================
+  window._reqQueueTab = 'exempt';
+
+  window.renderRequestQueue = (container) => {
+    const tab = window._reqQueueTab || 'exempt';
+    const tabBtn = (k, label, icon, color) => {
+      const isActive = tab === k;
+      return `<button onclick="window._reqQueueTab='${k}';window.renderRequestQueue(document.getElementById('contentArea'))" class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${isActive ? `bg-${color}-500 text-white shadow` : `bg-${color}-50 text-${color}-600 hover:bg-${color}-100`}">
+        <i class="fas fa-${icon}"></i>${label}
+      </button>`;
+    };
+    container.innerHTML = `
+    <div class="flex flex-col gap-3 fade-in h-full">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 shrink-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-inbox mr-2 text-pink-400"></i>신청 처리</h3>
+          <div class="flex gap-1.5 ml-4">
+            ${tabBtn('exempt', '아인슈페너 신청', 'shield-alt', 'pink')}
+            ${tabBtn('bail', '수로 보석금', 'gem', 'cyan')}
+          </div>
+          <span class="text-[9px] text-gray-400 ml-auto"><i class="fas fa-info-circle mr-1"></i>각 신청을 검토하여 승인/거절/보류 처리</span>
+        </div>
+      </div>
+      <div id="reqQueueContent" class="flex-1 min-h-0 overflow-y-auto no-scrollbar"></div>
+    </div>`;
+    const sub = document.getElementById('reqQueueContent');
+    if (tab === 'exempt') window.renderExemptRequest(sub);
+    else window.renderBailRequest(sub);
+  };
+
+  // 면제+보석금 통합 pending 뱃지 갱신
+  window._refreshReqQueueBadge = () => {
+    const exemptCnt = window._exemptPendingCount || 0;
+    const bailCnt = window._bailPendingCount || 0;
+    const total = exemptCnt + bailCnt;
+    const badge = document.getElementById('reqQueueBadge');
+    if (badge) {
+      if (total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }
+      else badge.classList.add('hidden');
+    }
+  };
+
+  // ============ 수로 보석금 신청 처리 (관리자) ============
+  window._bailReqState = { tab: 'pending', list: [], loaded: false };
+  window._bailPendingCount = 0;
+
+  window._fetchBailRequests = async () => {
+    const { data, error } = await supaDb.from('bail_requests')
+      .select('*').order('created_at', { ascending: false });
+    if (error) { window.showMsg('보석금 신청 로드 실패: ' + error.message, 'error'); return []; }
+    return data || [];
+  };
+
+  window._bailUpdatePendingBadge = async () => {
+    try {
+      const { count } = await supaDb.from('bail_requests')
+        .select('*', { count: 'exact', head: true }).eq('status', 'pending');
+      window._bailPendingCount = count || 0;
+      window._refreshReqQueueBadge?.();
+    } catch(e) { console.warn(e); }
+  };
+
+  window.renderBailRequest = async (container) => {
+    const st = window._bailReqState;
+    container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
+    st.list = await window._fetchBailRequests();
+    st.loaded = true;
+    window._bailUpdatePendingBadge();
+
+    const counts = { pending: 0, hold: 0, approved: 0, noble_unlocked: 0, rejected: 0 };
+    st.list.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+
+    const tabBtn = (key, label, icon, color) => {
+      const isActive = st.tab === key;
+      const cnt = counts[key] || 0;
+      return `<button onclick="window._bailReqState.tab='${key}';window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'))" class="px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1.5 ${isActive ? `bg-${color}-500 text-white shadow` : `bg-${color}-50 text-${color}-600 hover:bg-${color}-100`}">
+        <i class="fas fa-${icon}"></i>${label}
+        <span class="${isActive ? 'bg-white/30 text-white' : `bg-${color}-100 text-${color}-700`} px-1.5 rounded-full text-[10px]">${cnt}</span>
+      </button>`;
+    };
+
+    const filtered = st.list.filter(r => r.status === st.tab);
+    const totalAmt = filtered.reduce((s, r) => s + (Number(r.total_amount) || 0), 0);
+
+    container.innerHTML = `
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 fade-in">
+      <div class="flex items-center gap-2 flex-wrap mb-4 pb-3 border-b border-gray-100">
+        ${tabBtn('pending', '확인 대기', 'clock', 'amber')}
+        ${tabBtn('hold', '보류', 'pause', 'amber')}
+        ${tabBtn('approved', '입금 확인됨', 'check', 'blue')}
+        ${tabBtn('noble_unlocked', '노블 해제 완료', 'unlock', 'emerald')}
+        ${tabBtn('rejected', '거절됨', 'times-circle', 'red')}
+        <button onclick="window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'))" class="ml-auto px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-[10px] font-bold text-gray-500" title="새로고침"><i class="fas fa-sync-alt"></i></button>
+      </div>
+      ${filtered.length > 0 ? `<div class="text-[11px] text-gray-500 mb-3"><i class="fas fa-coins text-amber-400 mr-1"></i>합계 <strong class="text-gray-800">${totalAmt.toLocaleString()}개</strong> · ${filtered.length}건</div>` : ''}
+      <div id="bailReqList" class="space-y-3">
+        ${filtered.length === 0 ? `<div class="text-center py-12 text-gray-300 text-xs"><i class="fas fa-inbox text-3xl mb-2 block"></i>해당 상태의 신청이 없습니다</div>` : filtered.map(r => window._bailReqCard(r)).join('')}
+      </div>
+    </div>`;
+  };
+
+  window._bailReqCard = (r) => {
+    const dateStr = new Date(r.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const guildBadge = r.payer_guild === '뚠카롱' ? 'bg-pink-100 text-pink-700'
+                     : r.payer_guild === '뚱카롱' ? 'bg-rose-100 text-rose-700'
+                     : 'bg-violet-100 text-violet-700';
+    const multiClass = r.multiplier === 1 ? 'bg-emerald-100 text-emerald-700'
+                     : r.multiplier === 2 ? 'bg-amber-100 text-amber-700'
+                     : r.multiplier === 3 ? 'bg-orange-100 text-orange-700'
+                     : 'bg-red-100 text-red-700';
+    const proofHtml = r.proof_image_url
+      ? `<a href="${esc(r.proof_image_url)}" target="_blank" class="block group"><img src="${esc(r.proof_image_url)}" class="w-full max-h-40 object-contain rounded-xl bg-gray-50 border border-gray-200 group-hover:border-cyan-300 transition" alt="입금 스샷" loading="lazy"><div class="text-[9px] text-gray-400 text-center mt-1 group-hover:text-cyan-500"><i class="fas fa-external-link-alt mr-1"></i>크게 보기</div></a>`
+      : '<div class="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-xl p-3 text-center"><i class="fas fa-circle-exclamation mr-1"></i>스샷 없음</div>';
+    const reasonHtml = r.reason ? `<div class="text-[11px] text-gray-600 bg-gray-50 rounded-lg px-3 py-2 mt-2"><i class="fas fa-quote-left text-gray-300 mr-1"></i>${esc(r.reason)}</div>` : '';
+    const kakaoBtn = r.kakao_nick ? `<button onclick="navigator.clipboard.writeText('${esc(r.kakao_nick)}');window.showMsg('카톡 닉 복사됨','success')" class="px-3 py-1.5 bg-white border border-gray-200 text-gray-500 rounded-xl text-xs font-bold hover:bg-gray-50" title="${esc(r.kakao_nick)}"><i class="fas fa-message"></i></button>` : '';
+    const deleteBtn = `<button onclick="window._bailDelete(${r.id})" class="px-3 py-1.5 bg-white border border-gray-200 text-gray-400 rounded-xl text-xs font-bold hover:bg-red-50 hover:text-red-500 hover:border-red-200" title="이력에서 영구 삭제"><i class="fas fa-trash"></i></button>`;
+    const missHtml = r.miss_period_label ? `<span class="text-[10px] text-gray-500 bg-gray-50 rounded-md px-1.5 py-0.5">미참 추정: ${esc(r.miss_period_label)}</span>` : '';
+
+    let actions = '';
+    if (r.status === 'pending') {
+      actions = `
+        <div class="flex gap-2 mt-3 flex-wrap">
+          <button onclick="window._bailApprove(${r.id})" class="flex-1 px-3 py-1.5 bg-blue-500 text-white rounded-xl text-xs font-black hover:bg-blue-600 shadow-sm" title="입금 스샷 확인 → 노블 해제 작업 대기로"><i class="fas fa-check mr-1"></i>입금 확인</button>
+          <button onclick="window._bailHold(${r.id})" class="px-3 py-1.5 bg-white border border-amber-300 text-amber-600 rounded-xl text-xs font-bold hover:bg-amber-50" title="보류"><i class="fas fa-pause mr-1"></i>보류</button>
+          <button onclick="window._bailReject(${r.id})" class="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded-xl text-xs font-bold hover:bg-red-50"><i class="fas fa-times mr-1"></i>거절</button>
+          ${kakaoBtn}
+          ${deleteBtn}
+        </div>`;
+    } else if (r.status === 'hold') {
+      actions = `
+        <div class="flex gap-2 mt-3 flex-wrap">
+          <button onclick="window._bailApprove(${r.id})" class="flex-1 px-3 py-1.5 bg-blue-500 text-white rounded-xl text-xs font-black hover:bg-blue-600 shadow-sm"><i class="fas fa-check mr-1"></i>입금 확인</button>
+          <button onclick="window._bailUnhold(${r.id})" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-500 rounded-xl text-xs font-bold hover:bg-gray-50" title="대기로 복귀"><i class="fas fa-arrow-left mr-1"></i>대기로</button>
+          <button onclick="window._bailReject(${r.id})" class="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded-xl text-xs font-bold hover:bg-red-50"><i class="fas fa-times mr-1"></i>거절</button>
+          ${kakaoBtn}
+          ${deleteBtn}
+        </div>`;
+    } else if (r.status === 'approved') {
+      actions = `
+        <div class="flex gap-2 mt-3 flex-wrap">
+          <button onclick="window._bailUnlock(${r.id})" class="flex-1 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-black hover:bg-emerald-600 shadow-sm" title="게임 안에서 노블 직위 해제 완료 처리"><i class="fas fa-unlock mr-1"></i>노블 해제 완료</button>
+          ${deleteBtn}
+        </div>`;
+    } else {
+      actions = `<div class="flex gap-2 mt-3 flex-wrap">${deleteBtn}</div>`;
+    }
+
+    const processedInfo = r.processed_at
+      ? `<div class="text-[10px] text-gray-400 mt-1"><i class="fas fa-user-shield mr-1"></i>${esc(r.processed_by || '?')} · ${new Date(r.processed_at).toLocaleString('ko-KR')}${r.admin_note ? ' · ' + esc(r.admin_note) : ''}</div>`
+      : '';
+    const unlockedInfo = r.unlocked_at
+      ? `<div class="text-[10px] text-emerald-600 mt-1"><i class="fas fa-unlock mr-1"></i>${esc(r.unlocked_by || '?')} · ${new Date(r.unlocked_at).toLocaleString('ko-KR')}</div>`
+      : '';
+
+    return `
+      <div class="border ${r.status === 'pending' ? 'border-2 border-cyan-300 bg-gradient-to-br from-cyan-50/40 to-white' : r.status === 'approved' ? 'border-blue-200 bg-gradient-to-br from-blue-50/30 to-white' : 'border-gray-200 bg-white'} rounded-2xl p-4">
+        <div class="flex flex-col md:flex-row items-stretch gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="text-base font-black text-gray-800">${esc(r.payer_char)}</div>
+              <span class="${guildBadge} text-[10px] font-black px-2 py-0.5 rounded-md">${esc(r.payer_guild)}</span>
+              ${r.payer_role ? `<span class="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">${esc(r.payer_role)}</span>` : ''}
+              ${r.payer_is_main ? '<span class="text-[9px] font-black text-cyan-700 bg-cyan-100 px-1.5 py-0.5 rounded">본캐</span>' : ''}
+            </div>
+            <div class="text-[11px] text-gray-500 mt-1 flex items-center gap-2 flex-wrap">
+              <span>신청자: <strong class="text-gray-700">${esc(r.main_char)}</strong></span>
+              <span class="text-gray-300">·</span>
+              <span>${dateStr}</span>
+              ${missHtml}
+            </div>
+            <div class="flex items-center gap-2 mt-2 flex-wrap">
+              <span class="text-[10px] text-gray-400 font-bold">기본</span>
+              <span class="text-sm font-black text-gray-700">${r.base_amount}</span>
+              <span class="text-gray-300">×</span>
+              <span class="${multiClass} text-xs font-black px-2 py-0.5 rounded-md">×${r.multiplier}</span>
+              <span class="text-gray-300">=</span>
+              <span class="text-base font-black text-cyan-600">${r.total_amount}<span class="text-[10px] text-gray-400 ml-0.5">개</span></span>
+              <span class="text-[10px] text-gray-400 ml-2">${esc(r.half_year)} · ${r.offense_count}회차</span>
+            </div>
+            ${reasonHtml}
+            ${processedInfo}
+            ${unlockedInfo}
+          </div>
+          <div class="md:w-44 shrink-0">${proofHtml}</div>
+        </div>
+        ${actions}
+      </div>`;
+  };
+
+  // 처리 액션 함수들
+  const _bailAdminName = () => CURRENT_USER?.user_metadata?.full_name || CURRENT_USER?.email || 'admin';
+
+  window._bailApprove = async (id) => {
+    if (!confirm('입금 스샷 확인됨 — 노블 해제 작업 대기로 이동시키시겠습니까?')) return;
+    const note = prompt('관리자 메모 (선택)', '') || null;
+    try {
+      const { error } = await supaDb.from('bail_requests').update({
+        status: 'approved', processed_by: _bailAdminName(),
+        processed_at: new Date().toISOString(), admin_note: note
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('입금 확인 완료', 'success');
+      window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+
+  window._bailUnlock = async (id) => {
+    if (!confirm('게임에서 노블 직위 해제 완료 처리하시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('bail_requests').update({
+        status: 'noble_unlocked',
+        unlocked_by: _bailAdminName(),
+        unlocked_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('노블 해제 완료 처리됨', 'success');
+      window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+
+  window._bailReject = async (id) => {
+    const reason = prompt('거절 사유 (선택)', '') || null;
+    if (!confirm('이 신청을 거절하시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('bail_requests').update({
+        status: 'rejected', processed_by: _bailAdminName(),
+        processed_at: new Date().toISOString(), admin_note: reason
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('거절 처리됨', 'success');
+      window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+
+  window._bailHold = async (id) => {
+    const reason = prompt('보류 사유 (선택)', '') || null;
+    try {
+      const { error } = await supaDb.from('bail_requests').update({
+        status: 'hold', admin_note: reason
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('보류 처리됨', 'success');
+      window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+
+  window._bailUnhold = async (id) => {
+    try {
+      const { error } = await supaDb.from('bail_requests').update({
+        status: 'pending', admin_note: null
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('대기로 복귀', 'success');
+      window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+
+  window._bailDelete = async (id) => {
+    if (!confirm('이 신청을 영구 삭제하시겠습니까? (되돌릴 수 없습니다)')) return;
+    try {
+      const { error } = await supaDb.from('bail_requests').delete().eq('id', id);
+      if (error) throw error;
+      window.showMsg('삭제됨', 'success');
+      window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
+  };
+
+  // 페이지 로드 시 보석금 pending 카운트 (사이드바 통합 뱃지용)
+  setTimeout(() => { window._bailUpdatePendingBadge?.(); }, 3500);
+  setInterval(() => { window._bailUpdatePendingBadge?.(); }, 60000);
+
   // ============ 수로 면제 현황 ============
   window._suroExemptState = { sortField: 'score', sortOrder: 'desc', search: '', guild: 'all', filter: 'all' };
 
@@ -7714,7 +7991,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const maxSubs = Math.max(1, ...filtered.map(d => d.subs.length));
 
     const _rd = (role) => SITE_CONFIG?.roleDisplay?.[role] || {};
-    const fBtn = (key, label) => `<button onclick="window._suroExemptState.filter='${key}';window.renderSuroExempt(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.filter===key?'bg-pink-500 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${label}</button>`;
+    const fBtn = (key, label) => `<button onclick="window._suroExemptState.filter='${key}';window.renderSuroExempt(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.filter===key?'bg-pink-500 text-white':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${label}</button>`;
 
     container.innerHTML = `
     <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
@@ -7741,9 +8018,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         <div class="p-3 border-b border-gray-100 flex items-center gap-2 flex-wrap">
           <h3 class="text-xs font-bold text-gray-700 mr-1"><i class="fas fa-shield-alt mr-1 text-pink-500"></i>수로 면제</h3>
           <div class="flex gap-1">
-            <button onclick="window._suroExemptState.guild='all';window.renderSuroExempt(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='all'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">전체</button>
-            <button onclick="window._suroExemptState.guild='뚠카롱';window.renderSuroExempt(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚠카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚠</button>
-            <button onclick="window._suroExemptState.guild='뚱카롱';window.renderSuroExempt(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚱카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚱</button>
+            <button onclick="window._suroExemptState.guild='all';window.renderSuroExempt(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='all'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">전체</button>
+            <button onclick="window._suroExemptState.guild='뚠카롱';window.renderSuroExempt(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚠카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚠</button>
+            <button onclick="window._suroExemptState.guild='뚱카롱';window.renderSuroExempt(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="px-2 py-1 rounded-lg text-[9px] font-bold ${ss.guild==='뚱카롱'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500'}">뚱</button>
           </div>
           <span class="text-gray-200">|</span>
           <div class="flex gap-1">
@@ -7838,7 +8115,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     window._suroExemptSearchFocused = true;
     if (window._suroExemptSearchTimer) clearTimeout(window._suroExemptSearchTimer);
     window._suroExemptSearchTimer = setTimeout(() => {
-      const container = document.getElementById('sheetManageContent') || document.getElementById('contentArea');
+      const container = document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea');
       window.renderSuroExempt(container);
       setTimeout(() => { window._suroExemptSearchFocused = false; }, 100);
     }, 300);
@@ -7848,7 +8125,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const ss = window._suroExemptState;
     if (ss.sortField === field) ss.sortOrder = ss.sortOrder === 'asc' ? 'desc' : 'asc';
     else { ss.sortField = field; ss.sortOrder = (field === 'name') ? 'asc' : 'desc'; }
-    const container = document.getElementById('sheetManageContent') || document.getElementById('contentArea');
+    const container = document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea');
     window.renderSuroExempt(container);
   };
 
@@ -7985,14 +8262,14 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     container.innerHTML = `
     <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
       <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-        <div onclick="window._subCharsState.guild='all';window._subCharsState.search='';window.renderSubChars(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="cursor-pointer rounded-2xl border-2 p-3 text-center transition-all ${isAllView ? 'border-pink-400 shadow-md bg-pink-50' : 'border-gray-100 bg-white hover:border-pink-200'}">
+        <div onclick="window._subCharsState.guild='all';window._subCharsState.search='';window.renderSubChars(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="cursor-pointer rounded-2xl border-2 p-3 text-center transition-all ${isAllView ? 'border-pink-400 shadow-md bg-pink-50' : 'border-gray-100 bg-white hover:border-pink-200'}">
           <div class="text-[10px] font-bold ${isAllView ? 'text-pink-600' : 'text-gray-500'}">전체 명단</div>
           <div class="text-xl font-black ${isAllView ? 'text-pink-600' : 'text-gray-800'}">${totalMembers}<span class="text-[10px] font-bold text-gray-400">명</span></div>
         </div>
         ${subGuilds.map(g => {
           const cnt = guildSummary[g.name] || 0;
           const isActive = g.name === ss.guild;
-          return `<div onclick="window._subCharsState.guild='${g.name}';window._subCharsState.search='';window.renderSubChars(document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="cursor-pointer rounded-2xl border-2 p-3 text-center transition-all ${isActive ? 'border-pink-400 shadow-md bg-pink-50' : 'border-gray-100 bg-white hover:border-pink-200'}">
+          return `<div onclick="window._subCharsState.guild='${g.name}';window._subCharsState.search='';window.renderSubChars(document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea'))" class="cursor-pointer rounded-2xl border-2 p-3 text-center transition-all ${isActive ? 'border-pink-400 shadow-md bg-pink-50' : 'border-gray-100 bg-white hover:border-pink-200'}">
             <div class="text-[10px] font-bold ${isActive ? 'text-pink-600' : 'text-gray-500'}">${g.name}</div>
             <div class="text-xl font-black ${isActive ? 'text-pink-600' : 'text-gray-800'}">${cnt}<span class="text-[10px] font-bold text-gray-400">명</span></div>
           </div>`;
@@ -8064,7 +8341,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     window._subCharsSearchFocused = true;
     if (window._subCharsSearchTimer) clearTimeout(window._subCharsSearchTimer);
     window._subCharsSearchTimer = setTimeout(() => {
-      const container = document.getElementById('sheetManageContent') || document.getElementById('contentArea');
+      const container = document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea');
       window.renderSubChars(container);
       // 렌더 후 한 번만 복원하고 플래그 해제
       setTimeout(() => { window._subCharsSearchFocused = false; }, 100);
@@ -8075,7 +8352,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const ss = window._subCharsState;
     if (ss.sortField === field) { ss.sortOrder = ss.sortOrder === 'asc' ? 'desc' : 'asc'; }
     else { ss.sortField = field; ss.sortOrder = 'asc'; }
-    const container = document.getElementById('sheetManageContent') || document.getElementById('contentArea');
+    const container = document.getElementById('reqQueueContent') || document.getElementById('sheetManageContent') || document.getElementById('contentArea');
     window.renderSubChars(container);
   };
 
