@@ -201,7 +201,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
    <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form"><i class="fas fa-shield-alt w-5 text-center text-xs"></i><span>면제 신청</span></button>
    <button onclick="router('bail_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail_form"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금 신청</span></button>
-   <button onclick="router('guide')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="guide"><i class="fas fa-book-open w-5 text-center text-xs"></i><span>사용 안내</span></button>
+   <button onclick="router('manual')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="manual"><i class="fas fa-book-open w-5 text-center text-xs"></i><span>사용 안내</span></button>
    <button onclick="router('requests')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="requests"><i class="fas fa-inbox w-5 text-center text-xs"></i><span>신청 처리</span><span id="reqQueueBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
    <div class="admin-only hidden" id="adminMenuSection">
    <button onclick="const el=document.getElementById('adminMenuList');el.classList.toggle('hidden');this.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-4 pt-4 pb-2 cursor-pointer hover:bg-pink-50/50 rounded-xl transition-all">
@@ -1545,7 +1545,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'penalty') window.renderPenalty(content);
             else if (tab === 'exempt_form') window.renderExemptForm(content);
             else if (tab === 'bail_form') window.renderBailForm(content);
-            else if (tab === 'guide') window.renderGuide(content);
+            else if (tab === 'manual') window.renderManual(content);
             else if (tab === 'requests' && isAdmin()) window.renderRequestQueue(content);
             else if (tab === 'sheet' && isAdmin()) window.renderSheet(content);
             else if (tab === 'guide_edit' && isAdmin()) window.renderGuideEditor(content);
@@ -7657,8 +7657,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       </div>`;
   };
 
-  // ============ 사용 안내 (iframe 임베드) ============
-  window.renderGuide = (container) => {
+  // ============ 사용 안내 (iframe 임베드) — guide_pages 도메인과 충돌 회피 위해 'manual'로 분리 ============
+  window.renderManual = (container) => {
     container.innerHTML = `
       <div class="flex flex-col gap-3 fade-in h-full">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 shrink-0 flex items-center gap-3 flex-wrap">
