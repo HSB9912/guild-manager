@@ -451,6 +451,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    if (!wlErr && wl && wl.status === 'approved') {
    userRole = 'admin';
    CURRENT_USER.role = wl.role || '관리자';
+   CURRENT_USER.adminName = wl.name || null;
    foundAdmin = true;
    }
    } catch(e) {}
@@ -7439,7 +7440,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       const { data, error } = await supaDb.from('exempt_requests').update({
         status: 'active',
         admin_note: note,
-        processed_by: CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
+        processed_by: CURRENT_USER?.adminName || CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
         processed_at: new Date().toISOString()
       }).eq('id', id).select().single();
       if (error) throw error;
@@ -7516,7 +7517,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       const { data, error } = await supaDb.from('exempt_requests').update({
         status: 'rejected',
         admin_note: reason,
-        processed_by: CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
+        processed_by: CURRENT_USER?.adminName || CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
         processed_at: new Date().toISOString()
       }).eq('id', id).select().single();
       if (error) throw error;
@@ -7534,7 +7535,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       const { data, error } = await supaDb.from('exempt_requests').update({
         status: 'revoked',
         revoke_reason: reason,
-        revoked_by: CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
+        revoked_by: CURRENT_USER?.adminName || CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
         revoked_at: new Date().toISOString()
       }).eq('id', id).select().single();
       if (error) throw error;
@@ -7563,7 +7564,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       const { error } = await supaDb.from('exempt_requests').update({
         status: 'hold',
         admin_note: note,
-        processed_by: CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
+        processed_by: CURRENT_USER?.adminName || CURRENT_USER?.name || CURRENT_USER?.email || 'admin',
         processed_at: new Date().toISOString()
       }).eq('id', id);
       if (error) throw error;
