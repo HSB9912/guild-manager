@@ -190,6 +190,7 @@
   const R2_PUBLIC_URL = 'https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev';
   const R2_API_KEY = 'guild-manager-r2-key-2026';
   const R2_BUCKET = 'bail-images';
+  const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
 
   const BASE_AMOUNT = {
     '뚠카롱': 80, '뚱카롱': 40,
@@ -649,9 +650,9 @@
       }]
     };
 
-    const res = await fetch(`${R2_WORKER_URL}/discord-bail-notify`, {
+    const res = await fetch(BAIL_NOTIFY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-API-Key': R2_API_KEY },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('Discord proxy failed: ' + res.status);
