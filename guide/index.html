@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>길드 신청 시스템 사용 안내 — 뚠/뚱카롱</title>
+<meta name="description" content="아인슈페너 면제 신청 + 수로 보석금 납부 매뉴얼">
+<meta property="og:title" content="길드 신청 시스템 사용 안내">
+<meta property="og:description" content="면제 신청 + 보석금 납부 사용법">
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: #fafafa; }
+  .step-num { font-feature-settings: 'tnum'; }
+  /* 인쇄/캡처 시 박스 잘림 방지 */
+  .section, .step-row, .callout { break-inside: avoid; page-break-inside: avoid; }
+</style>
+</head>
+<body class="text-gray-800">
+
+<div class="max-w-3xl mx-auto px-5 py-8 lg:py-12">
+
+  <!-- ============ 헤더 ============ -->
+  <header class="text-center mb-10">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-400 shadow mb-3">
+      <i class="fas fa-book-open text-white text-xl"></i>
+    </div>
+    <h1 class="text-2xl lg:text-3xl font-black text-gray-900">길드 신청 시스템 사용 안내</h1>
+    <p class="text-xs text-gray-500 mt-2">뚠 / 뚱카롱 길드 · 면제 신청 + 보석금 납부 매뉴얼</p>
+    <p class="text-[11px] text-gray-400 mt-1">사이트: hsb9912.github.io/guild-manager</p>
+  </header>
+
+  <!-- ============ 어떤 걸 써야 하나 ============ -->
+  <section class="section bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-8">
+    <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">언제 무엇을 써야 하나요</div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <a href="#section-exempt" class="block bg-pink-50 border border-pink-100 rounded-2xl p-4 hover:bg-pink-100 transition no-underline">
+        <div class="flex items-center gap-2 mb-1.5">
+          <i class="fas fa-shield-halved text-pink-500"></i>
+          <strong class="text-pink-700 text-sm">아인슈페너 신청</strong>
+        </div>
+        <p class="text-[12px] text-gray-700 leading-relaxed">이번 주 수로 점수가 부족할 것 같을 때<br>→ 부캐 직위를 아인슈페너로 전환해 노블 사용 가능</p>
+      </a>
+
+      <a href="#section-bail" class="block bg-cyan-50 border border-cyan-100 rounded-2xl p-4 hover:bg-cyan-100 transition no-underline">
+        <div class="flex items-center gap-2 mb-1.5">
+          <i class="fas fa-gem text-cyan-600"></i>
+          <strong class="text-cyan-700 text-sm">보석금 납부</strong>
+        </div>
+        <p class="text-[12px] text-gray-700 leading-relaxed">이미 미참해서 노블이 막혔을 때<br>→ 길드창고에 솔 에르다 조각 납부 후 인증</p>
+      </a>
+    </div>
+
+    <p class="text-[11px] text-gray-500 mt-4 leading-relaxed">
+      <i class="fas fa-circle-info text-gray-400 mr-1"></i>
+      두 신청 모두 운영진이 검토 후 처리합니다. 진행 상태는 페이지 하단 <strong>"내 신청 내역"</strong>에서 실시간 확인 가능합니다.
+    </p>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 1. 아인슈페너 면제 신청 -->
+  <!-- ============================================== -->
+  <section id="section-exempt" class="section mb-8">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl bg-pink-500 text-white flex items-center justify-center font-black step-num">1</div>
+      <h2 class="text-xl font-black text-gray-900">수로 면제 신청 — 아인슈페너</h2>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+      <p class="text-sm text-gray-700 leading-relaxed mb-4">
+        본인 본캐 닉 하나만 입력하면 <strong>점수 자동 조회 → 부캐 자동 분류</strong>까지 처리됩니다. 운영진이 승인하면 부캐 직위가 <strong>아인슈페너</strong>로 자동 변경되어 노블을 쓸 수 있습니다.
+      </p>
+
+      <div class="bg-gray-50 rounded-2xl p-3 mb-5 text-[12px]">
+        <div class="text-[10px] text-gray-400 font-bold uppercase mb-1">페이지 주소</div>
+        <code class="text-gray-700 break-all">hsb9912.github.io/guild-manager/exempt/</code>
+      </div>
+
+      <div class="space-y-3">
+        <div class="step-row flex gap-3">
+          <div class="shrink-0 w-7 h-7 bg-pink-100 text-pink-700 rounded-full flex items-center justify-center font-black text-xs step-num">1</div>
+          <div class="flex-1 pt-0.5">
+            <div class="text-sm font-bold text-gray-800">페이지 열기</div>
+            <div class="text-[12px] text-gray-600 leading-relaxed">위 주소를 입력하거나 메인 사이트의 <strong>"면제 신청"</strong> 메뉴를 선택합니다.</div>
+          </div>
+        </div>
+
+        <div class="step-row flex gap-3">
+          <div class="shrink-0 w-7 h-7 bg-pink-100 text-pink-700 rounded-full flex items-center justify-center font-black text-xs step-num">2</div>
+          <div class="flex-1 pt-0.5">
+            <div class="text-sm font-bold text-gray-800">본캐 닉 입력 → 돋보기 버튼</div>
+            <div class="text-[12px] text-gray-600 leading-relaxed">본인의 본캐(메인 캐릭) 닉네임만 입력하면 됩니다. 부캐 닉은 자동으로 가져옵니다.</div>
+          </div>
+        </div>
+
+        <div class="step-row flex gap-3">
+          <div class="shrink-0 w-7 h-7 bg-pink-100 text-pink-700 rounded-full flex items-center justify-center font-black text-xs step-num">3</div>
+          <div class="flex-1 pt-0.5">
+            <div class="text-sm font-bold text-gray-800">자동 분류 결과 확인</div>
+            <div class="text-[12px] text-gray-600 leading-relaxed mb-1">본캐 점수에 따라 신청 타입이 결정됩니다.</div>
+            <ul class="text-[12px] text-gray-600 space-y-0.5 ml-3">
+              <li>• <strong class="text-amber-700">9만점 이상</strong> — 전체 면제 (모든 부캐 자동 적용)</li>
+              <li>• <strong class="text-blue-700">9만점 미만</strong> — 절반 면제 (면제할 부캐 직접 선택)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="step-row flex gap-3">
+          <div class="shrink-0 w-7 h-7 bg-pink-100 text-pink-700 rounded-full flex items-center justify-center font-black text-xs step-num">4</div>
+          <div class="flex-1 pt-0.5">
+            <div class="text-sm font-bold text-gray-800">사유 / 오픈챗 닉 입력 (선택)</div>
+            <div class="text-[12px] text-gray-600 leading-relaxed">필수 아닙니다. 알릴 점이 있을 때만 작성하시면 됩니다.</div>
+          </div>
+        </div>
+
+        <div class="step-row flex gap-3">
+          <div class="shrink-0 w-7 h-7 bg-pink-500 text-white rounded-full flex items-center justify-center font-black text-xs step-num">5</div>
+          <div class="flex-1 pt-0.5">
+            <div class="text-sm font-bold text-gray-800">신청하기 버튼 클릭</div>
+            <div class="text-[12px] text-gray-600 leading-relaxed">완료. 운영진이 검토 후 승인하면 직위가 자동 변경됩니다. 처리 결과는 페이지 하단 <strong>"내 신청 내역"</strong>에 실시간 표시됩니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 2. 보석금 납부 신청 -->
+  <!-- ============================================== -->
+  <section id="section-bail" class="section mb-8">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl bg-cyan-500 text-white flex items-center justify-center font-black step-num">2</div>
+      <h2 class="text-xl font-black text-gray-900">보석금 납부 신청 — 노블 해제</h2>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+      <p class="text-sm text-gray-700 leading-relaxed mb-4">
+        수로 미참 시 노블이 잠깁니다. <strong>★보석금★ 길드 창고</strong>에 솔 에르다 조각을 납부하고 인증 캡처를 첨부하면, 운영진이 게임 안에서 노블을 해제해 드립니다.
+      </p>
+
+      <div class="bg-gray-50 rounded-2xl p-3 mb-5 text-[12px]">
+        <div class="text-[10px] text-gray-400 font-bold uppercase mb-1">페이지 주소</div>
+        <code class="text-gray-700 break-all">hsb9912.github.io/guild-manager/bail/</code>
+      </div>
+
+      <!-- 금액표 -->
+      <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">보석금 금액 (솔 에르다 조각)</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-5">
+        <div class="bg-pink-50 border border-pink-100 rounded-xl p-3">
+          <div class="text-[10px] text-pink-700 font-bold mb-0.5">뚠카롱</div>
+          <div class="text-lg font-black text-pink-600">80<span class="text-xs text-pink-400 ml-0.5">개</span></div>
+        </div>
+        <div class="bg-rose-50 border border-rose-100 rounded-xl p-3">
+          <div class="text-[10px] text-rose-700 font-bold mb-0.5">뚱카롱</div>
+          <div class="text-lg font-black text-rose-600">40<span class="text-xs text-rose-400 ml-0.5">개</span></div>
+        </div>
+        <div class="bg-violet-50 border border-violet-100 rounded-xl p-3">
+          <div class="text-[10px] text-violet-700 font-bold mb-0.5">밤·별·달·꿀·솜</div>
+          <div class="text-lg font-black text-violet-600">20<span class="text-xs text-violet-400 ml-0.5">개</span></div>
+        </div>
+      </div>
+
+      <!-- 누진세 -->
+      <div class="callout bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-5">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fas fa-triangle-exclamation text-amber-600"></i>
+          <strong class="text-amber-800 text-sm">누진세 (반기 기준 자동 초기화)</strong>
+        </div>
+        <p class="text-[12px] text-amber-900 leading-relaxed mb-2">동일 캐릭이 같은 반기에 또 보석금을 내면 금액이 가산됩니다.</p>
+        <div class="grid grid-cols-4 gap-1.5 text-center">
+          <div class="bg-white rounded-lg p-2"><div class="text-[9px] text-gray-400 font-bold">1회차</div><div class="text-sm font-black text-emerald-600">×1</div></div>
+          <div class="bg-white rounded-lg p-2"><div class="text-[9px] text-gray-400 font-bold">2회차</div><div class="text-sm font-black text-amber-600">×2</div></div>
+          <div class="bg-white rounded-lg p-2"><div class="text-[9px] text-gray-400 font-bold">3회차</div><div class="text-sm font-black text-orange-600">×3</div></div>
+          <div class="bg-white rounded-lg p-2"><div class="text-[9px] text-gray-400 font-bold">4회차</div><div class="text-sm font-black text-red-600">×4</div></div>
+        </div>
+        <p class="text-[11px] text-amber-700 mt-2">반기: 상반기(1~6월) / 하반기(7~12월) — 페이지에서 자동 계산됩니다</p>
+      </div>
+
+      <!-- 진행 순서 — 3단계 -->
+      <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">진행 순서</div>
+
+      <!-- 1단계: 입금 -->
+      <div class="step-row bg-white border-2 border-gray-100 rounded-2xl p-4 mb-3">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500 text-white flex items-center justify-center font-black text-sm step-num">1</div>
+          <h3 class="font-black text-gray-800 text-base">길드창고에 입금</h3>
+        </div>
+        <ol class="text-[12px] text-gray-700 space-y-1.5 ml-1 leading-relaxed list-decimal list-inside marker:text-gray-400 marker:font-bold">
+          <li>게임 접속 후 <strong>★보석금★ 길드 창고</strong> NPC로 이동</li>
+          <li>NPC 대화 → 길드 창고 열기</li>
+          <li>본인 인벤토리(기타 탭)에서 <strong>솔 에르다 조각</strong>을 끌어다 길드창고에 입고</li>
+        </ol>
+      </div>
+
+      <!-- 2단계: 캡처 -->
+      <div class="step-row bg-white border-2 border-gray-100 rounded-2xl p-4 mb-3">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500 text-white flex items-center justify-center font-black text-sm step-num">2</div>
+          <h3 class="font-black text-gray-800 text-base">입금 인증 캡처</h3>
+        </div>
+        <p class="text-[12px] text-gray-700 leading-relaxed mb-3">길드창고 좌측의 <strong>GUILD STORAGE LOG</strong> 패널에 다음과 같은 줄이 본인 닉네임으로 표시되어야 합니다.</p>
+        <div class="bg-slate-900 text-emerald-300 font-mono text-[11px] rounded-xl p-3 mb-3 leading-relaxed">
+          [날짜 시간] <span class="text-amber-300">OOO님</span> 님이 <span class="text-cyan-300">솔 에르다 조각 (N개)</span> 을 입고하였습니다
+        </div>
+        <p class="text-[12px] text-gray-700 leading-relaxed mb-3">이 줄이 보이는 상태에서 화면을 캡처해 주세요.</p>
+
+        <!-- 인정 vs 불인정 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+            <div class="flex items-center gap-1.5 mb-2">
+              <i class="fas fa-circle-check text-emerald-500"></i>
+              <strong class="text-emerald-700 text-[12px]">인정되는 캡처</strong>
+            </div>
+            <ul class="text-[11px] text-gray-700 space-y-1 leading-relaxed list-disc list-inside marker:text-emerald-400">
+              <li>GUILD STORAGE LOG에 <strong>본인 닉</strong> 표시됨</li>
+              <li>솔 에르다 조각 <strong>수량</strong> 보임</li>
+              <li>입고 <strong>시간</strong> 보임</li>
+            </ul>
+          </div>
+          <div class="bg-red-50 border border-red-200 rounded-xl p-3">
+            <div class="flex items-center gap-1.5 mb-2">
+              <i class="fas fa-circle-xmark text-red-500"></i>
+              <strong class="text-red-700 text-[12px]">인정되지 않음</strong>
+            </div>
+            <ul class="text-[11px] text-gray-700 space-y-1 leading-relaxed list-disc list-inside marker:text-red-400">
+              <li>메소 송금 화면</li>
+              <li>본인 인벤토리만 캡처</li>
+              <li>채팅창 캡처</li>
+              <li>닉네임 잘려서 안 보임</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3단계: 신청 -->
+      <div class="step-row bg-white border-2 border-gray-100 rounded-2xl p-4 mb-3">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500 text-white flex items-center justify-center font-black text-sm step-num">3</div>
+          <h3 class="font-black text-gray-800 text-base">신청 페이지에서 제출</h3>
+        </div>
+        <ol class="text-[12px] text-gray-700 space-y-1.5 ml-1 leading-relaxed list-decimal list-inside marker:text-gray-400 marker:font-bold">
+          <li>보석금 페이지 열기 (위 주소)</li>
+          <li>본캐 닉 입력 → 돋보기 버튼</li>
+          <li>미참한 캐릭 <strong>체크</strong> (여러 캐릭 동시 가능 — 합계와 누진세 자동 계산)</li>
+          <li>입금 인증 캡처 첨부
+            <ul class="ml-5 mt-1 list-disc text-[11px] text-gray-600 space-y-0.5 marker:text-gray-300">
+              <li>PC: 캡처 후 <kbd class="bg-gray-100 border border-gray-300 rounded px-1.5 py-0.5 text-[10px] font-mono">Ctrl + V</kbd> 한 번이면 자동 첨부</li>
+              <li>모바일: 첨부 영역을 눌러 갤러리/카메라 선택</li>
+            </ul>
+          </li>
+          <li>(선택) 사유 / 오픈챗 닉 입력</li>
+          <li><strong>"보석금 납부 신청"</strong> 버튼 클릭</li>
+        </ol>
+      </div>
+
+      <!-- 처리 흐름 -->
+      <div class="callout bg-cyan-50 border border-cyan-100 rounded-2xl p-3 mt-4">
+        <div class="text-[10px] font-black text-cyan-700 uppercase mb-2 flex items-center gap-1.5">
+          <i class="fas fa-arrow-right-arrow-left"></i>처리 단계 (페이지에서 실시간 확인)
+        </div>
+        <div class="flex items-center gap-1.5 text-[11px] flex-wrap">
+          <span class="bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-md">확인 대기</span>
+          <i class="fas fa-arrow-right text-gray-300 text-[10px]"></i>
+          <span class="bg-blue-100 text-blue-800 font-bold px-2.5 py-1 rounded-md">입금 확인됨</span>
+          <i class="fas fa-arrow-right text-gray-300 text-[10px]"></i>
+          <span class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-md">노블 해제 완료</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FAQ -->
+  <!-- ============================================== -->
+  <section class="section mb-8">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-xl bg-gray-700 text-white flex items-center justify-center font-black"><i class="fas fa-circle-question"></i></div>
+      <h2 class="text-xl font-black text-gray-900">자주 묻는 질문</h2>
+    </div>
+
+    <div class="space-y-2.5">
+      <details class="bg-white rounded-2xl border border-gray-100 shadow-sm group">
+        <summary class="cursor-pointer p-4 font-bold text-sm text-gray-800 flex items-center gap-2 list-none">
+          <i class="fas fa-chevron-right text-gray-400 text-xs transition-transform group-open:rotate-90"></i>
+          본캐 검색해도 안 나옵니다
+        </summary>
+        <div class="px-4 pb-4 pt-0 text-[12px] text-gray-600 leading-relaxed border-t border-gray-50">
+          사이트에 캐릭이 아직 등록되지 않은 경우입니다. 운영진에게 등록을 먼저 요청해 주세요. 면제 신청 페이지에서는 신규 가입자도 함께 신청 가능한 옵션이 있습니다.
+        </div>
+      </details>
+
+      <details class="bg-white rounded-2xl border border-gray-100 shadow-sm group">
+        <summary class="cursor-pointer p-4 font-bold text-sm text-gray-800 flex items-center gap-2 list-none">
+          <i class="fas fa-chevron-right text-gray-400 text-xs transition-transform group-open:rotate-90"></i>
+          부캐 여러 개가 동시에 미참했어요. 따로 신청하나요?
+        </summary>
+        <div class="px-4 pb-4 pt-0 text-[12px] text-gray-600 leading-relaxed border-t border-gray-50">
+          한 번에 처리됩니다. 보석금 페이지에서 미참한 부캐를 모두 체크하면 합계가 자동 계산됩니다. 길드창고에 합계만큼 한 번에 입금하고, 캡처 한 장만 첨부하면 됩니다.
+        </div>
+      </details>
+
+      <details class="bg-white rounded-2xl border border-gray-100 shadow-sm group">
+        <summary class="cursor-pointer p-4 font-bold text-sm text-gray-800 flex items-center gap-2 list-none">
+          <i class="fas fa-chevron-right text-gray-400 text-xs transition-transform group-open:rotate-90"></i>
+          신청 후 얼마나 기다려야 하나요?
+        </summary>
+        <div class="px-4 pb-4 pt-0 text-[12px] text-gray-600 leading-relaxed border-t border-gray-50">
+          운영진이 확인하는 대로 처리됩니다. 페이지 하단 <strong>"내 신청 내역"</strong>에서 진행 상태(확인 대기 → 입금 확인됨 → 노블 해제 완료)를 실시간으로 보실 수 있습니다.
+        </div>
+      </details>
+
+      <details class="bg-white rounded-2xl border border-gray-100 shadow-sm group">
+        <summary class="cursor-pointer p-4 font-bold text-sm text-gray-800 flex items-center gap-2 list-none">
+          <i class="fas fa-chevron-right text-gray-400 text-xs transition-transform group-open:rotate-90"></i>
+          누진세가 잘못 계산된 것 같아요
+        </summary>
+        <div class="px-4 pb-4 pt-0 text-[12px] text-gray-600 leading-relaxed border-t border-gray-50">
+          페이지에 표시되는 횟수는 같은 반기에 신청한 이력 기준입니다. 사정이 있으시면 사유 칸에 적어주시거나 운영진에게 문의해 주세요.
+        </div>
+      </details>
+
+      <details class="bg-white rounded-2xl border border-gray-100 shadow-sm group">
+        <summary class="cursor-pointer p-4 font-bold text-sm text-gray-800 flex items-center gap-2 list-none">
+          <i class="fas fa-chevron-right text-gray-400 text-xs transition-transform group-open:rotate-90"></i>
+          잘못 신청했습니다. 취소되나요?
+        </summary>
+        <div class="px-4 pb-4 pt-0 text-[12px] text-gray-600 leading-relaxed border-t border-gray-50">
+          운영진이 처리 전이라면 취소 가능합니다. 카톡 또는 디스코드로 운영진에게 알려 주세요.
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- 푸터 -->
+  <!-- ============================================== -->
+  <footer class="text-center pt-4 pb-8 border-t border-gray-100">
+    <p class="text-[12px] text-gray-600 mb-2">문의: <strong class="text-gray-800">운영진 (마카롱 / 다쿠아즈)</strong></p>
+    <div class="text-[11px] text-gray-400 space-x-2">
+      <a href="../" class="hover:text-pink-500"><i class="fas fa-home mr-1"></i>메인</a>
+      <span>·</span>
+      <a href="../exempt/" class="hover:text-pink-500"><i class="fas fa-shield-halved mr-1"></i>면제 신청</a>
+      <span>·</span>
+      <a href="../bail/" class="hover:text-cyan-500"><i class="fas fa-gem mr-1"></i>보석금 신청</a>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>
