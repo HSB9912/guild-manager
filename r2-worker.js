@@ -96,6 +96,26 @@ export default {
         return json({ success: true });
       }
 
+      // POST /discord-bail-notify — 디스코드 웹훅 프록시 (수로 보석금 신청 알림)
+      // 별도 채널/웹훅 사용. env.DISCORD_BAIL_WEBHOOK_URL 미설정 시 DISCORD_WEBHOOK_URL로 폴백.
+      if (request.method === 'POST' && path === '/discord-bail-notify') {
+        const webhookUrl = env.DISCORD_BAIL_WEBHOOK_URL || env.DISCORD_WEBHOOK_URL;
+        if (!webhookUrl) {
+          return json({ error: 'DISCORD_BAIL_WEBHOOK_URL not configured' }, 500);
+        }
+        const payload = await request.json();
+        const dcRes = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!dcRes.ok) {
+          const text = await dcRes.text();
+          return json({ error: 'Discord rejected', status: dcRes.status, detail: text }, 502);
+        }
+        return json({ success: true });
+      }
+
       return new Response('Not Found', { status: 404, headers: cors });
     } catch (e) {
       return json({ error: e.message }, 500);

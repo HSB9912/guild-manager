@@ -200,6 +200,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금</span></button>
    <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
    <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form"><i class="fas fa-shield-alt w-5 text-center text-xs"></i><span>면제 신청</span></button>
+   <button onclick="router('bail_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail_form"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금 신청</span></button>
    <div class="admin-only hidden" id="adminMenuSection">
    <button onclick="const el=document.getElementById('adminMenuList');el.classList.toggle('hidden');this.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-4 pt-4 pb-2 cursor-pointer hover:bg-pink-50/50 rounded-xl transition-all">
      <span class="text-[9px] font-bold text-gray-300 uppercase tracking-widest">관리자</span>
@@ -1541,6 +1542,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'bail') window.renderBail(content);
             else if (tab === 'penalty') window.renderPenalty(content);
             else if (tab === 'exempt_form') window.renderExemptForm(content);
+            else if (tab === 'bail_form') window.renderBailForm(content);
             else if (tab === 'sheet' && isAdmin()) window.renderSheet(content);
             else if (tab === 'guide_edit' && isAdmin()) window.renderGuideEditor(content);
             else if (tab === 'history' && isAdmin()) window.renderHistory(content);
@@ -7630,6 +7632,21 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         </div>
         <div class="flex-1 min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <iframe src="exempt/" class="w-full h-full border-0" allow="clipboard-write" title="수로 면제 신청"></iframe>
+        </div>
+      </div>`;
+  };
+
+  // ============ 길드원용 보석금 신청 폼 (iframe 임베드) ============
+  window.renderBailForm = (container) => {
+    container.innerHTML = `
+      <div class="flex flex-col gap-3 fade-in h-full">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 shrink-0 flex items-center gap-3 flex-wrap">
+          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-gem mr-2 text-cyan-500"></i>수로 보석금 신청</h3>
+          <span class="text-[10px] text-gray-400">길드창고 입금 후 인증 스샷 첨부</span>
+          <a href="bail/" target="_blank" class="ml-auto px-3 py-1 bg-cyan-50 text-cyan-600 rounded-lg text-[10px] font-bold hover:bg-cyan-100 flex items-center gap-1"><i class="fas fa-external-link-alt text-[9px]"></i>새 창에서 열기</a>
+        </div>
+        <div class="flex-1 min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <iframe src="bail/" class="w-full h-full border-0" allow="clipboard-write" title="수로 보석금 신청"></iframe>
         </div>
       </div>`;
   };

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>수로 보석금 신청 — 뚠/뚱카롱</title>
+<meta name="description" content="뚠/뚱카롱 길드 수로 보석금 납부 신청 페이지 (노블 해제용)">
+<meta property="og:title" content="수로 보석금 신청 — 뚠/뚱카롱">
+<meta property="og:description" content="본캐닉만 입력하면 자동 분류 · 누진세 자동 계산">
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: linear-gradient(135deg, #ecfeff 0%, #eff6ff 100%); min-height: 100vh; }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .badge-ddun  { background: linear-gradient(135deg, #fce7f3, #fbcfe8); color: #9d174d; }
+  .badge-ddung { background: linear-gradient(135deg, #ffe4e6, #fecdd3); color: #9f1239; }
+  .badge-sub   { background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #5b21b6; }
+  .multi-x1 { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+  .multi-x2 { background:#fef3c7; color:#b45309; border-color:#fde68a; }
+  .multi-x3 { background:#ffedd5; color:#c2410c; border-color:#fed7aa; }
+  .multi-x4 { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
+  @supports (padding: env(safe-area-inset-bottom)) {
+    body { padding-bottom: env(safe-area-inset-bottom); }
+  }
+</style>
+</head>
+<body class="p-4 lg:p-8">
+
+<div class="max-w-md mx-auto">
+
+  <!-- 헤더 -->
+  <div class="text-center mb-6 pt-4">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg mb-3">
+      <i class="fas fa-gem text-white text-2xl"></i>
+    </div>
+    <h1 class="text-xl font-black text-gray-800">수로 보석금 신청</h1>
+    <p class="text-[11px] text-gray-500 mt-1">뚠/뚱카롱 길드 · 노블 해제 신청</p>
+  </div>
+
+  <!-- 안내 카드: 금액표 + 누진세 -->
+  <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 mb-4">
+    <h3 class="text-[11px] text-gray-500 font-bold uppercase mb-3 flex items-center gap-1.5">
+      <i class="fas fa-circle-info text-cyan-500"></i>보석금 안내
+    </h3>
+    <div class="space-y-1.5 text-[12px] mb-3">
+      <div class="flex justify-between items-center bg-pink-50 rounded-xl px-3 py-2">
+        <span class="font-bold text-pink-700">뚠카롱</span>
+        <span class="font-black text-pink-600">솔 에르다 조각 80개</span>
+      </div>
+      <div class="flex justify-between items-center bg-rose-50 rounded-xl px-3 py-2">
+        <span class="font-bold text-rose-700">뚱카롱</span>
+        <span class="font-black text-rose-600">솔 에르다 조각 40개</span>
+      </div>
+      <div class="flex justify-between items-center bg-violet-50 rounded-xl px-3 py-2">
+        <span class="font-bold text-violet-700">밤 / 별 / 달 / 꿀 / 솜카롱</span>
+        <span class="font-black text-violet-600">솔 에르다 조각 20개</span>
+      </div>
+    </div>
+    <div class="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-[11px] text-amber-800 leading-relaxed">
+      <i class="fas fa-triangle-exclamation mr-1"></i>
+      <strong>누진세</strong> · 동일 캐릭이 같은 반기에 또 보석금 시 <strong>×2 → ×3 → ×4</strong> 가산.
+      반기(<span id="halfYearLabel">-</span>) 기준으로 자동 초기화됩니다.
+    </div>
+    <div class="bg-cyan-50 border border-cyan-200 rounded-xl px-3 py-2.5 text-[11px] text-cyan-800 leading-relaxed mt-2">
+      <i class="fas fa-warehouse mr-1"></i>
+      솔 에르다 조각은 <strong>뚠/뚱카롱 길드창고</strong>에 직접 입금 후, 인증 스샷을 첨부해 주세요.
+    </div>
+  </div>
+
+  <!-- ==================== 신청 폼 ==================== -->
+  <div id="formCard" class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-4">
+
+    <!-- 본캐 검색 -->
+    <div class="mb-4">
+      <label class="text-[11px] text-gray-500 font-bold uppercase mb-2 block">본캐닉 *</label>
+      <div class="relative">
+        <input id="mainCharInput" type="text" placeholder="본캐 닉네임 입력" autocomplete="off"
+          class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:border-cyan-300 focus:bg-white transition pr-12">
+        <button onclick="searchMainChar()" id="searchBtn"
+          class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-cyan-500 text-white rounded-xl text-xs font-bold hover:bg-cyan-600 shadow disabled:opacity-50">
+          <i class="fas fa-search"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 검색 결과 / 캐릭 선택 -->
+    <div id="resultArea"></div>
+
+    <!-- 선택된 캐릭의 금액 패널 (계산 결과) -->
+    <div id="amountPanel" class="hidden"></div>
+
+    <!-- 입금 스샷 업로드 -->
+    <div id="proofArea" class="mb-4 hidden">
+      <label class="text-[11px] text-gray-500 font-bold uppercase mb-2 block">길드창고 입금 인증 스샷 *</label>
+      <div id="proofWrap" class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4 hover:border-cyan-300 transition">
+        <input id="proofInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp"
+          class="hidden" onchange="handleProofChange(event)">
+        <div id="proofEmpty">
+          <button onclick="document.getElementById('proofInput').click()"
+            class="w-full text-center py-4 text-gray-400 hover:text-cyan-500 transition">
+            <i class="fas fa-cloud-arrow-up text-3xl mb-2 block"></i>
+            <span class="text-xs font-bold">탭해서 스샷 첨부</span>
+            <p class="text-[10px] text-gray-400 mt-1">길드창고에 솔 에르다 조각 입금한 화면</p>
+          </button>
+        </div>
+        <div id="proofPreview" class="hidden">
+          <img id="proofImg" class="w-full max-h-64 object-contain rounded-xl mb-2">
+          <div class="flex gap-2">
+            <button onclick="document.getElementById('proofInput').click()" class="flex-1 text-[11px] py-2 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold hover:bg-gray-50">
+              <i class="fas fa-rotate mr-1"></i>다시 선택
+            </button>
+            <button onclick="clearProof()" class="text-[11px] px-3 py-2 rounded-xl bg-red-50 text-red-500 font-bold hover:bg-red-100">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+          <p id="proofStatus" class="text-[10px] text-gray-400 text-center mt-2"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 사유 (선택) -->
+    <div class="mb-4 hidden" id="reasonArea">
+      <label class="text-[11px] text-gray-500 font-bold uppercase mb-2 block">사유 / 비고 <span class="text-gray-400 normal-case font-normal">(선택)</span></label>
+      <textarea id="reasonInput" placeholder="미참 사유 / 추가로 알릴 점 등"
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-300 focus:bg-white transition h-20 resize-none"></textarea>
+    </div>
+
+    <!-- 카톡 닉 (선택) -->
+    <div class="mb-4 hidden" id="kakaoArea">
+      <label class="text-[11px] text-gray-500 font-bold uppercase mb-2 block">오픈채팅 닉 <span class="text-gray-400 normal-case font-normal">(본인 확인용 · 선택)</span></label>
+      <input id="kakaoInput" type="text" placeholder="카톡 오픈챗 닉네임"
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-cyan-300 focus:bg-white transition">
+    </div>
+
+    <!-- 제출 버튼 -->
+    <button onclick="submitRequest()" id="submitBtn"
+      class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-black text-sm py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition disabled:opacity-50 hidden">
+      <i class="fas fa-paper-plane mr-2"></i>보석금 납부 신청
+    </button>
+
+    <p id="submitNote" class="text-[10px] text-gray-400 text-center mt-3 hidden">신청 후 운영진이 입금 확인 → 노블 해제 처리됩니다</p>
+  </div>
+
+  <!-- ==================== 본인 신청 이력 ==================== -->
+  <div id="historyCard" class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-4 hidden">
+    <h3 class="text-sm font-black text-gray-800 mb-4 flex items-center gap-2">
+      <i class="fas fa-clock-rotate-left text-cyan-500"></i>내 신청 내역
+    </h3>
+    <div id="historyList" class="space-y-2"></div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="text-center py-4">
+    <p class="text-[10px] text-gray-400">
+      <a href="../" class="hover:text-cyan-500"><i class="fas fa-home mr-1"></i>뚠/뚱카롱 메인</a>
+      <span class="mx-1">·</span>
+      <a href="../exempt/" class="hover:text-cyan-500"><i class="fas fa-shield-alt mr-1"></i>면제 신청</a>
+    </p>
+  </div>
+
+</div>
+
+<!-- ==================== 토스트 ==================== -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 bg-slate-900 text-white text-sm font-bold rounded-2xl shadow-2xl hidden z-50 max-w-xs text-center"></div>
+
+<script>
+  // ============ 설정 ============
+  const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
+  const R2_WORKER_URL = 'https://guild-images.hongsb9912.workers.dev';
+  const R2_PUBLIC_URL = 'https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev';
+  const R2_API_KEY = 'guild-manager-r2-key-2026';
+  const R2_BUCKET = 'bail-images';
+
+  // 길드별 기본 보석금 (솔 에르다 조각)
+  const BASE_AMOUNT = {
+    '뚠카롱': 80,
+    '뚱카롱': 40,
+    '밤카롱': 20,
+    '별카롱': 20,
+    '달카롱': 20,
+    '꿀카롱': 20,
+    '솜카롱': 20
+  };
+  const GUILDS = ['뚠카롱', '뚱카롱', '밤카롱', '별카롱', '달카롱', '꿀카롱', '솜카롱'];
+
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ============ 상태 ============
+  let state = {
+    mainChar: null,        // members row (본캐)
+    subChars: [],          // 부캐 list
+    selectedPayer: null,   // 선택된 캐릭 객체 { name, guild, role, is_main }
+    offenseCount: 0,       // 이번 반기 위반 카운트 (선택 캐릭의)
+    multiplier: 1,
+    baseAmount: 0,
+    totalAmount: 0,
+    halfYear: '',          // 'YYYY-H1' / 'YYYY-H2'
+    proofUrl: null,        // R2 업로드된 url
+    proofUploading: false,
+    missPeriod: null       // 미참 회차 정보 (참고)
+  };
+
+  // ============ 유틸 ============
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const toast = (msg, type = 'info') => {
+    const el = document.getElementById('toast');
+    const colors = { error: 'bg-red-500', success: 'bg-emerald-500', info: 'bg-slate-900' };
+    el.className = `fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 text-white text-sm font-bold rounded-2xl shadow-2xl z-50 max-w-xs text-center fade-in ${colors[type] || colors.info}`;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.add('hidden'), 3000);
+  };
+
+  // 반기 계산: YYYY-H1 (1~6월) / YYYY-H2 (7~12월)
+  function getCurrentHalfYear(date = new Date()) {
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    return `${y}-H${m <= 6 ? 1 : 2}`;
+  }
+
+  // 길드 기본 금액
+  function baseAmountForGuild(guild) {
+    return BASE_AMOUNT[guild] || 20;
+  }
+
+  // 초기화
+  state.halfYear = getCurrentHalfYear();
+  document.getElementById('halfYearLabel').textContent = state.halfYear;
+
+  // ============ 본캐 검색 ============
+  async function searchMainChar() {
+    const name = document.getElementById('mainCharInput').value.trim();
+    if (!name) { toast('본캐닉을 입력해주세요', 'error'); return; }
+
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    document.getElementById('resultArea').innerHTML = '<div class="text-center py-4 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-1"></i>조회 중...</div>';
+    hideAmountPanel();
+    hideSubmitArea();
+
+    try {
+      const { data: members, error } = await supa.from('members').select('*').eq('name', name);
+      if (error) throw error;
+
+      let mainCandidate = (members || []).find(m => m.is_main !== false) || (members || [])[0] || null;
+
+      if (mainCandidate) {
+        const { data: subs } = await supa.from('members').select('*').eq('main_char_name', name);
+        const subList = (subs || []).filter(s => s.is_main === false);
+
+        state.mainChar = mainCandidate;
+        state.subChars = subList;
+        state.selectedPayer = null;
+        renderCharSelect();
+      } else {
+        state.mainChar = null;
+        state.subChars = [];
+        state.selectedPayer = null;
+        document.getElementById('resultArea').innerHTML = `
+          <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 fade-in">
+            <div class="flex items-center gap-2 text-amber-700 mb-2">
+              <i class="fas fa-info-circle"></i>
+              <span class="text-xs font-black">사이트에 등록된 본캐가 아닙니다</span>
+            </div>
+            <p class="text-[11px] text-gray-600 leading-relaxed">본캐 닉을 다시 확인하거나, 운영진에게 등록을 먼저 요청해주세요. 보석금 신청은 등록된 캐릭만 가능합니다.</p>
+          </div>`;
+      }
+    } catch (e) {
+      console.error(e);
+      document.getElementById('resultArea').innerHTML = `<div class="text-center py-4 text-red-500 text-xs">조회 실패: ${esc(e.message)}</div>`;
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i>';
+    }
+
+    loadHistory(name);
+  }
+
+  // ============ 캐릭 선택 렌더 ============
+  function renderCharSelect() {
+    const m = state.mainChar;
+    const allChars = [
+      { ...m, _isMain: true },
+      ...state.subChars.map(s => ({ ...s, _isMain: false }))
+    ];
+
+    const rowHtml = allChars.map((c, i) => {
+      const guild = c.guild || '?';
+      const guildClass = guild === '뚠카롱' ? 'badge-ddun' : guild === '뚱카롱' ? 'badge-ddung' : 'badge-sub';
+      const base = baseAmountForGuild(guild);
+      const mainBadge = c._isMain ? '<span class="text-[9px] font-black text-cyan-700 bg-cyan-100 px-1.5 py-0.5 rounded ml-1">본캐</span>' : '';
+      return `
+        <label class="flex items-center gap-3 p-3 bg-white border border-gray-200 hover:border-cyan-300 rounded-2xl cursor-pointer transition" data-idx="${i}">
+          <input type="radio" name="payerChar" value="${i}" onchange="selectPayer(${i})" class="w-4 h-4 accent-cyan-500">
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-bold text-gray-800 truncate">${esc(c.name)}${mainBadge}</div>
+            <div class="text-[11px] text-gray-400 truncate">${esc(c.class || '직업?')} · ${esc(c.role || '직위?')}</div>
+          </div>
+          <span class="${guildClass} text-[10px] font-black px-2 py-1 rounded-lg">${esc(guild)}</span>
+          <span class="text-[10px] font-black text-gray-600 bg-gray-100 px-2 py-1 rounded-lg">${base}개</span>
+        </label>`;
+    }).join('');
+
+    document.getElementById('resultArea').innerHTML = `
+      <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 mb-3 fade-in">
+        <div class="flex items-center gap-2 text-[11px] font-black text-emerald-700">
+          <i class="fas fa-check-circle"></i>본캐 매칭 — 보석금 낼 캐릭 선택
+        </div>
+        <p class="text-[10px] text-emerald-600/70 mt-1">수로 미참한 캐릭을 1개 선택해주세요</p>
+      </div>
+      <div class="space-y-2 mb-4">${rowHtml}</div>`;
+
+    // 캐릭 1명뿐이면 자동 선택
+    if (allChars.length === 1) {
+      const radio = document.querySelector('input[name="payerChar"][value="0"]');
+      if (radio) { radio.checked = true; selectPayer(0); }
+    }
+  }
+
+  // ============ 캐릭 선택 → 자동 계산 ============
+  async function selectPayer(idx) {
+    const m = state.mainChar;
+    const allChars = [
+      { ...m, _isMain: true },
+      ...state.subChars.map(s => ({ ...s, _isMain: false }))
+    ];
+    const c = allChars[idx];
+    if (!c) return;
+
+    state.selectedPayer = {
+      name: c.name,
+      guild: c.guild,
+      role: c.role,
+      is_main: c._isMain
+    };
+    state.baseAmount = baseAmountForGuild(c.guild);
+
+    // 누진 카운트 조회 (이번 반기, 같은 캐릭, status가 거절/보류 아닌 것)
+    showAmountPanelLoading();
+    try {
+      const { count, error } = await supa.from('bail_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('payer_char', c.name)
+        .eq('half_year', state.halfYear)
+        .in('status', ['approved', 'noble_unlocked', 'pending']);
+      if (error) throw error;
+      state.offenseCount = (count || 0) + 1;
+    } catch (e) {
+      console.warn('누진 카운트 조회 실패:', e);
+      state.offenseCount = 1;
+    }
+    state.multiplier = state.offenseCount;
+    state.totalAmount = state.baseAmount * state.multiplier;
+
+    // 미참 회차 자동 감지 (참고용)
+    await detectMissedPeriod(c);
+
+    renderAmountPanel();
+    showSubmitArea();
+  }
+
+  // ============ 미참 회차 자동 감지 ============
+  async function detectMissedPeriod(c) {
+    state.missPeriod = null;
+    if (!c.id) return;
+    try {
+      // 가장 최근 회차에서 점수 확인
+      const { data: periods } = await supa.from('suro_periods')
+        .select('id, period_label').order('id', { ascending: false }).limit(1);
+      if (!periods || !periods[0]) return;
+      const latest = periods[0];
+      const { data: score } = await supa.from('suro_scores')
+        .select('score').eq('member_id', c.id).eq('period_id', latest.id).maybeSingle();
+      // 점수 없거나 0이면 미참 후보로 표시
+      if (!score || !score.score || Number(score.score) === 0) {
+        state.missPeriod = { id: latest.id, label: latest.period_label, hint: '미참 추정' };
+      } else {
+        state.missPeriod = { id: latest.id, label: latest.period_label, hint: '점수 있음', score: Number(score.score) };
+      }
+    } catch (e) { console.warn('미참 회차 감지 실패:', e); }
+  }
+
+  function showAmountPanelLoading() {
+    const el = document.getElementById('amountPanel');
+    el.classList.remove('hidden');
+    el.innerHTML = '<div class="bg-gray-50 rounded-2xl p-4 text-center text-xs text-gray-400 mb-4"><i class="fas fa-spinner fa-spin mr-1"></i>금액 계산 중...</div>';
+  }
+
+  function hideAmountPanel() {
+    const el = document.getElementById('amountPanel');
+    el.classList.add('hidden');
+    el.innerHTML = '';
+  }
+
+  function renderAmountPanel() {
+    const p = state.selectedPayer;
+    const multiClass = `multi-x${Math.min(state.multiplier, 4)}`;
+    const multiNote = state.offenseCount === 1
+      ? '이번 반기 첫 보석금 → 기본 ×1'
+      : `이번 반기 <strong>${state.offenseCount - 1}회</strong> 신청 이력 → ×${state.multiplier} 누진`;
+
+    const missHtml = state.missPeriod
+      ? (state.missPeriod.hint === '미참 추정'
+          ? `<div class="text-[10px] text-amber-600 mt-2 flex items-center gap-1"><i class="fas fa-circle-exclamation"></i><strong>${esc(state.missPeriod.label)}</strong> 미참 추정</div>`
+          : `<div class="text-[10px] text-gray-400 mt-2 flex items-center gap-1"><i class="fas fa-circle-info"></i>${esc(state.missPeriod.label)} · ${state.missPeriod.score?.toLocaleString() || 0}점 (점수 있음 — 운영진이 검토)</div>`)
+      : '';
+
+    document.getElementById('amountPanel').innerHTML = `
+      <div class="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-4 mb-4 border border-cyan-100 fade-in">
+        <div class="flex items-center gap-2 text-[10px] font-black text-cyan-600 mb-3">
+          <i class="fas fa-calculator"></i>자동 계산 결과
+        </div>
+        <div class="bg-white rounded-xl p-3 mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-sm font-black text-gray-800">${esc(p.name)}</div>
+            <div class="text-[10px] text-gray-400">${esc(p.guild)} · ${esc(p.role || '?')}</div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div class="text-[9px] text-gray-400 font-bold uppercase mb-0.5">기본</div>
+              <div class="text-base font-black text-gray-700">${state.baseAmount}<span class="text-[9px] text-gray-400 ml-0.5">개</span></div>
+            </div>
+            <div>
+              <div class="text-[9px] text-gray-400 font-bold uppercase mb-0.5">배수</div>
+              <div class="text-base font-black px-2 py-0.5 rounded-md ${multiClass} border inline-block">×${state.multiplier}</div>
+            </div>
+            <div>
+              <div class="text-[9px] text-gray-400 font-bold uppercase mb-0.5">총 납부</div>
+              <div class="text-lg font-black text-cyan-600">${state.totalAmount}<span class="text-[9px] text-gray-400 ml-0.5">개</span></div>
+            </div>
+          </div>
+          ${missHtml}
+        </div>
+        <p class="text-[10px] text-cyan-700 leading-relaxed">${multiNote} (반기: <strong>${state.halfYear}</strong>)</p>
+        <p class="text-[10px] text-gray-500 mt-2 leading-relaxed">
+          <i class="fas fa-warehouse mr-1"></i>
+          <strong>${state.totalAmount}개</strong>를 뚠/뚱카롱 길드창고에 입금 후 스샷 첨부해주세요.
+        </p>
+      </div>
+    `;
+  }
+
+  // ============ 스샷 업로드 ============
+  async function handleProofChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast('이미지 파일만 업로드 가능', 'error'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast('10MB 이하 파일만 가능', 'error'); return; }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      document.getElementById('proofImg').src = ev.target.result;
+      document.getElementById('proofEmpty').classList.add('hidden');
+      document.getElementById('proofPreview').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+
+    // R2 업로드
+    state.proofUploading = true;
+    state.proofUrl = null;
+    document.getElementById('proofStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>업로드 중...';
+
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const safeExt = ['png','jpg','jpeg','gif','webp'].includes(ext) ? ext : 'jpg';
+      const filename = `bail-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+      const res = await fetch(`${R2_WORKER_URL}/upload/${R2_BUCKET}/${filename}`, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type, 'X-API-Key': R2_API_KEY },
+        body: file
+      });
+      if (!res.ok) throw new Error('업로드 실패: ' + res.status);
+      const json = await res.json();
+      state.proofUrl = json.url || `${R2_PUBLIC_URL}/${R2_BUCKET}/${filename}`;
+      document.getElementById('proofStatus').innerHTML = '<i class="fas fa-check-circle text-emerald-500 mr-1"></i><span class="text-emerald-600">업로드 완료</span>';
+    } catch (err) {
+      console.error(err);
+      document.getElementById('proofStatus').innerHTML = `<span class="text-red-500"><i class="fas fa-circle-xmark mr-1"></i>업로드 실패: ${esc(err.message)}</span>`;
+      state.proofUrl = null;
+    } finally {
+      state.proofUploading = false;
+    }
+  }
+
+  function clearProof() {
+    state.proofUrl = null;
+    state.proofUploading = false;
+    document.getElementById('proofInput').value = '';
+    document.getElementById('proofImg').src = '';
+    document.getElementById('proofEmpty').classList.remove('hidden');
+    document.getElementById('proofPreview').classList.add('hidden');
+    document.getElementById('proofStatus').innerHTML = '';
+  }
+
+  // ============ 폼 표시/숨김 ============
+  function showSubmitArea() {
+    document.getElementById('proofArea').classList.remove('hidden');
+    document.getElementById('reasonArea').classList.remove('hidden');
+    document.getElementById('kakaoArea').classList.remove('hidden');
+    document.getElementById('submitBtn').classList.remove('hidden');
+    document.getElementById('submitNote').classList.remove('hidden');
+  }
+
+  function hideSubmitArea() {
+    document.getElementById('proofArea').classList.add('hidden');
+    document.getElementById('reasonArea').classList.add('hidden');
+    document.getElementById('kakaoArea').classList.add('hidden');
+    document.getElementById('submitBtn').classList.add('hidden');
+    document.getElementById('submitNote').classList.add('hidden');
+  }
+
+  // ============ 제출 ============
+  async function submitRequest() {
+    if (!state.mainChar) { toast('본캐를 먼저 검색해주세요', 'error'); return; }
+    if (!state.selectedPayer) { toast('보석금 낼 캐릭을 선택해주세요', 'error'); return; }
+    if (!state.proofUrl) {
+      if (state.proofUploading) { toast('스샷 업로드 중입니다', 'error'); return; }
+      toast('길드창고 입금 인증 스샷을 첨부해주세요', 'error'); return;
+    }
+
+    const payload = {
+      main_char: state.mainChar.name,
+      payer_char: state.selectedPayer.name,
+      payer_guild: state.selectedPayer.guild,
+      payer_role: state.selectedPayer.role || null,
+      payer_is_main: !!state.selectedPayer.is_main,
+      base_amount: state.baseAmount,
+      multiplier: state.multiplier,
+      total_amount: state.totalAmount,
+      offense_count: state.offenseCount,
+      half_year: state.halfYear,
+      miss_period_id: state.missPeriod?.id || null,
+      miss_period_label: state.missPeriod?.label || null,
+      proof_image_url: state.proofUrl,
+      reason: document.getElementById('reasonInput').value.trim() || null,
+      kakao_nick: document.getElementById('kakaoInput').value.trim() || null,
+      status: 'pending'
+    };
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>제출 중...';
+
+    try {
+      const { data, error } = await supa.from('bail_requests').insert(payload).select().single();
+      if (error) throw error;
+
+      try { await notifyDiscord(data); } catch (e) { console.warn('Discord notify failed:', e); }
+
+      toast('보석금 신청 완료! 운영진이 확인합니다', 'success');
+      // 폼 리셋
+      document.getElementById('reasonInput').value = '';
+      document.getElementById('kakaoInput').value = '';
+      clearProof();
+      // 검색 다시 실행해서 이력 갱신
+      setTimeout(() => searchMainChar(), 800);
+    } catch (e) {
+      console.error(e);
+      toast('신청 실패: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>보석금 납부 신청';
+    }
+  }
+
+  // ============ 디스코드 알림 ============
+  async function notifyDiscord(req) {
+    const multiText = req.multiplier > 1 ? ` (×${req.multiplier} 누진)` : '';
+    const colorBlock = req.multiplier === 1 ? 0x06b6d4 : req.multiplier === 2 ? 0xf59e0b : req.multiplier === 3 ? 0xea580c : 0xdc2626;
+
+    const payload = {
+      embeds: [{
+        title: '💎 새 보석금 납부 신청',
+        description: `**${req.main_char}** 님이 **${req.payer_char}** (${req.payer_guild}) 캐릭의 보석금을 신청했습니다`,
+        color: colorBlock,
+        fields: [
+          { name: '캐릭', value: `${req.payer_char} (${req.payer_guild} · ${req.payer_role || '?'})`, inline: false },
+          { name: '기본', value: `${req.base_amount}개`, inline: true },
+          { name: '배수', value: `×${req.multiplier}${multiText ? ' 누진' : ''}`, inline: true },
+          { name: '총 납부', value: `**${req.total_amount}개**`, inline: true },
+          { name: '반기', value: req.half_year, inline: true },
+          { name: '위반 누적', value: `이번 반기 ${req.offense_count}회차`, inline: true },
+          { name: '미참 회차(추정)', value: req.miss_period_label || '미감지', inline: true },
+        ],
+        image: req.proof_image_url ? { url: req.proof_image_url } : undefined,
+        footer: { text: req.reason ? `사유: ${req.reason}` : '입금 확인 후 노블 해제 처리' },
+        timestamp: new Date().toISOString()
+      }]
+    };
+
+    const res = await fetch(`${R2_WORKER_URL}/discord-bail-notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': R2_API_KEY },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Discord proxy failed: ' + res.status);
+  }
+
+  // ============ 본인 신청 이력 ============
+  async function loadHistory(mainCharName) {
+    const card = document.getElementById('historyCard');
+    const list = document.getElementById('historyList');
+    try {
+      const { data, error } = await supa.from('bail_requests')
+        .select('id, status, payer_char, payer_guild, total_amount, multiplier, half_year, processed_at, created_at, admin_note')
+        .eq('main_char', mainCharName).order('created_at', { ascending: false }).limit(10);
+      if (error) throw error;
+      if (!data || data.length === 0) { card.classList.add('hidden'); return; }
+      list.innerHTML = data.map(r => renderHistoryRow(r)).join('');
+      card.classList.remove('hidden');
+    } catch (e) {
+      console.warn('History load failed:', e);
+      card.classList.add('hidden');
+    }
+  }
+
+  function renderHistoryRow(r) {
+    const statusMap = {
+      pending:        { color: 'amber',   label: '확인 대기',   icon: 'clock' },
+      hold:           { color: 'amber',   label: '보류 중',     icon: 'pause' },
+      approved:       { color: 'blue',    label: '입금 확인됨', icon: 'check' },
+      noble_unlocked: { color: 'emerald', label: '노블 해제됨', icon: 'unlock' },
+      rejected:       { color: 'red',     label: '거절됨',      icon: 'times-circle' }
+    };
+    const s = statusMap[r.status] || statusMap.pending;
+    const dateLabel = r.processed_at ? new Date(r.processed_at).toLocaleString('ko-KR') : new Date(r.created_at).toLocaleString('ko-KR');
+    const noteHtml = r.admin_note ? `<div class="text-[11px] text-${s.color}-600 mt-1">메모: ${esc(r.admin_note)}</div>` : '';
+    return `
+      <div class="bg-${s.color}-50 border border-${s.color}-200 rounded-2xl p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[10px] font-black text-${s.color}-700 bg-${s.color}-100 px-2 py-0.5 rounded-full">
+            ${r.status === 'pending' ? '<span class="pulse-dot inline-block w-1.5 h-1.5 bg-amber-500 rounded-full mr-1"></span>' : `<i class="fas fa-${s.icon} mr-1"></i>`}
+            ${s.label}
+          </span>
+          <span class="text-[10px] text-gray-400">${esc(dateLabel)}</span>
+        </div>
+        <div class="text-sm font-bold text-gray-800">${esc(r.payer_char)} <span class="text-[10px] text-gray-400 font-normal">(${esc(r.payer_guild)})</span></div>
+        <div class="text-[11px] text-gray-500 mt-1">${r.total_amount}개 · ×${r.multiplier} · ${esc(r.half_year)}</div>
+        ${noteHtml}
+      </div>`;
+  }
+
+  // ============ 엔터키로 검색 ============
+  document.getElementById('mainCharInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); searchMainChar(); }
+  });
+</script>
+
+</body>
+</html>
