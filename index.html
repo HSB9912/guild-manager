@@ -5581,10 +5581,28 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     if (cs.view === 'edit' || cs.view === 'new') return window._consultingRenderEdit(container);
   };
 
+  // 컨설팅 합산 헥사 상승치 (효율 분석과 동일 로직 — 카드 뱃지/요약 공통)
+  window._consultingComputeTotalHexa = (c) => {
+    if (!c) return 0;
+    const items = Array.isArray(c.target_items) ? c.target_items : [];
+    const goal = c.goal || {};
+    const setListRaw = Array.isArray(goal.sets) ? goal.sets : [];
+    const targetSlots = new Set(items.map(t => t.slot));
+    const itemHexa = items.reduce((s, t) => s + (Number(t.hexa_contrib) || 0), 0);
+    const setHexa = setListRaw.reduce((sum, s) => {
+      const slots = Array.isArray(s.items) ? s.items
+        : (typeof s.items === 'string' ? s.items.split(/[,/·]/).map(x => x.trim()).filter(Boolean) : []);
+      const active = slots.length > 0 && slots.some(slot => targetSlots.has(slot));
+      return active ? sum + (Number(s.hexa_contrib) || 0) : sum;
+    }, 0);
+    const huHexa = Number(goal.hexaUpgrade?.hexa_gain) || 0;
+    return itemHexa + setHexa + huHexa;
+  };
+
   window._consultingFetchList = async () => {
     try {
       const { data, error } = await supaDb.from('item_consultings')
-        .select('id, member_name, member_class, member_server, consultant_name, diagnosis_date, combat_power, main_stat, hexa_stat, goal, summary, character_image, updated_at')
+        .select('id, member_name, member_class, member_server, consultant_name, diagnosis_date, combat_power, main_stat, hexa_stat, goal, target_items, summary, character_image, updated_at')
         .order('updated_at', { ascending: false });
       if (error) throw error;
       return data || [];
@@ -5650,8 +5668,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
               const sep = c.character_image.includes('?') ? '&' : '?';
               return c.character_image + `${sep}width=400&height=500`;
             })();
-            // 헥사 환산 숫자 파싱 (현재 vs 목표 차이 계산용)
-            const parseHexa = (s) => {
+            // 헥사 환산 숫자 파싱 (교체 후 예상값 계산용)
+            const parseHexaNum = (s) => {
               if (s == null) return null;
               const cleaned = String(s).replace(/[,\s]/g, '');
               const manMatch = cleaned.match(/^([\d.]+)만/);
@@ -5659,10 +5677,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
               const num = parseFloat(cleaned);
               return isNaN(num) ? null : num;
             };
-            const curHexaNum = parseHexa(c.hexa_stat);
-            const tgtHexaNum = parseHexa(goal.targetHexa);
-            const hexaDiff = (curHexaNum != null && tgtHexaNum != null && tgtHexaNum > curHexaNum) ? tgtHexaNum - curHexaNum : null;
-            const hasTarget = goal.targetHexa && String(goal.targetHexa).trim();
+            const curHexaNum = parseHexaNum(c.hexa_stat);
+            // 합산 상승치 = 효율 분석의 총 헥사 상승 (단품 + 세트 발동 + 헥사 강화)
+            const totalGain = window._consultingComputeTotalHexa(c);
+            const projectedHexa = (curHexaNum != null && totalGain > 0) ? curHexaNum + totalGain : null;
+            const hasGoalText = goal.targetHexa && String(goal.targetHexa).trim();
             return `
               <div onclick="window._consultingOpen(${c.id})" class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-pink-300 hover:shadow-md transition-all cursor-pointer overflow-hidden group">
                 <div class="p-4">
@@ -5680,15 +5699,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                   <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-3 mb-2 border border-orange-100">
                     <div class="flex items-center justify-between mb-1.5">
                       <span class="text-[9px] font-black text-orange-500 uppercase tracking-wider"><i class="fas fa-cube mr-0.5"></i>헥사 환산</span>
-                      ${hexaDiff != null ? `<span class="text-[9px] font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">+${hexaDiff.toLocaleString()}</span>` : ''}
+                      ${totalGain > 0 ? `<span class="text-[9px] font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">+${totalGain.toLocaleString()}</span>` : ''}
                     </div>
                     <div class="flex items-baseline gap-2 flex-wrap">
                       <span class="text-base font-black text-gray-700">${esc(c.hexa_stat || '-')}</span>
-                      ${hasTarget ? `
+                      ${projectedHexa != null ? `
                         <i class="fas fa-arrow-right text-[10px] text-gray-300"></i>
-                        <span class="text-xl font-black text-orange-600">${esc(goal.targetHexa)}</span>
+                        <span class="text-xl font-black text-orange-600">${projectedHexa.toLocaleString()}</span>
                       ` : ''}
                     </div>
+                    ${hasGoalText ? `<div class="text-[9px] text-gray-500 mt-1.5"><i class="fas fa-bullseye text-orange-400 mr-0.5"></i>목표 ${esc(goal.targetHexa)}</div>` : ''}
                   </div>
 
                   ${(goal.budget || goal.period) ? `
