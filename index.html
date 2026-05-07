@@ -5643,6 +5643,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           ${list.map(c => {
             const date = c.diagnosis_date || (c.updated_at || '').slice(0, 10);
             const goal = c.goal || {};
+            // 캐릭 이미지 URL — width 파라미터 없으면 큰 사이즈로 강제 (메이플 API 호환)
+            const charImgUrl = (() => {
+              if (!c.character_image) return '';
+              if (/[?&]width=/.test(c.character_image)) return c.character_image;
+              const sep = c.character_image.includes('?') ? '&' : '?';
+              return c.character_image + `${sep}width=400&height=500`;
+            })();
             // 헥사 환산 숫자 파싱 (현재 vs 목표 차이 계산용)
             const parseHexa = (s) => {
               if (s == null) return null;
@@ -5661,7 +5668,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 <div class="p-4">
                   <div class="flex items-center gap-3 mb-3">
                     <div class="w-20 h-24 rounded-xl bg-gradient-to-br from-pink-50 to-rose-50 flex items-center justify-center shrink-0 overflow-hidden border border-pink-100">
-                      ${c.character_image ? `<img src="${esc(c.character_image)}" class="w-full h-full object-cover" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-user text-pink-300 text-3xl\\'></i>'">` : '<i class="fas fa-user text-pink-300 text-3xl"></i>'}
+                      ${c.character_image ? `<img src="${esc(charImgUrl)}" class="w-full h-full object-cover" style="transform:scale(1.6);transform-origin:center 60%;" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-user text-pink-300 text-3xl\\'></i>'">` : '<i class="fas fa-user text-pink-300 text-3xl"></i>'}
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="font-black text-gray-800 text-sm truncate">${esc(c.member_name)}<span class="text-gray-400 font-normal text-[10px] ml-1">님의 컨설팅</span></div>
