@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>컨설팅 카드 시안 미리보기</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body { font-family: 'Pretendard', -apple-system, system-ui, sans-serif; background: #f8f9fb; }
+</style>
+</head>
+<body class="p-6 lg:p-10">
+
+<div class="max-w-5xl mx-auto">
+
+  <header class="mb-8">
+    <h1 class="text-2xl font-black text-gray-800">컨설팅 카드 시안 미리보기</h1>
+    <p class="text-sm text-gray-500 mt-1">현재 카드와 목표/교체 후 정보 추가 시안 3개 비교</p>
+  </header>
+
+  <!-- 기준 데이터 -->
+  <div class="bg-white border border-gray-200 rounded-xl p-4 mb-8 text-xs">
+    <div class="font-black text-gray-700 mb-2"><i class="fas fa-database mr-1 text-pink-400"></i>기준 데이터 (mock)</div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-600">
+      <div><strong>캐릭:</strong> 할미표시간 / 제로·루나</div>
+      <div><strong>현재 전투력:</strong> 3.36억</div>
+      <div><strong>현재 환산:</strong> 92,978</div>
+      <div><strong>현재 헥사:</strong> 87,272</div>
+      <div><strong>목표 전투력:</strong> 4.5억</div>
+      <div><strong>목표 환산:</strong> 115,000</div>
+      <div><strong>목표 헥사:</strong> 125,000</div>
+      <div><strong>예산:</strong> 100억</div>
+      <div><strong>기간:</strong> 2개월</div>
+    </div>
+  </div>
+
+  <!-- ===== 현재 ===== -->
+  <section class="mb-12">
+    <h2 class="text-base font-black text-gray-700 mb-3 flex items-center gap-2">
+      <span class="bg-gray-200 text-gray-600 text-[10px] font-black px-2 py-1 rounded">현재</span>
+      변경 없음
+    </h2>
+    <div class="max-w-md">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center"><i class="fas fa-user text-pink-300 text-lg"></i></div>
+            <div class="flex-1">
+              <div class="font-black text-gray-800 text-sm">할미표시간 <span class="text-gray-400 font-normal text-[10px] ml-1">님의 컨설팅</span></div>
+              <div class="text-[10px] text-gray-500">제로·루나</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center mb-3">
+            <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-2">
+              <div class="text-[8px] text-blue-400 font-bold uppercase">전투력</div>
+              <div class="text-[11px] font-black text-blue-600">3.36억</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-2">
+              <div class="text-[8px] text-gray-400 font-bold uppercase">환산</div>
+              <div class="text-[11px] font-black text-gray-700">92,978</div>
+            </div>
+            <div class="bg-orange-50 rounded-lg p-2">
+              <div class="text-[8px] text-orange-400 font-bold uppercase">헥사</div>
+              <div class="text-[11px] font-black text-orange-600">87,272</div>
+            </div>
+          </div>
+          <p class="text-[10px] text-gray-500" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">현재 유행 및 캐릭터의 내실이 부족한 부분이 있습니다. 이 부분을 중점적으로 챙기신다는 전제 하에 맞춘 세팅입니다. 1차 목표 데티 해방을 하고난 후에...</p>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+            <span class="text-[9px] text-gray-400"><i class="fas fa-calendar mr-1"></i>2026-05-07</span>
+            <span class="text-[9px] text-pink-400 font-bold">자세히 →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== A안 — 인라인 화살표 (현재 → 목표) ===== -->
+  <section class="mb-12">
+    <h2 class="text-base font-black text-gray-700 mb-3 flex items-center gap-2">
+      <span class="bg-pink-100 text-pink-700 text-[10px] font-black px-2 py-1 rounded">A안</span>
+      각 칸 안에 "현재 → 목표" 세로 표기 (가장 컴팩트)
+    </h2>
+    <div class="max-w-md">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center"><i class="fas fa-user text-pink-300 text-lg"></i></div>
+            <div class="flex-1">
+              <div class="font-black text-gray-800 text-sm">할미표시간 <span class="text-gray-400 font-normal text-[10px] ml-1">님의 컨설팅</span></div>
+              <div class="text-[10px] text-gray-500">제로·루나</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center mb-3">
+            <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-2">
+              <div class="text-[8px] text-blue-400 font-bold uppercase">전투력</div>
+              <div class="text-[11px] font-black text-blue-600">3.36억</div>
+              <div class="text-[8px] text-blue-400/70 mt-0.5"><i class="fas fa-arrow-down text-[7px]"></i></div>
+              <div class="text-[10px] font-black text-emerald-600">4.5억</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-2">
+              <div class="text-[8px] text-gray-400 font-bold uppercase">환산</div>
+              <div class="text-[11px] font-black text-gray-700">92,978</div>
+              <div class="text-[8px] text-gray-400/70 mt-0.5"><i class="fas fa-arrow-down text-[7px]"></i></div>
+              <div class="text-[10px] font-black text-emerald-600">115,000</div>
+            </div>
+            <div class="bg-orange-50 rounded-lg p-2">
+              <div class="text-[8px] text-orange-400 font-bold uppercase">헥사</div>
+              <div class="text-[11px] font-black text-orange-600">87,272</div>
+              <div class="text-[8px] text-orange-400/70 mt-0.5"><i class="fas fa-arrow-down text-[7px]"></i></div>
+              <div class="text-[10px] font-black text-emerald-600">125,000</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-center gap-3 text-[9px] text-gray-500 bg-emerald-50/50 rounded-md py-1.5 mb-3 border border-emerald-100/60">
+            <span><i class="fas fa-coins text-amber-400 mr-1"></i>예산 100억</span>
+            <span class="text-gray-300">·</span>
+            <span><i class="fas fa-clock text-gray-400 mr-1"></i>2개월</span>
+          </div>
+          <p class="text-[10px] text-gray-500" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">현재 유행 및 캐릭터의 내실이 부족한 부분이 있습니다. 이 부분을 중점적으로 챙기신다는 전제 하에 맞춘 세팅입니다.</p>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+            <span class="text-[9px] text-gray-400"><i class="fas fa-calendar mr-1"></i>2026-05-07</span>
+            <span class="text-[9px] text-pink-400 font-bold">자세히 →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== B안 — 두 줄 분리 ===== -->
+  <section class="mb-12">
+    <h2 class="text-base font-black text-gray-700 mb-3 flex items-center gap-2">
+      <span class="bg-pink-100 text-pink-700 text-[10px] font-black px-2 py-1 rounded">B안</span>
+      현재 행 + 목표 행 분리 (라벨 명확)
+    </h2>
+    <div class="max-w-md">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center"><i class="fas fa-user text-pink-300 text-lg"></i></div>
+            <div class="flex-1">
+              <div class="font-black text-gray-800 text-sm">할미표시간 <span class="text-gray-400 font-normal text-[10px] ml-1">님의 컨설팅</span></div>
+              <div class="text-[10px] text-gray-500">제로·루나</div>
+            </div>
+          </div>
+
+          <!-- 현재 행 -->
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="text-[8px] font-black text-gray-400 uppercase tracking-wider w-10 shrink-0">현재</span>
+            <div class="grid grid-cols-3 gap-1.5 flex-1 text-center">
+              <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded p-1.5">
+                <div class="text-[7px] text-blue-400 font-bold uppercase">전투력</div>
+                <div class="text-[10px] font-black text-blue-600">3.36억</div>
+              </div>
+              <div class="bg-gray-50 rounded p-1.5">
+                <div class="text-[7px] text-gray-400 font-bold uppercase">환산</div>
+                <div class="text-[10px] font-black text-gray-700">92,978</div>
+              </div>
+              <div class="bg-orange-50 rounded p-1.5">
+                <div class="text-[7px] text-orange-400 font-bold uppercase">헥사</div>
+                <div class="text-[10px] font-black text-orange-600">87,272</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 목표 행 -->
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-[8px] font-black text-emerald-500 uppercase tracking-wider w-10 shrink-0">목표</span>
+            <div class="grid grid-cols-3 gap-1.5 flex-1 text-center">
+              <div class="bg-emerald-50/70 border border-emerald-100 rounded p-1.5">
+                <div class="text-[10px] font-black text-emerald-600">4.5억</div>
+              </div>
+              <div class="bg-emerald-50/70 border border-emerald-100 rounded p-1.5">
+                <div class="text-[10px] font-black text-emerald-600">115,000</div>
+              </div>
+              <div class="bg-emerald-50/70 border border-emerald-100 rounded p-1.5">
+                <div class="text-[10px] font-black text-emerald-600">125,000</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-center gap-3 text-[9px] text-gray-500 bg-amber-50/50 border border-amber-100/60 rounded-md py-1.5 mb-3">
+            <span><i class="fas fa-coins text-amber-500 mr-1"></i>예산 100억</span>
+            <span class="text-gray-300">·</span>
+            <span><i class="fas fa-clock text-gray-400 mr-1"></i>2개월</span>
+          </div>
+
+          <p class="text-[10px] text-gray-500" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">현재 유행 및 캐릭터의 내실이 부족한 부분이 있습니다. 이 부분을 중점적으로 챙기신다는 전제 하에 맞춘 세팅입니다.</p>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+            <span class="text-[9px] text-gray-400"><i class="fas fa-calendar mr-1"></i>2026-05-07</span>
+            <span class="text-[9px] text-pink-400 font-bold">자세히 →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== C안 — 비교 그리드 with +증가량 ===== -->
+  <section class="mb-12">
+    <h2 class="text-base font-black text-gray-700 mb-3 flex items-center gap-2">
+      <span class="bg-pink-100 text-pink-700 text-[10px] font-black px-2 py-1 rounded">C안</span>
+      현재 → 교체 후 + 증가량 표시 (정보 가장 풍부)
+    </h2>
+    <div class="max-w-md">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center"><i class="fas fa-user text-pink-300 text-lg"></i></div>
+            <div class="flex-1">
+              <div class="font-black text-gray-800 text-sm">할미표시간 <span class="text-gray-400 font-normal text-[10px] ml-1">님의 컨설팅</span></div>
+              <div class="text-[10px] text-gray-500">제로·루나</div>
+            </div>
+          </div>
+
+          <!-- 비교 테이블 -->
+          <div class="bg-gray-50 rounded-lg p-2 mb-3">
+            <div class="grid grid-cols-[44px_1fr_8px_1fr_44px] gap-1 items-center text-center text-[10px]">
+              <div></div>
+              <div class="text-[8px] text-gray-400 font-black uppercase">현재</div>
+              <div></div>
+              <div class="text-[8px] text-emerald-500 font-black uppercase">교체 후</div>
+              <div></div>
+
+              <div class="text-[8px] text-blue-400 font-bold uppercase text-left pl-1">전투력</div>
+              <div class="font-black text-blue-600 bg-white rounded py-1">3.36억</div>
+              <div class="text-gray-300"><i class="fas fa-chevron-right text-[7px]"></i></div>
+              <div class="font-black text-emerald-600 bg-white rounded py-1">4.5억</div>
+              <div class="text-[8px] text-emerald-500 font-black">+1.1억</div>
+
+              <div class="text-[8px] text-gray-500 font-bold uppercase text-left pl-1">환산</div>
+              <div class="font-black text-gray-700 bg-white rounded py-1">92,978</div>
+              <div class="text-gray-300"><i class="fas fa-chevron-right text-[7px]"></i></div>
+              <div class="font-black text-emerald-600 bg-white rounded py-1">115,000</div>
+              <div class="text-[8px] text-emerald-500 font-black">+22K</div>
+
+              <div class="text-[8px] text-orange-400 font-bold uppercase text-left pl-1">헥사</div>
+              <div class="font-black text-orange-600 bg-white rounded py-1">87,272</div>
+              <div class="text-gray-300"><i class="fas fa-chevron-right text-[7px]"></i></div>
+              <div class="font-black text-emerald-600 bg-white rounded py-1">125,000</div>
+              <div class="text-[8px] text-emerald-500 font-black">+38K</div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-center gap-3 text-[9px] text-gray-500 bg-amber-50/50 border border-amber-100/60 rounded-md py-1.5 mb-3">
+            <span><i class="fas fa-coins text-amber-500 mr-1"></i>예산 100억</span>
+            <span class="text-gray-300">·</span>
+            <span><i class="fas fa-clock text-gray-400 mr-1"></i>2개월</span>
+          </div>
+
+          <p class="text-[10px] text-gray-500" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">현재 유행 및 캐릭터의 내실이 부족한 부분이 있습니다. 이 부분을 중점적으로 챙기신다는 전제 하에 맞춘 세팅입니다.</p>
+          <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+            <span class="text-[9px] text-gray-400"><i class="fas fa-calendar mr-1"></i>2026-05-07</span>
+            <span class="text-[9px] text-pink-400 font-bold">자세히 →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 비교 노트 -->
+  <div class="bg-white border border-gray-200 rounded-xl p-5 mt-12">
+    <h3 class="font-black text-gray-700 mb-3"><i class="fas fa-list-check text-pink-400 mr-1"></i>각 안 특징</h3>
+    <div class="space-y-3 text-xs text-gray-600">
+      <div><strong class="text-gray-800">A안</strong> — 가장 컴팩트. 한 칸 안에 현재값과 목표값을 위아래로. 카드 높이 거의 안 늘어남.</div>
+      <div><strong class="text-gray-800">B안</strong> — "현재 / 목표" 라벨이 명확. 두 줄로 분리되어 알아보기 쉬움. 라벨이 항상 보이는 게 장점.</div>
+      <div><strong class="text-gray-800">C안</strong> — "현재 → 교체 후 (+증가량)"까지. 정보가 가장 풍부하지만 카드 높이도 가장 큼. 비교가 직관적.</div>
+    </div>
+    <div class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+      <strong class="text-gray-700">데이터 출처:</strong>
+      목표 헥사·예산·기간은 이미 입력 받고 있고 <code class="bg-gray-100 px-1 rounded text-[10px]">goal</code> JSONB에 저장됨.
+      목표 환산·전투력은 새 입력 필드 추가 필요.
+      교체 후 헥사는 <code class="bg-gray-100 px-1 rounded text-[10px]">target_items.hexa_contrib</code> 합산으로 자동 계산 가능.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
