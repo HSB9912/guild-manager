@@ -5570,7 +5570,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
   */
-  window._consultingState = { view: 'list', currentId: null, draft: null, list: null, loading: false };
+  window._consultingState = { view: 'list', currentId: null, draft: null, list: null, loading: false, linkingSetIdx: null };
 
   window.renderConsulting = async (container) => {
     const cs = window._consultingState;
@@ -6214,33 +6214,40 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
         <div class="flex items-center justify-between">
-          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-layer-group mr-1 text-violet-500"></i>세트 효과 <span class="text-gray-400 normal-case font-normal text-[10px] ml-1">(아이템 여러 개 교체로 발동되는 큰 환산 상승)</span></h4>
+          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-layer-group mr-1 text-violet-500"></i>세트 효과 <span class="text-gray-400 normal-case font-normal text-[10px] ml-1">(아이템 여러 개로 발동되는 큰 환산 상승)</span></h4>
           <button onclick="window._consultingAddSet()" class="text-[10px] bg-violet-50 text-violet-600 px-2 py-1 rounded-lg font-bold hover:bg-violet-100"><i class="fas fa-plus mr-1"></i>세트 추가</button>
         </div>
-        <p class="text-[10px] text-gray-400">단품 옵션 효과는 아래 "장비 교체 목표"에서 입력. 여기는 <strong>세트 발동 보너스</strong>만 입력 — 묶은 슬롯이 모두 교체 목표에 있어야 발동, 보너스는 슬롯 수로 균등 분배해서 효율 분석에 반영됩니다.</p>
+        <p class="text-[10px] text-gray-400">단품 옵션 효과는 "장비 교체 목표"에서 입력. 여기는 <strong>세트 발동 보너스</strong>만. <strong class="text-violet-600">교체 안 하는 아이템도 세트에 포함 가능</strong> — "📌 장비에서 클릭해서 묶기"로 현재 장비/교체 카드 모두 골라요.</p>
         <div class="space-y-2">
           ${(goal.sets || []).length === 0 ? `<div class="text-[10px] text-gray-300 text-center py-3">아직 등록된 세트가 없습니다 — 우측 "세트 추가" 클릭</div>` : (goal.sets || []).map((s, i) => {
             const setItems = Array.isArray(s.items) ? s.items : [];
-            const sharePerSlot = setItems.length > 0 ? Math.round((Number(s.hexa_contrib)||0) / setItems.length) : 0;
-            const slotChips = availableSlots.length === 0
-              ? `<div class="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">아래 "장비 교체 목표"에 단품을 먼저 추가하면 슬롯이 여기 체크박스로 떠요</div>`
-              : `<div class="flex flex-wrap gap-1.5">${availableSlots.map(slot => {
-                  const checked = setItems.includes(slot);
-                  return `<label class="text-[10px] ${checked ? 'bg-violet-100 border-violet-300 text-violet-700 font-bold' : 'bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200'} border rounded px-2 py-1 flex items-center gap-1 cursor-pointer transition">
-                    <input type="checkbox" ${checked ? 'checked' : ''} onchange="window._consultingToggleSetSlot(${i}, '${esc(slot)}', this.checked)" class="accent-violet-500"> ${esc(slot)}
-                  </label>`;
-                }).join('')}</div>`;
+            const targetSlotSet = new Set((d.target_items || []).map(t => t.slot));
+            const itemsInTarget = setItems.filter(slot => targetSlotSet.has(slot));
+            const itemsKeep = setItems.filter(slot => !targetSlotSet.has(slot));
+            const sharePerSlot = itemsInTarget.length > 0 ? Math.round((Number(s.hexa_contrib)||0) / itemsInTarget.length) : 0;
+            const isLinking = window._consultingState?.linkingSetIdx === i;
             return `
-              <div class="bg-violet-50/40 border border-violet-100 rounded-xl p-3 space-y-2">
+              <div class="bg-violet-50/40 border ${isLinking ? 'border-2 border-violet-400' : 'border-violet-100'} rounded-xl p-3 space-y-2">
                 <div class="grid grid-cols-1 sm:grid-cols-[1fr_130px_28px] gap-2 items-center">
                   <input type="text" value="${esc(s.name || '')}" oninput="window._consultingState.draft.goal.sets[${i}].name=this.value" placeholder="세트 이름 (예: 아케인셰이드 5세트)" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
                   <input type="number" value="${s.hexa_contrib != null ? s.hexa_contrib : ''}" oninput="window._consultingState.draft.goal.sets[${i}].hexa_contrib=Number(this.value)||0" placeholder="헥사 보너스" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-right font-bold text-violet-600">
                   <button onclick="window._consultingRemoveSet(${i})" class="text-red-400 hover:text-red-600 text-sm" title="삭제"><i class="fas fa-times"></i></button>
                 </div>
                 <div>
-                  <div class="text-[9px] font-bold text-gray-500 uppercase mb-1">묶을 슬롯 (target_items 중)</div>
-                  ${slotChips}
-                  ${setItems.length > 0 ? `<p class="text-[10px] text-gray-500 mt-1">${setItems.length}개 선택 · 분배: 슬롯당 약 +${sharePerSlot.toLocaleString()} (${(Number(s.hexa_contrib)||0).toLocaleString()} ÷ ${setItems.length})</p>` : ''}
+                  <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                    <span class="text-[9px] font-bold text-gray-500 uppercase">묶인 슬롯 (${setItems.length}개)</span>
+                    ${isLinking
+                      ? `<button onclick="window._consultingEndLinkSet()" class="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-lg font-bold hover:bg-emerald-600 ml-auto"><i class="fas fa-check mr-1"></i>묶기 완료</button>`
+                      : `<button onclick="window._consultingStartLinkSet(${i})" class="text-[10px] bg-violet-500 text-white px-2 py-1 rounded-lg font-bold hover:bg-violet-600 ml-auto"><i class="fas fa-thumbtack mr-1"></i>장비에서 클릭해서 묶기</button>`}
+                  </div>
+                  ${setItems.length === 0
+                    ? `<div class="text-[10px] text-gray-400 bg-white rounded px-2 py-1.5 border border-dashed border-gray-200">묶기 버튼을 누르고 아래 장비 카드들을 클릭하세요</div>`
+                    : `<div class="flex flex-wrap gap-1">
+                        ${setItems.map(slot => `<span class="text-[10px] ${targetSlotSet.has(slot) ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-700'} border ${targetSlotSet.has(slot) ? 'border-violet-200' : 'border-amber-200'} rounded px-2 py-0.5 font-bold inline-flex items-center gap-1">${esc(slot)}${targetSlotSet.has(slot) ? '' : ' <span class="text-[9px] font-normal opacity-70">유지</span>'}<button onclick="window._consultingToggleSetSlot(${i}, '${esc(slot)}', false)" class="text-red-400 hover:text-red-600 ml-0.5" title="제거">×</button></span>`).join('')}
+                      </div>`}
+                  ${setItems.length > 0
+                    ? `<p class="text-[10px] text-gray-500 mt-1.5">분배 대상: <strong>${itemsInTarget.length}개</strong> (교체) ${itemsKeep.length > 0 ? `<span class="text-amber-600">+ ${itemsKeep.length}개 (유지·분배 X)</span>` : ''} · 슬롯당 약 +${sharePerSlot.toLocaleString()} (${(Number(s.hexa_contrib)||0).toLocaleString()} ÷ ${itemsInTarget.length || '0'})</p>`
+                    : ''}
                 </div>
               </div>
             `;
@@ -6337,12 +6344,28 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         ${window._consultingRenderAttachmentsEditor(d.attachments)}
       </div>
 
-      ${equipCount > 0 ? `
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      ${equipCount > 0 ? (() => {
+        const linkingIdx = window._consultingState?.linkingSetIdx;
+        const linkingSet = (linkingIdx != null) ? d.goal.sets[linkingIdx] : null;
+        return `
+      <div id="consultingEquipArea" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        ${linkingSet ? `
+          <div class="sticky top-0 z-20 -m-5 mb-4 px-5 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white flex items-center gap-3 flex-wrap shadow-lg">
+            <i class="fas fa-link text-lg"></i>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-black"><strong>"${esc(linkingSet.name || '(이름 없음)')}"</strong> 슬롯 묶는 중</div>
+              <div class="text-[10px] opacity-90">아래 장비 카드를 클릭하여 추가/제거 · 현재 ${(linkingSet.items || []).length}개 묶임</div>
+            </div>
+            <button onclick="window._consultingEndLinkSet()" class="px-3 py-1.5 bg-white text-violet-700 rounded-lg text-xs font-black hover:bg-violet-50 shadow"><i class="fas fa-check mr-1"></i>완료</button>
+          </div>
+        ` : ''}
         <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2"><i class="fas fa-shield-alt mr-1 text-pink-400"></i>현재 장비 (${equipCount}개)</h4>
-        <p class="text-[10px] text-gray-400 mb-3"><i class="fas fa-mouse-pointer mr-1"></i>장비를 클릭하면 교체 목표를 설정할 수 있습니다 ${(d.target_items || []).length > 0 ? `<span class="text-emerald-500 font-bold ml-2">· 현재 ${d.target_items.length}개 교체 목표 설정됨</span>` : ''}</p>
+        <p class="text-[10px] text-gray-400 mb-3">${linkingSet
+          ? `<span class="text-violet-600 font-bold"><i class="fas fa-link mr-1"></i>묶기 모드 — 카드 클릭으로 슬롯 토글</span>`
+          : `<i class="fas fa-mouse-pointer mr-1"></i>장비를 클릭하면 교체 목표를 설정할 수 있습니다 ${(d.target_items || []).length > 0 ? `<span class="text-emerald-500 font-bold ml-2">· 현재 ${d.target_items.length}개 교체 목표 설정됨</span>` : ''}`}</p>
         ${window._consultingRenderEquipPreview(d.equipment_data, true, d.target_items)}
-      </div>` : ''}
+      </div>`;
+      })() : ''}
     </div>`;
   };
 
@@ -6449,24 +6472,42 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const tgtMap = {};
     if (Array.isArray(targets)) targets.forEach(t => { if (t.slot) tgtMap[t.slot] = t; });
     const targetCount = Object.keys(tgtMap).length;
+    // 세트 묶기 모드
+    const linkingIdx = editable ? window._consultingState?.linkingSetIdx : null;
+    const linkingSet = (linkingIdx != null) ? window._consultingState.draft?.goal?.sets?.[linkingIdx] : null;
+    const linkedSlots = linkingSet ? new Set(linkingSet.items || []) : new Set();
+    const isLinkMode = !!linkingSet;
     return `<div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-3 border border-slate-700/50">
-      ${editable && targetCount > 0 ? `<div class="flex items-center gap-2 mb-3 px-3 py-2 bg-emerald-500/15 border border-emerald-400/30 rounded-lg"><i class="fas fa-bullseye text-emerald-300"></i><span class="text-xs font-bold text-emerald-200">${targetCount}개 교체 목표 설정됨</span><span class="text-[10px] text-emerald-300/70 ml-auto">목표 설정 카드는 초록 테두리 + 🎯 라벨</span></div>` : ''}
+      ${editable && targetCount > 0 && !isLinkMode ? `<div class="flex items-center gap-2 mb-3 px-3 py-2 bg-emerald-500/15 border border-emerald-400/30 rounded-lg"><i class="fas fa-bullseye text-emerald-300"></i><span class="text-xs font-bold text-emerald-200">${targetCount}개 교체 목표 설정됨</span><span class="text-[10px] text-emerald-300/70 ml-auto">목표 설정 카드는 초록 테두리 + 🎯 라벨</span></div>` : ''}
       <div class="grid gap-1.5" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
       ${equips.map((eq, idx) => {
         const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
         const hasTarget = !!tgtMap[slot];
+        const isLinked = isLinkMode && linkedSlots.has(slot);
         const data = window._consultingNormalizeEq(eq);
-        // 교체 목표 설정된 카드는 큼지막한 라벨 + 두꺼운 링 + 어두운 emerald 배경
-        const stateBadge = hasTarget
-          ? '<span class="absolute -top-2 -right-2 px-1.5 py-0.5 bg-emerald-500 text-white rounded-md text-[9px] flex items-center gap-0.5 font-black shadow-lg whitespace-nowrap"><i class="fas fa-bullseye text-[8px]"></i>교체</span>'
-          : '';
+        let stateBadge = '';
+        let onClick = '';
+        let extraCls = '';
+        let title = data.name || slot;
+        if (isLinkMode) {
+          stateBadge = isLinked
+            ? '<span class="absolute -top-2 -right-2 px-1.5 py-0.5 bg-violet-500 text-white rounded-md text-[9px] flex items-center gap-0.5 font-black shadow-lg whitespace-nowrap"><i class="fas fa-link text-[8px]"></i>묶임</span>'
+            : '<span class="absolute -top-2 -right-2 w-5 h-5 bg-slate-600/80 text-white rounded-full text-[10px] flex items-center justify-center font-black shadow-lg">+</span>';
+          onClick = `onclick="window._consultingLinkToggle('${esc(slot).replace(/'/g, "\\'")}')"`;
+          extraCls = isLinked ? 'ring-2 ring-violet-400 bg-violet-500/15' : 'hover:ring-2 hover:ring-violet-300/60';
+          title = `${slot}${isLinked ? ' · 세트에 묶임 (클릭하여 제거)' : ' (클릭하여 세트에 묶기)'}`;
+        } else {
+          stateBadge = hasTarget
+            ? '<span class="absolute -top-2 -right-2 px-1.5 py-0.5 bg-emerald-500 text-white rounded-md text-[9px] flex items-center gap-0.5 font-black shadow-lg whitespace-nowrap"><i class="fas fa-bullseye text-[8px]"></i>교체</span>'
+            : '';
+          onClick = editable ? `onclick="window._consultingOpenTarget(${idx})"` : '';
+          extraCls = hasTarget && editable ? 'ring-2 ring-emerald-400 bg-emerald-500/10' : '';
+          title = `${data.name || slot}${hasTarget ? ' · 교체 목표 설정됨 (다시 클릭하여 수정)' : (editable ? ' (클릭하여 교체 목표 설정)' : '')}`;
+        }
         return window._consultingItemCardHtml(data, {
-          slot,
-          stateBadge,
+          slot, stateBadge,
           interactive: editable,
-          onClick: editable ? `onclick="window._consultingOpenTarget(${idx})"` : '',
-          title: `${data.name || slot}${hasTarget ? ' · 교체 목표 설정됨 (다시 클릭하여 수정)' : (editable ? ' (클릭하여 교체 목표 설정)' : '')}`,
-          extraCls: hasTarget && editable ? 'ring-2 ring-emerald-400 bg-emerald-500/10' : ''
+          onClick, title, extraCls
         });
       }).join('')}
       </div>
@@ -7237,18 +7278,21 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     };
 
     const targetSlots = new Set(items.map(t => t.slot));
-    // 세트 발동 판정 (묶은 슬롯이 모두 target_items에 있는지)
+    // 세트 발동 판정 — 묶은 슬롯이 (target_items + 현재 장비) 합집합에 모두 있어야 발동.
+    // 단, 분배는 target_items에 있는 슬롯 수로만 나눔 (교체 안 하는 '유지' 슬롯엔 분배 X — 효율 표에 행이 없으니까)
     const setStatus = setList.map(s => {
       const slots = s.items || [];
-      const active = slots.length > 0 && slots.every(slot => targetSlots.has(slot));
-      return { ...s, active, slotCount: slots.length };
+      const slotsInTarget = slots.filter(slot => targetSlots.has(slot));
+      // 발동: 묶은 슬롯 중 하나라도 target_items에 있어야 (= 유효한 교체로 발동) — 모두 유지면 효율 분석에 의미 없음
+      const active = slots.length > 0 && slotsInTarget.length > 0;
+      return { ...s, active, slotCount: slots.length, distSlots: slotsInTarget, distCount: slotsInTarget.length };
     });
 
-    // slot → 첫 매칭 active set 인덱스
+    // slot → 첫 매칭 active set 인덱스 (분배 대상 슬롯만)
     const slotToSetIdx = new Map();
     setStatus.forEach((s, idx) => {
       if (!s.active) return;
-      (s.items || []).forEach(slot => {
+      (s.distSlots || []).forEach(slot => {
         if (!slotToSetIdx.has(slot)) slotToSetIdx.set(slot, idx);
       });
     });
@@ -7256,8 +7300,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     // 각 단품 행 계산
     const itemRows = items.map(t => {
       const sIdx = slotToSetIdx.get(t.slot);
-      const setShare = (sIdx != null && setStatus[sIdx].slotCount > 0)
-        ? Math.round(Number(setStatus[sIdx].hexa_contrib || 0) / setStatus[sIdx].slotCount)
+      const setShare = (sIdx != null && setStatus[sIdx].distCount > 0)
+        ? Math.round(Number(setStatus[sIdx].hexa_contrib || 0) / setStatus[sIdx].distCount)
         : 0;
       const itemHexa = Number(t.hexa_contrib) || 0;
       const total = itemHexa + setShare;
@@ -7334,16 +7378,22 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const memberHexaSum = g.members.reduce((s, r) => s + r.itemHexa, 0);
             const setBonus = Number(g.set.hexa_contrib) || 0;
             const groupTotal = memberHexaSum + (g.set.active ? setBonus : 0);
-            const slotsLabel = (g.set.items || []).join(' / ');
+            const slotsLabel = (g.set.items || []).map(slot =>
+              targetSlots.has(slot)
+                ? `<span>${esc(slot)}</span>`
+                : `<span class="text-amber-600">${esc(slot)}<span class="text-[9px] opacity-70 ml-0.5">(유지)</span></span>`
+            ).join('<span class="text-gray-300 mx-0.5">/</span>');
+            const keepCount = (g.set.items || []).length - g.set.distCount;
             return `
               <div class="col-span-7 px-3 py-2 border-t-2 border-violet-300 bg-violet-50/60 flex items-center justify-between text-[11px] flex-wrap gap-2">
-                <div class="flex items-center gap-2 min-w-0">
+                <div class="flex items-center gap-2 min-w-0 flex-wrap">
                   <i class="fas fa-layer-group text-violet-500"></i>
                   <span class="font-black text-violet-700">${esc(g.set.name || '(이름 없음)')}</span>
-                  ${slotsLabel ? `<span class="text-gray-500 text-[10px]">${esc(slotsLabel)}</span>` : ''}
+                  ${slotsLabel ? `<span class="text-gray-500 text-[10px]">${slotsLabel}</span>` : ''}
                   ${g.set.active
                     ? `<span class="bg-emerald-100 text-emerald-700 text-[9px] font-black px-1.5 py-0.5 rounded">발동</span>`
-                    : `<span class="bg-gray-100 text-gray-500 text-[9px] font-black px-1.5 py-0.5 rounded" title="묶은 슬롯이 모두 target_items에 있어야 발동">미발동</span>`}
+                    : `<span class="bg-gray-100 text-gray-500 text-[9px] font-black px-1.5 py-0.5 rounded" title="묶은 슬롯 중 교체할 게 1개 이상이어야 효율 분석에 반영">미발동</span>`}
+                  ${keepCount > 0 ? `<span class="text-[9px] text-amber-600 font-bold">유지 ${keepCount}개</span>` : ''}
                 </div>
                 <div class="text-[10px] text-gray-600">단품 +${memberHexaSum.toLocaleString()}${g.set.active ? ` + 세트 +${setBonus.toLocaleString()} = <strong class="text-violet-700">+${groupTotal.toLocaleString()}</strong>` : ` <span class="text-gray-400">(세트 +${setBonus.toLocaleString()} 미발동)</span>`}</div>
               </div>
@@ -7474,6 +7524,29 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     } else {
       set.items = set.items.filter(x => x !== slot);
     }
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  // 세트 묶기 모드 (장비 카드 클릭으로 슬롯 추가/제거)
+  window._consultingStartLinkSet = (i) => {
+    window._consultingState.linkingSetIdx = i;
+    window.renderConsulting(document.getElementById('contentArea'));
+    setTimeout(() => {
+      const el = document.getElementById('consultingEquipArea');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+  window._consultingEndLinkSet = () => {
+    window._consultingState.linkingSetIdx = null;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingLinkToggle = (slot) => {
+    const i = window._consultingState.linkingSetIdx;
+    if (i == null) return;
+    const set = window._consultingState.draft?.goal?.sets?.[i];
+    if (!set) return;
+    if (!Array.isArray(set.items)) set.items = [];
+    if (set.items.includes(slot)) set.items = set.items.filter(x => x !== slot);
+    else set.items.push(slot);
     window.renderConsulting(document.getElementById('contentArea'));
   };
 
