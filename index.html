@@ -5732,7 +5732,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       member_name: '', member_class: '', member_server: '루나', consultant_name: '',
       diagnosis_date: new Date().toISOString().slice(0, 10),
       combat_power: '', main_stat: '', hexa_stat: '',
-      goal: { targetHexa: '', budget: '', period: '', sets: [] },
+      goal: { targetHexa: '', budget: '', period: '', sets: [], hexaUpgrade: { hexa_gain: 0, sol_erda: 0, sol_erda_price: 0 } },
       diagnosis: [], tips: [], target_items: [], summary: '', character_image: '', attachments: []
     };
     window.renderConsulting(document.getElementById('contentArea'));
@@ -6066,18 +6066,21 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             <div class="text-[11px] font-black text-violet-700">+${goal.sets.reduce((s, x) => s + (Number(x.hexa_contrib)||0), 0).toLocaleString()}</div>
           </div>
           <div class="space-y-1.5">
-            ${goal.sets.map(s => `
-              <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2">
-                <div class="min-w-0 flex-1">
-                  <div class="text-xs font-black text-gray-800 truncate">${esc(s.name || '(이름 없음)')}</div>
-                  ${s.items ? `<div class="text-[10px] text-gray-400 truncate">${esc(s.items)}</div>` : ''}
+            ${goal.sets.map(s => {
+              const slots = Array.isArray(s.items) ? s.items.join(' / ') : (typeof s.items === 'string' ? s.items : '');
+              return `
+                <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black text-gray-800 truncate">${esc(s.name || '(이름 없음)')}</div>
+                    ${slots ? `<div class="text-[10px] text-gray-400 truncate">${esc(slots)}</div>` : ''}
+                  </div>
+                  <div class="text-right shrink-0 ml-2">
+                    <div class="text-sm font-black text-violet-600">+${(Number(s.hexa_contrib)||0).toLocaleString()}</div>
+                    <div class="text-[9px] text-gray-400">헥사 환산</div>
+                  </div>
                 </div>
-                <div class="text-right shrink-0 ml-2">
-                  <div class="text-sm font-black text-violet-600">+${(Number(s.hexa_contrib)||0).toLocaleString()}</div>
-                  <div class="text-[9px] text-gray-400">헥사 환산</div>
-                </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>` : ''}
 
@@ -6104,7 +6107,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
       <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-100 shadow-sm p-6">
         <h3 class="text-base font-black mb-4 flex items-center gap-2 text-amber-600"><i class="fas fa-calculator"></i>교체 효율 분석</h3>
-        ${window._consultingRenderEfficiency(c.target_items, c.goal?.sets)}
+        ${window._consultingRenderEfficiency(c.target_items, c.goal?.sets, c.goal?.hexaUpgrade)}
       </div>` : ''}
 
       ${diagnosis.length ? `
@@ -6146,8 +6149,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const diagnosis = Array.isArray(d.diagnosis) ? d.diagnosis : [];
     if (!d.goal) d.goal = {};
     if (!Array.isArray(d.goal.sets)) d.goal.sets = [];
+    // sets[*].items 마이그레이션: 문자열("모자, 상의") → 배열
+    d.goal.sets.forEach(s => {
+      if (typeof s.items === 'string') s.items = s.items.split(/[,/·]/).map(x => x.trim()).filter(Boolean);
+      else if (!Array.isArray(s.items)) s.items = [];
+    });
+    if (!d.goal.hexaUpgrade) d.goal.hexaUpgrade = { hexa_gain: 0, sol_erda: 0, sol_erda_price: 0 };
     const goal = d.goal;
     const isNew = window._consultingState.view === 'new';
+    // 세트 슬롯 풀: target_items에 있는 슬롯들만 (없으면 빈 풀 안내)
+    const availableSlots = [...new Set((d.target_items || []).map(t => t.slot).filter(Boolean))];
 
     const equipCount = Array.isArray(d.equipment_data) ? d.equipment_data.length : 0;
     container.innerHTML = `
@@ -6206,20 +6217,65 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-layer-group mr-1 text-violet-500"></i>세트 효과 <span class="text-gray-400 normal-case font-normal text-[10px] ml-1">(아이템 여러 개 교체로 발동되는 큰 환산 상승)</span></h4>
           <button onclick="window._consultingAddSet()" class="text-[10px] bg-violet-50 text-violet-600 px-2 py-1 rounded-lg font-bold hover:bg-violet-100"><i class="fas fa-plus mr-1"></i>세트 추가</button>
         </div>
-        <p class="text-[10px] text-gray-400">단품 옵션 효과(슬롯별 hexa_contrib)는 아래 "장비 교체 목표"에서 입력. 여기는 <strong>세트 발동으로 추가되는 환산</strong>만.</p>
+        <p class="text-[10px] text-gray-400">단품 옵션 효과는 아래 "장비 교체 목표"에서 입력. 여기는 <strong>세트 발동 보너스</strong>만 입력 — 묶은 슬롯이 모두 교체 목표에 있어야 발동, 보너스는 슬롯 수로 균등 분배해서 효율 분석에 반영됩니다.</p>
         <div class="space-y-2">
-          ${(goal.sets || []).length === 0 ? `<div class="text-[10px] text-gray-300 text-center py-3">아직 등록된 세트가 없습니다 — 우측 "세트 추가" 클릭</div>` : (goal.sets || []).map((s, i) => `
-            <div class="bg-violet-50/40 border border-violet-100 rounded-xl p-3">
-              <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_130px_28px] gap-2 items-center">
-                <input type="text" value="${esc(s.name || '')}" oninput="window._consultingState.draft.goal.sets[${i}].name=this.value" placeholder="세트 이름 (예: 아케인셰이드 5세트)" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
-                <input type="text" value="${esc(s.items || '')}" oninput="window._consultingState.draft.goal.sets[${i}].items=this.value" placeholder="포함 슬롯 (선택, 예: 모자/상의/장갑)" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
-                <input type="number" value="${s.hexa_contrib != null ? s.hexa_contrib : ''}" oninput="window._consultingState.draft.goal.sets[${i}].hexa_contrib=Number(this.value)||0" placeholder="헥사 +상승" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-right font-bold text-violet-600">
-                <button onclick="window._consultingRemoveSet(${i})" class="text-red-400 hover:text-red-600 text-sm" title="삭제"><i class="fas fa-times"></i></button>
+          ${(goal.sets || []).length === 0 ? `<div class="text-[10px] text-gray-300 text-center py-3">아직 등록된 세트가 없습니다 — 우측 "세트 추가" 클릭</div>` : (goal.sets || []).map((s, i) => {
+            const setItems = Array.isArray(s.items) ? s.items : [];
+            const sharePerSlot = setItems.length > 0 ? Math.round((Number(s.hexa_contrib)||0) / setItems.length) : 0;
+            const slotChips = availableSlots.length === 0
+              ? `<div class="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">아래 "장비 교체 목표"에 단품을 먼저 추가하면 슬롯이 여기 체크박스로 떠요</div>`
+              : `<div class="flex flex-wrap gap-1.5">${availableSlots.map(slot => {
+                  const checked = setItems.includes(slot);
+                  return `<label class="text-[10px] ${checked ? 'bg-violet-100 border-violet-300 text-violet-700 font-bold' : 'bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200'} border rounded px-2 py-1 flex items-center gap-1 cursor-pointer transition">
+                    <input type="checkbox" ${checked ? 'checked' : ''} onchange="window._consultingToggleSetSlot(${i}, '${esc(slot)}', this.checked)" class="accent-violet-500"> ${esc(slot)}
+                  </label>`;
+                }).join('')}</div>`;
+            return `
+              <div class="bg-violet-50/40 border border-violet-100 rounded-xl p-3 space-y-2">
+                <div class="grid grid-cols-1 sm:grid-cols-[1fr_130px_28px] gap-2 items-center">
+                  <input type="text" value="${esc(s.name || '')}" oninput="window._consultingState.draft.goal.sets[${i}].name=this.value" placeholder="세트 이름 (예: 아케인셰이드 5세트)" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+                  <input type="number" value="${s.hexa_contrib != null ? s.hexa_contrib : ''}" oninput="window._consultingState.draft.goal.sets[${i}].hexa_contrib=Number(this.value)||0" placeholder="헥사 보너스" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-right font-bold text-violet-600">
+                  <button onclick="window._consultingRemoveSet(${i})" class="text-red-400 hover:text-red-600 text-sm" title="삭제"><i class="fas fa-times"></i></button>
+                </div>
+                <div>
+                  <div class="text-[9px] font-bold text-gray-500 uppercase mb-1">묶을 슬롯 (target_items 중)</div>
+                  ${slotChips}
+                  ${setItems.length > 0 ? `<p class="text-[10px] text-gray-500 mt-1">${setItems.length}개 선택 · 분배: 슬롯당 약 +${sharePerSlot.toLocaleString()} (${(Number(s.hexa_contrib)||0).toLocaleString()} ÷ ${setItems.length})</p>` : ''}
+                </div>
               </div>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
         ${(goal.sets || []).length > 0 ? `<div class="text-right text-[11px] text-gray-500 pt-1">세트 합계: <strong class="text-violet-600">+${(goal.sets || []).reduce((s, x) => s + (Number(x.hexa_contrib)||0), 0).toLocaleString()}</strong></div>` : ''}
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-cubes-stacked mr-1 text-amber-500"></i>헥사 강화 (솔에르다 조각) <span class="text-gray-400 normal-case font-normal text-[10px] ml-1">(선택)</span></h4>
+        <p class="text-[10px] text-gray-400">솔에르다 강화로 얻을 헥사 환산 상승치 + 필요 조각 수 + 1조각 시세를 입력하면 효율 분석에 자동 포함됩니다.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">예상 헥사 상승</label>
+            <input type="number" value="${goal.hexaUpgrade.hexa_gain || ''}" oninput="window._consultingState.draft.goal.hexaUpgrade.hexa_gain=Number(this.value)||0" placeholder="예: 5000" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 outline-none focus:border-amber-300">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">필요 솔에르다 조각</label>
+            <input type="number" value="${goal.hexaUpgrade.sol_erda || ''}" oninput="window._consultingState.draft.goal.hexaUpgrade.sol_erda=Number(this.value)||0" placeholder="예: 50" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 outline-none focus:border-amber-300">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">조각 시세 (1개 / 억)</label>
+            <input type="number" step="0.1" value="${goal.hexaUpgrade.sol_erda_price || ''}" oninput="window._consultingState.draft.goal.hexaUpgrade.sol_erda_price=Number(this.value)||0" placeholder="예: 0.6" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 outline-none focus:border-amber-300">
+          </div>
+        </div>
+        ${(() => {
+          const hu = goal.hexaUpgrade;
+          const cost = (Number(hu.sol_erda) || 0) * (Number(hu.sol_erda_price) || 0);
+          const eff = cost > 0 ? (Number(hu.hexa_gain) || 0) / cost : 0;
+          if (Number(hu.hexa_gain) <= 0 && Number(hu.sol_erda) <= 0) return '';
+          return `<div class="bg-amber-50/60 border border-amber-100 rounded-lg px-3 py-2 text-[11px] text-amber-800 flex items-center justify-between flex-wrap gap-2">
+            <span>총 비용: <strong>${cost.toFixed(1)}억</strong> (${hu.sol_erda || 0} × ${hu.sol_erda_price || 0}억)</span>
+            ${eff > 0 ? `<span>효율: <strong class="text-emerald-600">${eff.toFixed(1)}</strong> (${(hu.hexa_gain||0).toLocaleString()} ÷ ${cost.toFixed(1)})</span>` : ''}
+          </div>`;
+        })()}
       </div>
 
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
@@ -7157,81 +7213,158 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
 
   // 효율 분석 표 (상세 뷰)
-  window._consultingRenderEfficiency = (targets, sets) => {
-    const hasTargets = Array.isArray(targets) && targets.length;
-    const setList = Array.isArray(sets) ? sets.filter(s => Number(s.hexa_contrib) > 0 || (s.name && s.name.trim())) : [];
-    const hasSets = setList.length > 0;
-    if (!hasTargets && !hasSets) return '';
+  window._consultingRenderEfficiency = (targets, sets, hexaUpgrade) => {
+    const items = Array.isArray(targets) ? targets : [];
+    const setListRaw = Array.isArray(sets) ? sets : [];
+    // sets[*].items 호환: string → array
+    const setList = setListRaw.map(s => ({
+      ...s,
+      items: Array.isArray(s.items) ? s.items
+        : (typeof s.items === 'string' ? s.items.split(/[,/·]/).map(x => x.trim()).filter(Boolean) : [])
+    }));
+    const hu = hexaUpgrade || {};
+    const huHexa = Number(hu.hexa_gain) || 0;
+    const huSol = Number(hu.sol_erda) || 0;
+    const huPrice = Number(hu.sol_erda_price) || 0;
+    const huCost = huSol * huPrice;
+    const huEff = huCost > 0 ? huHexa / huCost : 0;
+    if (items.length === 0 && setList.length === 0 && huHexa === 0) return '';
+
     const parseCost = (s) => {
       if (!s) return 0;
       const m = String(s).replace(/,/g,'').match(/([\d.]+)\s*억?/);
       return m ? parseFloat(m[1]) : 0;
     };
-    const ranked = (targets || []).map(t => ({
-      slot: t.slot,
-      name: t.after_name,
-      hexa: Number(t.hexa_contrib) || 0,
-      cost: parseCost(t.cost),
-      efficiency: parseCost(t.cost) > 0 ? (Number(t.hexa_contrib) || 0) / parseCost(t.cost) : 0
-    })).sort((a, b) => b.efficiency - a.efficiency);
 
-    const itemHexa = ranked.reduce((s, r) => s + r.hexa, 0);
-    const setHexa  = setList.reduce((s, x) => s + (Number(x.hexa_contrib) || 0), 0);
-    const totalHexa = itemHexa + setHexa;
-    const totalCost = ranked.reduce((s, r) => s + r.cost, 0);
+    const targetSlots = new Set(items.map(t => t.slot));
+    // 세트 발동 판정 (묶은 슬롯이 모두 target_items에 있는지)
+    const setStatus = setList.map(s => {
+      const slots = s.items || [];
+      const active = slots.length > 0 && slots.every(slot => targetSlots.has(slot));
+      return { ...s, active, slotCount: slots.length };
+    });
+
+    // slot → 첫 매칭 active set 인덱스
+    const slotToSetIdx = new Map();
+    setStatus.forEach((s, idx) => {
+      if (!s.active) return;
+      (s.items || []).forEach(slot => {
+        if (!slotToSetIdx.has(slot)) slotToSetIdx.set(slot, idx);
+      });
+    });
+
+    // 각 단품 행 계산
+    const itemRows = items.map(t => {
+      const sIdx = slotToSetIdx.get(t.slot);
+      const setShare = (sIdx != null && setStatus[sIdx].slotCount > 0)
+        ? Math.round(Number(setStatus[sIdx].hexa_contrib || 0) / setStatus[sIdx].slotCount)
+        : 0;
+      const itemHexa = Number(t.hexa_contrib) || 0;
+      const total = itemHexa + setShare;
+      const cost = parseCost(t.cost);
+      const eff = cost > 0 ? total / cost : 0;
+      return { slot: t.slot, name: t.after_name, itemHexa, setShare, total, cost, eff, setIdx: sIdx ?? null };
+    });
+
+    const standalone = itemRows.filter(r => r.setIdx == null).sort((a, b) => b.eff - a.eff);
+    const groups = setStatus.map((s, idx) => ({
+      set: s, setIdx: idx,
+      members: itemRows.filter(r => r.setIdx === idx).sort((a, b) => b.eff - a.eff)
+    })).filter(g => g.members.length > 0 || g.set.slotCount > 0 || Number(g.set.hexa_contrib) > 0);
+
+    // 합계
+    const itemHexaSum = itemRows.reduce((s, r) => s + r.itemHexa, 0);
+    const setHexaSum = setStatus.filter(s => s.active).reduce((acc, s) => acc + (Number(s.hexa_contrib) || 0), 0);
+    const totalHexa = itemHexaSum + setHexaSum + huHexa;
+    const itemCostSum = itemRows.reduce((s, r) => s + r.cost, 0);
+    const totalCost = itemCostSum + huCost;
+    const activeSetCount = setStatus.filter(s => s.active).length;
+
+    const effColorClass = (e) => e >= 100 ? 'text-emerald-500' : e >= 30 ? 'text-blue-500' : e > 0 ? 'text-amber-500' : 'text-gray-300';
+    let rowSeq = 0;
+    const renderItemRow = (r, opts = {}) => {
+      const num = ++rowSeq;
+      const medal = !opts.inGroup && num === 1 ? '🥇' : !opts.inGroup && num === 2 ? '🥈' : !opts.inGroup && num === 3 ? '🥉' : num;
+      const bg = opts.inGroup ? 'bg-violet-50/30' : (num === 1 ? 'bg-amber-50/40' : '');
+      const stripe = opts.inGroup ? ' border-l-4 border-l-violet-300' : '';
+      return `
+        <div class="px-2 py-2.5 border-t border-gray-100 text-center font-bold ${bg}${stripe}">${medal}</div>
+        <div class="px-3 py-2.5 border-t border-gray-100 ${bg}">
+          <span class="text-gray-700 font-bold">${esc(r.slot)}</span>${r.name ? `<span class="text-gray-400 ml-1">${esc(r.name)}</span>` : ''}
+        </div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right font-bold text-gray-700 ${bg}">+${r.itemHexa.toLocaleString()}</div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right font-bold ${r.setShare > 0 ? 'text-violet-600' : 'text-gray-300'} ${bg}">${r.setShare > 0 ? '+' + r.setShare.toLocaleString() : '-'}</div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right font-bold text-emerald-500 ${bg}">+${r.total.toLocaleString()}</div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right text-gray-700 ${bg}">${r.cost > 0 ? r.cost + '억' : '-'}</div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right font-black ${effColorClass(r.eff)} ${bg}">${r.eff > 0 ? r.eff.toFixed(1) : '-'}</div>`;
+    };
 
     return `<div class="space-y-3">
       <div class="grid grid-cols-3 gap-2">
         <div class="bg-emerald-50 rounded-lg p-3 text-center border border-emerald-100">
           <div class="text-[10px] text-emerald-500 font-bold uppercase">총 헥사 상승</div>
           <div class="text-base font-black text-emerald-600 mt-1">+${totalHexa.toLocaleString()}</div>
-          ${hasSets ? `<div class="text-[9px] text-gray-500 mt-1 font-bold">단품 +${itemHexa.toLocaleString()} <span class="text-gray-300">·</span> <span class="text-violet-600">세트 +${setHexa.toLocaleString()}</span></div>` : ''}
+          ${(setHexaSum > 0 || huHexa > 0) ? `<div class="text-[9px] text-gray-500 mt-1 font-bold">
+            단품 +${itemHexaSum.toLocaleString()}
+            ${setHexaSum > 0 ? `<span class="text-gray-300"> · </span><span class="text-violet-600">세트 +${setHexaSum.toLocaleString()}</span>` : ''}
+            ${huHexa > 0 ? `<span class="text-gray-300"> · </span><span class="text-amber-600">강화 +${huHexa.toLocaleString()}</span>` : ''}
+          </div>` : ''}
         </div>
         <div class="bg-amber-50 rounded-lg p-3 text-center border border-amber-100">
           <div class="text-[10px] text-amber-500 font-bold uppercase">총 비용</div>
           <div class="text-base font-black text-amber-600 mt-1">${totalCost.toFixed(1)}억</div>
+          ${huCost > 0 ? `<div class="text-[9px] text-gray-500 mt-1 font-bold">장비 ${itemCostSum.toFixed(0)}억 <span class="text-gray-300">·</span> <span class="text-amber-600">솔에르다 ${huCost.toFixed(1)}억</span></div>` : ''}
         </div>
         <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-100">
           <div class="text-[10px] text-blue-500 font-bold uppercase">교체 부위</div>
-          <div class="text-base font-black text-blue-600 mt-1">${ranked.length}개${hasSets ? ` <span class="text-[10px] text-violet-500 font-bold">+ 세트 ${setList.length}</span>` : ''}</div>
+          <div class="text-base font-black text-blue-600 mt-1">${itemRows.length}개${activeSetCount > 0 ? ` <span class="text-[10px] text-violet-500 font-bold">+ 세트 ${activeSetCount}</span>` : ''}</div>
         </div>
       </div>
-      ${hasTargets ? `<div class="bg-white border border-gray-100 rounded-xl overflow-hidden">
-        <div class="grid grid-cols-[40px_1fr_80px_80px_90px] gap-0 text-[11px]">
+      <div class="bg-white border border-gray-100 rounded-xl overflow-hidden">
+        <div class="grid grid-cols-[40px_1fr_70px_80px_70px_80px_70px] gap-0 text-[11px]">
           <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-center">#</div>
           <div class="bg-gray-50 px-3 py-2 font-bold text-gray-500">부위</div>
-          <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-right">헥사 상승</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-right">단품</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-violet-500 text-right">세트분배</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-emerald-500 text-right">합계</div>
           <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-right">비용</div>
           <div class="bg-gray-50 px-2 py-2 font-bold text-amber-500 text-right">효율 ↓</div>
-          ${ranked.map((r, i) => {
-            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1);
-            const effColor = r.efficiency >= 100 ? 'text-emerald-500' : r.efficiency >= 30 ? 'text-blue-500' : 'text-amber-500';
-            const bg = i === 0 ? 'bg-amber-50/40' : '';
+          ${standalone.map(r => renderItemRow(r)).join('')}
+          ${groups.map(g => {
+            const memberHexaSum = g.members.reduce((s, r) => s + r.itemHexa, 0);
+            const setBonus = Number(g.set.hexa_contrib) || 0;
+            const groupTotal = memberHexaSum + (g.set.active ? setBonus : 0);
+            const slotsLabel = (g.set.items || []).join(' / ');
             return `
-              <div class="px-2 py-2.5 border-t border-gray-100 text-center font-bold ${bg}">${medal}</div>
-              <div class="px-3 py-2.5 border-t border-gray-100 ${bg}">
-                <span class="text-gray-700 font-bold">${esc(r.slot)}</span>
-                ${r.name ? `<span class="text-gray-400 ml-1">${esc(r.name)}</span>` : ''}
+              <div class="col-span-7 px-3 py-2 border-t-2 border-violet-300 bg-violet-50/60 flex items-center justify-between text-[11px] flex-wrap gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <i class="fas fa-layer-group text-violet-500"></i>
+                  <span class="font-black text-violet-700">${esc(g.set.name || '(이름 없음)')}</span>
+                  ${slotsLabel ? `<span class="text-gray-500 text-[10px]">${esc(slotsLabel)}</span>` : ''}
+                  ${g.set.active
+                    ? `<span class="bg-emerald-100 text-emerald-700 text-[9px] font-black px-1.5 py-0.5 rounded">발동</span>`
+                    : `<span class="bg-gray-100 text-gray-500 text-[9px] font-black px-1.5 py-0.5 rounded" title="묶은 슬롯이 모두 target_items에 있어야 발동">미발동</span>`}
+                </div>
+                <div class="text-[10px] text-gray-600">단품 +${memberHexaSum.toLocaleString()}${g.set.active ? ` + 세트 +${setBonus.toLocaleString()} = <strong class="text-violet-700">+${groupTotal.toLocaleString()}</strong>` : ` <span class="text-gray-400">(세트 +${setBonus.toLocaleString()} 미발동)</span>`}</div>
               </div>
-              <div class="px-2 py-2.5 border-t border-gray-100 text-right font-bold text-emerald-500 ${bg}">+${r.hexa.toLocaleString()}</div>
-              <div class="px-2 py-2.5 border-t border-gray-100 text-right text-gray-700 ${bg}">${r.cost > 0 ? r.cost + '억' : '-'}</div>
-              <div class="px-2 py-2.5 border-t border-gray-100 text-right font-black ${effColor} ${bg}">${r.efficiency > 0 ? r.efficiency.toFixed(1) : '-'}</div>`;
+              ${g.members.map(r => renderItemRow(r, { inGroup: true })).join('')}
+            `;
           }).join('')}
-          ${setList.map(s => `
-              <div class="px-2 py-2.5 border-t border-violet-100 text-center font-bold bg-violet-50/40 text-violet-500"><i class="fas fa-layer-group"></i></div>
-              <div class="px-3 py-2.5 border-t border-violet-100 bg-violet-50/40">
-                <span class="text-violet-700 font-bold">세트</span>
-                <span class="text-gray-700 ml-1">${esc(s.name || '(이름 없음)')}</span>
-                ${s.items ? `<span class="text-gray-400 ml-1 text-[10px]">${esc(s.items)}</span>` : ''}
+          ${huHexa > 0 ? `
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-center font-bold bg-amber-50/60 text-amber-500"><i class="fas fa-cubes-stacked"></i></div>
+              <div class="px-3 py-2.5 border-t-2 border-amber-200 bg-amber-50/60">
+                <span class="text-amber-700 font-bold">헥사 강화</span>
+                <span class="text-gray-700 ml-1">솔에르다 ${huSol}개${huPrice > 0 ? ` × ${huPrice}억` : ''}</span>
               </div>
-              <div class="px-2 py-2.5 border-t border-violet-100 text-right font-bold text-violet-600 bg-violet-50/40">+${(Number(s.hexa_contrib) || 0).toLocaleString()}</div>
-              <div class="px-2 py-2.5 border-t border-violet-100 text-right text-gray-400 bg-violet-50/40">포함</div>
-              <div class="px-2 py-2.5 border-t border-violet-100 text-right text-gray-300 bg-violet-50/40">-</div>`).join('')}
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right text-gray-300 bg-amber-50/60">-</div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right text-gray-300 bg-amber-50/60">-</div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right font-bold text-amber-600 bg-amber-50/60">+${huHexa.toLocaleString()}</div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right text-gray-700 bg-amber-50/60">${huCost > 0 ? huCost.toFixed(1) + '억' : huSol + '조각'}</div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right font-black ${effColorClass(huEff)} bg-amber-50/60">${huEff > 0 ? huEff.toFixed(1) : '-'}</div>
+          ` : ''}
         </div>
-      </div>` : (hasSets ? `<div class="bg-violet-50/40 border border-violet-100 rounded-xl p-3 space-y-1.5">
-        ${setList.map(s => `<div class="flex items-center justify-between bg-white rounded-lg px-3 py-2"><div><div class="text-xs font-black text-gray-800">${esc(s.name || '(이름 없음)')}</div>${s.items ? `<div class="text-[10px] text-gray-400">${esc(s.items)}</div>` : ''}</div><div class="text-sm font-black text-violet-600">+${(Number(s.hexa_contrib)||0).toLocaleString()}</div></div>`).join('')}
-      </div>` : '')}
-      <p class="text-[10px] text-gray-400 text-right">💡 효율 = 헥사 상승 ÷ 비용(억) · 높을수록 가성비 좋음 · 세트는 구성 아이템 비용에 포함</p>
+      </div>
+      <p class="text-[10px] text-gray-400 text-right">💡 효율 = 합계 헥사 상승 ÷ 비용(억) · 세트 분배 = 보너스 ÷ 묶인 슬롯 수 · 헥사 강화 비용 = 조각수 × 시세</p>
     </div>`;
   };
 
@@ -7329,6 +7462,18 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const d = window._consultingState.draft;
     if (!d?.goal?.sets) return;
     d.goal.sets.splice(i, 1);
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingToggleSetSlot = (setIdx, slot, checked) => {
+    const d = window._consultingState.draft;
+    const set = d?.goal?.sets?.[setIdx];
+    if (!set) return;
+    if (!Array.isArray(set.items)) set.items = [];
+    if (checked) {
+      if (!set.items.includes(slot)) set.items.push(slot);
+    } else {
+      set.items = set.items.filter(x => x !== slot);
+    }
     window.renderConsulting(document.getElementById('contentArea'));
   };
 
