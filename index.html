@@ -5725,7 +5725,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       member_name: '', member_class: '', member_server: '루나', consultant_name: '',
       diagnosis_date: new Date().toISOString().slice(0, 10),
       combat_power: '', main_stat: '', hexa_stat: '',
-      goal: { targetHexa: '', budget: '', period: '' },
+      goal: { targetHexa: '', budget: '', period: '', sets: [] },
       diagnosis: [], tips: [], target_items: [], summary: '', character_image: '', attachments: []
     };
     window.renderConsulting(document.getElementById('contentArea'));
@@ -6052,6 +6052,28 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           </div>
         </div>` : ''}
 
+        ${(Array.isArray(goal.sets) && goal.sets.length) ? `
+        <div class="mt-4 bg-violet-50/40 rounded-xl p-3 border border-violet-100">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] text-violet-600 font-bold uppercase tracking-wider"><i class="fas fa-layer-group mr-1"></i>세트 효과 (${goal.sets.length}개 발동)</div>
+            <div class="text-[11px] font-black text-violet-700">+${goal.sets.reduce((s, x) => s + (Number(x.hexa_contrib)||0), 0).toLocaleString()}</div>
+          </div>
+          <div class="space-y-1.5">
+            ${goal.sets.map(s => `
+              <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-black text-gray-800 truncate">${esc(s.name || '(이름 없음)')}</div>
+                  ${s.items ? `<div class="text-[10px] text-gray-400 truncate">${esc(s.items)}</div>` : ''}
+                </div>
+                <div class="text-right shrink-0 ml-2">
+                  <div class="text-sm font-black text-violet-600">+${(Number(s.hexa_contrib)||0).toLocaleString()}</div>
+                  <div class="text-[9px] text-gray-400">헥사 환산</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
         ${tips.length ? `
         <div class="mt-4 bg-amber-50/60 rounded-xl p-3 border border-amber-100">
           <div class="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-2"><i class="fas fa-info-circle mr-1"></i>주의사항</div>
@@ -6115,7 +6137,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const d = window._consultingState.draft || {};
     const tips = Array.isArray(d.tips) ? d.tips : [];
     const diagnosis = Array.isArray(d.diagnosis) ? d.diagnosis : [];
-    const goal = d.goal || {};
+    if (!d.goal) d.goal = {};
+    if (!Array.isArray(d.goal.sets)) d.goal.sets = [];
+    const goal = d.goal;
     const isNew = window._consultingState.view === 'new';
 
     const equipCount = Array.isArray(d.equipment_data) ? d.equipment_data.length : 0;
@@ -6168,6 +6192,27 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           <div><label class="text-[10px] text-gray-400 font-bold uppercase">예산</label><input type="text" value="${esc(goal.budget || '')}" oninput="window._consultingState.draft.goal.budget=this.value" placeholder="예: 주식 100억" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
           <div><label class="text-[10px] text-gray-400 font-bold uppercase">기간</label><input type="text" value="${esc(goal.period || '')}" oninput="window._consultingState.draft.goal.period=this.value" placeholder="예: 2개월" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
         </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-layer-group mr-1 text-violet-500"></i>세트 효과 <span class="text-gray-400 normal-case font-normal text-[10px] ml-1">(아이템 여러 개 교체로 발동되는 큰 환산 상승)</span></h4>
+          <button onclick="window._consultingAddSet()" class="text-[10px] bg-violet-50 text-violet-600 px-2 py-1 rounded-lg font-bold hover:bg-violet-100"><i class="fas fa-plus mr-1"></i>세트 추가</button>
+        </div>
+        <p class="text-[10px] text-gray-400">단품 옵션 효과(슬롯별 hexa_contrib)는 아래 "장비 교체 목표"에서 입력. 여기는 <strong>세트 발동으로 추가되는 환산</strong>만.</p>
+        <div class="space-y-2">
+          ${(goal.sets || []).length === 0 ? `<div class="text-[10px] text-gray-300 text-center py-3">아직 등록된 세트가 없습니다 — 우측 "세트 추가" 클릭</div>` : (goal.sets || []).map((s, i) => `
+            <div class="bg-violet-50/40 border border-violet-100 rounded-xl p-3">
+              <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_130px_28px] gap-2 items-center">
+                <input type="text" value="${esc(s.name || '')}" oninput="window._consultingState.draft.goal.sets[${i}].name=this.value" placeholder="세트 이름 (예: 아케인셰이드 5세트)" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+                <input type="text" value="${esc(s.items || '')}" oninput="window._consultingState.draft.goal.sets[${i}].items=this.value" placeholder="포함 슬롯 (선택, 예: 모자/상의/장갑)" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+                <input type="number" value="${s.hexa_contrib != null ? s.hexa_contrib : ''}" oninput="window._consultingState.draft.goal.sets[${i}].hexa_contrib=Number(this.value)||0" placeholder="헥사 +상승" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-right font-bold text-violet-600">
+                <button onclick="window._consultingRemoveSet(${i})" class="text-red-400 hover:text-red-600 text-sm" title="삭제"><i class="fas fa-times"></i></button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ${(goal.sets || []).length > 0 ? `<div class="text-right text-[11px] text-gray-500 pt-1">세트 합계: <strong class="text-violet-600">+${(goal.sets || []).reduce((s, x) => s + (Number(x.hexa_contrib)||0), 0).toLocaleString()}</strong></div>` : ''}
       </div>
 
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
@@ -7246,6 +7291,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
   window._consultingRemoveTip = (i) => {
     window._consultingState.draft.tips.splice(i, 1);
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingAddSet = () => {
+    const d = window._consultingState.draft;
+    if (!d.goal) d.goal = {};
+    if (!Array.isArray(d.goal.sets)) d.goal.sets = [];
+    d.goal.sets.push({ name: '', items: '', hexa_contrib: 0 });
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingRemoveSet = (i) => {
+    const d = window._consultingState.draft;
+    if (!d?.goal?.sets) return;
+    d.goal.sets.splice(i, 1);
     window.renderConsulting(document.getElementById('contentArea'));
   };
 
