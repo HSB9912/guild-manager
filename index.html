@@ -203,6 +203,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('bail_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail_form"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금 신청</span></button>
    <button onclick="router('manual')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="manual"><i class="fas fa-book-open w-5 text-center text-xs"></i><span>사용 안내</span></button>
    <button onclick="router('requests')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="requests"><i class="fas fa-inbox w-5 text-center text-xs"></i><span>신청 처리</span><span id="reqQueueBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
+   <button onclick="router('admin_todos')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="admin_todos"><i class="fas fa-clipboard-check w-5 text-center text-xs"></i><span>운영진 할 일</span><span id="adminTodosBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
    <div class="admin-only hidden" id="adminMenuSection">
    <button onclick="const el=document.getElementById('adminMenuList');el.classList.toggle('hidden');this.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-4 pt-4 pb-2 cursor-pointer hover:bg-pink-50/50 rounded-xl transition-all">
      <span class="text-[9px] font-bold text-gray-300 uppercase tracking-widest">관리자</span>
@@ -1547,6 +1548,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'bail_form') window.renderBailForm(content);
             else if (tab === 'manual') window.renderManual(content);
             else if (tab === 'requests' && isAdmin()) window.renderRequestQueue(content);
+            else if (tab === 'admin_todos' && isAdmin()) window.renderAdminTodos(content);
             else if (tab === 'sheet' && isAdmin()) window.renderSheet(content);
             else if (tab === 'guide_edit' && isAdmin()) window.renderGuideEditor(content);
             else if (tab === 'history' && isAdmin()) window.renderHistory(content);
@@ -1557,7 +1559,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const _sb = document.getElementById('sidebar'), _ov = document.getElementById('sidebarOverlay');
             if (window.innerWidth < 1024 && _sb) { _sb.classList.add('-translate-x-full'); _ov?.classList.add('hidden'); }
             if (window._updateMobileTab) window._updateMobileTab(tab);
-            const adminTabs = ['weekly_log','all_history','suro_input','role_assign','guide_edit','sync','sheet','history','records','settings','requests'];
+            const adminTabs = ['weekly_log','all_history','suro_input','role_assign','guide_edit','sync','sheet','history','records','settings','requests','admin_todos'];
             const adminList = document.getElementById('adminMenuList');
             if (adminList && adminTabs.includes(tab)) adminList.classList.remove('hidden');
         };
@@ -8289,6 +8291,249 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   // 페이지 로드 시 보석금 pending 카운트 (사이드바 통합 뱃지용)
   setTimeout(() => { window._bailUpdatePendingBadge?.(); }, 3500);
   setInterval(() => { window._bailUpdatePendingBadge?.(); }, 60000);
+
+  // ============================================================
+  // 운영진 할 일 보드 (admin_todos) — A안 + 사이드바 뱃지
+  // ============================================================
+  window._adminTodosState = {
+    list: [], loaded: false,
+    filter: { category: 'all', priority: 'all' },
+    showDone: false,
+    draft: { title: '', priority: 'normal', category: '' },
+    editingId: null
+  };
+
+  const _adminName = () => CURRENT_USER?.user_metadata?.full_name || CURRENT_USER?.email?.split('@')[0] || 'admin';
+
+  window._fetchAdminTodos = async () => {
+    const { data, error } = await supaDb.from('admin_todos')
+      .select('*').order('status', { ascending: true })
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) {
+      window.showMsg('할 일 로드 실패: ' + error.message, 'error');
+      return null;
+    }
+    return data || [];
+  };
+
+  window._adminTodoUpdateBadge = async () => {
+    try {
+      const { count } = await supaDb.from('admin_todos')
+        .select('*', { count: 'exact', head: true }).eq('status', 'todo');
+      const badge = document.getElementById('adminTodosBadge');
+      if (badge) {
+        if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+        else badge.classList.add('hidden');
+      }
+    } catch(e) { console.warn(e); }
+  };
+
+  const PRIORITY_META = {
+    urgent: { label: '긴급', color: 'red',    rank: 4 },
+    high:   { label: '높음', color: 'amber',  rank: 3 },
+    normal: { label: '보통', color: 'blue',   rank: 2 },
+    low:    { label: '낮음', color: 'gray',   rank: 1 }
+  };
+
+  window.renderAdminTodos = async (container) => {
+    const st = window._adminTodosState;
+    container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
+    const list = await window._fetchAdminTodos();
+    if (list === null) {
+      container.innerHTML = `<div class="bg-white rounded-2xl border border-red-100 shadow-sm p-8 text-center">
+        <i class="fas fa-exclamation-circle text-3xl text-red-400 mb-3"></i>
+        <h3 class="text-base font-bold text-gray-800 mb-2">테이블이 없거나 권한이 부족합니다</h3>
+        <p class="text-xs text-gray-500">Supabase에서 <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-500">admin_todos</code> 테이블을 만들어주세요 (admin-todos-schema.sql 참고)</p>
+      </div>`;
+      return;
+    }
+    st.list = list;
+    st.loaded = true;
+    window._adminTodoUpdateBadge();
+
+    // 필터 적용
+    const filtered = list.filter(t => {
+      if (st.filter.category !== 'all' && t.category !== st.filter.category) return false;
+      if (st.filter.priority !== 'all' && t.priority !== st.filter.priority) return false;
+      return true;
+    });
+    const todos = filtered.filter(t => t.status === 'todo');
+    const done = filtered.filter(t => t.status === 'done');
+
+    // 카테고리 풀 (드롭다운용 — 기존 데이터에 있는 + 기본)
+    const defaultCats = ['신청처리','운영','길드','기타'];
+    const allCats = [...new Set([...defaultCats, ...list.map(t => t.category).filter(Boolean)])];
+
+    container.innerHTML = `
+    <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <!-- 헤더 -->
+        <div class="flex items-center gap-2 flex-wrap mb-4">
+          <h3 class="text-sm font-black text-gray-800"><i class="fas fa-clipboard-check text-pink-500 mr-1"></i>운영진 할 일 보드</h3>
+          <span class="text-[10px] text-gray-400">미완료 ${todos.length}건 · 완료 ${done.length}건</span>
+          <div class="ml-auto flex items-center gap-1.5 flex-wrap">
+            <select onchange="window._adminTodosState.filter.category=this.value;window.renderAdminTodos(document.getElementById('contentArea'))" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-bold">
+              <option value="all" ${st.filter.category==='all'?'selected':''}>모든 카테고리</option>
+              ${allCats.map(c => `<option value="${esc(c)}" ${st.filter.category===c?'selected':''}>${esc(c)}</option>`).join('')}
+            </select>
+            <select onchange="window._adminTodosState.filter.priority=this.value;window.renderAdminTodos(document.getElementById('contentArea'))" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[11px] font-bold">
+              <option value="all" ${st.filter.priority==='all'?'selected':''}>모든 우선순위</option>
+              <option value="urgent" ${st.filter.priority==='urgent'?'selected':''}>긴급</option>
+              <option value="high"   ${st.filter.priority==='high'?'selected':''}>높음</option>
+              <option value="normal" ${st.filter.priority==='normal'?'selected':''}>보통</option>
+              <option value="low"    ${st.filter.priority==='low'?'selected':''}>낮음</option>
+            </select>
+            <button onclick="window.renderAdminTodos(document.getElementById('contentArea'))" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-[10px] font-bold text-gray-500" title="새로고침"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+
+        <!-- 빠른 추가 폼 -->
+        <div class="bg-gray-50/70 border border-gray-200 rounded-xl p-3 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px_80px] gap-2">
+            <input id="adminTodoTitleInput" type="text" placeholder="할 일 제목 (Enter로 빠르게 추가)" value="${esc(st.draft.title)}" oninput="window._adminTodosState.draft.title=this.value" onkeydown="if(event.key==='Enter')window._adminTodoQuickAdd()" class="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs">
+            <select onchange="window._adminTodosState.draft.priority=this.value" class="bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs font-bold">
+              <option value="urgent" ${st.draft.priority==='urgent'?'selected':''}>긴급</option>
+              <option value="high"   ${st.draft.priority==='high'?'selected':''}>높음</option>
+              <option value="normal" ${st.draft.priority==='normal'?'selected':''}>보통</option>
+              <option value="low"    ${st.draft.priority==='low'?'selected':''}>낮음</option>
+            </select>
+            <select onchange="window._adminTodosState.draft.category=this.value" class="bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs font-bold">
+              <option value="">카테고리 없음</option>
+              ${defaultCats.map(c => `<option value="${esc(c)}" ${st.draft.category===c?'selected':''}>${esc(c)}</option>`).join('')}
+            </select>
+            <button onclick="window._adminTodoQuickAdd()" class="bg-pink-500 text-white rounded-lg text-xs font-black hover:bg-pink-600"><i class="fas fa-plus mr-1"></i>추가</button>
+          </div>
+        </div>
+
+        <!-- 미완료 -->
+        <div class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2"><i class="fas fa-list-check mr-1"></i>미완료 (${todos.length})</div>
+        <div class="space-y-2 mb-5">
+          ${todos.length === 0 ? '<div class="text-center py-8 text-gray-300 text-xs">미완료 할 일이 없습니다 ✨</div>' : todos.map(t => window._adminTodoRow(t)).join('')}
+        </div>
+
+        <!-- 완료 (접기) -->
+        ${done.length > 0 ? `
+        <details ${st.showDone ? 'open' : ''} ontoggle="window._adminTodosState.showDone=this.open">
+          <summary class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 cursor-pointer hover:text-gray-600 list-none flex items-center gap-1.5">
+            <i class="fas fa-chevron-right text-[9px] transition-transform" style="${st.showDone ? 'transform:rotate(90deg)' : ''}"></i>
+            <i class="fas fa-check-circle"></i>완료 (${done.length}) ${st.showDone ? '접기' : '보기'}
+          </summary>
+          <div class="space-y-2 mt-2">
+            ${done.map(t => window._adminTodoRow(t)).join('')}
+          </div>
+        </details>` : ''}
+      </div>
+    </div>`;
+  };
+
+  window._adminTodoRow = (t) => {
+    const isDone = t.status === 'done';
+    const meta = PRIORITY_META[t.priority] || PRIORITY_META.normal;
+    const editing = window._adminTodosState.editingId === t.id;
+    const accent = `accent-${meta.color}-500`;
+    const bgCls = isDone
+      ? 'bg-emerald-50/30 border border-emerald-100'
+      : (meta.color === 'red' ? 'bg-red-50/70 border-l-4 border-red-400 border border-red-100'
+        : meta.color === 'amber' ? 'bg-amber-50/70 border-l-4 border-amber-400 border border-amber-100'
+        : 'bg-white border border-gray-200');
+    const created = new Date(t.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const doneInfo = (isDone && t.done_at)
+      ? `<i class="fas fa-user-shield mr-1 text-emerald-500"></i>${esc(t.done_by || '?')} 완료 · ${new Date(t.done_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+      : `<i class="fas fa-user mr-1"></i>${esc(t.created_by || '?')} · ${created}`;
+    const dueLabel = t.due_date ? `<i class="fas fa-calendar ml-1.5 mr-0.5"></i>${esc(t.due_date)}` : '';
+    return `
+      <div class="flex items-start gap-3 ${bgCls} rounded-xl rounded-r-xl p-3">
+        <input type="checkbox" ${isDone?'checked':''} onchange="window._adminTodoToggle(${t.id}, this.checked)" class="w-4 h-4 mt-0.5 ${accent}">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-[10px] font-black text-${meta.color}-700 bg-${meta.color}-100 px-1.5 py-0.5 rounded">${meta.label}</span>
+            ${t.category ? `<span class="text-[10px] font-black text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">${esc(t.category)}</span>` : ''}
+            ${editing
+              ? `<input type="text" value="${esc(t.title)}" onblur="window._adminTodoSaveTitle(${t.id}, this.value)" onkeydown="if(event.key==='Enter')this.blur(); if(event.key==='Escape'){window._adminTodosState.editingId=null;window.renderAdminTodos(document.getElementById('contentArea'))}" autofocus class="text-sm font-bold text-gray-800 bg-white border border-pink-300 rounded px-2 py-0.5 flex-1 min-w-[150px] outline-none">`
+              : `<span class="text-sm font-bold ${isDone?'text-gray-500 line-through':'text-gray-800'}">${esc(t.title)}</span>`}
+          </div>
+          <div class="text-[10px] text-gray-500 mt-1">${doneInfo}${dueLabel}</div>
+          ${t.note ? `<div class="text-[11px] text-gray-600 bg-white rounded-md px-2 py-1 mt-1.5 border border-gray-100"><i class="fas fa-sticky-note text-gray-300 mr-1"></i>${esc(t.note)}</div>` : ''}
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <button onclick="window._adminTodoEditNote(${t.id})" class="text-gray-400 hover:text-gray-600 text-xs px-1.5" title="메모/마감일 편집"><i class="fas fa-pen"></i></button>
+          <button onclick="window._adminTodoDelete(${t.id})" class="text-red-300 hover:text-red-500 text-xs px-1.5" title="삭제"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`;
+  };
+
+  // ===== 액션 =====
+  window._adminTodoQuickAdd = async () => {
+    const st = window._adminTodosState;
+    const title = (st.draft.title || '').trim();
+    if (!title) { window.showMsg('할 일 제목을 입력해주세요', 'error'); return; }
+    try {
+      const { error } = await supaDb.from('admin_todos').insert({
+        title,
+        priority: st.draft.priority || 'normal',
+        category: st.draft.category || null,
+        created_by: _adminName()
+      });
+      if (error) throw error;
+      st.draft.title = '';
+      window.showMsg('추가됨', 'success');
+      window.renderAdminTodos(document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('추가 실패: ' + e.message, 'error'); }
+  };
+
+  window._adminTodoToggle = async (id, checked) => {
+    try {
+      const update = checked
+        ? { status: 'done', done_by: _adminName(), done_at: new Date().toISOString() }
+        : { status: 'todo', done_by: null, done_at: null };
+      const { error } = await supaDb.from('admin_todos').update(update).eq('id', id);
+      if (error) throw error;
+      window.renderAdminTodos(document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('상태 변경 실패: ' + e.message, 'error'); }
+  };
+
+  window._adminTodoDelete = async (id) => {
+    if (!confirm('이 할 일을 삭제하시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('admin_todos').delete().eq('id', id);
+      if (error) throw error;
+      window.renderAdminTodos(document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
+  };
+
+  window._adminTodoSaveTitle = async (id, value) => {
+    const trimmed = (value || '').trim();
+    window._adminTodosState.editingId = null;
+    if (!trimmed) { window.renderAdminTodos(document.getElementById('contentArea')); return; }
+    try {
+      const { error } = await supaDb.from('admin_todos').update({ title: trimmed }).eq('id', id);
+      if (error) throw error;
+      window.renderAdminTodos(document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('수정 실패: ' + e.message, 'error'); }
+  };
+
+  window._adminTodoEditNote = async (id) => {
+    const t = window._adminTodosState.list.find(x => x.id === id);
+    if (!t) return;
+    const newNote = prompt('메모 (취소하려면 빈칸 OK 누르고 엔터, 그대로 두려면 Cancel)', t.note || '');
+    if (newNote === null) return; // 취소
+    const newDue = prompt('마감일 (YYYY-MM-DD, 없으면 빈칸)', t.due_date || '');
+    if (newDue === null) return;
+    try {
+      const update = { note: newNote.trim() || null };
+      if (newDue.trim()) update.due_date = newDue.trim();
+      else update.due_date = null;
+      const { error } = await supaDb.from('admin_todos').update(update).eq('id', id);
+      if (error) throw error;
+      window.showMsg('수정됨', 'success');
+      window.renderAdminTodos(document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('수정 실패: ' + e.message, 'error'); }
+  };
+
+  // 페이지 로드 시 미완료 카운트 (사이드바 뱃지)
+  setTimeout(() => { window._adminTodoUpdateBadge?.(); }, 4000);
+  setInterval(() => { window._adminTodoUpdateBadge?.(); }, 60000);
 
   // ============ 수로 면제 현황 ============
   window._suroExemptState = { sortField: 'score', sortOrder: 'desc', search: '', guild: 'all', filter: 'all' };
