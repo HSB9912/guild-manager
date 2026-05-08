@@ -8211,7 +8211,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
 
   // 처리 액션 함수들
-  const _bailAdminName = () => CURRENT_USER?.user_metadata?.full_name || CURRENT_USER?.email || 'admin';
+  const _bailAdminName = () => CURRENT_USER?.adminName || CURRENT_USER?.name || CURRENT_USER?.email?.split('@')[0] || 'admin';
 
   window._bailApprove = async (id) => {
     if (!confirm('입금 스샷 확인됨 — 노블 해제 작업 대기로 이동시키시겠습니까?')) return;
@@ -8303,7 +8303,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     editingId: null
   };
 
-  const _adminName = () => CURRENT_USER?.user_metadata?.full_name || CURRENT_USER?.email?.split('@')[0] || 'admin';
+  const _adminName = () => CURRENT_USER?.adminName || CURRENT_USER?.name || CURRENT_USER?.email?.split('@')[0] || 'admin';
 
   window._fetchAdminTodos = async () => {
     const { data, error } = await supaDb.from('admin_todos')
