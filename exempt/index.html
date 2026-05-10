@@ -31,12 +31,31 @@
 <div class="max-w-md mx-auto">
 
   <!-- 헤더 -->
-  <div class="text-center mb-6 pt-4">
+  <div class="text-center mb-4 pt-4">
     <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg mb-3">
       <i class="fas fa-shield-alt text-white text-2xl"></i>
     </div>
     <h1 class="text-xl font-black text-gray-800">수로 면제 신청</h1>
     <p class="text-[11px] text-gray-500 mt-1">뚠/뚱카롱 길드 · 본캐닉만 입력하면 자동 분류</p>
+  </div>
+
+  <!-- 점수 기준 안내 -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 mb-4">
+    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2"><i class="fas fa-circle-info mr-1 text-pink-400"></i>본캐 수로 점수 기준</div>
+    <div class="space-y-1 text-[11px]">
+      <div class="flex items-center justify-between bg-amber-50 rounded-lg px-3 py-1.5">
+        <span class="font-bold text-amber-700">9만 이상</span>
+        <span class="font-black text-amber-700">전체 면제</span>
+      </div>
+      <div class="flex items-center justify-between bg-blue-50 rounded-lg px-3 py-1.5">
+        <span class="font-bold text-blue-700">5.5만 이상 ~ 9만 미만</span>
+        <span class="font-black text-blue-700">절반 면제</span>
+      </div>
+      <div class="flex items-center justify-between bg-red-50 rounded-lg px-3 py-1.5">
+        <span class="font-bold text-red-700">5.5만 미만</span>
+        <span class="font-black text-red-700">신청 불가</span>
+      </div>
+    </div>
   </div>
 
   <!-- ==================== 신청 폼 ==================== -->
@@ -107,7 +126,8 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const R2_WORKER_URL = 'https://guild-images.hongsb9912.workers.dev';
   const R2_API_KEY = 'guild-manager-r2-key-2026';
-  const SCORE_THRESHOLD = 90000; // 9만점 기준 (전체 면제 vs 절반 면제)
+  const SCORE_FULL_THRESHOLD = 90000;  // 9만 이상 → 전체 면제
+  const SCORE_HALF_THRESHOLD = 55000;  // 5.5만 이상 ~ 9만 미만 → 절반 면제 / 5.5만 미만은 신청 불가
 
   // 길드 리스트 (수동 입력용 드롭다운)
   const GUILDS = ['뚠카롱', '뚱카롱', '밤카롱', '별카롱', '달카롱', '꿀카롱', '솜카롱'];
@@ -140,9 +160,13 @@
   };
 
   // 점수 → 신청 타입 (full / half)
+  // null = 점수 미입력 / 'ineligible' = 신청 불가 / 'full' / 'half'
   const requestTypeFromScore = (score) => {
     if (score == null || isNaN(score)) return null;
-    return Number(score) >= SCORE_THRESHOLD ? 'full' : 'half';
+    const n = Number(score);
+    if (n >= SCORE_FULL_THRESHOLD) return 'full';
+    if (n >= SCORE_HALF_THRESHOLD) return 'half';
+    return 'ineligible';
   };
 
   // 점수 일괄 조회 (suro_scores 테이블)
@@ -227,12 +251,14 @@
     const hasScore = score != null;
     const reqType = requestTypeFromScore(score);
     const badge = reqType === 'full' ? '<span class="badge-9만 text-[10px] font-black px-2 py-1 rounded-lg">9만+</span>'
-                : reqType === 'half' ? '<span class="badge-half text-[10px] font-black px-2 py-1 rounded-lg">9만-</span>'
+                : reqType === 'half' ? '<span class="badge-half text-[10px] font-black px-2 py-1 rounded-lg">5.5~9만</span>'
+                : reqType === 'ineligible' ? '<span class="text-[10px] font-black text-red-700 bg-red-100 px-2 py-1 rounded-lg">신청 불가</span>'
                 : '<span class="text-[10px] font-black text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">점수 없음</span>';
 
-    const scoreInputClasses = hasScore
-      ? (reqType === 'full' ? 'border-emerald-200 text-emerald-600' : 'border-blue-200 text-blue-600')
-      : 'border-amber-300 text-amber-700';
+    const scoreInputClasses = !hasScore ? 'border-amber-300 text-amber-700'
+      : reqType === 'full' ? 'border-emerald-200 text-emerald-600'
+      : reqType === 'half' ? 'border-blue-200 text-blue-600'
+      : 'border-red-200 text-red-600';
 
     const periodLabel = state.latestPeriod?.period_label || '지난주';
     const shortPeriod = periodLabel.replace(/ 수로 점수.*$/, '').trim() || '지난주';
@@ -366,20 +392,29 @@
   function updateReqTypeBadge() {
     const badge = document.getElementById('reqTypeBadge');
     const note = document.getElementById('scoreNote');
+    const submitBtn = document.getElementById('submitBtn');
     if (!badge) return;
     const reqType = requestTypeFromScore(state.mainScore);
     if (reqType === 'full') {
       badge.className = 'mt-2 text-[11px] font-bold px-3 py-2 rounded-xl text-center bg-amber-100 text-amber-700';
       badge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>전체 면제 대상 (9만 이상)';
       if (note) note.innerHTML = `<span class="text-amber-600"><i class="fas fa-bolt mr-0.5"></i>9만 이상이라 전체 면제 대상</span>`;
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('opacity-40','cursor-not-allowed'); }
     } else if (reqType === 'half') {
       badge.className = 'mt-2 text-[11px] font-bold px-3 py-2 rounded-xl text-center bg-blue-100 text-blue-700';
-      badge.innerHTML = '<i class="fas fa-info-circle mr-1"></i>절반 면제 대상 (9만 미만)';
-      if (note) note.innerHTML = `<span class="text-blue-600"><i class="fas fa-info-circle mr-0.5"></i>9만 미만이라 절반 면제 대상</span>`;
+      badge.innerHTML = '<i class="fas fa-info-circle mr-1"></i>절반 면제 대상 (5.5만 이상 ~ 9만 미만)';
+      if (note) note.innerHTML = `<span class="text-blue-600"><i class="fas fa-info-circle mr-0.5"></i>5.5만 이상 ~ 9만 미만이라 절반 면제 대상</span>`;
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('opacity-40','cursor-not-allowed'); }
+    } else if (reqType === 'ineligible') {
+      badge.className = 'mt-2 text-[11px] font-bold px-3 py-2 rounded-xl text-center bg-red-100 text-red-700';
+      badge.innerHTML = '<i class="fas fa-circle-xmark mr-1"></i>신청 불가 — 본캐 수로 점수 5.5만 미만';
+      if (note) note.innerHTML = `<span class="text-red-600"><i class="fas fa-circle-xmark mr-0.5"></i>면제 신청 자격 미달 (5.5만 이상이어야 절반 면제 신청 가능)</span>`;
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.classList.add('opacity-40','cursor-not-allowed'); }
     } else {
       badge.className = 'mt-2 text-[11px] font-bold px-3 py-2 rounded-xl text-center bg-gray-100 text-gray-500';
       badge.innerHTML = '점수를 입력해주세요';
       if (note) note.innerHTML = '';
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.classList.add('opacity-40','cursor-not-allowed'); }
     }
   }
 
@@ -447,6 +482,7 @@
     if (!state.mainChar) { toast('본캐를 먼저 검색해주세요', 'error'); return; }
     const reqType = requestTypeFromScore(state.mainScore);
     if (!reqType) { toast('수로 점수를 입력해주세요', 'error'); return; }
+    if (reqType === 'ineligible') { toast('본캐 수로 점수 5.5만 이상이어야 신청 가능합니다', 'error'); return; }
 
     // 선택된 부캐 (자동 매칭은 selected, 수동은 모두 포함)
     const selectedSubs = state.subChars.filter(s => s.manual ? (s.name && s.name.trim()) : s.selected);
