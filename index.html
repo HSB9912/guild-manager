@@ -8113,8 +8113,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         ${tabBtn('approved', '입금 확인됨', 'check', 'blue')}
         ${tabBtn('noble_unlocked', '노블 해제 완료', 'unlock', 'emerald')}
         ${tabBtn('rejected', '거절됨', 'times-circle', 'red')}
-        <button onclick="window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'))" class="ml-auto px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-[10px] font-bold text-gray-500" title="새로고침"><i class="fas fa-sync-alt"></i></button>
+        <button onclick="window._bailBulkImportOpen()" class="ml-auto px-2.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black hover:bg-emerald-100" title="엑셀 복사 → 붙여넣기로 기존 이력 일괄 등록"><i class="fas fa-file-import mr-1"></i>기존 이력 임포트</button>
+        <button onclick="window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'))" class="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-[10px] font-bold text-gray-500" title="새로고침"><i class="fas fa-sync-alt"></i></button>
       </div>
+      <div id="bailBulkImportArea"></div>
       ${filtered.length > 0 ? `<div class="text-[11px] text-gray-500 mb-3"><i class="fas fa-coins text-amber-400 mr-1"></i>합계 <strong class="text-gray-800">${totalAmt.toLocaleString()}개</strong> · ${filtered.length}건</div>` : ''}
       <div id="bailReqList" class="space-y-3">
         ${filtered.length === 0 ? `<div class="text-center py-12 text-gray-300 text-xs"><i class="fas fa-inbox text-3xl mb-2 block"></i>해당 상태의 신청이 없습니다</div>` : filtered.map(r => window._bailReqCard(r)).join('')}
@@ -8286,6 +8288,184 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       window.showMsg('삭제됨', 'success');
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
+  };
+
+  // ============================================================
+  // 기존 보석금 이력 일괄 임포트 (엑셀 복사 → 붙여넣기)
+  // ============================================================
+  const _BAIL_BASE = { '뚠카롱': 80, '뚱카롱': 40, '밤카롱': 20, '별카롱': 20, '달카롱': 20, '꿀카롱': 20, '솜카롱': 20 };
+
+  window._bailBulkImportOpen = () => {
+    const area = document.getElementById('bailBulkImportArea');
+    if (!area) return;
+    if (area.dataset.open === '1') { area.innerHTML = ''; area.dataset.open = ''; return; }
+    area.dataset.open = '1';
+    area.innerHTML = `
+      <div class="bg-emerald-50/40 border-2 border-emerald-200 rounded-2xl p-4 mb-4 fade-in">
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <i class="fas fa-file-import text-emerald-600"></i>
+          <strong class="text-emerald-800 text-sm">기존 이력 일괄 임포트</strong>
+          <button onclick="document.getElementById('bailBulkImportArea').innerHTML='';document.getElementById('bailBulkImportArea').dataset.open=''" class="ml-auto text-gray-400 hover:text-gray-600 text-xs"><i class="fas fa-times"></i></button>
+        </div>
+        <p class="text-[11px] text-emerald-700/80 leading-relaxed mb-2">엑셀에서 행 선택 → <kbd class="bg-white border border-gray-300 rounded px-1.5 py-0.5 text-[10px] font-mono">Ctrl+C</kbd> → 아래 영역에 <kbd class="bg-white border border-gray-300 rounded px-1.5 py-0.5 text-[10px] font-mono">Ctrl+V</kbd> 붙여넣기.</p>
+        <p class="text-[11px] text-gray-600 mb-3">컬럼 순서: <code class="bg-white px-1 rounded">No(선택) · 날짜 · 닉네임 · 길드 · 횟수 · 개수 · 체크(처리자)</code><br>
+          부캐는 <code class="bg-white px-1 rounded">부캐닉(본캐닉)</code> 형태로 인식됩니다.</p>
+        <textarea id="bailImportTextarea" rows="6" placeholder="여기에 붙여넣기 (탭 구분)..." class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono outline-none focus:border-emerald-400" oninput="window._bailBulkImportParseAndPreview()"></textarea>
+        <div id="bailImportPreview" class="mt-3"></div>
+      </div>`;
+  };
+
+  window._bailBulkImportParse = (text) => {
+    if (!text) return [];
+    const lines = text.trim().split(/\r?\n/);
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+      const raw = lines[i];
+      // 탭 우선, 그 다음 2공백 이상
+      let parts = raw.split(/\t/).map(s => s.trim());
+      if (parts.length < 5) parts = raw.split(/\s{2,}/).map(s => s.trim());
+      parts = parts.filter(s => s.length > 0);
+      if (parts.length < 5) continue;
+
+      // No 컬럼 자동 감지: 첫 컬럼이 순수 숫자면 No로 보고 제거
+      if (/^\d+$/.test(parts[0]) && parts.length >= 6) parts = parts.slice(1);
+
+      // [date, nick, guild, count, amount, handler]
+      const [date, nickRaw, guild, countStr, amountStr, handler] = parts;
+
+      // 닉 파싱 (괄호)
+      const nickMatch = (nickRaw || '').match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+      let payer_char, main_char, is_main;
+      if (nickMatch) {
+        payer_char = nickMatch[1].trim();
+        main_char = nickMatch[2].trim();
+        is_main = payer_char === main_char;
+      } else {
+        payer_char = (nickRaw || '').trim();
+        main_char = payer_char;
+        is_main = true;
+      }
+
+      const countNum = parseInt(String(countStr).replace(/[^\d]/g, '')) || 1;
+      const amtNum = parseInt(String(amountStr).replace(/[^\d]/g, '')) || 0;
+      const base = _BAIL_BASE[guild] || 20;
+      const expected = base * countNum;
+
+      // 날짜 → 반기
+      const dateClean = (date || '').replace(/[^\d-]/g, '');
+      let half_year = '';
+      const d = new Date(dateClean);
+      if (!isNaN(d.getTime())) {
+        const half = d.getMonth() < 6 ? 'H1' : 'H2';
+        half_year = `${d.getFullYear()}-${half}`;
+      }
+
+      out.push({
+        lineNo: i + 1,
+        date: dateClean, payer_char, main_char, is_main,
+        guild, base_amount: base, multiplier: countNum, total_amount: amtNum,
+        expected, valid: amtNum === expected && payer_char && guild && dateClean && half_year,
+        offense_count: countNum, half_year, handler: (handler || '').trim()
+      });
+    }
+    return out;
+  };
+
+  window._bailBulkImportParseAndPreview = () => {
+    const ta = document.getElementById('bailImportTextarea');
+    const pv = document.getElementById('bailImportPreview');
+    if (!ta || !pv) return;
+    const rows = window._bailBulkImportParse(ta.value);
+    if (rows.length === 0) { pv.innerHTML = ''; return; }
+    const valid = rows.filter(r => r.valid).length;
+    const invalid = rows.length - valid;
+    const totalAmt = rows.filter(r => r.valid).reduce((s, r) => s + r.total_amount, 0);
+    pv.innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-xl p-3 mb-2">
+        <div class="flex items-center justify-between mb-2 text-[11px]">
+          <span class="font-bold text-gray-700">파싱 결과: ${rows.length}건 (유효 ${valid} · 오류 ${invalid})</span>
+          <span class="font-bold text-emerald-600">합계 ${totalAmt.toLocaleString()}개</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-[10px] border-collapse">
+            <thead><tr class="bg-gray-50">
+              <th class="px-1.5 py-1 text-left">#</th>
+              <th class="px-1.5 py-1 text-left">날짜</th>
+              <th class="px-1.5 py-1 text-left">캐릭</th>
+              <th class="px-1.5 py-1 text-left">본캐</th>
+              <th class="px-1.5 py-1 text-left">길드</th>
+              <th class="px-1.5 py-1 text-right">회차</th>
+              <th class="px-1.5 py-1 text-right">기본</th>
+              <th class="px-1.5 py-1 text-right">금액</th>
+              <th class="px-1.5 py-1 text-right">예상</th>
+              <th class="px-1.5 py-1 text-left">반기</th>
+              <th class="px-1.5 py-1 text-left">처리자</th>
+              <th class="px-1.5 py-1 text-center">검증</th>
+            </tr></thead>
+            <tbody>
+              ${rows.map(r => `
+                <tr class="${r.valid ? '' : 'bg-red-50'} border-t border-gray-100">
+                  <td class="px-1.5 py-1 text-gray-400">${r.lineNo}</td>
+                  <td class="px-1.5 py-1">${esc(r.date || '-')}</td>
+                  <td class="px-1.5 py-1 font-bold">${esc(r.payer_char || '-')}</td>
+                  <td class="px-1.5 py-1 text-gray-500">${r.is_main ? '<span class="text-cyan-600">본캐</span>' : esc(r.main_char || '-')}</td>
+                  <td class="px-1.5 py-1">${esc(r.guild || '-')}</td>
+                  <td class="px-1.5 py-1 text-right">${r.multiplier}</td>
+                  <td class="px-1.5 py-1 text-right text-gray-500">${r.base_amount}</td>
+                  <td class="px-1.5 py-1 text-right font-bold">${r.total_amount}</td>
+                  <td class="px-1.5 py-1 text-right text-gray-400">${r.expected}</td>
+                  <td class="px-1.5 py-1 text-gray-500">${esc(r.half_year || '-')}</td>
+                  <td class="px-1.5 py-1">${esc(r.handler || '-')}</td>
+                  <td class="px-1.5 py-1 text-center">${r.valid ? '<span class="text-emerald-500">✓</span>' : '<span class="text-red-500" title="금액 불일치 또는 필수 누락">✗</span>'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="window._bailBulkImportSave()" class="flex-1 px-3 py-2 bg-emerald-500 text-white rounded-xl text-xs font-black hover:bg-emerald-600 shadow disabled:opacity-40" ${valid === 0 ? 'disabled' : ''}><i class="fas fa-database mr-1"></i>유효 ${valid}건 일괄 등록</button>
+        <button onclick="document.getElementById('bailImportTextarea').value='';window._bailBulkImportParseAndPreview()" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200">초기화</button>
+      </div>
+      ${invalid > 0 ? `<p class="text-[10px] text-red-500 mt-2"><i class="fas fa-circle-exclamation mr-1"></i>오류 ${invalid}건은 등록에서 제외됩니다 (금액 불일치 또는 필수 컬럼 누락)</p>` : ''}
+    `;
+  };
+
+  window._bailBulkImportSave = async () => {
+    const ta = document.getElementById('bailImportTextarea');
+    if (!ta) return;
+    const rows = window._bailBulkImportParse(ta.value).filter(r => r.valid);
+    if (rows.length === 0) { window.showMsg('등록할 유효 행이 없습니다', 'error'); return; }
+    if (!confirm(`${rows.length}건을 일괄 등록하시겠습니까? (이미 노블 해제 완료 처리됨 상태로 들어갑니다)`)) return;
+    const payload = rows.map(r => ({
+      main_char: r.main_char,
+      payer_char: r.payer_char,
+      payer_guild: r.guild,
+      payer_is_main: r.is_main,
+      base_amount: r.base_amount,
+      multiplier: r.multiplier,
+      total_amount: r.total_amount,
+      offense_count: r.offense_count,
+      half_year: r.half_year,
+      status: 'noble_unlocked',
+      processed_by: r.handler || _bailAdminName(),
+      processed_at: r.date ? new Date(r.date + 'T00:00:00').toISOString() : new Date().toISOString(),
+      unlocked_by: r.handler || _bailAdminName(),
+      unlocked_at: r.date ? new Date(r.date + 'T00:00:00').toISOString() : new Date().toISOString(),
+      admin_note: '[기존 이력 · 일괄 임포트]'
+    }));
+    try {
+      const { error } = await supaDb.from('bail_requests').insert(payload);
+      if (error) throw error;
+      window.showMsg(`${rows.length}건 등록 완료`, 'success');
+      // 영역 닫고 새로고침
+      const area = document.getElementById('bailBulkImportArea');
+      if (area) { area.innerHTML = ''; area.dataset.open = ''; }
+      window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) {
+      console.error(e);
+      window.showMsg('등록 실패: ' + e.message, 'error');
+    }
   };
 
   // 페이지 로드 시 보석금 pending 카운트 (사이드바 통합 뱃지용)
