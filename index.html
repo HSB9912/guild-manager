@@ -8689,10 +8689,12 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       : action === 'rejected'
       ? { status: 'rejected', processed_by: me, processed_at: nowIso, admin_note: '[일괄 거절]' }
       : { status: 'hold', admin_note: '[일괄 보류]' };
+    const rowsForNotify = st.list.filter(r => ids.includes(r.id));
     try {
       const { error } = await supaDb.from('bail_requests').update(update).in('id', ids);
       if (error) throw error;
       window.showMsg(`${ids.length}건 ${labelMap[action]} 처리됨`, 'success');
+      window._bailNotifyBulk(action, rowsForNotify);
       st.selectedIds = [];
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) {
@@ -8799,10 +8801,63 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   // 처리 액션 함수들
   const _bailAdminName = () => CURRENT_USER?.adminName || CURRENT_USER?.name || CURRENT_USER?.email?.split('@')[0] || 'admin';
+  const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
+  const _BAIL_ACTION_META = {
+    noble_unlocked: { label: '처리 완료 · 노블 해제',  color: 0x10b981, icon: '🟢' },
+    approved:       { label: '입금 확인',             color: 0x3b82f6, icon: '🔵' },
+    rejected:       { label: '신청 거절',             color: 0xef4444, icon: '🔴' },
+    hold:           { label: '보류',                  color: 0xf59e0b, icon: '🟡' },
+  };
+  window._bailNotifyAction = async (action, row, note) => {
+    if (!row) return;
+    const meta = _BAIL_ACTION_META[action];
+    if (!meta) return;
+    const fields = [
+      { name: '신청자', value: row.main_char || '-', inline: true },
+      { name: '처리자', value: _bailAdminName(), inline: true },
+    ];
+    if (note) fields.push({ name: '메모', value: String(note).slice(0, 100), inline: false });
+    const payload = {
+      embeds: [{
+        title: `${meta.icon} 보석금 ${meta.label}`,
+        description: `**${row.payer_char}** (${row.payer_guild}) — ${row.total_amount}개 · ×${row.multiplier} · ${row.half_year} ${row.offense_count}회차`,
+        color: meta.color, fields,
+        timestamp: new Date().toISOString()
+      }]
+    };
+    try {
+      await fetch(BAIL_NOTIFY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    } catch (e) { console.warn('bail notify failed:', e); }
+  };
+  window._bailNotifyBulk = async (action, rows) => {
+    if (!Array.isArray(rows) || rows.length === 0) return;
+    const meta = _BAIL_ACTION_META[action];
+    if (!meta) return;
+    const totalAmt = rows.reduce((s, r) => s + (Number(r.total_amount) || 0), 0);
+    const lines = rows.slice(0, 10).map(r => `• **${r.payer_char}** (${r.payer_guild}) ${r.total_amount}개${r.multiplier > 1 ? ` _(×${r.multiplier})_` : ''}`);
+    if (rows.length > 10) lines.push(`… 외 ${rows.length - 10}건`);
+    const payload = {
+      embeds: [{
+        title: `${meta.icon} 보석금 ${meta.label} · ${rows.length}건 일괄`,
+        description: lines.join('\n'),
+        color: meta.color,
+        fields: [
+          { name: '총 건수', value: `${rows.length}건`, inline: true },
+          { name: '총 금액', value: `**${totalAmt.toLocaleString()}개**`, inline: true },
+          { name: '처리자', value: _bailAdminName(), inline: true },
+        ],
+        timestamp: new Date().toISOString()
+      }]
+    };
+    try {
+      await fetch(BAIL_NOTIFY_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    } catch (e) { console.warn('bail bulk notify failed:', e); }
+  };
 
   window._bailApprove = async (id) => {
     if (!confirm('입금 스샷 확인됨 — 노블 해제 작업 대기로 이동시키시겠습니까?')) return;
     const note = prompt('관리자 메모 (선택)', '') || null;
+    const row = window._bailReqState.list.find(r => r.id === id);
     try {
       const { error } = await supaDb.from('bail_requests').update({
         status: 'approved', processed_by: _bailAdminName(),
@@ -8810,6 +8865,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       }).eq('id', id);
       if (error) throw error;
       window.showMsg('입금 확인 완료', 'success');
+      if (row) window._bailNotifyAction('approved', row, note);
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
   };
@@ -8818,6 +8874,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     if (!confirm('입금 확인 + 노블 해제 완료 처리하시겠습니까?')) return;
     const nowIso = new Date().toISOString();
     const me = _bailAdminName();
+    const row = window._bailReqState.list.find(r => r.id === id);
     try {
       const { error } = await supaDb.from('bail_requests').update({
         status: 'noble_unlocked',
@@ -8826,6 +8883,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       }).eq('id', id);
       if (error) throw error;
       window.showMsg('노블 해제 완료 처리됨', 'success');
+      if (row) window._bailNotifyAction('noble_unlocked', row);
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
   };
@@ -8833,6 +8891,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   window._bailReject = async (id) => {
     const reason = prompt('거절 사유 (선택)', '') || null;
     if (!confirm('이 신청을 거절하시겠습니까?')) return;
+    const row = window._bailReqState.list.find(r => r.id === id);
     try {
       const { error } = await supaDb.from('bail_requests').update({
         status: 'rejected', processed_by: _bailAdminName(),
@@ -8840,18 +8899,21 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       }).eq('id', id);
       if (error) throw error;
       window.showMsg('거절 처리됨', 'success');
+      if (row) window._bailNotifyAction('rejected', row, reason);
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
   };
 
   window._bailHold = async (id) => {
     const reason = prompt('보류 사유 (선택)', '') || null;
+    const row = window._bailReqState.list.find(r => r.id === id);
     try {
       const { error } = await supaDb.from('bail_requests').update({
         status: 'hold', admin_note: reason
       }).eq('id', id);
       if (error) throw error;
       window.showMsg('보류 처리됨', 'success');
+      if (row) window._bailNotifyAction('hold', row, reason);
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
   };
