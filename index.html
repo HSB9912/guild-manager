@@ -2846,16 +2846,23 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 return { name: x.m.name, score: x.score, rank: curRank, change, changeCls, role: x.m.role, m: x.m };
             });
 
-            // 2) 성장 트래커: 최근 6주 선형 회귀 기울기 (참여한 주차만)
+            // 2) 성장 트래커: 참여한 회차만 시간 가중 선형 회귀 (미참여 0 제외)
             const growthRows = filtered.map(m => {
                 const series = recentHeaders.map(h => scoreOf(m, h));
-                const participated = series.filter(s => s > 0);
-                if (participated.length < 3) return null;
-                const slope = window._stat.slope(series);
-                const avg = window._stat.mean(participated);
-                const slopePct = avg > 0 ? (slope / avg) * 100 : 0;
-                const first = series.find(s => s > 0) || 0;
-                const last = series[series.length - 1] || 0;
+                const pairs = series.map((s, i) => ({ x: i, y: s })).filter(p => p.y > 0);
+                if (pairs.length < 3) return null;
+                const n = pairs.length;
+                const xMean = pairs.reduce((s, p) => s + p.x, 0) / n;
+                const yMean = pairs.reduce((s, p) => s + p.y, 0) / n;
+                let num = 0, den = 0;
+                for (const p of pairs) {
+                    num += (p.x - xMean) * (p.y - yMean);
+                    den += (p.x - xMean) ** 2;
+                }
+                const slope = den === 0 ? 0 : num / den;
+                const slopePct = yMean > 0 ? (slope / yMean) * 100 : 0;
+                const first = pairs[0].y;
+                const last = pairs[pairs.length - 1].y;
                 return { name: m.name, first, last, slope, slopePct, role: m.role, class: m.class };
             }).filter(x => x);
             const growUp = growthRows.filter(x => x.slopePct > 1).sort((a,b)=>b.slopePct-a.slopePct);
@@ -2895,9 +2902,22 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 const std = window._stat.stdev(participated);
                 const cv = avg > 0 ? std / avg : 1;
                 const partRate = series.length > 0 ? participated.length / series.length : 0;
-                const slope = window._stat.slope(series);
-                const slopePct = avg > 0 ? (slope / avg) * 100 : 0;
-                return { m, total, avg, cv, partRate, slope, slopePct, weeks: participated.length };
+                // 시간 가중 회귀 (미참여 회차 제외)
+                let slopePct = 0;
+                if (participated.length >= 3) {
+                    const pairs = series.map((s, i) => ({ x: i, y: s })).filter(p => p.y > 0);
+                    const n = pairs.length;
+                    const xMean = pairs.reduce((s, p) => s + p.x, 0) / n;
+                    const yMean = pairs.reduce((s, p) => s + p.y, 0) / n;
+                    let num = 0, den = 0;
+                    for (const p of pairs) {
+                        num += (p.x - xMean) * (p.y - yMean);
+                        den += (p.x - xMean) ** 2;
+                    }
+                    const slope = den === 0 ? 0 : num / den;
+                    slopePct = yMean > 0 ? (slope / yMean) * 100 : 0;
+                }
+                return { m, total, avg, cv, partRate, slopePct, weeks: participated.length };
             }).filter(x => x);
             const maxTotal = Math.max(1, ...mvpRows.map(x => x.total));
             const mvpScored = mvpRows.map(x => {
