@@ -312,7 +312,7 @@
         timestamp: new Date().toISOString()
       }]
     };
-    const res = await fetch('https://guild-bail-notify.hongsb9912.workers.dev/', {
+    const res = await fetch('https://guild-join-notify.hongsb9912.workers.dev/', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
     });
     if (!res.ok) throw new Error('discord proxy ' + res.status);
