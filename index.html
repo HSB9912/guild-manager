@@ -8585,6 +8585,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   // ============================================================
   // 길드 가입 신청 처리 (관리자)
   // ============================================================
+  // 가입경로 / 가입 카테고리 — 영구기록(member_records) 신규등록 폼과 공유하는 전역 옵션
+  window.JOIN_SOURCES = ['인벤', '라운지', '지인', '인게임', '재가입', '고확', '오픈톡', '길드창', '복귀', '추천', '마을', '검색', '디코', '지인소개'];
+  window.JOIN_CATEGORIES = ['지인 추천', '길드 혜택/성장', '분위기/소통/체계', '홍보물/길드 이미지', '재가입/복귀', '부캐 육성', '기타'];
+
   window._joinReqState = { tab: 'pending', list: [], questionsOpen: false, questions: [] };
   window._joinPendingCount = 0;
 
@@ -8664,7 +8668,15 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const deleteBtn = `<button onclick="window._joinDelete(${r.id})" class="px-3 py-1.5 bg-white border border-gray-200 text-gray-400 rounded-xl text-xs font-bold hover:bg-red-50 hover:text-red-500 hover:border-red-200" title="삭제"><i class="fas fa-trash"></i></button>`;
     let actions = '';
     if (r.status === 'pending') {
+      const optTags = (arr) => '<option value="">선택...</option>' + arr.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
       actions = `
+        <div class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 mb-2">
+          <div class="text-[10px] font-bold text-gray-500 mb-1.5"><i class="fas fa-link mr-1 text-purple-400"></i>승인 시 영구기록에 자동 등록 — 가입경로/카테고리 선택</div>
+          <div class="grid grid-cols-2 gap-2">
+            <select id="joinSrc_${r.id}" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none focus:border-purple-300">${optTags(window.JOIN_SOURCES)}</select>
+            <select id="joinCat_${r.id}" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none focus:border-purple-300">${optTags(window.JOIN_CATEGORIES)}</select>
+          </div>
+        </div>
         <button onclick="window._joinApprove(${r.id})" class="flex-1 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-black hover:bg-emerald-600 shadow-sm"><i class="fas fa-check mr-1"></i>가입 승인</button>
         <button onclick="window._joinReject(${r.id})" class="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded-xl text-xs font-bold hover:bg-red-50"><i class="fas fa-times mr-1"></i>거절</button>
         ${deleteBtn}`;
@@ -8701,13 +8713,38 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     catch(e) { window.showMsg('복사 실패', 'error'); }
   };
   window._joinApprove = async (id) => {
-    if (!confirm('이 가입 신청을 승인하시겠습니까?')) return;
+    const r = (window._joinReqState.list || []).find(x => x.id === id);
+    if (!r) { window.showMsg('신청 정보를 찾을 수 없습니다', 'error'); return; }
+    const join_source = document.getElementById('joinSrc_' + id)?.value || '';
+    const join_category = document.getElementById('joinCat_' + id)?.value || '';
+    if (!confirm(`이 가입 신청을 승인하시겠습니까?\n\n· join_requests 상태 → 승인\n· 영구기록(member_records)에 자동 등록\n  가입경로: ${join_source || '(미선택)'} / 카테고리: ${join_category || '(미선택)'}`)) return;
     try {
+      // 1. 가입 신청 승인
       const { error } = await supaDb.from('join_requests').update({
         status: 'approved', processed_by: _bailAdminName(), processed_at: new Date().toISOString()
       }).eq('id', id);
       if (error) throw error;
-      window.showMsg('가입 승인됨', 'success');
+
+      // 2. 영구기록(member_records) 자동 등록
+      const reasonAns = (r.answers || []).find(x => x.q && x.q.includes('이유'));
+      const today = window.getKSTDateStr ? window.getKSTDateStr() : new Date().toISOString().slice(0, 10);
+      const rec = {
+        join_date: today,
+        nickname: r.nickname,
+        job_class: r.job || '',
+        suro_score: r.suro_score || '',
+        prev_guild: r.prev_guild || '',
+        join_source, join_category,
+        join_reason: reasonAns?.a || '',
+        status: 'active'
+      };
+      const { data: recData, error: recErr } = await supaDb.from('member_records').insert(rec).select();
+      if (recErr) {
+        window.showMsg('승인됨 — 단 영구기록 등록 실패: ' + recErr.message, 'error');
+      } else {
+        if (recData?.[0] && window._recordsState?.data) window._recordsState.data.unshift(recData[0]);
+        window.showMsg('가입 승인 + 영구기록 자동 등록 완료', 'success');
+      }
       window.renderJoinRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
   };
@@ -11871,8 +11908,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    const isEdit = !!editData;
 
    const jobList = ['히어로','팔라딘','다크나이트','아크메이지(불,독)','아크메이지(썬,콜)','비숍','보우마스터','신궁','패스파인더','나이트로드','섀도어','듀얼블레이더','바이퍼','캡틴','캐논슈터','미하일','소울마스터','플레임위자드','윈드브레이커','나이트워커','스트라이커','아란','에반','루미너스','메르세데스','팬텀','은월','카이저','엔젤릭버스터','카데나','아델','일리움','아크','라라','칼리','제로','키네시스','제논','데몬슬레이어','데몬어벤져','블래스터','배틀메이지','와일드헌터','메카닉','제논','나로','렌','불독','썬콜','보마','패파','듀블','엔버','나워','윈브','섀도어','카인','소마','히어로','비숍'];
-   const joinSources = ['인벤', '라운지', '지인', '인게임', '재가입', '고확', '오픈톡', '길드창', '복귀', '추천', '마을', '검색', '디코', '지인소개'];
-   const joinCategories = ['지인 추천', '길드 혜택/성장', '분위기/소통/체계', '홍보물/길드 이미지', '재가입/복귀', '부캐 육성', '기타'];
+   const joinSources = window.JOIN_SOURCES;
+   const joinCategories = window.JOIN_CATEGORIES;
    const leaveCategories = ['해당 없음(또는 미기재)', '노블/스펙 한계', '관리/운영 부실 및 비활성화', '불화/폐쇄적 친목/사고', '솔플/임시길드 탈피', '지인 동반 이동', '기타', '해당 없음'];
    const guilds = (SITE_CONFIG?.guilds || appState.guilds || []).map(g => g.name);
 
