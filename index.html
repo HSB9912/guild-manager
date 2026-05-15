@@ -8668,15 +8668,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const deleteBtn = `<button onclick="window._joinDelete(${r.id})" class="px-3 py-1.5 bg-white border border-gray-200 text-gray-400 rounded-xl text-xs font-bold hover:bg-red-50 hover:text-red-500 hover:border-red-200" title="삭제"><i class="fas fa-trash"></i></button>`;
     let actions = '';
     if (r.status === 'pending') {
-      const optTags = (arr) => '<option value="">선택...</option>' + arr.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
       actions = `
-        <div class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 mb-2">
-          <div class="text-[10px] font-bold text-gray-500 mb-1.5"><i class="fas fa-link mr-1 text-purple-400"></i>승인 시 영구기록에 자동 등록 — 가입경로/카테고리 선택</div>
-          <div class="grid grid-cols-2 gap-2">
-            <select id="joinSrc_${r.id}" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none focus:border-purple-300">${optTags(window.JOIN_SOURCES)}</select>
-            <select id="joinCat_${r.id}" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[11px] font-bold outline-none focus:border-purple-300">${optTags(window.JOIN_CATEGORIES)}</select>
-          </div>
-        </div>
         <button onclick="window._joinApprove(${r.id})" class="flex-1 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-black hover:bg-emerald-600 shadow-sm"><i class="fas fa-check mr-1"></i>가입 승인</button>
         <button onclick="window._joinReject(${r.id})" class="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded-xl text-xs font-bold hover:bg-red-50"><i class="fas fa-times mr-1"></i>거절</button>
         ${deleteBtn}`;
@@ -8692,6 +8684,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           <span class="text-base font-black text-gray-800">${esc(r.nickname)}</span>
           <span class="text-[10px] font-black bg-gray-100 text-gray-600 px-2 py-0.5 rounded">${esc(r.job || '직업?')}</span>
           <span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded">수로 ${esc(suroFmt)}</span>
+          ${r.join_source ? `<span class="text-[10px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded">경로 ${esc(r.join_source)}</span>` : ''}
+          ${r.join_category ? `<span class="text-[10px] font-black bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">${esc(r.join_category)}</span>` : ''}
           <span class="text-[10px] text-gray-400">전길드 ${esc(r.prev_guild || '-')} · ${dateStr}</span>
           ${waitLabel ? `<span class="ml-auto">${waitLabel}</span>` : ''}
         </div>
@@ -8715,9 +8709,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   window._joinApprove = async (id) => {
     const r = (window._joinReqState.list || []).find(x => x.id === id);
     if (!r) { window.showMsg('신청 정보를 찾을 수 없습니다', 'error'); return; }
-    const join_source = document.getElementById('joinSrc_' + id)?.value || '';
-    const join_category = document.getElementById('joinCat_' + id)?.value || '';
-    if (!confirm(`이 가입 신청을 승인하시겠습니까?\n\n· join_requests 상태 → 승인\n· 영구기록(member_records)에 자동 등록\n  가입경로: ${join_source || '(미선택)'} / 카테고리: ${join_category || '(미선택)'}`)) return;
+    const join_source = r.join_source || '';
+    const join_category = r.join_category || '';
+    if (!confirm(`이 가입 신청을 승인하시겠습니까?\n\n· join_requests 상태 → 승인\n· 영구기록(member_records)에 자동 등록\n  가입경로: ${join_source || '(미입력)'} / 카테고리: ${join_category || '(미입력)'}`)) return;
     try {
       // 1. 가입 신청 승인
       const { error } = await supaDb.from('join_requests').update({

@@ -58,6 +58,14 @@
         class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
       <input id="f_prevguild" type="text" placeholder="전 길드 * (없으면 '없음' 입력)"
         class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
+      <select id="f_source"
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
+        <option value="">가입 경로 * (어떻게 알게 되셨나요)</option>
+      </select>
+      <select id="f_category"
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
+        <option value="">가입 카테고리 * (가입을 결정한 이유)</option>
+      </select>
     </div>
 
     <!-- 질문 (동적 렌더) -->
@@ -141,6 +149,16 @@
   const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   let state = { questions: [], handsUrl: null, handsUploading: false };
+
+  // 가입경로 / 카테고리 — 영구기록(member_records)과 동일 옵션
+  const JOIN_SOURCES = ['인벤', '라운지', '지인', '인게임', '재가입', '고확', '오픈톡', '길드창', '복귀', '추천', '마을', '검색', '디코', '지인소개'];
+  const JOIN_CATEGORIES = ['지인 추천', '길드 혜택/성장', '분위기/소통/체계', '홍보물/길드 이미지', '재가입/복귀', '부캐 육성', '기타'];
+  (function fillJoinSelects() {
+    const srcEl = document.getElementById('f_source');
+    const catEl = document.getElementById('f_category');
+    if (srcEl) srcEl.insertAdjacentHTML('beforeend', JOIN_SOURCES.map(o => `<option value="${o}">${o}</option>`).join(''));
+    if (catEl) catEl.insertAdjacentHTML('beforeend', JOIN_CATEGORIES.map(o => `<option value="${o}">${o}</option>`).join(''));
+  })();
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const toast = (msg, type='info') => {
@@ -257,11 +275,15 @@
     const suro = document.getElementById('f_suro').value.trim();
     const job = document.getElementById('f_job').value.trim();
     const prevGuild = document.getElementById('f_prevguild').value.trim();
+    const joinSource = document.getElementById('f_source').value;
+    const joinCategory = document.getElementById('f_category').value;
 
     if (!nickname) { toast('닉네임을 입력해주세요', 'error'); return; }
     if (!suro) { toast('수로 점수를 입력해주세요', 'error'); return; }
     if (!job) { toast('직업을 입력해주세요', 'error'); return; }
     if (!prevGuild) { toast("전 길드를 입력해주세요 (없으면 '없음')", 'error'); return; }
+    if (!joinSource) { toast('가입 경로를 선택해주세요', 'error'); return; }
+    if (!joinCategory) { toast('가입 카테고리를 선택해주세요', 'error'); return; }
     if (!state.handsUrl) {
       if (state.handsUploading) { toast('핸즈 캡처 업로드 중입니다', 'error'); return; }
       toast('핸즈 인증 캡처를 첨부해주세요', 'error'); return;
@@ -275,6 +297,7 @@
 
     const payload = {
       nickname, suro_score: suro, job, prev_guild: prevGuild,
+      join_source: joinSource, join_category: joinCategory,
       answers, hands_image_url: state.handsUrl, status: 'pending'
     };
 
