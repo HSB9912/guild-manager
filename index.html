@@ -8736,7 +8736,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       if (recErr) {
         window.showMsg('승인됨 — 단 영구기록 등록 실패: ' + recErr.message, 'error');
       } else {
-        if (recData?.[0] && window._recordsState?.data) window._recordsState.data.unshift(recData[0]);
+        // 영구기록 화면이 이미 로드된 상태일 때만 캐시에 추가 (미로드면 다음 진입 시 전체 fetch)
+        if (recData?.[0] && window._recordsState?.data?.length > 0) window._recordsState.data.unshift(recData[0]);
         window.showMsg('가입 승인 + 영구기록 자동 등록 완료', 'success');
       }
       window.renderJoinRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
