@@ -199,6 +199,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('consulting')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="consulting"><i class="fas fa-stethoscope w-5 text-center text-xs"></i><span>아이템 컨설팅</span></button>
    <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금</span></button>
    <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
+   <button onclick="router('join_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="join_form"><i class="fas fa-user-plus w-5 text-center text-xs"></i><span>가입 신청</span></button>
    <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form"><i class="fas fa-shield-alt w-5 text-center text-xs"></i><span>면제 신청</span></button>
    <button onclick="router('bail_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail_form"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금 신청</span></button>
    <button onclick="router('manual')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="manual"><i class="fas fa-book-open w-5 text-center text-xs"></i><span>사용 안내</span></button>
@@ -1548,6 +1549,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'exempt_form') window.renderExemptForm(content);
             else if (tab === 'bail_form') window.renderBailForm(content);
             else if (tab === 'manual') window.renderManual(content);
+            else if (tab === 'join_form') window.renderJoinForm(content);
             else if (tab === 'requests' && isAdmin()) window.renderRequestQueue(content);
             else if (tab === 'admin_todos' && isAdmin()) window.renderAdminTodos(content);
             else if (tab === 'sheet' && isAdmin()) window.renderSheet(content);
@@ -8516,6 +8518,21 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       </div>`;
   };
 
+  // ============ 길드원용 가입 신청 폼 (iframe 임베드) ============
+  window.renderJoinForm = (container) => {
+    container.innerHTML = `
+      <div class="flex flex-col gap-3 fade-in h-full">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 shrink-0 flex items-center gap-3 flex-wrap">
+          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-user-plus mr-2 text-pink-500"></i>길드 가입 신청</h3>
+          <span class="text-[10px] text-gray-400">질문 답변 + 핸즈 인증 캡처 첨부</span>
+          <a href="join/" target="_blank" class="ml-auto px-3 py-1 bg-pink-50 text-pink-600 rounded-lg text-[10px] font-bold hover:bg-pink-100 flex items-center gap-1"><i class="fas fa-external-link-alt text-[9px]"></i>새 창에서 열기</a>
+        </div>
+        <div class="flex-1 min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <iframe src="join/" class="w-full h-full border-0" allow="clipboard-write" title="길드 가입 신청"></iframe>
+        </div>
+      </div>`;
+  };
+
   // ============ 사용 안내 (iframe 임베드) — guide_pages 도메인과 충돌 회피 위해 'manual'로 분리 ============
   window.renderManual = (container) => {
     container.innerHTML = `
@@ -8549,7 +8566,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 shrink-0">
         <div class="flex items-center gap-2 flex-wrap">
           <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-inbox mr-2 text-pink-400"></i>신청 처리</h3>
-          <div class="flex gap-1.5 ml-4">
+          <div class="flex gap-1.5 ml-4 flex-wrap">
+            ${tabBtn('join', '가입 신청', 'user-plus', 'pink')}
             ${tabBtn('exempt', '아인슈페너 신청', 'shield-alt', 'pink')}
             ${tabBtn('bail', '수로 보석금', 'gem', 'cyan')}
           </div>
@@ -8560,14 +8578,234 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     </div>`;
     const sub = document.getElementById('reqQueueContent');
     if (tab === 'exempt') window.renderExemptRequest(sub);
+    else if (tab === 'join') window.renderJoinRequest(sub);
     else window.renderBailRequest(sub);
   };
 
-  // 면제+보석금 통합 pending 뱃지 갱신
+  // ============================================================
+  // 길드 가입 신청 처리 (관리자)
+  // ============================================================
+  window._joinReqState = { tab: 'pending', list: [], questionsOpen: false, questions: [] };
+  window._joinPendingCount = 0;
+
+  window._fetchJoinRequests = async () => {
+    const { data, error } = await supaDb.from('join_requests').select('*').order('created_at', { ascending: false });
+    if (error) { window.showMsg('가입 신청 로드 실패: ' + error.message, 'error'); return null; }
+    return data || [];
+  };
+  window._joinUpdateBadge = async () => {
+    try {
+      const { count } = await supaDb.from('join_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+      window._joinPendingCount = count || 0;
+      window._refreshReqQueueBadge?.();
+    } catch(e) { console.warn(e); }
+  };
+
+  window.renderJoinRequest = async (container) => {
+    const st = window._joinReqState;
+    container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
+    const list = await window._fetchJoinRequests();
+    if (list === null) {
+      container.innerHTML = `<div class="bg-white rounded-2xl border border-red-100 shadow-sm p-8 text-center">
+        <i class="fas fa-exclamation-circle text-3xl text-red-400 mb-3"></i>
+        <h3 class="text-base font-bold text-gray-800 mb-2">테이블이 없거나 권한이 부족합니다</h3>
+        <p class="text-xs text-gray-500">Supabase에서 <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-500">join_requests</code> 테이블을 만들어주세요 (join-schema.sql 참고)</p>
+      </div>`;
+      return;
+    }
+    st.list = list;
+    window._joinUpdateBadge();
+    const counts = { pending: 0, approved: 0, rejected: 0 };
+    list.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+    const tabBtn = (k, label, color) => {
+      const active = st.tab === k;
+      return `<button onclick="window._joinReqState.tab='${k}';window.renderJoinRequest(document.getElementById('reqQueueContent')||document.getElementById('contentArea'))" class="px-3 py-1.5 rounded-xl text-[11px] font-black transition-all ${active?`bg-${color}-500 text-white shadow`:`bg-${color}-50 text-${color}-600 hover:bg-${color}-100`}">${label} <span class="${active?'bg-white/30 text-white':`bg-${color}-100 text-${color}-700`} px-1.5 rounded-full text-[10px]">${counts[k]||0}</span></button>`;
+    };
+    const filtered = list.filter(r => r.status === st.tab);
+    container.innerHTML = `
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 fade-in">
+      <div class="flex items-center gap-2 flex-wrap mb-4 pb-3 border-b border-gray-100">
+        ${tabBtn('pending', '처리 대기', 'amber')}
+        ${tabBtn('approved', '승인됨', 'emerald')}
+        ${tabBtn('rejected', '거절됨', 'red')}
+        <button onclick="window._joinToggleQuestions()" class="ml-auto px-2.5 py-1.5 bg-gray-100 text-gray-600 rounded-xl text-[10px] font-bold hover:bg-gray-200"><i class="fas fa-list-check mr-1"></i>질문 관리</button>
+        <button onclick="window.renderJoinRequest(document.getElementById('reqQueueContent')||document.getElementById('contentArea'))" class="px-2 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-[10px] font-bold text-gray-500"><i class="fas fa-sync-alt"></i></button>
+      </div>
+      <div id="joinQuestionsArea"></div>
+      <div class="space-y-3">
+        ${filtered.length === 0 ? '<div class="text-center py-12 text-gray-300 text-xs"><i class="fas fa-inbox text-3xl mb-2 block"></i>해당 상태의 신청이 없습니다</div>' : filtered.map(r => window._joinReqCard(r)).join('')}
+      </div>
+    </div>`;
+    if (st.questionsOpen) window._joinRenderQuestions();
+  };
+
+  window._joinReqCard = (r) => {
+    const created = new Date(r.created_at);
+    const elapsedH = (Date.now() - created.getTime()) / 3600000;
+    const waitDone = elapsedH >= 12;
+    const dateStr = created.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const waitLabel = r.status !== 'pending' ? ''
+      : waitDone
+        ? '<span class="text-[10px] text-emerald-600 font-bold"><i class="fas fa-circle-check mr-0.5"></i>12시간 경과</span>'
+        : `<span class="text-[10px] text-amber-600 font-bold"><i class="fas fa-clock mr-0.5"></i>12시간 대기중 (${Math.floor(elapsedH)}시간 경과)</span>`;
+    const answersHtml = (r.answers || []).filter(x => x.a).map(x =>
+      `<div class="text-[11px]"><strong class="text-gray-700">${esc(x.q)}</strong><div class="text-gray-600">${esc(x.a)}</div></div>`).join('');
+    const handsHtml = r.hands_image_url
+      ? `<a href="${esc(r.hands_image_url)}" target="_blank" class="block group"><img src="${esc(r.hands_image_url)}" class="w-full max-h-48 object-contain rounded-xl bg-gray-50 border border-gray-200 group-hover:border-pink-300" loading="lazy"><div class="text-[9px] text-gray-400 text-center mt-1 group-hover:text-pink-500"><i class="fas fa-external-link-alt mr-1"></i>핸즈 캡처 크게 보기</div></a>`
+      : '<div class="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-xl p-3 text-center"><i class="fas fa-circle-exclamation mr-1"></i>핸즈 캡처 없음</div>';
+    const notice = `[모집제]\n뚠&뚱카롱에 가입을 희망하는 분이 계셔 공지드립니다.\n\n닉네임 : ${r.nickname}\n수로점수 : ${r.suro_score || '-'}\n직업 : ${r.job || '-'}\n전길드 : ${r.prev_guild || '-'}\n\n이견이 있거나 문의사항이 있을 경우\n간부진에게 편하게 1:1 오픈채팅 주시기 바랍니다.`;
+    const deleteBtn = `<button onclick="window._joinDelete(${r.id})" class="px-3 py-1.5 bg-white border border-gray-200 text-gray-400 rounded-xl text-xs font-bold hover:bg-red-50 hover:text-red-500 hover:border-red-200" title="삭제"><i class="fas fa-trash"></i></button>`;
+    let actions = '';
+    if (r.status === 'pending') {
+      actions = `
+        <button onclick="window._joinApprove(${r.id})" class="flex-1 px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-xs font-black hover:bg-emerald-600 shadow-sm"><i class="fas fa-check mr-1"></i>가입 승인</button>
+        <button onclick="window._joinReject(${r.id})" class="px-3 py-1.5 bg-white border border-red-200 text-red-500 rounded-xl text-xs font-bold hover:bg-red-50"><i class="fas fa-times mr-1"></i>거절</button>
+        ${deleteBtn}`;
+    } else {
+      actions = `<button onclick="window._joinRevert(${r.id})" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-50"><i class="fas fa-rotate-left mr-1"></i>되돌리기</button>${deleteBtn}`;
+    }
+    const processedInfo = r.processed_at
+      ? `<div class="text-[10px] text-gray-400 mt-1"><i class="fas fa-user-shield mr-1"></i>${esc(r.processed_by || '?')} · ${new Date(r.processed_at).toLocaleString('ko-KR')}${r.admin_note ? ' · ' + esc(r.admin_note) : ''}</div>`
+      : '';
+    return `
+      <div class="border ${r.status === 'pending' ? 'border-2 border-pink-200 bg-pink-50/30' : 'border-gray-200 bg-white'} rounded-2xl p-4">
+        <div class="flex items-center gap-2 flex-wrap mb-2">
+          <span class="text-base font-black text-gray-800">${esc(r.nickname)}</span>
+          <span class="text-[10px] font-black bg-gray-100 text-gray-600 px-2 py-0.5 rounded">${esc(r.job || '직업?')}</span>
+          <span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded">수로 ${esc(r.suro_score || '-')}</span>
+          <span class="text-[10px] text-gray-400">전길드 ${esc(r.prev_guild || '-')} · ${dateStr}</span>
+          ${waitLabel ? `<span class="ml-auto">${waitLabel}</span>` : ''}
+        </div>
+        <div class="flex flex-col md:flex-row gap-3">
+          <div class="flex-1 min-w-0 space-y-2">
+            ${answersHtml ? `<div class="bg-white border border-gray-100 rounded-lg p-2.5 space-y-1">${answersHtml}</div>` : '<div class="text-[10px] text-gray-300">답변 없음</div>'}
+            <div class="bg-gray-900 text-gray-100 rounded-xl p-3 text-[11px] leading-relaxed whitespace-pre-wrap font-mono">${esc(notice)}</div>
+            <button onclick="window._joinCopyNotice('${encodeURIComponent(notice)}')" class="w-full px-3 py-1.5 bg-slate-700 text-white rounded-xl text-xs font-black hover:bg-slate-800"><i class="fas fa-copy mr-1"></i>모집공고 복사</button>
+            ${processedInfo}
+          </div>
+          <div class="md:w-48 shrink-0">${handsHtml}</div>
+        </div>
+        <div class="flex gap-2 mt-3 flex-wrap">${actions}</div>
+      </div>`;
+  };
+
+  window._joinCopyNotice = (enc) => {
+    try { navigator.clipboard.writeText(decodeURIComponent(enc)); window.showMsg('모집공고 복사됨 — 공지방에 붙여넣기', 'success'); }
+    catch(e) { window.showMsg('복사 실패', 'error'); }
+  };
+  window._joinApprove = async (id) => {
+    if (!confirm('이 가입 신청을 승인하시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('join_requests').update({
+        status: 'approved', processed_by: _bailAdminName(), processed_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('가입 승인됨', 'success');
+      window.renderJoinRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+  window._joinReject = async (id) => {
+    const reason = prompt('거절 사유 (선택)', '') || null;
+    if (!confirm('이 가입 신청을 거절하시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('join_requests').update({
+        status: 'rejected', processed_by: _bailAdminName(), processed_at: new Date().toISOString(), admin_note: reason
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('거절 처리됨', 'success');
+      window.renderJoinRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+  window._joinRevert = async (id) => {
+    if (!confirm('대기 상태로 되돌리시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('join_requests').update({
+        status: 'pending', processed_by: null, processed_at: null, admin_note: null
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('대기로 되돌림', 'success');
+      window.renderJoinRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+  window._joinDelete = async (id) => {
+    if (!confirm('이 신청을 영구 삭제하시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('join_requests').delete().eq('id', id);
+      if (error) throw error;
+      window.showMsg('삭제됨', 'success');
+      window.renderJoinRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
+  };
+
+  // ===== 질문 관리 =====
+  window._joinToggleQuestions = () => {
+    window._joinReqState.questionsOpen = !window._joinReqState.questionsOpen;
+    if (window._joinReqState.questionsOpen) window._joinRenderQuestions();
+    else { const a = document.getElementById('joinQuestionsArea'); if (a) a.innerHTML = ''; }
+  };
+  window._joinRenderQuestions = async () => {
+    const area = document.getElementById('joinQuestionsArea');
+    if (!area) return;
+    area.innerHTML = '<div class="text-center py-3 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-1"></i>질문 로딩...</div>';
+    const { data, error } = await supaDb.from('join_questions').select('*').order('sort_order', { ascending: true });
+    if (error) { area.innerHTML = `<div class="text-red-500 text-xs">${esc(error.message)}</div>`; return; }
+    window._joinReqState.questions = data || [];
+    area.innerHTML = `
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <strong class="text-sm text-gray-700"><i class="fas fa-list-check text-pink-400 mr-1"></i>가입 질문 관리</strong>
+          <button onclick="window._joinAddQuestion()" class="px-2.5 py-1 bg-pink-500 text-white rounded-lg text-[10px] font-bold hover:bg-pink-600"><i class="fas fa-plus mr-1"></i>질문 추가</button>
+        </div>
+        <p class="text-[10px] text-gray-400 mb-2">고정 필드(닉네임·수로점수·직업·전길드)는 항상 입력됩니다. 여기는 추가 질문만.</p>
+        <div class="space-y-1.5">
+          ${(data || []).length === 0 ? '<div class="text-[10px] text-gray-300 text-center py-2">질문이 없습니다</div>' : (data || []).map(q => `
+            <div class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl p-2">
+              <input type="text" value="${esc(q.label)}" onchange="window._joinUpdateQuestion(${q.id},'label',this.value)" class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs">
+              <select onchange="window._joinUpdateQuestion(${q.id},'input_type',this.value)" class="bg-gray-50 border border-gray-200 rounded-lg px-1.5 py-1 text-[10px] font-bold">
+                <option value="text" ${q.input_type==='text'?'selected':''}>한 줄</option>
+                <option value="textarea" ${q.input_type==='textarea'?'selected':''}>여러 줄</option>
+                <option value="yesno" ${q.input_type==='yesno'?'selected':''}>예/아니오</option>
+              </select>
+              <input type="number" value="${q.sort_order}" onchange="window._joinUpdateQuestion(${q.id},'sort_order',Number(this.value)||0)" class="w-12 bg-gray-50 border border-gray-200 rounded-lg px-1 py-1 text-[10px] text-center" title="순서">
+              <button onclick="window._joinDeleteQuestion(${q.id})" class="text-red-400 hover:text-red-600 text-xs px-1"><i class="fas fa-times"></i></button>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  };
+  window._joinAddQuestion = async () => {
+    const maxOrder = Math.max(0, ...(window._joinReqState.questions || []).map(q => q.sort_order || 0));
+    try {
+      const { error } = await supaDb.from('join_questions').insert({ label: '새 질문', input_type: 'text', sort_order: maxOrder + 1 });
+      if (error) throw error;
+      window._joinRenderQuestions();
+    } catch(e) { window.showMsg('추가 실패: ' + e.message, 'error'); }
+  };
+  window._joinUpdateQuestion = async (id, field, value) => {
+    try {
+      const { error } = await supaDb.from('join_questions').update({ [field]: value }).eq('id', id);
+      if (error) throw error;
+      if (field === 'sort_order') window._joinRenderQuestions();
+    } catch(e) { window.showMsg('수정 실패: ' + e.message, 'error'); }
+  };
+  window._joinDeleteQuestion = async (id) => {
+    if (!confirm('이 질문을 삭제하시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('join_questions').delete().eq('id', id);
+      if (error) throw error;
+      window._joinRenderQuestions();
+    } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
+  };
+
+  setTimeout(() => { window._joinUpdateBadge?.(); }, 4500);
+  setInterval(() => { window._joinUpdateBadge?.(); }, 60000);
+
+  // 면제+보석금+가입 통합 pending 뱃지 갱신
   window._refreshReqQueueBadge = () => {
     const exemptCnt = window._exemptPendingCount || 0;
     const bailCnt = window._bailPendingCount || 0;
-    const total = exemptCnt + bailCnt;
+    const joinCnt = window._joinPendingCount || 0;
+    const total = exemptCnt + bailCnt + joinCnt;
     const badge = document.getElementById('reqQueueBadge');
     if (badge) {
       if (total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }

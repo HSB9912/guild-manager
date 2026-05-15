@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>길드 가입 신청 — 뚠/뚱카롱</title>
+<meta name="description" content="뚠/뚱카롱 길드 가입 신청 페이지">
+<meta property="og:title" content="길드 가입 신청 — 뚠/뚱카롱">
+<meta property="og:description" content="질문에 답변하고 핸즈 인증만 하면 신청 완료">
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; background: linear-gradient(135deg, #fdf2f8 0%, #fff1f2 100%); min-height: 100vh; }
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .paste-flash { animation: flash 0.5s; }
+  @keyframes flash { 0%,100% { background: inherit; } 50% { background: #fce7f3; } }
+  @supports (padding: env(safe-area-inset-bottom)) { body { padding-bottom: env(safe-area-inset-bottom); } }
+</style>
+</head>
+<body class="p-4 lg:p-8">
+
+<div class="max-w-md mx-auto">
+
+  <!-- 헤더 -->
+  <div class="text-center mb-6 pt-4">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg mb-3">
+      <i class="fas fa-user-plus text-white text-2xl"></i>
+    </div>
+    <h1 class="text-xl font-black text-gray-800">뚠/뚱카롱 가입 신청</h1>
+    <p class="text-[11px] text-gray-500 mt-1">아래 항목을 작성하면 간부진이 검토 후 안내드립니다</p>
+  </div>
+
+  <!-- 안내 -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 text-[11px] text-gray-600 leading-relaxed">
+    <div class="flex items-start gap-2">
+      <i class="fas fa-circle-info text-pink-400 mt-0.5"></i>
+      <div>가입 문의 후 <strong class="text-gray-800">12시간 대기</strong>가 있습니다. 신청 후 핸즈 인증 캡처를 꼭 첨부해 주세요.</div>
+    </div>
+  </div>
+
+  <!-- ==================== 신청 폼 ==================== -->
+  <div id="formCard" class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-4">
+
+    <!-- 기본 정보 (고정) -->
+    <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider mb-2">기본 정보 *</div>
+    <div class="space-y-2 mb-5">
+      <input id="f_nickname" type="text" placeholder="닉네임 *" autocomplete="off"
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:border-pink-300 focus:bg-white transition">
+      <input id="f_suro" type="text" inputmode="numeric" placeholder="수로 점수 * (예: 15000 이상)"
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
+      <input id="f_job" type="text" placeholder="직업 *"
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
+      <input id="f_prevguild" type="text" placeholder="전 길드 * (없으면 '없음' 입력)"
+        class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
+    </div>
+
+    <!-- 질문 (동적 렌더) -->
+    <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider mb-2">가입 질문</div>
+    <div id="questionArea" class="space-y-3 mb-5">
+      <div class="text-center py-4 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-1"></i>질문 불러오는 중...</div>
+    </div>
+
+    <!-- 핸즈 인증 -->
+    <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider mb-2">핸즈 인증 캡처 *</div>
+    <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 mb-3">
+      <div class="flex items-start gap-2 text-[11px] leading-relaxed">
+        <i class="fas fa-circle-exclamation text-amber-600 mt-0.5"></i>
+        <div class="text-amber-800">
+          <strong>maple hands+ 앱</strong>에서 보유 캐릭터가 <strong>바둑판식으로 12캐릭 이상</strong> 보이게 캡처해 주세요. 본인 본·부캐 확인용입니다.
+        </div>
+      </div>
+      <!-- 예시 -->
+      <div class="mt-2 text-center">
+        <div class="text-[9px] text-amber-600 mb-1">↓ 캡처 예시</div>
+        <div class="inline-block bg-slate-800 rounded-lg p-1.5">
+          <div class="grid grid-cols-3 gap-1">
+            <div class="w-7 h-9 bg-slate-600 rounded"></div><div class="w-7 h-9 bg-slate-600 rounded"></div><div class="w-7 h-9 bg-slate-600 rounded"></div>
+            <div class="w-7 h-9 bg-slate-600 rounded"></div><div class="w-7 h-9 bg-slate-600 rounded"></div><div class="w-7 h-9 bg-slate-600 rounded"></div>
+            <div class="w-7 h-9 bg-slate-600 rounded"></div><div class="w-7 h-9 bg-slate-600 rounded"></div><div class="w-7 h-9 bg-slate-600 rounded"></div>
+            <div class="w-7 h-9 bg-slate-600 rounded"></div><div class="w-7 h-9 bg-slate-600 rounded"></div><div class="w-7 h-9 bg-slate-600 rounded"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="handsWrap" class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4 hover:border-pink-300 transition mb-5">
+      <input id="handsInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden" onchange="handleHandsChange(event)">
+      <div id="handsEmpty">
+        <button onclick="document.getElementById('handsInput').click()" class="w-full text-center py-3 text-gray-400 hover:text-pink-500 transition">
+          <i class="fas fa-cloud-arrow-up text-2xl mb-1 block"></i>
+          <span class="text-xs font-bold">탭해서 캡처 첨부</span>
+          <p class="text-[10px] text-gray-400 mt-1">또는 <kbd class="bg-white border border-gray-300 rounded px-1 py-0.5 text-[10px] font-mono">Ctrl+V</kbd> 로 붙여넣기</p>
+        </button>
+      </div>
+      <div id="handsPreview" class="hidden">
+        <img id="handsImg" class="w-full max-h-64 object-contain rounded-xl mb-2 bg-white">
+        <div class="flex gap-2">
+          <button onclick="document.getElementById('handsInput').click()" class="flex-1 text-[11px] py-2 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold hover:bg-gray-50"><i class="fas fa-rotate mr-1"></i>다시 선택</button>
+          <button onclick="clearHands()" class="text-[11px] px-3 py-2 rounded-xl bg-red-50 text-red-500 font-bold hover:bg-red-100"><i class="fas fa-trash"></i></button>
+        </div>
+        <p id="handsStatus" class="text-[10px] text-gray-400 text-center mt-2"></p>
+      </div>
+    </div>
+
+    <!-- 제출 -->
+    <button onclick="submitJoin()" id="submitBtn"
+      class="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition disabled:opacity-50">
+      <i class="fas fa-paper-plane mr-2"></i>가입 신청하기
+    </button>
+    <p class="text-[10px] text-gray-400 text-center mt-3">신청 후 간부진이 검토합니다 · 12시간 대기 후 처리</p>
+  </div>
+
+  <!-- 신청 완료 -->
+  <div id="doneCard" class="bg-white rounded-3xl border border-emerald-100 shadow-sm p-8 mb-4 hidden text-center">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-emerald-100 mb-3"><i class="fas fa-check text-emerald-500 text-2xl"></i></div>
+    <h2 class="text-lg font-black text-gray-800">가입 신청 완료</h2>
+    <p class="text-[12px] text-gray-500 mt-2 leading-relaxed">간부진이 검토 후 오픈채팅으로 안내드립니다.<br>가입 문의 후 12시간 대기가 있습니다.</p>
+  </div>
+
+  <div class="text-center py-4">
+    <p class="text-[10px] text-gray-400"><a href="../" class="hover:text-pink-500"><i class="fas fa-home mr-1"></i>뚠/뚱카롱 메인</a></p>
+  </div>
+
+</div>
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 bg-slate-900 text-white text-sm font-bold rounded-2xl shadow-2xl hidden z-50 max-w-xs text-center"></div>
+
+<script>
+  const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
+  const R2_WORKER_URL = 'https://guild-images.hongsb9912.workers.dev';
+  const R2_PUBLIC_URL = 'https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev';
+  const R2_API_KEY = 'guild-manager-r2-key-2026';
+  const R2_BUCKET = 'join-hands';
+
+  const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let state = { questions: [], handsUrl: null, handsUploading: false };
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const toast = (msg, type='info') => {
+    const el = document.getElementById('toast');
+    const colors = { error: 'bg-red-500', success: 'bg-emerald-500', info: 'bg-slate-900' };
+    el.className = `fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 text-white text-sm font-bold rounded-2xl shadow-2xl z-50 max-w-xs text-center fade-in ${colors[type]||colors.info}`;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.add('hidden'), 3000);
+  };
+
+  // ============ 질문 로드 ============
+  async function loadQuestions() {
+    try {
+      const { data, error } = await supa.from('join_questions').select('*').order('sort_order', { ascending: true });
+      if (error) throw error;
+      state.questions = data || [];
+      renderQuestions();
+    } catch (e) {
+      document.getElementById('questionArea').innerHTML = `<div class="text-center py-3 text-red-500 text-xs">질문 로드 실패: ${esc(e.message)}</div>`;
+    }
+  }
+
+  function renderQuestions() {
+    const area = document.getElementById('questionArea');
+    if (state.questions.length === 0) {
+      area.innerHTML = '<div class="text-center py-3 text-gray-400 text-xs">등록된 질문이 없습니다</div>';
+      return;
+    }
+    area.innerHTML = state.questions.map((q, i) => {
+      let input;
+      if (q.input_type === 'textarea') {
+        input = `<textarea data-qid="${q.id}" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-300 focus:bg-white transition h-16 resize-none"></textarea>`;
+      } else if (q.input_type === 'yesno') {
+        input = `<select data-qid="${q.id}" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-300"><option value="">선택</option><option value="네">네</option><option value="아니오">아니오</option></select>`;
+      } else {
+        input = `<input type="text" data-qid="${q.id}" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-300 focus:bg-white transition">`;
+      }
+      return `<div><label class="text-[11px] font-bold text-gray-700">${esc(q.label)}</label>${input}</div>`;
+    }).join('');
+  }
+
+  // ============ 핸즈 캡처 업로드 ============
+  async function handleHandsChange(e) {
+    const file = e.target.files?.[0];
+    if (file) await handleHandsFile(file);
+  }
+  async function handleHandsFile(file) {
+    if (!file.type.startsWith('image/')) { toast('이미지 파일만 가능', 'error'); return; }
+    if (file.size > 10*1024*1024) { toast('10MB 이하만 가능', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      document.getElementById('handsImg').src = ev.target.result;
+      document.getElementById('handsEmpty').classList.add('hidden');
+      document.getElementById('handsPreview').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+    state.handsUploading = true;
+    state.handsUrl = null;
+    document.getElementById('handsStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>업로드 중...';
+    try {
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+      const safeExt = ['png','jpg','jpeg','gif','webp'].includes(ext) ? ext : 'png';
+      const filename = `hands-${Date.now()}-${Math.random().toString(36).slice(2,8)}.${safeExt}`;
+      const res = await fetch(`${R2_WORKER_URL}/upload/${R2_BUCKET}/${filename}`, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type, 'X-API-Key': R2_API_KEY },
+        body: file
+      });
+      if (!res.ok) throw new Error('업로드 실패: ' + res.status);
+      const json = await res.json();
+      state.handsUrl = json.url || `${R2_PUBLIC_URL}/${R2_BUCKET}/${filename}`;
+      document.getElementById('handsStatus').innerHTML = '<i class="fas fa-check-circle text-emerald-500 mr-1"></i><span class="text-emerald-600">업로드 완료</span>';
+    } catch (err) {
+      console.error(err);
+      document.getElementById('handsStatus').innerHTML = `<span class="text-red-500"><i class="fas fa-circle-xmark mr-1"></i>업로드 실패: ${esc(err.message)}</span>`;
+      state.handsUrl = null;
+    } finally {
+      state.handsUploading = false;
+    }
+  }
+  function clearHands() {
+    state.handsUrl = null; state.handsUploading = false;
+    document.getElementById('handsInput').value = '';
+    document.getElementById('handsImg').src = '';
+    document.getElementById('handsEmpty').classList.remove('hidden');
+    document.getElementById('handsPreview').classList.add('hidden');
+    document.getElementById('handsStatus').innerHTML = '';
+  }
+  window.addEventListener('paste', async (e) => {
+    if (document.getElementById('formCard').classList.contains('hidden')) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          const wrap = document.getElementById('handsWrap');
+          wrap?.classList.add('paste-flash');
+          setTimeout(() => wrap?.classList.remove('paste-flash'), 500);
+          toast('클립보드 이미지 붙여넣기 — 업로드 중', 'info');
+          await handleHandsFile(file);
+          return;
+        }
+      }
+    }
+  });
+
+  // ============ 제출 ============
+  async function submitJoin() {
+    const nickname = document.getElementById('f_nickname').value.trim();
+    const suro = document.getElementById('f_suro').value.trim();
+    const job = document.getElementById('f_job').value.trim();
+    const prevGuild = document.getElementById('f_prevguild').value.trim();
+
+    if (!nickname) { toast('닉네임을 입력해주세요', 'error'); return; }
+    if (!suro) { toast('수로 점수를 입력해주세요', 'error'); return; }
+    if (!job) { toast('직업을 입력해주세요', 'error'); return; }
+    if (!prevGuild) { toast("전 길드를 입력해주세요 (없으면 '없음')", 'error'); return; }
+    if (!state.handsUrl) {
+      if (state.handsUploading) { toast('핸즈 캡처 업로드 중입니다', 'error'); return; }
+      toast('핸즈 인증 캡처를 첨부해주세요', 'error'); return;
+    }
+
+    // 질문 답변 수집
+    const answers = state.questions.map(q => {
+      const el = document.querySelector(`[data-qid="${q.id}"]`);
+      return { q: q.label, a: (el?.value || '').trim() };
+    });
+
+    const payload = {
+      nickname, suro_score: suro, job, prev_guild: prevGuild,
+      answers, hands_image_url: state.handsUrl, status: 'pending'
+    };
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>제출 중...';
+    try {
+      const { data, error } = await supa.from('join_requests').insert(payload).select().single();
+      if (error) throw error;
+      try { await notifyDiscord(data); } catch(e) { console.warn('discord notify failed', e); }
+      document.getElementById('formCard').classList.add('hidden');
+      document.getElementById('doneCard').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      console.error(e);
+      toast('신청 실패: ' + e.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>가입 신청하기';
+    }
+  }
+
+  async function notifyDiscord(req) {
+    const ansLines = (req.answers || []).filter(x => x.a).map(x => `**${x.q}**\n${x.a}`).join('\n');
+    const payload = {
+      embeds: [{
+        title: '🙋 새 길드 가입 신청',
+        description: `**${req.nickname}** 님이 가입 신청했습니다`,
+        color: 0xec4899,
+        fields: [
+          { name: '닉네임', value: req.nickname, inline: true },
+          { name: '수로 점수', value: req.suro_score || '-', inline: true },
+          { name: '직업', value: req.job || '-', inline: true },
+          { name: '전 길드', value: req.prev_guild || '-', inline: true },
+        ],
+        image: req.hands_image_url ? { url: req.hands_image_url } : undefined,
+        footer: { text: ansLines ? ansLines.slice(0, 1000) : '간부진 검토 대기' },
+        timestamp: new Date().toISOString()
+      }]
+    };
+    const res = await fetch('https://guild-bail-notify.hongsb9912.workers.dev/', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('discord proxy ' + res.status);
+  }
+
+  loadQuestions();
+</script>
+
+</body>
+</html>
