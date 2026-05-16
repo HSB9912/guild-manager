@@ -8682,7 +8682,6 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       <div class="border ${r.status === 'pending' ? 'border-2 border-pink-200 bg-pink-50/30' : 'border-gray-200 bg-white'} rounded-2xl p-4">
         <div class="flex items-center gap-2 flex-wrap mb-2">
           <span class="text-base font-black text-gray-800">${esc(r.nickname)}</span>
-          <button onclick="window._joinBgCheck('${encodeURIComponent(r.nickname)}')" class="text-[10px] font-black bg-rose-100 text-rose-600 px-2 py-0.5 rounded hover:bg-rose-200" title="메애기·구글·인벤 3곳 동시 검색"><i class="fas fa-magnifying-glass mr-0.5"></i>비매너 검색</button>
           <span class="text-[10px] font-black bg-gray-100 text-gray-600 px-2 py-0.5 rounded">${esc(r.job || '직업?')}</span>
           <span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded">수로 ${esc(suroFmt)}</span>
           ${r.join_source ? `<span class="text-[10px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded">경로 ${esc(r.join_source)}</span>` : ''}
@@ -8690,6 +8689,20 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           <span class="text-[10px] text-gray-400">전길드 ${esc(r.prev_guild || '-')} · ${dateStr}</span>
           ${waitLabel ? `<span class="ml-auto">${waitLabel}</span>` : ''}
         </div>
+        ${(() => {
+          const bg = window._joinBgCheckState[r.id] || {};
+          const sites = [['meaegi','메애기'],['google','구글'],['inven','인벤']];
+          const done = sites.filter(([s]) => bg[s]).length;
+          const nEnc = encodeURIComponent(r.nickname);
+          const btn = (site, label) => {
+            const ok = !!bg[site];
+            return `<button onclick="window._joinSearch('${site}',${r.id},'${nEnc}')" class="px-3 py-1.5 rounded-lg text-xs font-bold ${ok ? 'bg-emerald-500 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'}"><i class="fas fa-${ok ? 'check' : 'magnifying-glass'} mr-1"></i>${label}</button>`;
+          };
+          return `<div class="flex gap-1.5 flex-wrap items-center mb-3 bg-rose-50 border border-rose-100 rounded-xl p-2.5">
+            <span class="text-[11px] font-black text-rose-600 mr-1"><i class="fas fa-user-shield mr-1"></i>비매너 확인 <span class="${done === 3 ? 'text-emerald-500' : 'text-rose-400'}">${done}/3</span></span>
+            ${btn('meaegi','메애기')}${btn('google','구글')}${btn('inven','인벤')}
+          </div>`;
+        })()}
         <div class="flex flex-col md:flex-row gap-3">
           <div class="flex-1 min-w-0 space-y-2">
             ${answersHtml ? `<div class="bg-white border border-gray-100 rounded-lg p-2.5 space-y-1">${answersHtml}</div>` : '<div class="text-[10px] text-gray-300">답변 없음</div>'}
@@ -8703,18 +8716,20 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       </div>`;
   };
 
-  // 비매너 검색 — 메애기 / 구글 / 인벤 3개 창 동시 오픈
-  window._joinBgCheck = (nickEnc) => {
+  // 비매너 검색 — 메애기 / 구글 / 인벤 (각각 별도 버튼, 클릭 추적)
+  window._joinBgCheckState = {};  // { reqId: { meaegi, google, inven } }
+  window._joinSearch = (site, id, nickEnc) => {
     const nick = decodeURIComponent(nickEnc);
     const n = encodeURIComponent(nick);
-    const urls = [
-      'https://meaegi.com/s/' + n,
-      'https://www.google.com/search?q=' + encodeURIComponent('메이플 ' + nick),
-      'https://www.inven.co.kr/search/maple/top/' + n + '/1'
-    ];
-    let blocked = 0;
-    urls.forEach(u => { if (!window.open(u, '_blank')) blocked++; });
-    if (blocked > 0) window.showMsg(`창 ${blocked}개가 팝업 차단됨 — 브라우저에서 이 사이트 팝업 허용 필요`, 'error');
+    const urls = {
+      meaegi: 'https://meaegi.com/s/' + n,
+      google: 'https://www.google.com/search?q=' + encodeURIComponent('메이플 ' + nick),
+      inven: 'https://www.inven.co.kr/search/maple/top/' + n + '/1'
+    };
+    if (urls[site]) window.open(urls[site], '_blank');
+    if (!window._joinBgCheckState[id]) window._joinBgCheckState[id] = {};
+    window._joinBgCheckState[id][site] = true;
+    window.renderJoinRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
   };
 
   window._joinCopyNotice = (enc) => {
@@ -8726,7 +8741,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     if (!r) { window.showMsg('신청 정보를 찾을 수 없습니다', 'error'); return; }
     const join_source = r.join_source || '';
     const join_category = r.join_category || '';
-    if (!confirm(`이 가입 신청을 승인하시겠습니까?\n\n· join_requests 상태 → 승인\n· 영구기록(member_records)에 자동 등록\n  가입경로: ${join_source || '(미입력)'} / 카테고리: ${join_category || '(미입력)'}`)) return;
+    const bg = window._joinBgCheckState[id] || {};
+    const bgDone = ['meaegi', 'google', 'inven'].filter(s => bg[s]).length;
+    let confirmMsg = `이 가입 신청을 승인하시겠습니까?\n\n· join_requests 상태 → 승인\n· 영구기록(member_records)에 자동 등록\n  가입경로: ${join_source || '(미입력)'} / 카테고리: ${join_category || '(미입력)'}`;
+    if (bgDone < 3) confirmMsg = `⚠ 비매너 검색을 아직 다 확인하지 않았습니다 (${bgDone}/3)\n메애기·구글·인벤 모두 확인을 권장합니다.\n\n` + confirmMsg;
+    if (!confirm(confirmMsg)) return;
     try {
       // 1. 가입 신청 승인
       const { error } = await supaDb.from('join_requests').update({
