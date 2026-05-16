@@ -8682,6 +8682,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       <div class="border ${r.status === 'pending' ? 'border-2 border-pink-200 bg-pink-50/30' : 'border-gray-200 bg-white'} rounded-2xl p-4">
         <div class="flex items-center gap-2 flex-wrap mb-2">
           <span class="text-base font-black text-gray-800">${esc(r.nickname)}</span>
+          <button onclick="window._joinBgCheck('${encodeURIComponent(r.nickname)}')" class="text-[10px] font-black bg-rose-100 text-rose-600 px-2 py-0.5 rounded hover:bg-rose-200" title="메애기·구글·인벤 3곳 동시 검색"><i class="fas fa-magnifying-glass mr-0.5"></i>비매너 검색</button>
           <span class="text-[10px] font-black bg-gray-100 text-gray-600 px-2 py-0.5 rounded">${esc(r.job || '직업?')}</span>
           <span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded">수로 ${esc(suroFmt)}</span>
           ${r.join_source ? `<span class="text-[10px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded">경로 ${esc(r.join_source)}</span>` : ''}
@@ -8700,6 +8701,20 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         </div>
         <div class="flex gap-2 mt-3 flex-wrap">${actions}</div>
       </div>`;
+  };
+
+  // 비매너 검색 — 메애기 / 구글 / 인벤 3개 창 동시 오픈
+  window._joinBgCheck = (nickEnc) => {
+    const nick = decodeURIComponent(nickEnc);
+    const n = encodeURIComponent(nick);
+    const urls = [
+      'https://meaegi.com/s/' + n,
+      'https://www.google.com/search?q=' + encodeURIComponent('메이플 ' + nick),
+      'https://www.inven.co.kr/search/maple/top/' + n + '/1'
+    ];
+    let blocked = 0;
+    urls.forEach(u => { if (!window.open(u, '_blank')) blocked++; });
+    if (blocked > 0) window.showMsg(`창 ${blocked}개가 팝업 차단됨 — 브라우저에서 이 사이트 팝업 허용 필요`, 'error');
   };
 
   window._joinCopyNotice = (enc) => {
