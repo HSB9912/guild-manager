@@ -289,13 +289,18 @@
           ${badge}
         </div>
         <div class="mt-3 pt-3 border-t border-emerald-200/50">
-          ${scoreNotice}
-          <div class="flex gap-2">
-            <input id="scoreInput" type="number" inputmode="numeric" value="${hasScore ? score : ''}" placeholder="예: 95000"
-              oninput="onScoreChange(this.value)"
-              class="flex-1 bg-white border-2 ${scoreInputClasses} rounded-xl px-3 py-2 text-base font-black outline-none">
-            ${hasScore ? `<button onclick="resetScore()" class="px-3 py-2 bg-white border border-gray-200 text-gray-500 rounded-xl text-[10px] font-bold hover:bg-gray-50" title="자동값으로 되돌리기"><i class="fas fa-rotate-left"></i></button>` : ''}
-          </div>
+          ${hasScore ? `
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] text-gray-500 font-bold">현재 수로 점수</span>
+              <span class="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded"><i class="fas fa-bolt mr-0.5"></i>${esc(shortPeriod)} 자동 집계</span>
+            </div>
+            <div class="bg-white border-2 ${scoreInputClasses} rounded-xl px-3 py-2.5 text-xl font-black">${Number(score).toLocaleString()}<span class="text-xs text-gray-400 ml-1 font-bold">점</span></div>
+          ` : `
+            <div class="flex items-center gap-2 text-red-600 mb-1">
+              <i class="fas fa-circle-xmark"></i><span class="text-[11px] font-black">수로 점수 데이터 없음</span>
+            </div>
+            <p class="text-[10px] text-gray-600 leading-relaxed">자동 집계된 수로 점수가 없어 면제 신청을 진행할 수 없습니다. 신규 가입자거나 지난주 미참여 — 운영진에게 직접 문의해주세요.</p>
+          `}
           <p id="scoreNote" class="text-[10px] mt-1.5"></p>
         </div>
         <div id="reqTypeBadge" class="mt-2 text-[11px] font-bold px-3 py-2 rounded-xl text-center"></div>
@@ -316,58 +321,18 @@
 
   // ============ 수동 모드 (본캐 못 찾음) ============
   function renderManualMode(typedName) {
-    state.mainChar = { name: typedName, manual: true };
+    state.mainChar = null;
     document.getElementById('resultArea').innerHTML = `
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 fade-in">
-        <div class="flex items-center gap-2 text-amber-700 mb-2">
-          <i class="fas fa-info-circle"></i>
+      <div class="bg-red-50 border border-red-200 rounded-2xl p-4 fade-in">
+        <div class="flex items-center gap-2 text-red-700 mb-2">
+          <i class="fas fa-circle-xmark"></i>
           <span class="text-xs font-black">사이트에 등록된 본캐가 아닙니다</span>
         </div>
-        <p class="text-[11px] text-gray-600 leading-relaxed">신규 가입자거나, 본캐가 아직 등록 안 된 경우입니다. <strong>아래 정보를 직접 입력</strong>해주세요. 운영진이 검토 후 처리합니다.</p>
-      </div>
-
-      <label class="flex items-center gap-3 p-3 bg-pink-50 border border-pink-200 rounded-2xl mb-4 cursor-pointer">
-        <input type="checkbox" id="newMemberToggle" checked onchange="state.isNewMember=this.checked" class="w-4 h-4 accent-pink-500">
-        <div class="flex-1">
-          <div class="text-xs font-black text-pink-700"><i class="fas fa-user-plus mr-1"></i>신규 가입 동시 신청</div>
-          <div class="text-[10px] text-pink-600/70 mt-0.5">아직 가입 신청 안 했으면 같이 등록해드림</div>
-        </div>
-      </label>
-
-      <div class="space-y-3 mb-4">
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-[10px] text-gray-500 font-bold uppercase mb-1 block">본캐 직업</label>
-            <select id="manualJobInput" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold">
-              ${JOBS.map(j => `<option value="${esc(j)}">${esc(j)}</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-500 font-bold uppercase mb-1 block">본캐 길드</label>
-            <select id="manualGuildInput" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold">
-              ${GUILDS.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('')}
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-500 font-bold uppercase mb-1 block">현재 수로 점수 (직접 입력) *</label>
-          <input id="scoreInput" type="number" inputmode="numeric" placeholder="예: 95000" oninput="onScoreChange(this.value)"
-            class="w-full bg-gray-50 border-2 border-amber-300 rounded-xl px-3 py-2.5 text-base font-black text-amber-700 outline-none">
-          <p id="scoreNote" class="text-[10px] mt-1"></p>
-        </div>
-      </div>
-
-      <div id="reqTypeBadge" class="mb-4 text-[11px] font-bold px-3 py-2 rounded-xl text-center bg-gray-100 text-gray-500">점수를 입력해주세요</div>
-
-      <div class="mb-4">
-        <label class="text-[11px] text-gray-500 font-bold uppercase mb-2 block">면제 신청할 부캐 (직접 추가) *</label>
-        <div id="subList" class="space-y-2"></div>
-        <button onclick="addManualSub()" class="w-full mt-2 px-3 py-2 bg-gray-50 border border-dashed border-gray-300 text-gray-500 rounded-xl text-xs font-bold hover:bg-gray-100">
-          <i class="fas fa-plus mr-1"></i>부캐 추가
-        </button>
-      </div>
-    `;
-    showSubmitArea();
+        <p class="text-[11px] text-gray-600 leading-relaxed">'<strong>${esc(typedName)}</strong>' 의 자동 집계 수로 점수가 없어 면제 신청을 진행할 수 없습니다.<br><br>· 본캐 닉네임을 다시 확인해주세요<br>· 신규 가입자라면 운영진에게 직접 문의해주세요</p>
+      </div>`;
+    ['reasonArea','kakaoArea','submitBtn','submitNote'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.classList.add('hidden');
+    });
   }
 
   // ============ 점수 변경 ============
