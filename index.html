@@ -8651,6 +8651,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       return n ? Number(n).toLocaleString() : String(s);
     };
     const suroFmt = fmtScore(r.suro_score);
+    const suroNum = Number(String(r.suro_score || '').replace(/[^\d]/g, '')) || 0;
+    const suroBelowMin = suroNum > 0 && suroNum < 10000;
     const created = new Date(r.created_at);
     const elapsedH = (Date.now() - created.getTime()) / 3600000;
     const waitDone = elapsedH >= 12;
@@ -8683,7 +8685,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         <div class="flex items-center gap-2 flex-wrap mb-2">
           <span class="text-base font-black text-gray-800">${esc(r.nickname)}</span>
           <span class="text-[10px] font-black bg-gray-100 text-gray-600 px-2 py-0.5 rounded">${esc(r.job || '직업?')}</span>
-          <span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded">수로 ${esc(suroFmt)}</span>
+          <span class="text-[10px] font-black ${suroBelowMin ? 'bg-red-500 text-white' : 'bg-amber-100 text-amber-700'} px-2 py-0.5 rounded" ${suroBelowMin ? 'title="수로 10,000점 미만 — 가입 불가 기준"' : ''}>${suroBelowMin ? '<i class="fas fa-triangle-exclamation mr-0.5"></i>' : ''}수로 ${esc(suroFmt)}${suroBelowMin ? ' (1만 미만)' : ''}</span>
           ${r.join_source ? `<span class="text-[10px] font-black bg-purple-100 text-purple-700 px-2 py-0.5 rounded">경로 ${esc(r.join_source)}</span>` : ''}
           ${r.join_category ? `<span class="text-[10px] font-black bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">${esc(r.join_category)}</span>` : ''}
           <span class="text-[10px] text-gray-400">전길드 ${esc(r.prev_guild || '-')} · ${dateStr}</span>
@@ -8743,8 +8745,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const join_category = r.join_category || '';
     const bg = window._joinBgCheckState[id] || {};
     const bgDone = ['meaegi', 'google', 'inven'].filter(s => bg[s]).length;
+    const suroNum = Number(String(r.suro_score || '').replace(/[^\d]/g, '')) || 0;
     let confirmMsg = `이 가입 신청을 승인하시겠습니까?\n\n· join_requests 상태 → 승인\n· 영구기록(member_records)에 자동 등록\n  가입경로: ${join_source || '(미입력)'} / 카테고리: ${join_category || '(미입력)'}`;
     if (bgDone < 3) confirmMsg = `⚠ 비매너 검색을 아직 다 확인하지 않았습니다 (${bgDone}/3)\n메애기·구글·인벤 모두 확인을 권장합니다.\n\n` + confirmMsg;
+    if (suroNum > 0 && suroNum < 10000) confirmMsg = `⚠ 수로 점수가 ${suroNum.toLocaleString()}점입니다 (가입 기준 10,000점 미만)\n그래도 승인하시겠습니까?\n\n` + confirmMsg;
     if (!confirm(confirmMsg)) return;
     try {
       // 1. 가입 신청 승인
