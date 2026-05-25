@@ -17655,77 +17655,89 @@ function M(c){const e=c.channels();let l=R,u="",w=[];for(let t=0;t<12;t++)w.push
  <script>
   if (!window.esc) window.esc = s => String(s||'').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]);
 
-  // ───── 홈 ─────
+  // ───── 홈 (가이드 메인) ─────
   window.renderHome = function(container) {
-    const ddunT = window.calculateTotalSuro?.('뚠카롱') || 0;
-    const ddungT = window.calculateTotalSuro?.('뚱카롱') || 0;
-    const members = appState?.members || [];
+    const ddunT = (typeof calculateTotalSuro === 'function' ? calculateTotalSuro('뚠카롱') : 0) || 0;
+    const ddungT = (typeof calculateTotalSuro === 'function' ? calculateTotalSuro('뚱카롱') : 0) || 0;
+    const members = (typeof appState !== 'undefined' && appState.members) || [];
     const ddunCount = members.filter(m => m.guild === '뚠카롱').length;
     const ddungCount = members.filter(m => m.guild === '뚱카롱').length;
-    const mainCount = members.filter(m => m.isMain !== false).length;
 
     container.innerHTML = `
-      <div class="max-w-4xl mx-auto p-6 space-y-8">
+      <div class="max-w-5xl mx-auto p-6 space-y-5">
 
-        <section class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button onclick="router('analysis'); window.renderAnalysis?.(document.getElementById('contentArea'), '뚠카롱')" class="text-left border border-gray-200 hover:border-gray-400 rounded p-4 transition">
-            <div class="text-[10px] text-gray-500 uppercase font-medium tracking-wider">뚠카롱 수로 총점</div>
-            <div class="text-2xl font-bold text-gray-900 mt-1 tabular-nums">${ddunT.toLocaleString()}</div>
-            <div class="text-[10px] text-gray-500 mt-0.5">${ddunCount}명</div>
-          </button>
-          <button onclick="router('analysis'); window.renderAnalysis?.(document.getElementById('contentArea'), '뚱카롱')" class="text-left border border-gray-200 hover:border-gray-400 rounded p-4 transition">
-            <div class="text-[10px] text-gray-500 uppercase font-medium tracking-wider">뚱카롱 수로 총점</div>
-            <div class="text-2xl font-bold text-gray-900 mt-1 tabular-nums">${ddungT.toLocaleString()}</div>
-            <div class="text-[10px] text-gray-500 mt-0.5">${ddungCount}명</div>
-          </button>
-        </section>
-
+        <!-- 메인: 길드 안내 (가이드) -->
         <section>
-          <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">통계</div>
-          <table class="v2-mini-table border border-gray-200 rounded overflow-hidden">
-            <tbody>
-              <tr><td class="text-gray-600">전체 인원</td><td class="text-right font-bold tabular-nums">${members.length}명</td></tr>
-              <tr><td class="text-gray-600">본캐</td><td class="text-right font-bold tabular-nums">${mainCount}명</td></tr>
-              <tr><td class="text-gray-600">부캐</td><td class="text-right font-bold tabular-nums">${members.length - mainCount}명</td></tr>
-            </tbody>
-          </table>
-        </section>
-
-        <section>
-          <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">빠른 액션</div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[12px]">
-            <button onclick="router('members')" class="border border-gray-200 hover:border-gray-400 rounded p-3 text-left text-gray-700 font-medium transition">길드원 보기 →</button>
-            <button onclick="router('exempt_form')" class="border border-gray-200 hover:border-gray-400 rounded p-3 text-left text-gray-700 font-medium transition">면제·보석금 신청 →</button>
-            <button onclick="router('analysis')" class="border border-gray-200 hover:border-gray-400 rounded p-3 text-left text-gray-700 font-medium transition">수로 분석 →</button>
+          <div id="v2HomeGuideTabs" class="flex gap-1 mb-3 text-[11px] flex-wrap"></div>
+          <div id="v2HomeGuideContent" class="border border-gray-200 rounded-lg p-6 text-[13px] text-gray-700 leading-relaxed home-guide-content min-h-[400px] bg-white">
+            <div class="text-gray-400 text-center py-12 text-[11px]"><i class="fas fa-spinner fa-spin mr-1"></i>가이드 로딩 중...</div>
           </div>
         </section>
 
-        <section>
-          <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">길드 안내</div>
-          <div id="v2HomeGuideTabs" class="flex gap-1 mb-2 text-[11px] flex-wrap"></div>
-          <div id="v2HomeGuideContent" class="border border-gray-200 rounded p-4 text-[12px] text-gray-700 leading-relaxed home-guide-content min-h-[200px]">로딩 중...</div>
+        <!-- 하단: 수로 총점 + 빠른 액션 (작게) -->
+        <section class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-gray-100">
+          <button onclick="router('analysis'); typeof renderAnalysis==='function' && renderAnalysis(document.getElementById('contentArea'), '뚠카롱')" class="text-left border border-gray-200 hover:border-gray-400 rounded p-3 transition">
+            <div class="text-[9px] text-gray-500 uppercase font-medium">뚠카롱 총점</div>
+            <div class="text-base font-bold text-gray-900 mt-0.5 tabular-nums">${ddunT.toLocaleString()}</div>
+            <div class="text-[9px] text-gray-500">${ddunCount}명</div>
+          </button>
+          <button onclick="router('analysis'); typeof renderAnalysis==='function' && renderAnalysis(document.getElementById('contentArea'), '뚱카롱')" class="text-left border border-gray-200 hover:border-gray-400 rounded p-3 transition">
+            <div class="text-[9px] text-gray-500 uppercase font-medium">뚱카롱 총점</div>
+            <div class="text-base font-bold text-gray-900 mt-0.5 tabular-nums">${ddungT.toLocaleString()}</div>
+            <div class="text-[9px] text-gray-500">${ddungCount}명</div>
+          </button>
+          <button onclick="router('members')" class="border border-gray-200 hover:border-gray-400 rounded p-3 text-left text-gray-700 font-medium text-[11px] transition">길드원 →<div class="text-[9px] text-gray-400 mt-0.5 font-normal">${members.length}명</div></button>
+          <button onclick="router('exempt_form')" class="border border-gray-200 hover:border-gray-400 rounded p-3 text-left text-gray-700 font-medium text-[11px] transition">면제·보석금 신청 →<div class="text-[9px] text-gray-400 mt-0.5 font-normal">멤버용</div></button>
         </section>
 
       </div>
     `;
 
-    // 가이드 페이지 로드 (실제 데이터)
-    if (window.supaDb) {
-      window.supaDb.from('guide_pages').select('*').order('id').then(({data}) => {
+    // 가이드 데이터 로드 — supaDb는 글로벌 const (window 객체에 없음)
+    const loadGuides = () => {
+      if (typeof supaDb === 'undefined') {
+        setTimeout(loadGuides, 200);
+        return;
+      }
+      supaDb.from('guide_pages').select('*').order('id').then(({data, error}) => {
         const tabs = document.getElementById('v2HomeGuideTabs');
         const content = document.getElementById('v2HomeGuideContent');
-        if (!tabs || !content || !data || data.length === 0) {
-          if (content) content.innerHTML = '<p class="text-gray-400">안내 없음</p>';
+        if (!tabs || !content) return;
+        if (error) {
+          content.innerHTML = `<p class="text-red-500 text-center py-8 text-[12px]">가이드 로드 실패: ${esc(error.message)}</p>`;
+          return;
+        }
+        if (!data || data.length === 0) {
+          content.innerHTML = '<p class="text-gray-400 text-center py-8 text-[12px]">등록된 안내 없음</p>';
+          return;
+        }
+        // 정렬: home_tab_order ASC NULLS LAST, then id
+        data.sort((a, b) => {
+          const ao = a.home_tab_order ?? 99999, bo = b.home_tab_order ?? 99999;
+          if (ao !== bo) return ao - bo;
+          return (a.id || 0) - (b.id || 0);
+        });
+        // home에 노출 안 되는 페이지 제외 (show_on_home===false면 숨김)
+        const visible = data.filter(p => p.show_on_home !== false);
+        if (visible.length === 0) {
+          content.innerHTML = '<p class="text-gray-400 text-center py-8 text-[12px]">홈에 표시할 안내 없음</p>';
           return;
         }
         const renderTab = (i) => {
-          tabs.innerHTML = data.map((p, idx) => `<button onclick="window._v2GuideTab(${idx})" class="px-2 py-1 rounded ${idx===i?'bg-gray-900 text-white':'bg-gray-100 text-gray-700 hover:bg-gray-200'} font-medium">${esc((p.tab_label||p.slug||'').replace(/<[^>]+>/g,'').slice(0,20))}</button>`).join('');
-          content.innerHTML = data[i]?.content || '<p class="text-gray-400">내용 없음</p>';
+          tabs.innerHTML = visible.map((p, idx) => {
+            const label = (p.tab_label || p.slug || '안내').toString().replace(/<[^>]+>/g, '').slice(0, 30);
+            return `<button onclick="window._v2GuideTab(${idx})" class="px-2.5 py-1.5 rounded ${idx===i?'bg-gray-900 text-white':'bg-gray-100 text-gray-700 hover:bg-gray-200'} font-medium">${esc(label)}</button>`;
+          }).join('');
+          content.innerHTML = visible[i]?.content || '<p class="text-gray-400">내용 없음</p>';
         };
         window._v2GuideTab = renderTab;
         renderTab(0);
+      }).catch(e => {
+        const content = document.getElementById('v2HomeGuideContent');
+        if (content) content.innerHTML = `<p class="text-red-500 text-center py-8 text-[12px]">가이드 로드 에러: ${esc(e.message)}</p>`;
       });
-    }
+    };
+    loadGuides();
   };
 
   // ───── 길드원 ─────
