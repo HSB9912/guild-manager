@@ -205,6 +205,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <button onclick="router('manual')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="manual"><i class="fas fa-book-open w-5 text-center text-xs"></i><span>사용 안내</span></button>
    <button onclick="router('requests')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="requests"><i class="fas fa-inbox w-5 text-center text-xs"></i><span>신청 처리</span><span id="reqQueueBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
    <button onclick="router('admin_todos')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="admin_todos"><i class="fas fa-clipboard-check w-5 text-center text-xs"></i><span>운영진 할 일</span><span id="adminTodosBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
+   <button onclick="router('dual_guild')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="dual_guild"><i class="fas fa-user-shield w-5 text-center text-xs"></i><span>이중길드 감사</span><span id="dualGuildBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
    <div class="admin-only hidden" id="adminMenuSection">
    <button onclick="const el=document.getElementById('adminMenuList');el.classList.toggle('hidden');this.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-4 pt-4 pb-2 cursor-pointer hover:bg-pink-50/50 rounded-xl transition-all">
      <span class="text-[9px] font-bold text-gray-300 uppercase tracking-widest">관리자</span>
@@ -1552,6 +1553,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'join_form') window.renderJoinForm(content);
             else if (tab === 'requests' && isAdmin()) window.renderRequestQueue(content);
             else if (tab === 'admin_todos' && isAdmin()) window.renderAdminTodos(content);
+            else if (tab === 'dual_guild' && isAdmin()) window.renderDualGuild(content);
             else if (tab === 'sheet' && isAdmin()) window.renderSheet(content);
             else if (tab === 'guide_edit' && isAdmin()) window.renderGuideEditor(content);
             else if (tab === 'history' && isAdmin()) window.renderHistory(content);
@@ -1562,7 +1564,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const _sb = document.getElementById('sidebar'), _ov = document.getElementById('sidebarOverlay');
             if (window.innerWidth < 1024 && _sb) { _sb.classList.add('-translate-x-full'); _ov?.classList.add('hidden'); }
             if (window._updateMobileTab) window._updateMobileTab(tab);
-            const adminTabs = ['weekly_log','all_history','suro_input','role_assign','guide_edit','sync','sheet','history','records','settings','requests','admin_todos'];
+            const adminTabs = ['weekly_log','all_history','suro_input','role_assign','guide_edit','sync','sheet','history','records','settings','requests','admin_todos','dual_guild'];
             const adminList = document.getElementById('adminMenuList');
             if (adminList && adminTabs.includes(tab)) adminList.classList.remove('hidden');
         };
@@ -9726,6 +9728,331 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   // 페이지 로드 시 미완료 카운트 (사이드바 뱃지)
   setTimeout(() => { window._adminTodoUpdateBadge?.(); }, 4000);
   setInterval(() => { window._adminTodoUpdateBadge?.(); }, 60000);
+
+  // ============================================================
+  // 이중길드 감사 (dual guild audit) — 카롱+허용 외 길드 가입 캐릭 감지
+  // ============================================================
+  window.CAROLLING_GUILDS = ['뚠카롱','뚱카롱','밤카롱','별카롱','달카롱','꿀카롱','솜카롱'];
+  window._dualGuildState = {
+    rows: [],            // discovered_subchars + members 합친 표시 데이터
+    allowedGuilds: [],   // allowed_guilds 캐시
+    scanning: false,
+    progress: { done: 0, total: 0, current: '' },
+    filter: 'violation', // 'violation' | 'all'
+    cacheHours: 24       // 캐시 만료 (시간)
+  };
+  window._dualViolationCount = 0;
+
+  window._dualUpdateBadge = () => {
+    const badge = document.getElementById('dualGuildBadge');
+    if (!badge) return;
+    if (window._dualViolationCount > 0) {
+      badge.textContent = window._dualViolationCount;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  };
+
+  window._dualFetchAllRows = async () => {
+    const { data, error } = await supaDb.from('discovered_subchars')
+      .select('*').order('main_char_name', { ascending: true });
+    if (error) { window.showMsg('이중길드 데이터 로드 실패: ' + error.message, 'error'); return []; }
+    return data || [];
+  };
+  window._dualFetchAllowed = async () => {
+    const { data, error } = await supaDb.from('allowed_guilds').select('*').order('name');
+    if (error) return [];
+    return data || [];
+  };
+
+  // 위반 판정
+  window._dualIsAllowed = (guildName) => {
+    if (!guildName) return false;  // 길드 없음은 위반은 아니지만 별도 표시
+    if (window.CAROLLING_GUILDS.includes(guildName)) return true;
+    const allowSet = new Set((window._dualGuildState.allowedGuilds || []).map(g => g.name));
+    return allowSet.has(guildName);
+  };
+
+  // 본캐 하나 검사
+  window._dualScanOne = async (mainCharName, opts = {}) => {
+    const st = window._dualGuildState;
+    const force = !!opts.force;
+    const cacheMs = (st.cacheHours || 24) * 3600 * 1000;
+    const now = Date.now();
+
+    // 1. 본캐 ocid
+    let ocid;
+    try {
+      const idData = await window._nexonFetch('/maplestory/v1/id', { character_name: mainCharName });
+      ocid = idData.ocid;
+    } catch (e) {
+      console.warn('id 조회 실패:', mainCharName, e.message);
+      return { error: 'id 조회 실패: ' + e.message };
+    }
+
+    // 2. 유챔으로 부캐 닉 얻기
+    let champNicks = [];
+    try {
+      const champData = await window._nexonFetch('/maplestory/v1/character/union-champion', { ocid });
+      champNicks = (champData?.union_champion || []).map(c => c.champion_name).filter(Boolean);
+    } catch (e) { /* 유챔 없으면 패스 */ }
+
+    // 3. members 매핑 부캐
+    const memberSubs = (appState.members || [])
+      .filter(m => m.main_char_name === mainCharName || m.name === mainCharName)
+      .map(m => m.name);
+
+    // 4. 합집합 unique
+    const allNicks = [...new Set([mainCharName, ...champNicks, ...memberSubs])];
+
+    // 5. 각 캐릭 길드 조회 (캐시 만료된 것만)
+    const { data: existing } = await supaDb.from('discovered_subchars')
+      .select('nickname, last_checked_at').in('nickname', allNicks);
+    const existingMap = new Map((existing || []).map(r => [r.nickname, r]));
+
+    const upserts = [];
+    for (const nick of allNicks) {
+      const ex = existingMap.get(nick);
+      if (!force && ex && (now - new Date(ex.last_checked_at).getTime()) < cacheMs) continue;
+      try {
+        const id = await window._nexonFetch('/maplestory/v1/id', { character_name: nick });
+        const basic = await window._nexonFetch('/maplestory/v1/character/basic', { ocid: id.ocid });
+        const guildName = basic.character_guild_name || '';
+        upserts.push({
+          nickname: nick,
+          main_char_name: mainCharName,
+          ocid: id.ocid,
+          job_class: basic.character_class || '',
+          level: Number(basic.character_level) || 0,
+          real_guild: guildName,
+          source: champNicks.includes(nick) ? 'union-champion' : (memberSubs.includes(nick) ? 'members' : 'manual'),
+          is_violation: !!guildName && !window._dualIsAllowed(guildName),
+          last_checked_at: new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn('basic 조회 실패:', nick, e.message);
+      }
+      // rate limit 완화: 짧은 대기
+      await new Promise(r => setTimeout(r, 150));
+    }
+    if (upserts.length > 0) {
+      await supaDb.from('discovered_subchars').upsert(upserts, { onConflict: 'nickname' });
+    }
+    return { upserted: upserts.length, total: allNicks.length };
+  };
+
+  // 전체 검사
+  window._dualScanAll = async (force = false) => {
+    const st = window._dualGuildState;
+    if (st.scanning) { window.showMsg('이미 검사 중입니다', 'error'); return; }
+    const mains = (appState.members || []).filter(m => m.is_main !== false);
+    if (mains.length === 0) { window.showMsg('본캐 목록이 비어있습니다', 'error'); return; }
+    st.scanning = true;
+    st.progress = { done: 0, total: mains.length, current: '' };
+    // 허용 길드 먼저 로드
+    st.allowedGuilds = await window._dualFetchAllowed();
+    window.renderDualGuild(document.getElementById('contentArea'));
+
+    for (let i = 0; i < mains.length; i++) {
+      st.progress.current = mains[i].name;
+      st.progress.done = i;
+      // 진행률만 업데이트 (전체 재렌더는 너무 무거움)
+      const pe = document.getElementById('dualProgress');
+      if (pe) pe.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>검사 중 — ${i+1} / ${mains.length} (${mains[i].name})`;
+      try { await window._dualScanOne(mains[i].name, { force }); } catch(e) { console.warn(e); }
+    }
+    st.progress.done = mains.length;
+    st.scanning = false;
+    window.showMsg(`검사 완료 — 본캐 ${mains.length}명 처리됨`, 'success');
+    window.renderDualGuild(document.getElementById('contentArea'));
+    window._dualUpdateBadgeFromDB();
+  };
+
+  window._dualUpdateBadgeFromDB = async () => {
+    const { count } = await supaDb.from('discovered_subchars')
+      .select('*', { count: 'exact', head: true }).eq('is_violation', true);
+    window._dualViolationCount = count || 0;
+    window._dualUpdateBadge();
+  };
+
+  // ===== 허용 길드 관리 =====
+  window._dualAddAllowedGuild = async () => {
+    const name = prompt('허용할 길드 이름 (정확히 입력)');
+    if (!name?.trim()) return;
+    const note = prompt('메모 (선택, 예: 너굴님 1인길드)') || null;
+    try {
+      const { error } = await supaDb.from('allowed_guilds').insert({
+        name: name.trim(), note, added_by: CURRENT_USER?.adminName || CURRENT_USER?.name || 'admin'
+      });
+      if (error) throw error;
+      window.showMsg('허용 길드 추가됨', 'success');
+      // 추가 후엔 기존 위반 행도 다시 평가 (해당 길드 행 is_violation=false로)
+      await supaDb.from('discovered_subchars').update({ is_violation: false }).eq('real_guild', name.trim());
+      window.renderDualGuild(document.getElementById('contentArea'));
+      window._dualUpdateBadgeFromDB();
+    } catch(e) { window.showMsg('추가 실패: ' + e.message, 'error'); }
+  };
+  window._dualRemoveAllowedGuild = async (name) => {
+    if (!confirm(`'${name}' 허용 목록에서 제거하시겠습니까? 해당 길드 멤버는 다시 위반으로 표시됩니다.`)) return;
+    try {
+      const { error } = await supaDb.from('allowed_guilds').delete().eq('name', name);
+      if (error) throw error;
+      // 해당 길드 행 is_violation=true로 복귀
+      await supaDb.from('discovered_subchars').update({ is_violation: true }).eq('real_guild', name);
+      window.renderDualGuild(document.getElementById('contentArea'));
+      window._dualUpdateBadgeFromDB();
+    } catch(e) { window.showMsg('제거 실패: ' + e.message, 'error'); }
+  };
+  // 발견 카드의 길드명 옆 "허용 추가" 버튼
+  window._dualAllowFromRow = async (guildName) => {
+    if (!guildName) return;
+    if (!confirm(`'${guildName}' 길드를 허용 목록에 추가하시겠습니까?\n(예: 1인 길드)`)) return;
+    try {
+      const { error } = await supaDb.from('allowed_guilds').upsert({
+        name: guildName, note: '발견 시 추가', added_by: CURRENT_USER?.adminName || CURRENT_USER?.name || 'admin'
+      }, { onConflict: 'name' });
+      if (error) throw error;
+      await supaDb.from('discovered_subchars').update({ is_violation: false }).eq('real_guild', guildName);
+      window.showMsg(`'${guildName}' 허용 길드로 추가됨`, 'success');
+      window.renderDualGuild(document.getElementById('contentArea'));
+      window._dualUpdateBadgeFromDB();
+    } catch(e) { window.showMsg('추가 실패: ' + e.message, 'error'); }
+  };
+  // 행 삭제
+  window._dualDeleteRow = async (nickname) => {
+    if (!confirm(`'${nickname}' 데이터를 캐시에서 삭제하시겠습니까? (다음 검사 때 다시 발견될 수 있습니다)`)) return;
+    try {
+      await supaDb.from('discovered_subchars').delete().eq('nickname', nickname);
+      window.renderDualGuild(document.getElementById('contentArea'));
+    } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
+  };
+
+  // ===== 렌더 =====
+  window.renderDualGuild = async (container) => {
+    const st = window._dualGuildState;
+    container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
+    const [rows, allowed] = await Promise.all([window._dualFetchAllRows(), window._dualFetchAllowed()]);
+    st.rows = rows; st.allowedGuilds = allowed;
+    // 위반/길드없음/일치 카운트
+    const stats = { ok: 0, viol: 0, noguild: 0 };
+    rows.forEach(r => {
+      if (!r.real_guild) stats.noguild++;
+      else if (r.is_violation) stats.viol++;
+      else stats.ok++;
+    });
+    window._dualViolationCount = stats.viol;
+    window._dualUpdateBadge();
+
+    // 본캐별 그룹화
+    const groups = {};
+    rows.forEach(r => {
+      const k = r.main_char_name || '(미매핑)';
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(r);
+    });
+    // 위반 있는 그룹 먼저
+    const groupKeys = Object.keys(groups).sort((a, b) => {
+      const av = groups[a].some(r => r.is_violation) ? 0 : 1;
+      const bv = groups[b].some(r => r.is_violation) ? 0 : 1;
+      return av - bv || a.localeCompare(b, 'ko');
+    });
+    // 필터 적용
+    const showViolOnly = st.filter === 'violation';
+    const filteredGroups = showViolOnly ? groupKeys.filter(k => groups[k].some(r => r.is_violation)) : groupKeys;
+
+    const guildBadge = (g) => {
+      if (!g) return '<span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded">길드 없음</span>';
+      const allowed = window._dualIsAllowed(g);
+      const isCarol = window.CAROLLING_GUILDS.includes(g);
+      const cls = isCarol ? 'bg-emerald-100 text-emerald-700' : allowed ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700';
+      const icon = isCarol ? 'check' : allowed ? 'star' : 'triangle-exclamation';
+      return `<span class="text-[10px] font-black ${cls} px-2 py-0.5 rounded"><i class="fas fa-${icon} mr-0.5"></i>${esc(g)}</span>`;
+    };
+
+    container.innerHTML = `
+    <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
+      <!-- 헤더 -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div class="flex items-center gap-2 flex-wrap mb-3">
+          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-user-shield mr-1 text-rose-500"></i>이중길드 감사</h3>
+          <span class="text-[10px] text-gray-400">캐릭 ${rows.length}개 · 본캐 ${groupKeys.length}그룹</span>
+          <div class="ml-auto flex gap-1.5 flex-wrap">
+            <button onclick="window._dualScanAll(false)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-black hover:bg-rose-600 shadow disabled:opacity-50"><i class="fas fa-rotate mr-1"></i>최신화 (24h 캐시)</button>
+            <button onclick="window._dualScanAll(true)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-white border border-rose-300 text-rose-600 rounded-lg text-[11px] font-bold hover:bg-rose-50 disabled:opacity-50"><i class="fas fa-radar mr-1"></i>전체 재검사</button>
+            <button onclick="window.showMsg('메애기 세부 검사 — 워커 배포 후 사용 가능. 진행 원하면 알려주세요','info')" class="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[11px] font-bold" title="별도 워커(guild-meaegi-proxy) 배포 필요"><i class="fas fa-magnifying-glass-plus mr-1"></i>세부 검사 (예정)</button>
+          </div>
+        </div>
+        ${st.scanning ? `<div id="dualProgress" class="text-[11px] text-rose-600 font-bold bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 mb-2"><i class="fas fa-spinner fa-spin mr-1"></i>검사 진행 중...</div>` : ''}
+        <div class="grid grid-cols-3 gap-2">
+          <div class="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-100"><div class="text-[9px] font-bold text-emerald-500 uppercase">일치</div><div class="text-sm font-black text-emerald-600 mt-0.5">${stats.ok}</div></div>
+          <div class="bg-red-50 rounded-lg p-2 text-center border border-red-200"><div class="text-[9px] font-bold text-red-500 uppercase">이중길드 ⚠</div><div class="text-sm font-black text-red-600 mt-0.5">${stats.viol}</div></div>
+          <div class="bg-amber-50 rounded-lg p-2 text-center border border-amber-200"><div class="text-[9px] font-bold text-amber-500 uppercase">길드 없음</div><div class="text-sm font-black text-amber-600 mt-0.5">${stats.noguild}</div></div>
+        </div>
+      </div>
+
+      <!-- 허용 길드 -->
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-black text-gray-800"><i class="fas fa-star text-blue-400 mr-1"></i>허용 길드 (카롱 외 통과 목록)</span>
+          <button onclick="window._dualAddAllowedGuild()" class="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold hover:bg-blue-100"><i class="fas fa-plus mr-1"></i>추가</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-1">
+          ${window.CAROLLING_GUILDS.map(g => `<span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">${g}</span>`).join('')}
+          ${allowed.length === 0 ? '<span class="text-[10px] text-gray-400 self-center">아직 추가된 허용 길드 없음</span>' :
+            allowed.map(g => `<span class="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded inline-flex items-center gap-1" title="${esc(g.note || '')}">${esc(g.name)}<button onclick="window._dualRemoveAllowedGuild('${esc(g.name).replace(/'/g, "\\'")}')" class="text-blue-400 hover:text-red-500"><i class="fas fa-times"></i></button></span>`).join('')}
+        </div>
+        <p class="text-[10px] text-gray-400">카롱 7개 + 위 허용 길드는 정상으로 분류. 그 외는 위반.</p>
+      </div>
+
+      <!-- 필터 -->
+      <div class="flex items-center gap-2 px-1">
+        <button onclick="window._dualGuildState.filter='violation';window.renderDualGuild(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[11px] font-black ${showViolOnly ? 'bg-red-500 text-white' : 'bg-red-50 text-red-600'}">위반만 (${stats.viol})</button>
+        <button onclick="window._dualGuildState.filter='all';window.renderDualGuild(document.getElementById('contentArea'))" class="px-3 py-1 rounded-lg text-[11px] font-bold ${showViolOnly ? 'bg-gray-100 text-gray-500' : 'bg-gray-700 text-white'}">전체 (${rows.length})</button>
+      </div>
+
+      <!-- 그룹별 표시 -->
+      ${filteredGroups.length === 0 ? `<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-xs text-gray-400">${rows.length === 0 ? '아직 검사한 캐릭이 없습니다 — "최신화" 또는 "전체 재검사"를 눌러주세요' : (showViolOnly ? '위반 캐릭 없음 ✨' : '데이터 없음')}</div>` :
+        filteredGroups.map(mainName => {
+          const memberRows = groups[mainName];
+          const hasViol = memberRows.some(r => r.is_violation);
+          const mainGuild = (appState.members || []).find(m => m.name === mainName)?.guild || '';
+          return `
+            <div class="bg-white rounded-2xl border ${hasViol ? 'border-red-200' : 'border-gray-100'} shadow-sm p-4">
+              <div class="flex items-center gap-2 flex-wrap mb-3">
+                <span class="text-base font-black text-gray-800">${esc(mainName)}</span>
+                ${mainGuild ? `<span class="text-[10px] font-bold bg-pink-100 text-pink-700 px-2 py-0.5 rounded">본캐 ${esc(mainGuild)}</span>` : ''}
+                <span class="text-[10px] text-gray-400">${memberRows.length}캐릭</span>
+                ${hasViol ? `<span class="ml-auto text-[10px] font-black text-red-600"><i class="fas fa-triangle-exclamation mr-1"></i>위반 ${memberRows.filter(r => r.is_violation).length}건</span>` : '<span class="ml-auto text-[10px] font-bold text-emerald-500">모두 정상</span>'}
+              </div>
+              <div class="space-y-1.5">
+                ${memberRows.sort((a,b) => (b.is_violation?1:0) - (a.is_violation?1:0)).map(r => {
+                  const checked = r.last_checked_at ? new Date(r.last_checked_at).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '-';
+                  const sourceTag = r.source === 'union-champion' ? '<span class="text-[9px] text-gray-400">유챔</span>' :
+                                    r.source === 'members' ? '<span class="text-[9px] text-gray-400">사이트</span>' :
+                                    r.source === 'manual' ? '<span class="text-[9px] text-gray-400">수동</span>' : '';
+                  return `
+                    <div class="flex items-center gap-2 flex-wrap ${r.is_violation ? 'bg-red-50/60 border-l-4 border-red-300 border border-red-100' : 'bg-gray-50 border border-gray-100'} rounded-r-xl px-3 py-2">
+                      <span class="text-sm font-bold text-gray-800">${esc(r.nickname)}</span>
+                      ${r.job_class ? `<span class="text-[10px] text-gray-500">${esc(r.job_class)}</span>` : ''}
+                      ${r.level ? `<span class="text-[10px] text-gray-400">Lv.${r.level}</span>` : ''}
+                      ${sourceTag}
+                      <span class="text-gray-300 text-[10px]">·</span>
+                      ${guildBadge(r.real_guild)}
+                      <span class="ml-auto text-[9px] text-gray-400" title="${esc(checked)}">${esc(checked)}</span>
+                      ${r.is_violation && r.real_guild ? `<button onclick="window._dualAllowFromRow('${esc(r.real_guild).replace(/'/g, "\\'")}')" class="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 font-bold" title="이 길드를 허용 목록에 추가 (예: 1인 길드)"><i class="fas fa-star mr-0.5"></i>허용</button>` : ''}
+                      <button onclick="window._dualDeleteRow('${esc(r.nickname).replace(/'/g, "\\'")}')" class="text-gray-300 hover:text-red-500 text-xs" title="캐시에서 삭제"><i class="fas fa-times"></i></button>
+                    </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+        }).join('')}
+    </div>`;
+  };
+
+  // 페이지 로드 시 위반 카운트 (사이드바 뱃지)
+  setTimeout(() => { window._dualUpdateBadgeFromDB?.(); }, 4500);
+  setInterval(() => { window._dualUpdateBadgeFromDB?.(); }, 5 * 60 * 1000);
 
   // ============ 수로 면제 현황 ============
   window._suroExemptState = { sortField: 'score', sortOrder: 'desc', search: '', guild: 'all', filter: 'all' };
