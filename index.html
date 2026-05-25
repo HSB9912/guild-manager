@@ -10014,6 +10014,24 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       window._dualUpdateBadgeFromDB();
     } catch(e) { window.showMsg('추가 실패: ' + e.message, 'error'); }
   };
+  // 사용법 패널 토글
+  window._dualToggleHelp = () => {
+    const panel = document.getElementById('dualHelpPanel');
+    const btn = document.getElementById('dualHelpToggle');
+    if (!panel || !btn) return;
+    const willOpen = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+    if (willOpen) {
+      btn.innerHTML = '<i class="fas fa-xmark text-[9px]"></i>닫기';
+      btn.classList.remove('bg-rose-50','border-rose-200','text-rose-600','hover:bg-rose-100');
+      btn.classList.add('bg-rose-500','border-rose-500','text-white','hover:bg-rose-600');
+    } else {
+      btn.innerHTML = '<i class="fas fa-circle-question text-[9px]"></i>사용법';
+      btn.classList.add('bg-rose-50','border-rose-200','text-rose-600','hover:bg-rose-100');
+      btn.classList.remove('bg-rose-500','border-rose-500','text-white','hover:bg-rose-600');
+    }
+  };
+
   // 행 삭제
   window._dualDeleteRow = async (nickname) => {
     if (!confirm(`'${nickname}' 데이터를 캐시에서 삭제하시겠습니까? (다음 검사 때 다시 발견될 수 있습니다)`)) return;
@@ -10072,10 +10090,85 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         <div class="flex items-center gap-2 flex-wrap mb-3">
           <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-user-shield mr-1 text-rose-500"></i>이중길드 감사</h3>
           <span class="text-[10px] text-gray-400">캐릭 ${rows.length}개 · 본캐 ${groupKeys.length}그룹</span>
+          <button id="dualHelpToggle" onclick="window._dualToggleHelp()" class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded text-[10px] font-bold transition" title="사용법 열기">
+            <i class="fas fa-circle-question text-[9px]"></i>사용법
+          </button>
           <div class="ml-auto flex gap-1.5 flex-wrap">
             <button onclick="window._dualScanAll(false)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-black hover:bg-rose-600 shadow disabled:opacity-50"><i class="fas fa-rotate mr-1"></i>최신화 (24h 캐시)</button>
             <button onclick="window._dualScanAll(true)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-white border border-rose-300 text-rose-600 rounded-lg text-[11px] font-bold hover:bg-rose-50 disabled:opacity-50"><i class="fas fa-radar mr-1"></i>전체 재검사</button>
             <button onclick="if(confirm('메애기 세부 검사 — 일반 검사보다 느립니다 (본캐 1명당 +1초). 모든 본캐 강제 재검사를 실행하시겠습니까?')) window._dualScanAll(true, true)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-[11px] font-black hover:bg-purple-600 shadow disabled:opacity-50" title="메애기 챔피언까지 합쳐 부캐 더 발견 — 날 잡고 한 번 돌리는 용도"><i class="fas fa-magnifying-glass-plus mr-1"></i>세부 검사 (메애기)</button>
+          </div>
+        </div>
+        <div id="dualHelpPanel" class="hidden bg-rose-50/40 border border-rose-100 rounded-xl p-3 mb-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-[10.5px] text-gray-700 leading-relaxed">
+            <div>
+              <div class="font-black text-rose-700 text-[10px] mb-0.5"><i class="fas fa-1 mr-0.5"></i>이중길드란?</div>
+              <div>우리 길드원의 캐릭이 <strong>카롱 외 길드</strong>에 가입된 상태</div>
+            </div>
+            <div>
+              <div class="font-black text-rose-700 text-[10px] mb-0.5"><i class="fas fa-2 mr-0.5"></i>검사 버튼 3종</div>
+              <div>· <strong>최신화</strong>: 24h 캐시·평소용<br>· <strong>전체 재검사</strong>: 강제 재조회<br>· <strong>세부(메애기)</strong>: 모든 부캐·월1회</div>
+            </div>
+            <div>
+              <div class="font-black text-rose-700 text-[10px] mb-0.5"><i class="fas fa-3 mr-0.5"></i>색상</div>
+              <div>
+                <span class="px-1 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[9px] font-bold">초록</span> 일치 ·
+                <span class="px-1 py-0.5 bg-red-100 text-red-700 rounded text-[9px] font-bold">빨강</span> 위반 ·
+                <span class="px-1 py-0.5 bg-amber-100 text-amber-700 rounded text-[9px] font-bold">앰버</span> 길드없음
+              </div>
+            </div>
+            <div>
+              <div class="font-black text-rose-700 text-[10px] mb-0.5"><i class="fas fa-4 mr-0.5"></i>허용 길드 (1인길드)</div>
+              <div>위반 행에서 <span class="px-1 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded text-[9px] font-bold">+ 허용</span> 클릭 → 그 길드 전체 일치 전환</div>
+            </div>
+
+            <!-- 5. 화이트 길드 체크법 — 강조 박스 -->
+            <div class="sm:col-span-2 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-xl p-3.5 shadow-sm">
+              <div class="flex items-center gap-2 mb-2.5">
+                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-[11px] font-black"><i class="fas fa-magnifying-glass"></i></span>
+                <div class="text-[13px] font-black text-emerald-800">화이트 길드 체크법 — 1인길드면 허용</div>
+                <span class="ml-auto text-[9px] font-black bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded">⭐ 핵심</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 mb-2.5">
+                <div class="bg-white rounded-lg p-2 border border-emerald-100 text-center">
+                  <div class="text-[9px] font-black text-emerald-600 mb-0.5">STEP 1</div>
+                  <div class="text-[10px] font-bold text-gray-700">메애기 검색</div>
+                  <div class="text-[9px] text-gray-500 mt-1">meaegi.com에서<br>길드명 검색</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 border border-emerald-100 text-center">
+                  <div class="text-[9px] font-black text-emerald-600 mb-0.5">STEP 2</div>
+                  <div class="text-[10px] font-bold text-gray-700">길드원 확인</div>
+                  <div class="text-[9px] text-gray-500 mt-1">전부 그 사람<br>본캐/부캐인지</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 border border-emerald-100 text-center">
+                  <div class="text-[9px] font-black text-emerald-600 mb-0.5">STEP 3</div>
+                  <div class="text-[10px] font-bold text-gray-700">+ 허용 클릭</div>
+                  <div class="text-[9px] text-gray-500 mt-1">위반 행에서<br>허용 추가</div>
+                </div>
+              </div>
+              <div class="bg-white/70 rounded-lg p-2 border border-emerald-200">
+                <div class="text-[10px] font-black text-emerald-700 mb-1"><i class="fas fa-circle-check mr-0.5"></i>1인길드 사인 (하나라도 해당하면 ↑)</div>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] text-gray-700">
+                  <div>· 길드원 <strong>1~3명</strong></div>
+                  <div>· 마스터 = <strong>본인</strong></div>
+                  <div>· 길드명이 <strong>본캐 닉</strong>과 유사</div>
+                  <div>· 멤버 모두 같은 <strong>본캐 부캐</strong></div>
+                </div>
+              </div>
+              <div class="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-2 flex items-start gap-1">
+                <i class="fas fa-triangle-exclamation mt-0.5"></i>
+                <div>확신 안 서면 위반 유지 + 본인한테 카톡 확인. 한번 허용하면 그 길드명 가진 <strong>모든 캐릭</strong>이 일치로 바뀜.</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="font-black text-rose-700 text-[10px] mb-0.5"><i class="fas fa-6 mr-0.5"></i>위반 발견 시</div>
+              <div>1인길드면 허용 추가 · 본인 모르면 탈퇴 요청 · 고의면 운영진 회의 (자동 탈퇴 X)</div>
+            </div>
+            <div>
+              <div class="font-black text-rose-700 text-[10px] mb-0.5"><i class="fas fa-lightbulb text-amber-500 mr-0.5"></i>추천 사이클</div>
+              <div>주1회 최신화 · 월1회 세부 · 신규 승인 직후 단건 재시도</div>
+            </div>
           </div>
         </div>
         ${st.scanning ? `<div id="dualProgressBox" class="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-3 mb-3 shadow-sm">
