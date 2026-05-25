@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>guild-manager v2 — 미니멀 화이트 미리보기</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', -apple-system, system-ui, sans-serif; background: #f4f4f5; color: #18181b; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  /* 미니멀 — 한 가지 액센트, 회색 베이스, 가는 선 */
+  :root { --accent: #db2777; --accent-soft: #fce7f3; }
+  .acc-text { color: var(--accent); }
+  .acc-bg { background: var(--accent); }
+  .acc-soft { background: var(--accent-soft); }
+  table { border-collapse: collapse; }
+  th, td { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body class="p-4 lg:p-6">
+
+<div class="max-w-[1500px] mx-auto space-y-10">
+
+  <header class="pb-2 border-b border-gray-300">
+    <h1 class="text-xl font-bold text-gray-900">guild-manager v2 — 미니멀 화이트 미리보기</h1>
+    <p class="text-xs text-gray-500 mt-1">홈 · 길드원 · 이중길드 3페이지 풀 렌더 · 사이드바는 정리된 구조 그대로</p>
+    <div class="flex gap-2 mt-2 text-[11px]">
+      <a href="#home" class="px-2 py-0.5 bg-gray-900 text-white rounded font-bold">홈</a>
+      <a href="#members" class="px-2 py-0.5 bg-gray-100 text-gray-700 border border-gray-300 rounded font-bold">길드원</a>
+      <a href="#dual" class="px-2 py-0.5 bg-gray-100 text-gray-700 border border-gray-300 rounded font-bold">이중길드</a>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 페이지 1: 홈 -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="home">
+    <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">① 홈 페이지</div>
+
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div class="flex h-[720px]">
+
+        <!-- Sidebar (이미 적용된 구조) -->
+        <aside class="w-52 bg-gray-50 border-r border-gray-200 flex flex-col">
+          <div class="p-3 border-b border-gray-200 flex items-center gap-2">
+            <div class="w-7 h-7 rounded bg-gray-900 flex items-center justify-center text-white text-[10px] font-bold">뚠</div>
+            <div>
+              <div class="text-[11px] font-bold text-gray-900">뚠카롱 길드</div>
+              <div class="text-[8px] text-pink-600 font-bold flex items-center gap-1"><i class="fas fa-shield-halved text-[8px]"></i>ADMIN</div>
+            </div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-2 space-y-0.5 text-[11px]">
+            <div class="text-[8px] text-gray-400 px-2 pt-1 pb-0.5 uppercase font-bold tracking-wider">메인</div>
+            <div class="bg-gray-200 text-gray-900 rounded px-2 py-1.5 font-bold flex items-center gap-2"><i class="fas fa-home w-3 text-gray-600"></i>홈</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2 pb-0.5 uppercase font-bold tracking-wider">길드원</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-users w-3 text-gray-400"></i>길드원</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-chart-line w-3 text-gray-400"></i>수로 분석</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-exchange-alt w-3 text-gray-400"></i>승강제·현황</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-gift w-3 text-gray-400"></i>수로 보상</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2 pb-0.5 uppercase font-bold tracking-wider">컨텐츠</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-clipboard w-3 text-gray-400"></i>게시판</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-handshake w-3 text-gray-400"></i>뚠뚠 버디</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-stethoscope w-3 text-gray-400"></i>아이템 컨설팅</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-book-open w-3 text-gray-400"></i>사용 안내</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2 pb-0.5 uppercase font-bold tracking-wider">신청</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-user-plus w-3 text-gray-400"></i>가입 신청</div>
+            <div class="text-gray-700 hover:bg-gray-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-shield-alt w-3 text-gray-400"></i>면제·보석금</div>
+
+            <div class="mt-2 mx-1 border-t border-pink-300 border-dashed"></div>
+            <div class="text-[8px] text-pink-600 px-2 pt-1.5 pb-0.5 uppercase font-bold tracking-wider flex items-center gap-1"><i class="fas fa-lock text-[8px]"></i>관리자</div>
+            <div class="text-pink-700 bg-pink-50 hover:bg-pink-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-inbox w-3 text-pink-400"></i>신청 처리</div>
+            <div class="text-pink-700 bg-pink-50 hover:bg-pink-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-gem w-3 text-pink-400"></i>보석금·벌점</div>
+            <div class="text-pink-700 bg-pink-50 hover:bg-pink-100 rounded px-2 py-1.5 font-medium flex items-center justify-between"><span class="flex items-center gap-2"><i class="fas fa-user-shield w-3 text-pink-400"></i>이중길드</span><span class="bg-pink-600 text-white text-[8px] rounded px-1 font-bold">16</span></div>
+            <div class="text-pink-700 bg-pink-50 hover:bg-pink-100 rounded px-2 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-cog w-3 text-pink-400"></i>설정 ▾</div>
+          </nav>
+          <div class="p-2 border-t border-gray-200 text-center">
+            <div class="text-[9px] font-bold text-gray-700">너굴님</div>
+            <div class="text-[8px] text-gray-500">supabase connected</div>
+          </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="flex-1 overflow-y-auto scrollbar-hide bg-white">
+          <!-- Top -->
+          <header class="border-b border-gray-200 px-6 py-3 flex items-center gap-3 sticky top-0 bg-white z-10">
+            <h2 class="text-base font-bold text-gray-900">홈</h2>
+            <div class="ml-auto flex items-center gap-2 text-[11px] text-gray-600 font-medium">
+              <span>뚠 199</span><span class="text-gray-300">·</span>
+              <span>뚱 162</span><span class="text-gray-300">·</span>
+              <span>별 197</span><span class="text-gray-300">·</span>
+              <span>솔 171</span><span class="text-gray-300">·</span>
+              <span>솜 107</span>
+              <span class="ml-3 text-gray-400">|</span>
+              <span class="text-gray-500">너굴님</span>
+            </div>
+          </header>
+
+          <div class="p-6 space-y-6 max-w-4xl">
+
+            <!-- 분기별 보상 — 군더더기 없이 -->
+            <section>
+              <h3 class="text-sm font-bold text-gray-900 mb-2">분기별 수로 직위 점수 기준 및 보상</h3>
+              <p class="text-[11px] text-gray-500 mb-3">뚠카롱 길드 · 분기(3개월) 평균 점수</p>
+
+              <!-- 크라운 -->
+              <div class="border border-gray-200 rounded mb-2">
+                <div class="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
+                  <div class="text-[12px] font-bold text-gray-900">크라운 <span class="text-[10px] font-medium text-gray-500 ml-1">TOP 5</span></div>
+                  <div class="text-[10px] font-medium text-pink-600">부캐 All 면제 + 100억</div>
+                </div>
+                <div class="grid grid-cols-5 divide-x divide-gray-100 text-center">
+                  <div class="py-2"><div class="text-[10px] text-gray-500">TOP 1</div><div class="text-base font-bold text-gray-900">28%</div></div>
+                  <div class="py-2"><div class="text-[10px] text-gray-500">TOP 2</div><div class="text-base font-bold text-gray-900">24%</div></div>
+                  <div class="py-2"><div class="text-[10px] text-gray-500">TOP 3</div><div class="text-base font-bold text-gray-900">20%</div></div>
+                  <div class="py-2"><div class="text-[10px] text-gray-500">TOP 4</div><div class="text-base font-bold text-gray-900">16%</div></div>
+                  <div class="py-2"><div class="text-[10px] text-gray-500">TOP 5</div><div class="text-base font-bold text-gray-900">12%</div></div>
+                </div>
+              </div>
+
+              <!-- 등급 표 (이모지 제거, 정보 위주) -->
+              <table class="w-full text-[11.5px] border border-gray-200 rounded overflow-hidden">
+                <thead class="bg-gray-50 text-gray-500 text-[10px] uppercase">
+                  <tr><th class="text-left px-3 py-2 font-medium">등급</th><th class="text-left px-3 py-2 font-medium">조건</th><th class="text-left px-3 py-2 font-medium">혜택</th></tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr><td class="px-3 py-2 font-bold">티라미슈</td><td class="text-gray-600">TOP 21 ~ 31</td><td class="text-gray-700">부캐 All 면제 + 수동 24개</td></tr>
+                  <tr><td class="px-3 py-2 font-bold">크로아상</td><td class="text-gray-600">수로 90,000+</td><td class="text-gray-700">부캐 All 면제</td></tr>
+                  <tr><td class="px-3 py-2 font-bold">롤케이크</td><td class="text-gray-600">55,000 ~ 89,999</td><td class="text-gray-700">부캐 절반 면제</td></tr>
+                  <tr><td class="px-3 py-2 font-bold">팬케이크</td><td class="text-gray-600">직위 20명 (강등 위험군)</td><td class="text-gray-700">부캐 절반 면제</td></tr>
+                  <tr class="bg-gray-50"><td class="px-3 py-2 font-bold text-gray-700">와플 / 수플레</td><td class="text-gray-600">본캐 95,000+ / 부캐 전용</td><td class="text-gray-500 text-[10px]">개별 적용</td></tr>
+                </tbody>
+              </table>
+            </section>
+
+            <!-- 빠른 액션 -->
+            <section>
+              <h3 class="text-sm font-bold text-gray-900 mb-2">빠른 액션</h3>
+              <div class="grid grid-cols-3 gap-2 text-[12px]">
+                <a href="#" class="border border-gray-200 hover:border-gray-400 rounded p-3 text-gray-700 font-medium">내 분기 점수 확인 →</a>
+                <a href="#" class="border border-gray-200 hover:border-gray-400 rounded p-3 text-gray-700 font-medium">면제 신청 →</a>
+                <a href="#" class="border border-gray-200 hover:border-gray-400 rounded p-3 text-gray-700 font-medium">보석금 신청 →</a>
+              </div>
+            </section>
+
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500">홈: 카드 그라데이션·아이콘 폭격 제거. 표 + 가는 선으로 정보 위주. 핑크는 핵심 액션·관리자 영역에만.</div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 페이지 2: 길드원 -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="members">
+    <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">② 길드원 페이지</div>
+
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div class="flex h-[720px]">
+        <aside class="w-52 bg-gray-50 border-r border-gray-200"></aside>
+
+        <main class="flex-1 overflow-y-auto scrollbar-hide bg-white">
+          <header class="border-b border-gray-200 px-6 py-3 flex items-center gap-3 sticky top-0 bg-white z-10">
+            <h2 class="text-base font-bold text-gray-900">길드원</h2>
+            <span class="text-[11px] text-gray-500">총 71명</span>
+            <div class="ml-auto flex items-center gap-2">
+              <input type="text" placeholder="닉/본캐/직업 검색" class="px-3 py-1.5 border border-gray-200 rounded text-[11px] w-48 outline-none focus:border-pink-500">
+              <button class="px-3 py-1.5 bg-gray-900 text-white rounded text-[11px] font-bold">+ 등록</button>
+            </div>
+          </header>
+
+          <div class="p-6 max-w-5xl">
+
+            <!-- 필터 칩 -->
+            <div class="flex gap-1 mb-3 text-[11px]">
+              <button class="px-2 py-1 bg-gray-900 text-white rounded font-bold">전체 71</button>
+              <button class="px-2 py-1 bg-gray-100 text-gray-600 rounded font-medium hover:bg-gray-200">뚠카롱 42</button>
+              <button class="px-2 py-1 bg-gray-100 text-gray-600 rounded font-medium hover:bg-gray-200">뚱카롱 29</button>
+              <span class="ml-3 text-gray-300">|</span>
+              <button class="px-2 py-1 bg-gray-100 text-gray-600 rounded font-medium hover:bg-gray-200">본캐만</button>
+              <button class="px-2 py-1 bg-gray-100 text-gray-600 rounded font-medium hover:bg-gray-200">강등 위험</button>
+            </div>
+
+            <!-- 멤버 표 -->
+            <table class="w-full text-[12px] border border-gray-200 rounded overflow-hidden">
+              <thead class="bg-gray-50 text-gray-500 text-[10px] uppercase">
+                <tr>
+                  <th class="text-left px-3 py-2 font-medium">닉네임</th>
+                  <th class="text-left px-3 py-2 font-medium">직업</th>
+                  <th class="text-right px-3 py-2 font-medium">레벨</th>
+                  <th class="text-left px-3 py-2 font-medium">길드</th>
+                  <th class="text-left px-3 py-2 font-medium">직위</th>
+                  <th class="text-right px-3 py-2 font-medium">분기 수로</th>
+                  <th class="text-left px-3 py-2 font-medium">본캐</th>
+                  <th class="px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-2 font-bold text-gray-900">너굴님</td>
+                  <td class="px-3 py-2 text-gray-700">에반</td>
+                  <td class="px-3 py-2 text-right text-gray-700 tabular-nums">296</td>
+                  <td class="px-3 py-2 text-gray-700">뚠카롱</td>
+                  <td class="px-3 py-2"><span class="text-[10px] font-bold text-pink-700 bg-pink-50 px-1.5 py-0.5 rounded">크라운</span></td>
+                  <td class="px-3 py-2 text-right font-bold text-gray-900 tabular-nums">142,890</td>
+                  <td class="px-3 py-2 text-gray-400">—</td>
+                  <td class="px-3 py-2 text-right"><button class="text-[10px] text-gray-400 hover:text-gray-900">⋯</button></td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-2 font-bold text-gray-900">너굴도구</td>
+                  <td class="px-3 py-2 text-gray-700">비숍</td>
+                  <td class="px-3 py-2 text-right text-gray-700 tabular-nums">283</td>
+                  <td class="px-3 py-2 text-gray-700">솜카롱</td>
+                  <td class="px-3 py-2"><span class="text-[10px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">와플</span></td>
+                  <td class="px-3 py-2 text-right text-gray-700 tabular-nums">38,210</td>
+                  <td class="px-3 py-2 text-gray-500">너굴님</td>
+                  <td class="px-3 py-2 text-right"><button class="text-[10px] text-gray-400 hover:text-gray-900">⋯</button></td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-2 font-bold text-gray-900">방울이</td>
+                  <td class="px-3 py-2 text-gray-700">아델</td>
+                  <td class="px-3 py-2 text-right text-gray-700 tabular-nums">295</td>
+                  <td class="px-3 py-2 text-gray-700">뚱카롱</td>
+                  <td class="px-3 py-2"><span class="text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">티라미슈</span></td>
+                  <td class="px-3 py-2 text-right font-bold text-gray-900 tabular-nums">98,540</td>
+                  <td class="px-3 py-2 text-gray-400">—</td>
+                  <td class="px-3 py-2 text-right"><button class="text-[10px] text-gray-400 hover:text-gray-900">⋯</button></td>
+                </tr>
+                <tr class="hover:bg-gray-50 bg-amber-50/30">
+                  <td class="px-3 py-2 font-bold text-gray-900">나로뜸</td>
+                  <td class="px-3 py-2 text-gray-700">나이트로드</td>
+                  <td class="px-3 py-2 text-right text-gray-700 tabular-nums">263</td>
+                  <td class="px-3 py-2 text-gray-700">뚠카롱</td>
+                  <td class="px-3 py-2"><span class="text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">팬케이크</span></td>
+                  <td class="px-3 py-2 text-right text-amber-700 tabular-nums">31,200</td>
+                  <td class="px-3 py-2 text-gray-400">—</td>
+                  <td class="px-3 py-2 text-right"><button class="text-[10px] text-gray-400 hover:text-gray-900">⋯</button></td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="px-3 py-2 font-bold text-gray-900">렌드름</td>
+                  <td class="px-3 py-2 text-gray-700">윈드브레이커</td>
+                  <td class="px-3 py-2 text-right text-gray-700 tabular-nums">281</td>
+                  <td class="px-3 py-2 text-gray-700">꿀카롱</td>
+                  <td class="px-3 py-2"><span class="text-[10px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">와플</span></td>
+                  <td class="px-3 py-2 text-right text-gray-700 tabular-nums">42,100</td>
+                  <td class="px-3 py-2 text-gray-500">너굴님</td>
+                  <td class="px-3 py-2 text-right"><button class="text-[10px] text-gray-400 hover:text-gray-900">⋯</button></td>
+                </tr>
+              </tbody>
+              <tfoot class="bg-gray-50">
+                <tr><td colspan="8" class="px-3 py-2 text-[10px] text-gray-500 text-center">… 71명 중 5명 표시 · 페이지네이션 / 무한스크롤</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500">길드원: 카드 그리드 → 표 형식. 정렬·검색 한 행에 자연스럽게. 강등 위험만 색 강조.</div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 페이지 3: 이중길드 감사 -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="dual">
+    <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">③ 이중길드 감사 (관리자 전용)</div>
+
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+      <div class="flex h-[720px]">
+        <aside class="w-52 bg-gray-50 border-r border-gray-200"></aside>
+
+        <main class="flex-1 overflow-y-auto scrollbar-hide bg-white">
+          <header class="border-b border-gray-200 px-6 py-3 flex items-center gap-3 sticky top-0 bg-white z-10">
+            <h2 class="text-base font-bold text-gray-900">이중길드 감사</h2>
+            <span class="text-[11px] text-gray-500">캐릭 247 · 본캐 49 · 마지막 검사 1시간 전</span>
+            <button class="text-[10px] px-1.5 py-0.5 border border-gray-200 hover:bg-gray-50 rounded text-gray-500">? 사용법</button>
+            <div class="ml-auto flex gap-1">
+              <button class="px-3 py-1.5 bg-gray-900 text-white rounded text-[11px] font-bold">최신화</button>
+              <button class="px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-[11px] font-medium hover:bg-gray-50">전체 재검사</button>
+              <button class="px-3 py-1.5 border border-pink-300 text-pink-700 rounded text-[11px] font-medium hover:bg-pink-50">세부 (메애기)</button>
+            </div>
+          </header>
+
+          <div class="p-6 space-y-4 max-w-5xl">
+
+            <!-- 통계 — 한 줄 -->
+            <div class="flex divide-x divide-gray-100 border border-gray-200 rounded text-center">
+              <div class="flex-1 py-3"><div class="text-[10px] text-gray-500 uppercase">일치</div><div class="text-xl font-bold text-gray-900">237</div></div>
+              <div class="flex-1 py-3"><div class="text-[10px] text-gray-500 uppercase">위반</div><div class="text-xl font-bold text-pink-600">7</div></div>
+              <div class="flex-1 py-3"><div class="text-[10px] text-gray-500 uppercase">길드 없음</div><div class="text-xl font-bold text-gray-700">3</div></div>
+            </div>
+
+            <!-- 필터 -->
+            <div class="flex items-center gap-1 text-[11px]">
+              <button class="px-2 py-1 bg-pink-600 text-white rounded font-bold">위반 7</button>
+              <button class="px-2 py-1 bg-gray-100 text-gray-600 rounded font-medium hover:bg-gray-200">길드 없음 3</button>
+              <button class="px-2 py-1 bg-gray-100 text-gray-600 rounded font-medium hover:bg-gray-200">전체 247</button>
+            </div>
+
+            <!-- 결과 표 (본캐별 그룹) -->
+            <div class="border border-gray-200 rounded overflow-hidden">
+              <!-- 그룹 1 -->
+              <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+                <div class="text-[12px]"><span class="font-bold text-gray-900">렌드름</span><span class="text-gray-500 ml-2">본캐 뚠카롱 · 13캐릭 · 위반 1</span></div>
+                <div class="text-[10px] text-gray-400">1시간 전 검사</div>
+              </div>
+              <table class="w-full text-[11.5px]">
+                <tbody class="divide-y divide-gray-100">
+                  <tr><td class="px-3 py-1.5 w-32 font-medium text-gray-900">나로뜸</td><td class="text-gray-700">나이트로드 · Lv.263</td><td class="px-3 text-pink-700 font-bold">⚠ 천종맹</td><td class="px-3 text-right"><button class="text-[10px] px-2 py-0.5 border border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded">+ 허용</button></td></tr>
+                  <tr><td class="px-3 py-1.5 w-32 font-medium text-gray-900">렌드름</td><td class="text-gray-700">윈드브레이커 · Lv.281</td><td class="px-3 text-gray-500">꿀카롱</td><td></td></tr>
+                  <tr><td class="px-3 py-1.5 w-32 font-medium text-gray-900">렌부캐2</td><td class="text-gray-700">메르세데스 · Lv.272</td><td class="px-3 text-gray-500">꿀카롱</td><td></td></tr>
+                </tbody>
+              </table>
+
+              <!-- 그룹 2 -->
+              <div class="bg-gray-50 px-3 py-2 border-y border-gray-200 flex items-center justify-between">
+                <div class="text-[12px]"><span class="font-bold text-gray-900">방울이</span><span class="text-gray-500 ml-2">본캐 뚱카롱 · 8캐릭 · 위반 1</span></div>
+                <div class="text-[10px] text-gray-400">1시간 전 검사</div>
+              </div>
+              <table class="w-full text-[11.5px]">
+                <tbody class="divide-y divide-gray-100">
+                  <tr><td class="px-3 py-1.5 w-32 font-medium text-gray-900">방울빵</td><td class="text-gray-700">아델 · Lv.245</td><td class="px-3 text-amber-700 font-bold">길드 없음</td><td class="px-3 text-right"><button class="text-[10px] px-2 py-0.5 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded">보류</button></td></tr>
+                  <tr><td class="px-3 py-1.5 w-32 font-medium text-gray-900">방울이</td><td class="text-gray-700">아델 · Lv.295</td><td class="px-3 text-gray-500">뚱카롱</td><td></td></tr>
+                </tbody>
+              </table>
+
+              <!-- 그룹 3 (1인길드 후보) -->
+              <div class="bg-gray-50 px-3 py-2 border-y border-gray-200 flex items-center justify-between">
+                <div class="text-[12px]"><span class="font-bold text-gray-900">너굴님</span><span class="text-gray-500 ml-2">본캐 뚠카롱 · 13캐릭 · 위반 1 (1인길드 의심)</span></div>
+                <div class="text-[10px] text-gray-400">1시간 전 검사</div>
+              </div>
+              <table class="w-full text-[11.5px]">
+                <tbody class="divide-y divide-gray-100">
+                  <tr><td class="px-3 py-1.5 w-32 font-medium text-gray-900">셉략</td><td class="text-gray-700">나이트로드 · Lv.255</td><td class="px-3 text-pink-700 font-bold">⚠ 너굴길드</td><td class="px-3 text-right"><button class="text-[10px] px-2 py-0.5 border border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded">+ 허용 (1인길드)</button></td></tr>
+                  <tr><td class="px-3 py-1.5 w-32 font-medium text-gray-900">너굴님</td><td class="text-gray-700">에반 · Lv.296</td><td class="px-3 text-gray-500">뚠카롱</td><td></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 허용 길드 -->
+            <div class="border border-gray-200 rounded p-3">
+              <div class="text-[12px] font-bold text-gray-900 mb-2 flex items-center justify-between">
+                <span>허용 길드 (1인길드)</span>
+                <button class="text-[10px] px-2 py-0.5 border border-gray-300 hover:bg-gray-50 rounded">+ 수동 추가</button>
+              </div>
+              <div class="flex gap-1.5 flex-wrap text-[11px]">
+                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">방울길드 ×</span>
+                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">너굴솔로 ×</span>
+              </div>
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500">이중길드: 가차 카드 → 본캐별 표 그룹. 위반은 핑크 1색만, 길드 없음은 앰버. 액션은 작은 outline 버튼.</div>
+  </section>
+
+  <!-- 작업 계획 -->
+  <section class="bg-white rounded-lg p-6 border border-gray-200">
+    <h3 class="font-bold text-gray-900 mb-3 text-base">작업 계획</h3>
+    <ol class="text-[12px] text-gray-700 leading-relaxed space-y-2 list-decimal list-inside">
+      <li><strong>폴더</strong>: <code class="bg-gray-100 px-1 rounded">guild-manager/v2/</code> 새로 생성 → 링크 <code class="bg-gray-100 px-1 rounded">https://hsb9912.github.io/guild-manager/v2/</code></li>
+      <li><strong>백엔드</strong>: 같은 Supabase·R2 워커·Discord 웹훅 그대로 (인증·DB·기능 변화 0)</li>
+      <li><strong>점진 마이그레이션</strong>: 홈 → 길드원 → 이중길드 → 신청 처리 → 보석금/벌점 → 나머지 순서. 각 페이지마다 별도 커밋·검증</li>
+      <li><strong>본 main 그대로</strong>: <code class="bg-gray-100 px-1 rounded">https://hsb9912.github.io/guild-manager/</code> 안정판 살아있음 → 자동 롤백</li>
+      <li><strong>안정화 후 정식 전환</strong>: v2 모든 페이지 OK 떨어지면 main으로 promote (또는 main에서 v2로 redirect)</li>
+    </ol>
+    <div class="mt-4 bg-pink-50 border border-pink-200 rounded p-3 text-[11px] text-pink-800">
+      <strong>이대로 진행할까요?</strong> OK 떨어지면 v2 폴더 만들고 홈 페이지부터 작업 시작합니다. 자리 비우셨으면 알아서 홈·길드원·이중길드 3페이지 만들고 작업 결과 보고드릴게요.
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
