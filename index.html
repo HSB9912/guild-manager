@@ -1544,7 +1544,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const content = document.getElementById('contentArea'); if(!content) return;
             content.innerHTML = '';
             document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab || el.dataset.targetAlt === tab));
-            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', consulting: '아이템 컨설팅', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영' };
+            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', consulting: '아이템 컨설팅', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영', exempt_form: '면제 신청', bail_form: '보석금 신청', join_form: '가입 신청', manual: '사용 안내', requests: '신청 처리', admin_todos: '운영진 할 일', dual_guild: '이중길드 감사' };
             document.getElementById('pageTitle').innerText = titles[tab] || '';
             if (tab === 'home') window.renderHome(content);
             else if (tab === 'members') window.renderMembers(content);
