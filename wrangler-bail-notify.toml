@@ -1,0 +1,5 @@
+name = "guild-bail-notify"
+main = "bail-notify-worker.js"
+compatibility_date = "2025-01-01"
+
+# 시크릿(DISCORD_BAIL_WEBHOOK_URL)은 wrangler secret put 또는 대시보드에서 등록

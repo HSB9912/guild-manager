@@ -9781,8 +9781,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const force = !!opts.force;
     const cacheMs = (st.cacheHours || 24) * 3600 * 1000;
     const now = Date.now();
+    const nowIso = new Date(now).toISOString();
 
-    // 1. 본캐 ocid
+    // 1. 본캐 ocid (메애기 /alt 호출 + 폴백용)
     let ocid;
     try {
       const idData = await window._nexonFetch('/maplestory/v1/id', { character_name: mainCharName });
@@ -9792,36 +9793,53 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       return { error: 'id 조회 실패: ' + e.message };
     }
 
-    // 2. 유챔으로 부캐 닉 얻기
+    // ===== 메애기 모드: /alt 한 방으로 main + alt 전체 받아옴 =====
+    if (opts.meaegi) {
+      try {
+        const url = window.MEAEGI_PROXY_URL + encodeURIComponent(mainCharName) + '/alt?ocid=' + encodeURIComponent(ocid);
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('meaegi /alt ' + res.status);
+        const data = await res.json();
+        const list = [];
+        if (data.main) list.push({ ...data.main, _isMain: true });
+        if (Array.isArray(data.alt)) list.push(...data.alt.map(c => ({ ...c, _isMain: false })));
+        if (list.length === 0) throw new Error('meaegi 응답 비어있음');
+
+        const upserts = list.map(c => {
+          const guildName = c.guildName || '';
+          return {
+            nickname: c.nickname,
+            main_char_name: mainCharName,
+            ocid: c._isMain ? ocid : null,
+            job_class: c.className || '',
+            level: Number(c.level) || 0,
+            real_guild: guildName,
+            source: c._isMain ? 'meaegi-main' : 'meaegi-alt',
+            is_violation: !!guildName && !window._dualIsAllowed(guildName),
+            last_checked_at: nowIso
+          };
+        });
+        await supaDb.from('discovered_subchars').upsert(upserts, { onConflict: 'nickname' });
+        return { upserted: upserts.length, total: list.length, source: 'meaegi' };
+      } catch (e) {
+        console.warn('메애기 /alt 실패, 폴백:', mainCharName, e.message);
+        // 폴백: 아래 유챔 경로로 진행
+      }
+    }
+
+    // ===== 폴백/기본 모드: 유챔 + members + Nexon basic =====
     let champNicks = [];
     try {
       const champData = await window._nexonFetch('/maplestory/v1/character/union-champion', { ocid });
       champNicks = (champData?.union_champion || []).map(c => c.champion_name).filter(Boolean);
     } catch (e) { /* 유챔 없으면 패스 */ }
 
-    // 2-2. (옵션) 메애기 세부 검사 — 챔피언 외 추가 캐릭 발견 가능
-    let meaegiNicks = [];
-    if (opts.meaegi) {
-      try {
-        const res = await fetch(window.MEAEGI_PROXY_URL + encodeURIComponent(mainCharName));
-        if (res.ok) {
-          const txt = await res.text();
-          // champion_name 추출 (RSC/JSON 모두 대응)
-          const matches = [...txt.matchAll(/"champion_name":"([^"]+)"/g)];
-          meaegiNicks = matches.map(m => m[1]);
-        }
-      } catch (e) { console.warn('메애기 호출 실패:', mainCharName, e.message); }
-    }
-
-    // 3. members 매핑 부캐
     const memberSubs = (appState.members || [])
       .filter(m => m.main_char_name === mainCharName || m.name === mainCharName)
       .map(m => m.name);
 
-    // 4. 합집합 unique
-    const allNicks = [...new Set([mainCharName, ...champNicks, ...meaegiNicks, ...memberSubs])];
+    const allNicks = [...new Set([mainCharName, ...champNicks, ...memberSubs])];
 
-    // 5. 각 캐릭 길드 조회 (캐시 만료된 것만)
     const { data: existing } = await supaDb.from('discovered_subchars')
       .select('nickname, last_checked_at').in('nickname', allNicks);
     const existingMap = new Map((existing || []).map(r => [r.nickname, r]));
@@ -9841,20 +9859,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           job_class: basic.character_class || '',
           level: Number(basic.character_level) || 0,
           real_guild: guildName,
-          source: champNicks.includes(nick) ? 'union-champion' : (memberSubs.includes(nick) ? 'members' : meaegiNicks.includes(nick) ? 'meaegi' : 'manual'),
+          source: champNicks.includes(nick) ? 'union-champion' : (memberSubs.includes(nick) ? 'members' : 'manual'),
           is_violation: !!guildName && !window._dualIsAllowed(guildName),
-          last_checked_at: new Date().toISOString()
+          last_checked_at: nowIso
         });
       } catch (e) {
         console.warn('basic 조회 실패:', nick, e.message);
       }
-      // rate limit 완화: 짧은 대기
       await new Promise(r => setTimeout(r, 150));
     }
     if (upserts.length > 0) {
       await supaDb.from('discovered_subchars').upsert(upserts, { onConflict: 'nickname' });
     }
-    return { upserted: upserts.length, total: allNicks.length };
+    return { upserted: upserts.length, total: allNicks.length, source: 'nexon' };
   };
 
   // 전체 검사 (force: 캐시 무시, meaegi: 메애기 챔피언까지 수집)
@@ -10045,7 +10062,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                   const checked = r.last_checked_at ? new Date(r.last_checked_at).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) : '-';
                   const sourceTag = r.source === 'union-champion' ? '<span class="text-[9px] text-gray-400">유챔</span>' :
                                     r.source === 'members' ? '<span class="text-[9px] text-gray-400">사이트</span>' :
-                                    r.source === 'manual' ? '<span class="text-[9px] text-gray-400">수동</span>' : '';
+                                    r.source === 'manual' ? '<span class="text-[9px] text-gray-400">수동</span>' :
+                                    r.source === 'meaegi-main' ? '<span class="text-[9px] text-rose-400">메애기·본캐</span>' :
+                                    r.source === 'meaegi-alt' ? '<span class="text-[9px] text-rose-400">메애기·부캐</span>' : '';
                   return `
                     <div class="flex items-center gap-2 flex-wrap ${r.is_violation ? 'bg-red-50/60 border-l-4 border-red-300 border border-red-100' : 'bg-gray-50 border border-gray-100'} rounded-r-xl px-3 py-2">
                       <span class="text-sm font-bold text-gray-800">${esc(r.nickname)}</span>

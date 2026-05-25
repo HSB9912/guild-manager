@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이중길드 감지 시스템 — 설계 미리보기</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>body { font-family: 'Pretendard', -apple-system, system-ui, sans-serif; background: #f8f9fb; }</style>
+</head>
+<body class="p-6 lg:p-10">
+<div class="max-w-3xl mx-auto">
+
+  <header class="mb-8">
+    <h1 class="text-2xl font-black text-gray-800">이중길드 감지 시스템 — 설계 미리보기</h1>
+    <p class="text-sm text-gray-500 mt-1">사이트 멤버의 실제 길드(넥슨 API)와 사이트 길드 비교 → 불일치 적발</p>
+  </header>
+
+  <!-- 정의 -->
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 text-[12px] text-amber-900 leading-relaxed space-y-2">
+    <div class="font-black text-amber-800 mb-1"><i class="fas fa-question-circle mr-1"></i>먼저 명확히 — "이중길드"의 정의?</div>
+    <div><strong>A.</strong> 사이트엔 우리 길드(뚠/뚱…)로 등록된 캐릭이, 실제 게임에서는 <strong>다른 길드에 가입돼 있는</strong> 경우</div>
+    <div><strong>B.</strong> 사이트엔 우리 길드인데, 게임에서는 <strong>길드가 없거나(탈퇴 상태)</strong></div>
+    <div><strong>C.</strong> 가입 신청자가 이미 다른 길드 소속 → 신청 시점 감지</div>
+    <div class="pt-2 border-t border-amber-200"><strong class="text-amber-700">기본 가정:</strong> A + B 둘 다 잡음 (사이트 길드 ≠ 실제 길드). 우리 길드 목록(뚠/뚱/밤/별/달/꿀/솜)에 안 들어가면 모두 "불일치".</div>
+  </div>
+
+  <!-- ===== 화면 시안 ===== -->
+  <section class="mb-10">
+    <h2 class="text-base font-black text-gray-700 mb-3"><span class="bg-pink-100 text-pink-700 text-[10px] font-black px-2 py-1 rounded mr-2">화면</span>이중길드 감사 (관리자 메뉴)</h2>
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <!-- 헤더 -->
+      <div class="flex items-center gap-2 flex-wrap mb-4 pb-3 border-b border-gray-100">
+        <h3 class="text-sm font-black text-gray-800"><i class="fas fa-user-shield text-rose-500 mr-1"></i>이중길드 감사</h3>
+        <span class="text-[10px] text-gray-400">총 71명 · 마지막 검사: 2026-05-15 23:59 (어제)</span>
+        <button class="ml-auto px-3 py-1.5 bg-rose-500 text-white rounded-lg text-xs font-black hover:bg-rose-600 shadow"><i class="fas fa-radar mr-1"></i>전체 검사 시작</button>
+      </div>
+
+      <!-- 진행률 (검사 중일 때) -->
+      <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-4">
+        <div class="flex items-center justify-between text-[11px] mb-1.5">
+          <span class="font-bold text-rose-700"><i class="fas fa-spinner fa-spin mr-1"></i>검사 중 — 23 / 71</span>
+          <span class="font-black text-rose-600">32%</span>
+        </div>
+        <div class="h-2 bg-white rounded-full overflow-hidden"><div class="h-full bg-rose-500 rounded-full" style="width:32%"></div></div>
+        <p class="text-[10px] text-gray-500 mt-1.5">넥슨 API 호출 (1초당 1캐릭 추천 — 71명 약 1분 소요)</p>
+      </div>
+
+      <!-- 요약 -->
+      <div class="grid grid-cols-4 gap-2 mb-4">
+        <div class="bg-emerald-50 rounded-lg p-2.5 text-center border border-emerald-100">
+          <div class="text-[9px] font-bold text-emerald-500 uppercase">일치</div>
+          <div class="text-base font-black text-emerald-600 mt-0.5">61</div>
+        </div>
+        <div class="bg-red-50 rounded-lg p-2.5 text-center border border-red-200">
+          <div class="text-[9px] font-bold text-red-500 uppercase">이중길드</div>
+          <div class="text-base font-black text-red-600 mt-0.5">3</div>
+        </div>
+        <div class="bg-amber-50 rounded-lg p-2.5 text-center border border-amber-200">
+          <div class="text-[9px] font-bold text-amber-500 uppercase">길드 없음</div>
+          <div class="text-base font-black text-amber-600 mt-0.5">5</div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-2.5 text-center border border-gray-200">
+          <div class="text-[9px] font-bold text-gray-400 uppercase">API 오류</div>
+          <div class="text-base font-black text-gray-500 mt-0.5">2</div>
+        </div>
+      </div>
+
+      <!-- 결과 표 (불일치만 또는 전체) -->
+      <div class="flex gap-1.5 mb-2">
+        <button class="px-2.5 py-1 bg-red-500 text-white rounded-lg text-[10px] font-bold">불일치 (8)</button>
+        <button class="px-2.5 py-1 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-bold">전체 (71)</button>
+      </div>
+
+      <div class="space-y-1.5">
+        <!-- 이중길드 행 -->
+        <div class="flex items-center gap-3 bg-red-50 border-l-4 border-red-400 border border-red-100 rounded-r-xl p-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-black text-gray-800">너굴거</span>
+              <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">달카롱 등록</span>
+              <i class="fas fa-arrow-right text-gray-300 text-[10px]"></i>
+              <span class="text-[10px] font-black bg-red-100 text-red-700 px-1.5 py-0.5 rounded">실제: 다른길드명</span>
+            </div>
+            <div class="text-[10px] text-gray-500 mt-0.5">본캐 너굴님 · Lv.286</div>
+          </div>
+          <button class="text-[10px] px-2 py-1 bg-white border border-red-200 text-red-500 rounded font-bold hover:bg-red-50"><i class="fas fa-user-slash mr-0.5"></i>탈퇴 처리</button>
+        </div>
+
+        <div class="flex items-center gap-3 bg-amber-50 border-l-4 border-amber-400 border border-amber-100 rounded-r-xl p-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-black text-gray-800">방울이</span>
+              <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">뚱카롱 등록</span>
+              <i class="fas fa-arrow-right text-gray-300 text-[10px]"></i>
+              <span class="text-[10px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">실제: 길드 없음 (탈퇴 상태)</span>
+            </div>
+            <div class="text-[10px] text-gray-500 mt-0.5">본캐 · Lv.295</div>
+          </div>
+          <button class="text-[10px] px-2 py-1 bg-white border border-amber-300 text-amber-600 rounded font-bold hover:bg-amber-50"><i class="fas fa-clock mr-0.5"></i>보류</button>
+        </div>
+
+        <div class="flex items-center gap-3 bg-gray-50 border-l-4 border-gray-300 border border-gray-200 rounded-r-xl p-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-black text-gray-800">렌드름</span>
+              <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">꿀카롱 등록</span>
+              <span class="text-[10px] text-gray-400">— 캐릭 정보 조회 실패</span>
+            </div>
+            <div class="text-[10px] text-gray-500 mt-0.5">캐릭이 삭제됐거나 API 오류 (재시도 필요)</div>
+          </div>
+          <button class="text-[10px] px-2 py-1 bg-white border border-gray-300 text-gray-500 rounded font-bold hover:bg-gray-50"><i class="fas fa-rotate mr-0.5"></i>재시도</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 자동화 -->
+  <section class="mb-10">
+    <h2 class="text-base font-black text-gray-700 mb-3"><span class="bg-blue-100 text-blue-700 text-[10px] font-black px-2 py-1 rounded mr-2">다음 단계 (선택)</span>매일 자정 자동 검사 + 디스코드 알림</h2>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-[12px] text-gray-600 leading-relaxed space-y-2">
+      <div><strong class="text-gray-800">방식:</strong> Cloudflare Worker Cron (매일 00:00 KST)</div>
+      <div><strong class="text-gray-800">동작:</strong> 워커가 멤버 목록 fetch → 넥슨 API 순회 → 불일치 발견 → 디스코드 운영진 채널에 알림 임베드</div>
+      <div><strong class="text-gray-800">필요:</strong> 워커에 넥슨 API key + 디스코드 웹훅 등록 (보석금 워커처럼)</div>
+      <div class="pt-2 border-t border-gray-100"><strong class="text-amber-700">선후관계:</strong> 수동 검사 시스템부터 구축해서 동작 검증 → 자동화는 그 다음. 사용자 요청대로.</div>
+    </div>
+  </section>
+
+  <!-- 결정 사항 -->
+  <div class="bg-white border border-gray-200 rounded-xl p-5 text-xs text-gray-600 leading-relaxed space-y-2">
+    <h3 class="font-black text-gray-700 mb-2"><i class="fas fa-list-check text-pink-400 mr-1"></i>설계 결정 사항</h3>
+    <div><strong class="text-gray-800">1. 메뉴 위치:</strong> ① 길드원 메뉴 안 서브탭 / ② 별도 메뉴 "이중길드 감사" / ③ 신청 처리에 새 탭. 추천: <strong>②</strong></div>
+    <div><strong class="text-gray-800">2. 검사 범위:</strong> 본캐만 / 본캐+부캐 전부 / 선택. 추천: <strong>본캐+부캐 전부 (members 전체)</strong></div>
+    <div><strong class="text-gray-800">3. 결과 저장:</strong> 휘발성(보고 끝) / DB에 last_guild_check 저장 (재방문 시 결과 유지). 추천: <strong>DB 저장</strong> — 자동화 때 활용</div>
+    <div><strong class="text-gray-800">4. API 호출 속도:</strong> 넥슨 API rate limit 있음 (초당 약 10건 정도). 71명이면 ~10초. 1초당 1건 보수적으로 가면 1분.</div>
+    <div><strong class="text-gray-800">5. 길드 없음(탈퇴):</strong> 이중길드와 같이 잡지만 색상 분리 (빨강 vs 앰버).</div>
+    <div><strong class="text-gray-800">6. 액션:</strong> 발견 시 ① 운영진이 수동 탈퇴 처리 ② 알림만 / 자동 탈퇴는 위험. 추천: <strong>알림만 + 운영진 수동</strong></div>
+    <div class="pt-2 border-t border-gray-100"><strong class="text-amber-700">필요한 것:</strong> 넥슨 API key (사이트에 이미 등록돼 있는 듯 — 동기화 탭에서 사용 중) · 캐릭별 ocid → /character/basic 호출 → guild_name 비교</div>
+  </div>
+
+</div>
+</body>
+</html>
