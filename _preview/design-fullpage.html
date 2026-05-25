@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>guild-manager — 홈 풀페이지 4가지 시안</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', -apple-system, system-ui, sans-serif; background: #e5e7eb; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .glass { backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); }
+  .neon-pink { text-shadow: 0 0 12px rgba(244,114,182,0.7); }
+  .neon-box { box-shadow: 0 0 24px rgba(244,114,182,0.4), 0 0 48px rgba(168,85,247,0.2); }
+  .mesh-pink { background: radial-gradient(at 0% 0%, #fce7f3 0%, transparent 50%), radial-gradient(at 100% 100%, #fef3c7 0%, transparent 50%), radial-gradient(at 50% 50%, #ede9fe 0%, transparent 60%), #fafafa; }
+  .mesh-glass { background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 25%, #fbc2eb 50%, #fda085 75%, #f6d365 100%); background-size: 200% 200%; }
+  .nav-active-pink { background: linear-gradient(90deg, #fce7f3, #fbcfe8); color: #db2777; }
+  .nav-active-dark { background: rgba(236,72,153,0.15); color: #f9a8d4; border-left: 3px solid #ec4899; }
+  .nav-active-mono { background: #f3f4f6; color: #111827; }
+</style>
+</head>
+<body class="p-4 lg:p-6">
+
+<div class="max-w-[1500px] mx-auto space-y-12">
+
+  <header class="text-center pb-2 border-b border-gray-300">
+    <h1 class="text-2xl font-black text-gray-800">guild-manager — 홈 풀페이지 시안 4종</h1>
+    <p class="text-sm text-gray-500 mt-1">실제 홈 페이지 구조(사이드바·상단바·콘텐츠) 그대로 4가지 디자인 톤 비교</p>
+    <p class="text-xs text-gray-400 mt-1">A 모던핑크 · B 다크네온 · C 미니멀화이트 · D 글래스 · 각 시안 클릭으로 점프 ↓</p>
+    <div class="flex justify-center gap-2 mt-3">
+      <a href="#A" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-xs font-black">A</a>
+      <a href="#B" class="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-black">B</a>
+      <a href="#C" class="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs font-black">C</a>
+      <a href="#D" class="px-3 py-1.5 bg-cyan-500 text-white rounded-lg text-xs font-black">D</a>
+    </div>
+  </header>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- 시안 A: 모던 핑크 (현재 진화형) -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <section id="A">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-pink-500 text-white rounded">시안 A</div>
+      <h2 class="text-lg font-black text-gray-800">모던 핑크 (현재 진화형)</h2>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+      <div class="flex h-[760px] mesh-pink">
+        <!-- Sidebar -->
+        <aside class="w-56 bg-white/80 backdrop-blur border-r border-pink-100 flex flex-col">
+          <div class="p-4 border-b border-pink-100 flex items-center gap-2">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-pink-200"><i class="fas fa-cookie-bite text-sm"></i></div>
+            <div>
+              <div class="text-xs font-black text-gray-800">뚠카롱 길드</div>
+              <div class="text-[9px] text-pink-400 font-bold">ADMIN</div>
+            </div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-2 space-y-0.5 text-[11px]">
+            <div class="nav-active-pink rounded-lg px-3 py-2 font-black flex items-center gap-2"><i class="fas fa-home w-4"></i>홈</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-users w-4 text-pink-300"></i>길드원</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-chart-line w-4 text-pink-300"></i>수로 분석</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-arrow-up-right-dots w-4 text-pink-300"></i>승강제</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-chart-pie w-4 text-pink-300"></i>현황</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-gift w-4 text-pink-300"></i>수로 보상</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-clipboard w-4 text-pink-300"></i>게시판</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-heart w-4 text-pink-300"></i>뚠뚠 버디</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-gem w-4 text-pink-300"></i>보석금</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-user-plus w-4 text-pink-300"></i>가입 신청</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-circle-question w-4 text-pink-300"></i>면제 신청</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-book-open w-4 text-pink-300"></i>사용 안내</div>
+            <div class="text-gray-600 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center justify-between"><span class="flex items-center gap-2"><i class="fas fa-user-shield w-4 text-pink-300"></i>이중길드 감사</span><span class="text-[9px] font-black bg-rose-500 text-white px-1.5 rounded-full">16</span></div>
+            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider px-3 pt-3 pb-1">관리자</div>
+            <div class="text-gray-500 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-clock-rotate-left w-4 text-pink-300"></i>이력</div>
+            <div class="text-gray-500 hover:bg-pink-50 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-cog w-4 text-pink-300"></i>설정</div>
+          </nav>
+          <div class="p-3 border-t border-pink-100 text-[9px] text-emerald-500 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>SUPABASE CONNECTED</div>
+        </aside>
+
+        <!-- Main -->
+        <main class="flex-1 overflow-y-auto scrollbar-hide">
+          <!-- Top bar -->
+          <header class="sticky top-0 bg-white/90 backdrop-blur border-b border-pink-100 px-6 py-3 flex items-center gap-2 flex-wrap z-10">
+            <h2 class="text-base font-black text-gray-800">홈</h2>
+            <div class="flex gap-1 ml-3 flex-wrap">
+              <span class="px-2 py-0.5 text-[10px] font-black bg-pink-100 text-pink-700 rounded-full">뚠 199</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-orange-100 text-orange-700 rounded-full">뚱 162</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-yellow-100 text-yellow-700 rounded-full">별 197</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-amber-100 text-amber-700 rounded-full">별 190</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-rose-100 text-rose-700 rounded-full">별 181</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-violet-100 text-violet-700 rounded-full">솔 171</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-emerald-100 text-emerald-700 rounded-full">솜 107</span>
+            </div>
+            <div class="ml-auto flex items-center gap-2 text-xs">
+              <span class="px-2 py-1 bg-amber-50 text-amber-700 rounded-lg font-black"><i class="fas fa-cookie-bite mr-1"></i>2260일 (6년 70일)</span>
+              <span class="px-2 py-1 bg-pink-50 text-pink-700 rounded-lg font-black"><i class="fas fa-users mr-1"></i>오늘 8명</span>
+              <button class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"><i class="fas fa-moon text-xs"></i></button>
+              <button class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"><i class="fas fa-rotate text-xs"></i></button>
+              <span class="text-[11px] font-black text-gray-700">너굴님</span>
+              <button class="w-8 h-8 rounded-full bg-rose-50 text-rose-500"><i class="fas fa-sign-out-alt text-xs"></i></button>
+            </div>
+          </header>
+
+          <div class="p-6 space-y-5">
+            <!-- Tabs -->
+            <div class="flex gap-1 flex-wrap">
+              <button class="px-3 py-1.5 bg-gradient-to-r from-pink-400 to-rose-500 text-white rounded-xl text-[11px] font-black shadow-md shadow-pink-200">📢 A. 수로 상시 이벤트</button>
+              <button class="px-3 py-1.5 bg-white border border-pink-100 text-gray-600 rounded-xl text-[11px] font-bold">📢 B. 뚠뚠 버디 이벤트</button>
+              <button class="px-3 py-1.5 bg-white border border-pink-100 text-gray-600 rounded-xl text-[11px] font-bold">📢 승강제 안내</button>
+              <button class="px-3 py-1.5 bg-white border border-pink-100 text-gray-600 rounded-xl text-[11px] font-bold">🌸 길드 소개</button>
+              <button class="px-3 py-1.5 bg-white border border-pink-100 text-gray-600 rounded-xl text-[11px] font-bold">👥 직위 & 부캐</button>
+              <button class="ml-auto px-3 py-1.5 bg-white border border-pink-100 text-pink-500 rounded-xl text-[11px] font-bold">✏️ 편집</button>
+            </div>
+
+            <!-- 분기별 보상 헤더 배너 -->
+            <div class="bg-gradient-to-r from-pink-100/80 via-rose-100/80 to-pink-100/80 backdrop-blur rounded-3xl p-5 border border-pink-200 shadow-lg shadow-pink-100">
+              <div class="flex items-center gap-3">
+                <div class="text-3xl">🎁</div>
+                <div>
+                  <h3 class="text-base font-black text-gray-800">분기별 수로 직위 점수 기준 및 보상</h3>
+                  <p class="text-[11px] text-gray-600 mt-0.5">뚠카롱 길드 · 분기(3개월) 평균 점수 기준</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 크라운 TOP 5 -->
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-4 border border-pink-100 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="text-sm font-black text-gray-800">👑 크라운 <span class="ml-1 text-[10px] font-bold text-pink-500 bg-pink-50 px-2 py-0.5 rounded">TOP 5</span></div>
+                <span class="text-[10px] font-black bg-rose-500 text-white px-2 py-1 rounded-lg">부캐 All 면제 + 100억</span>
+              </div>
+              <div class="grid grid-cols-5 gap-2">
+                <div class="bg-gradient-to-br from-pink-50 to-rose-100 rounded-xl p-3 text-center border border-pink-200"><div class="text-[10px] font-bold text-pink-600">TOP 1</div><div class="text-xl font-black text-rose-600 mt-1">28%</div></div>
+                <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-3 text-center border border-pink-100"><div class="text-[10px] font-bold text-pink-500">TOP 2</div><div class="text-xl font-black text-rose-500 mt-1">24%</div></div>
+                <div class="bg-pink-50/60 rounded-xl p-3 text-center border border-pink-100"><div class="text-[10px] font-bold text-pink-500">TOP 3</div><div class="text-xl font-black text-rose-500 mt-1">20%</div></div>
+                <div class="bg-pink-50/40 rounded-xl p-3 text-center border border-pink-100"><div class="text-[10px] font-bold text-pink-400">TOP 4</div><div class="text-xl font-black text-rose-400 mt-1">16%</div></div>
+                <div class="bg-pink-50/40 rounded-xl p-3 text-center border border-pink-100"><div class="text-[10px] font-bold text-pink-400">TOP 5</div><div class="text-xl font-black text-rose-400 mt-1">12%</div></div>
+              </div>
+            </div>
+
+            <!-- 일반 등급 카드들 -->
+            <div class="space-y-2">
+              <div class="bg-white/80 backdrop-blur rounded-2xl p-4 flex items-center gap-3 border border-amber-100 shadow-sm">
+                <div class="text-2xl">🍰</div>
+                <div class="flex-1"><div class="text-sm font-black text-gray-800">티라미슈 <span class="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded ml-1">TOP 21 ~ 31</span></div><div class="text-[11px] text-gray-500">부캐 All 면제 + 수동 24개</div></div>
+              </div>
+              <div class="bg-white/80 backdrop-blur rounded-2xl p-4 flex items-center gap-3 border border-orange-100 shadow-sm">
+                <div class="text-2xl">🥐</div>
+                <div class="flex-1"><div class="text-sm font-black text-gray-800">크로아상 <span class="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded ml-1">수로 90,000+</span></div><div class="text-[11px] text-gray-500">부캐 All 면제</div></div>
+              </div>
+              <div class="bg-white/80 backdrop-blur rounded-2xl p-4 flex items-center gap-3 border border-violet-100 shadow-sm">
+                <div class="text-2xl">🎂</div>
+                <div class="flex-1"><div class="text-sm font-black text-gray-800">롤케이크 <span class="text-[10px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded ml-1">수로 55,000 ~ 89,999</span></div><div class="text-[11px] text-gray-500">부캐 절반 면제</div></div>
+              </div>
+              <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-4 flex items-center gap-3 border border-emerald-200 shadow-sm">
+                <div class="text-2xl">🧇</div>
+                <div class="flex-1"><div class="text-sm font-black text-gray-800">와플 <span class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded ml-1">본캐 95,000+ (부캐 전용 적용)</span></div></div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500"><i class="fas fa-info-circle mr-1"></i>현재 톤 유지·정제판. 차이가 작아 적응 비용 0. 사이드바·콘텐츠 모두 부드러운 핑크 그라데이션</div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- 시안 B: 다크 게이밍 (네온 핑크) -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <section id="B">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-purple-600 text-white rounded">시안 B</div>
+      <h2 class="text-lg font-black text-gray-800">다크 게이밍 (네온 핑크)</h2>
+    </div>
+
+    <div class="bg-[#0f0f14] rounded-2xl shadow-lg overflow-hidden border border-purple-900/40">
+      <div class="flex h-[760px]">
+        <aside class="w-56 bg-black/40 border-r border-purple-900/40 flex flex-col">
+          <div class="p-4 border-b border-purple-900/40 flex items-center gap-2">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 neon-box flex items-center justify-center text-white"><i class="fas fa-cookie-bite text-sm"></i></div>
+            <div>
+              <div class="text-xs font-black text-white">뚠카롱 길드</div>
+              <div class="text-[9px] text-pink-400 font-bold">ADMIN</div>
+            </div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-2 space-y-0.5 text-[11px]">
+            <div class="nav-active-dark rounded-lg px-3 py-2 font-black flex items-center gap-2"><i class="fas fa-home w-4"></i>홈</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-users w-4 text-pink-500"></i>길드원</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-chart-line w-4 text-pink-500"></i>수로 분석</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-arrow-up-right-dots w-4 text-pink-500"></i>승강제</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-chart-pie w-4 text-pink-500"></i>현황</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-gift w-4 text-pink-500"></i>수로 보상</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-clipboard w-4 text-pink-500"></i>게시판</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-heart w-4 text-pink-500"></i>뚠뚠 버디</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-gem w-4 text-pink-500"></i>보석금</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-user-plus w-4 text-pink-500"></i>가입 신청</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-circle-question w-4 text-pink-500"></i>면제 신청</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-book-open w-4 text-pink-500"></i>사용 안내</div>
+            <div class="text-gray-400 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center justify-between"><span class="flex items-center gap-2"><i class="fas fa-user-shield w-4 text-pink-500"></i>이중길드 감사</span><span class="text-[9px] font-black bg-pink-500 text-white px-1.5 rounded-full neon-box">16</span></div>
+            <div class="text-[9px] text-purple-400 font-bold uppercase tracking-wider px-3 pt-3 pb-1">관리자</div>
+            <div class="text-gray-500 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-clock-rotate-left w-4 text-pink-500"></i>이력</div>
+            <div class="text-gray-500 hover:bg-white/5 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-cog w-4 text-pink-500"></i>설정</div>
+          </nav>
+          <div class="p-3 border-t border-purple-900/40 text-[9px] text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-400 rounded-full" style="box-shadow:0 0 6px #34d399"></span>SUPABASE CONNECTED</div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto scrollbar-hide bg-gradient-to-br from-[#0f0f14] via-[#1a1025] to-[#0f0f14]">
+          <header class="sticky top-0 bg-black/70 backdrop-blur border-b border-purple-900/40 px-6 py-3 flex items-center gap-2 flex-wrap z-10">
+            <h2 class="text-base font-black text-white neon-pink">홈</h2>
+            <div class="flex gap-1 ml-3 flex-wrap">
+              <span class="px-2 py-0.5 text-[10px] font-black bg-pink-500/20 text-pink-300 rounded-full border border-pink-500/30">뚠 199</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-orange-500/20 text-orange-300 rounded-full border border-orange-500/30">뚱 162</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-yellow-500/20 text-yellow-300 rounded-full border border-yellow-500/30">별 197</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30">별 190</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-rose-500/20 text-rose-300 rounded-full border border-rose-500/30">별 181</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-violet-500/20 text-violet-300 rounded-full border border-violet-500/30">솔 171</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/30">솜 107</span>
+            </div>
+            <div class="ml-auto flex items-center gap-2 text-xs">
+              <span class="px-2 py-1 bg-amber-500/10 text-amber-300 rounded-lg font-black border border-amber-500/20"><i class="fas fa-cookie-bite mr-1"></i>2260일</span>
+              <span class="px-2 py-1 bg-pink-500/10 text-pink-300 rounded-lg font-black border border-pink-500/20"><i class="fas fa-users mr-1"></i>오늘 8명</span>
+              <button class="w-8 h-8 rounded-full bg-white/5 text-gray-400"><i class="fas fa-sun text-xs"></i></button>
+              <button class="w-8 h-8 rounded-full bg-white/5 text-gray-400"><i class="fas fa-rotate text-xs"></i></button>
+              <span class="text-[11px] font-black text-white">너굴님</span>
+              <button class="w-8 h-8 rounded-full bg-pink-500/20 text-pink-400"><i class="fas fa-sign-out-alt text-xs"></i></button>
+            </div>
+          </header>
+
+          <div class="p-6 space-y-5">
+            <div class="flex gap-1 flex-wrap">
+              <button class="px-3 py-1.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl text-[11px] font-black neon-box">📢 A. 수로 상시 이벤트</button>
+              <button class="px-3 py-1.5 bg-white/5 border border-purple-900/40 text-gray-400 rounded-xl text-[11px] font-bold">📢 B. 뚠뚠 버디</button>
+              <button class="px-3 py-1.5 bg-white/5 border border-purple-900/40 text-gray-400 rounded-xl text-[11px] font-bold">📢 승강제 안내</button>
+              <button class="px-3 py-1.5 bg-white/5 border border-purple-900/40 text-gray-400 rounded-xl text-[11px] font-bold">🌸 길드 소개</button>
+              <button class="px-3 py-1.5 bg-white/5 border border-purple-900/40 text-gray-400 rounded-xl text-[11px] font-bold">👥 직위 & 부캐</button>
+              <button class="ml-auto px-3 py-1.5 bg-white/5 border border-pink-500/40 text-pink-400 rounded-xl text-[11px] font-bold">✏️ 편집</button>
+            </div>
+
+            <div class="bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-pink-500/20 backdrop-blur rounded-3xl p-5 border border-pink-500/30 neon-box">
+              <div class="flex items-center gap-3">
+                <div class="text-3xl">🎁</div>
+                <div>
+                  <h3 class="text-base font-black text-white">분기별 수로 직위 점수 기준 및 보상</h3>
+                  <p class="text-[11px] text-pink-200 mt-0.5">뚠카롱 길드 · 분기(3개월) 평균 점수</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white/5 backdrop-blur rounded-2xl p-4 border border-white/10">
+              <div class="flex items-center justify-between mb-3">
+                <div class="text-sm font-black text-white">👑 크라운 <span class="ml-1 text-[10px] font-bold text-pink-300 bg-pink-500/20 border border-pink-500/30 px-2 py-0.5 rounded">TOP 5</span></div>
+                <span class="text-[10px] font-black bg-gradient-to-r from-pink-500 to-rose-500 text-white px-2 py-1 rounded-lg neon-box">부캐 All + 100억</span>
+              </div>
+              <div class="grid grid-cols-5 gap-2">
+                <div class="bg-pink-500/10 border border-pink-500/40 rounded-xl p-3 text-center"><div class="text-[10px] font-bold text-pink-300">TOP 1</div><div class="text-xl font-black text-pink-400 mt-1 neon-pink">28%</div></div>
+                <div class="bg-pink-500/10 border border-pink-500/30 rounded-xl p-3 text-center"><div class="text-[10px] font-bold text-pink-300">TOP 2</div><div class="text-xl font-black text-pink-400 mt-1">24%</div></div>
+                <div class="bg-pink-500/5 border border-pink-500/20 rounded-xl p-3 text-center"><div class="text-[10px] font-bold text-pink-300">TOP 3</div><div class="text-xl font-black text-pink-400 mt-1">20%</div></div>
+                <div class="bg-pink-500/5 border border-pink-500/20 rounded-xl p-3 text-center"><div class="text-[10px] font-bold text-pink-300">TOP 4</div><div class="text-xl font-black text-pink-400 mt-1">16%</div></div>
+                <div class="bg-pink-500/5 border border-pink-500/20 rounded-xl p-3 text-center"><div class="text-[10px] font-bold text-pink-300">TOP 5</div><div class="text-xl font-black text-pink-400 mt-1">12%</div></div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="bg-white/5 rounded-2xl p-4 flex items-center gap-3 border border-amber-500/20"><div class="text-2xl">🍰</div><div class="flex-1"><div class="text-sm font-black text-white">티라미슈 <span class="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded ml-1">TOP 21~31</span></div><div class="text-[11px] text-gray-400">부캐 All 면제 + 수동 24개</div></div></div>
+              <div class="bg-white/5 rounded-2xl p-4 flex items-center gap-3 border border-orange-500/20"><div class="text-2xl">🥐</div><div class="flex-1"><div class="text-sm font-black text-white">크로아상 <span class="text-[10px] font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30 px-1.5 py-0.5 rounded ml-1">수로 90,000+</span></div><div class="text-[11px] text-gray-400">부캐 All 면제</div></div></div>
+              <div class="bg-white/5 rounded-2xl p-4 flex items-center gap-3 border border-violet-500/20"><div class="text-2xl">🎂</div><div class="flex-1"><div class="text-sm font-black text-white">롤케이크 <span class="text-[10px] font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30 px-1.5 py-0.5 rounded ml-1">55,000~89,999</span></div><div class="text-[11px] text-gray-400">부캐 절반 면제</div></div></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500"><i class="fas fa-info-circle mr-1"></i>다크 + 네온 글로우. 게임 사이트 감성 강함. 장시간 작업엔 눈 피로 가능</div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- 시안 C: 미니멀 화이트 (Linear/Notion 풍) -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <section id="C">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-gray-800 text-white rounded">시안 C</div>
+      <h2 class="text-lg font-black text-gray-800">미니멀 화이트 (업무툴 풍)</h2>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
+      <div class="flex h-[760px]">
+        <aside class="w-56 bg-gray-50 border-r border-gray-200 flex flex-col">
+          <div class="p-4 border-b border-gray-200 flex items-center gap-2">
+            <div class="w-9 h-9 rounded-lg bg-gray-900 flex items-center justify-center text-white text-xs font-black">뚠</div>
+            <div>
+              <div class="text-xs font-black text-gray-900">뚠카롱 길드</div>
+              <div class="text-[9px] text-gray-500 font-bold">ADMIN</div>
+            </div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-2 space-y-0.5 text-[11px]">
+            <div class="nav-active-mono rounded px-3 py-1.5 font-bold flex items-center gap-2"><i class="fas fa-home w-4 text-gray-700"></i>홈</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-users w-4 text-gray-400"></i>길드원</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-chart-line w-4 text-gray-400"></i>수로 분석</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-arrow-up-right-dots w-4 text-gray-400"></i>승강제</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-chart-pie w-4 text-gray-400"></i>현황</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-gift w-4 text-gray-400"></i>수로 보상</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-clipboard w-4 text-gray-400"></i>게시판</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-heart w-4 text-gray-400"></i>뚠뚠 버디</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-gem w-4 text-gray-400"></i>보석금</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-user-plus w-4 text-gray-400"></i>가입 신청</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-circle-question w-4 text-gray-400"></i>면제 신청</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-book-open w-4 text-gray-400"></i>사용 안내</div>
+            <div class="text-gray-600 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center justify-between"><span class="flex items-center gap-2"><i class="fas fa-user-shield w-4 text-gray-400"></i>이중길드 감사</span><span class="text-[9px] font-bold bg-pink-600 text-white px-1.5 rounded-full">16</span></div>
+            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider px-3 pt-3 pb-1">관리자</div>
+            <div class="text-gray-500 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-clock-rotate-left w-4 text-gray-400"></i>이력</div>
+            <div class="text-gray-500 hover:bg-gray-100 rounded px-3 py-1.5 font-medium flex items-center gap-2"><i class="fas fa-cog w-4 text-gray-400"></i>설정</div>
+          </nav>
+          <div class="p-3 border-t border-gray-200 text-[9px] text-emerald-600 font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>SUPABASE CONNECTED</div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto scrollbar-hide bg-white">
+          <header class="sticky top-0 bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-2 flex-wrap z-10">
+            <h2 class="text-base font-black text-gray-900">홈</h2>
+            <div class="flex gap-1 ml-3 flex-wrap">
+              <span class="px-2 py-0.5 text-[10px] font-bold text-gray-700 border border-gray-200 rounded">뚠 199</span>
+              <span class="px-2 py-0.5 text-[10px] font-bold text-gray-700 border border-gray-200 rounded">뚱 162</span>
+              <span class="px-2 py-0.5 text-[10px] font-bold text-gray-700 border border-gray-200 rounded">별 197</span>
+              <span class="px-2 py-0.5 text-[10px] font-bold text-gray-700 border border-gray-200 rounded">별 190</span>
+              <span class="px-2 py-0.5 text-[10px] font-bold text-gray-700 border border-gray-200 rounded">별 181</span>
+              <span class="px-2 py-0.5 text-[10px] font-bold text-gray-700 border border-gray-200 rounded">솔 171</span>
+              <span class="px-2 py-0.5 text-[10px] font-bold text-gray-700 border border-gray-200 rounded">솜 107</span>
+            </div>
+            <div class="ml-auto flex items-center gap-2 text-xs">
+              <span class="px-2 py-1 text-amber-700 font-bold"><i class="fas fa-cookie-bite mr-1 text-amber-500"></i>2260일</span>
+              <span class="px-2 py-1 text-gray-700 font-bold"><i class="fas fa-users mr-1 text-gray-400"></i>오늘 8명</span>
+              <button class="w-8 h-8 rounded text-gray-500 hover:bg-gray-100"><i class="fas fa-moon text-xs"></i></button>
+              <button class="w-8 h-8 rounded text-gray-500 hover:bg-gray-100"><i class="fas fa-rotate text-xs"></i></button>
+              <span class="text-[11px] font-bold text-gray-900">너굴님</span>
+              <button class="w-8 h-8 rounded text-gray-500 hover:bg-gray-100"><i class="fas fa-sign-out-alt text-xs"></i></button>
+            </div>
+          </header>
+
+          <div class="p-6 space-y-5">
+            <div class="flex gap-0 border-b border-gray-200 flex-wrap">
+              <button class="px-3 py-2 text-[11px] font-bold text-gray-900 border-b-2 border-pink-600">A. 수로 상시 이벤트</button>
+              <button class="px-3 py-2 text-[11px] font-medium text-gray-500 hover:text-gray-700">B. 뚠뚠 버디 이벤트</button>
+              <button class="px-3 py-2 text-[11px] font-medium text-gray-500">승강제 안내</button>
+              <button class="px-3 py-2 text-[11px] font-medium text-gray-500">길드 소개</button>
+              <button class="px-3 py-2 text-[11px] font-medium text-gray-500">직위 & 부캐</button>
+              <button class="ml-auto px-3 py-2 text-[11px] font-medium text-pink-600">편집</button>
+            </div>
+
+            <div class="border-l-4 border-pink-500 bg-pink-50/40 rounded-r-lg p-4">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-gift text-pink-500"></i>
+                <h3 class="text-base font-black text-gray-900">분기별 수로 직위 점수 기준 및 보상</h3>
+              </div>
+              <p class="text-[11px] text-gray-600 mt-1 ml-6">뚠카롱 길드 · 분기(3개월) 평균 점수 기준</p>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-black text-gray-900">크라운 <span class="ml-1 text-[10px] font-medium text-gray-500">TOP 5</span></div>
+                <span class="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200 px-2 py-1 rounded">부캐 All 면제 + 100억</span>
+              </div>
+              <div class="grid grid-cols-5 border border-gray-200 rounded-lg divide-x divide-gray-100 overflow-hidden">
+                <div class="p-3 text-center"><div class="text-[10px] font-medium text-gray-500">TOP 1</div><div class="text-xl font-black text-gray-900 mt-1">28<span class="text-xs text-gray-400">%</span></div></div>
+                <div class="p-3 text-center"><div class="text-[10px] font-medium text-gray-500">TOP 2</div><div class="text-xl font-black text-gray-900 mt-1">24<span class="text-xs text-gray-400">%</span></div></div>
+                <div class="p-3 text-center"><div class="text-[10px] font-medium text-gray-500">TOP 3</div><div class="text-xl font-black text-gray-900 mt-1">20<span class="text-xs text-gray-400">%</span></div></div>
+                <div class="p-3 text-center"><div class="text-[10px] font-medium text-gray-500">TOP 4</div><div class="text-xl font-black text-gray-900 mt-1">16<span class="text-xs text-gray-400">%</span></div></div>
+                <div class="p-3 text-center"><div class="text-[10px] font-medium text-gray-500">TOP 5</div><div class="text-xl font-black text-gray-900 mt-1">12<span class="text-xs text-gray-400">%</span></div></div>
+              </div>
+            </div>
+
+            <div class="divide-y divide-gray-100 border-y border-gray-100">
+              <div class="py-3 flex items-center gap-3 hover:bg-gray-50 px-2 -mx-2 rounded"><div class="w-2 h-8 rounded bg-amber-400"></div><div class="flex-1"><div class="text-sm font-bold text-gray-900">티라미슈 <span class="text-[10px] font-medium text-gray-500 ml-1">TOP 21 ~ 31</span></div><div class="text-[11px] text-gray-500 mt-0.5">부캐 All 면제 + 수동 24개</div></div></div>
+              <div class="py-3 flex items-center gap-3 hover:bg-gray-50 px-2 -mx-2 rounded"><div class="w-2 h-8 rounded bg-orange-400"></div><div class="flex-1"><div class="text-sm font-bold text-gray-900">크로아상 <span class="text-[10px] font-medium text-gray-500 ml-1">수로 90,000+</span></div><div class="text-[11px] text-gray-500 mt-0.5">부캐 All 면제</div></div></div>
+              <div class="py-3 flex items-center gap-3 hover:bg-gray-50 px-2 -mx-2 rounded"><div class="w-2 h-8 rounded bg-violet-400"></div><div class="flex-1"><div class="text-sm font-bold text-gray-900">롤케이크 <span class="text-[10px] font-medium text-gray-500 ml-1">수로 55,000 ~ 89,999</span></div><div class="text-[11px] text-gray-500 mt-0.5">부캐 절반 면제</div></div></div>
+              <div class="py-3 flex items-center gap-3 hover:bg-gray-50 px-2 -mx-2 rounded"><div class="w-2 h-8 rounded bg-emerald-400"></div><div class="flex-1"><div class="text-sm font-bold text-gray-900">와플 <span class="text-[10px] font-medium text-gray-500 ml-1">본캐 95,000+</span></div></div></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500"><i class="fas fa-info-circle mr-1"></i>정보 밀도 ↑·가독성 ↑. 노션/리니어 풍. 캐주얼 길드 색은 사라짐</div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- 시안 D: 글래스모피즘 -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <section id="D">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-cyan-500 text-white rounded">시안 D</div>
+      <h2 class="text-lg font-black text-gray-800">글래스모피즘 (Apple 풍)</h2>
+    </div>
+
+    <div class="rounded-2xl shadow-lg overflow-hidden border border-white/40 mesh-glass">
+      <div class="flex h-[760px]">
+        <aside class="w-56 bg-white/20 glass border-r border-white/30 flex flex-col">
+          <div class="p-4 border-b border-white/30 flex items-center gap-2">
+            <div class="w-9 h-9 rounded-2xl bg-white/40 glass border border-white/60 flex items-center justify-center text-white"><i class="fas fa-cookie-bite text-sm"></i></div>
+            <div>
+              <div class="text-xs font-black text-white drop-shadow">뚠카롱 길드</div>
+              <div class="text-[9px] text-white/80 font-bold">ADMIN</div>
+            </div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-2 space-y-0.5 text-[11px]">
+            <div class="bg-white/30 glass border border-white/40 rounded-lg px-3 py-2 font-black text-white flex items-center gap-2"><i class="fas fa-home w-4"></i>홈</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-users w-4"></i>길드원</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-chart-line w-4"></i>수로 분석</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-arrow-up-right-dots w-4"></i>승강제</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-chart-pie w-4"></i>현황</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-gift w-4"></i>수로 보상</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-clipboard w-4"></i>게시판</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-heart w-4"></i>뚠뚠 버디</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-gem w-4"></i>보석금</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-user-plus w-4"></i>가입 신청</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-circle-question w-4"></i>면제 신청</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-book-open w-4"></i>사용 안내</div>
+            <div class="text-white/80 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center justify-between"><span class="flex items-center gap-2"><i class="fas fa-user-shield w-4"></i>이중길드 감사</span><span class="text-[9px] font-black bg-rose-500/80 backdrop-blur text-white px-1.5 rounded-full">16</span></div>
+            <div class="text-[9px] text-white/70 font-bold uppercase tracking-wider px-3 pt-3 pb-1">관리자</div>
+            <div class="text-white/70 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-clock-rotate-left w-4"></i>이력</div>
+            <div class="text-white/70 hover:bg-white/15 rounded-lg px-3 py-2 font-bold flex items-center gap-2"><i class="fas fa-cog w-4"></i>설정</div>
+          </nav>
+          <div class="p-3 border-t border-white/30 text-[9px] text-white font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 bg-emerald-300 rounded-full"></span>SUPABASE CONNECTED</div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto scrollbar-hide">
+          <header class="sticky top-0 bg-white/20 glass border-b border-white/30 px-6 py-3 flex items-center gap-2 flex-wrap z-10">
+            <h2 class="text-base font-black text-white drop-shadow">홈</h2>
+            <div class="flex gap-1 ml-3 flex-wrap">
+              <span class="px-2 py-0.5 text-[10px] font-black bg-white/30 glass text-white border border-white/40 rounded-full">뚠 199</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-white/30 glass text-white border border-white/40 rounded-full">뚱 162</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-white/30 glass text-white border border-white/40 rounded-full">별 197</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-white/30 glass text-white border border-white/40 rounded-full">별 190</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-white/30 glass text-white border border-white/40 rounded-full">별 181</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-white/30 glass text-white border border-white/40 rounded-full">솔 171</span>
+              <span class="px-2 py-0.5 text-[10px] font-black bg-white/30 glass text-white border border-white/40 rounded-full">솜 107</span>
+            </div>
+            <div class="ml-auto flex items-center gap-2 text-xs">
+              <span class="px-2 py-1 bg-white/30 glass text-white rounded-lg font-black border border-white/40">2260일</span>
+              <span class="px-2 py-1 bg-white/30 glass text-white rounded-lg font-black border border-white/40">오늘 8명</span>
+              <button class="w-8 h-8 rounded-full bg-white/20 glass text-white border border-white/40"><i class="fas fa-moon text-xs"></i></button>
+              <button class="w-8 h-8 rounded-full bg-white/20 glass text-white border border-white/40"><i class="fas fa-rotate text-xs"></i></button>
+              <span class="text-[11px] font-black text-white drop-shadow">너굴님</span>
+              <button class="w-8 h-8 rounded-full bg-red-500/40 glass text-white border border-white/40"><i class="fas fa-sign-out-alt text-xs"></i></button>
+            </div>
+          </header>
+
+          <div class="p-6 space-y-5">
+            <div class="flex gap-1 flex-wrap">
+              <button class="px-3 py-1.5 bg-white/40 glass border border-white/60 text-white rounded-xl text-[11px] font-black shadow-lg">📢 A. 수로 상시 이벤트</button>
+              <button class="px-3 py-1.5 bg-white/20 glass border border-white/30 text-white/80 rounded-xl text-[11px] font-bold">📢 B. 뚠뚠 버디</button>
+              <button class="px-3 py-1.5 bg-white/20 glass border border-white/30 text-white/80 rounded-xl text-[11px] font-bold">📢 승강제 안내</button>
+              <button class="px-3 py-1.5 bg-white/20 glass border border-white/30 text-white/80 rounded-xl text-[11px] font-bold">🌸 길드 소개</button>
+              <button class="ml-auto px-3 py-1.5 bg-white/20 glass border border-white/30 text-white rounded-xl text-[11px] font-bold">✏️ 편집</button>
+            </div>
+
+            <div class="bg-white/30 glass rounded-3xl p-5 border border-white/40 shadow-xl">
+              <div class="flex items-center gap-3">
+                <div class="text-3xl">🎁</div>
+                <div>
+                  <h3 class="text-base font-black text-white drop-shadow">분기별 수로 직위 점수 기준 및 보상</h3>
+                  <p class="text-[11px] text-white/80 mt-0.5">뚠카롱 길드 · 분기(3개월) 평균 점수</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white/30 glass rounded-2xl p-4 border border-white/40 shadow-xl">
+              <div class="flex items-center justify-between mb-3">
+                <div class="text-sm font-black text-white drop-shadow">👑 크라운 <span class="ml-1 text-[10px] font-bold bg-white/30 text-white border border-white/40 px-2 py-0.5 rounded">TOP 5</span></div>
+                <span class="text-[10px] font-black bg-rose-500/60 glass text-white border border-white/40 px-2 py-1 rounded-lg">부캐 All + 100억</span>
+              </div>
+              <div class="grid grid-cols-5 gap-2">
+                <div class="bg-white/40 glass rounded-xl p-3 text-center border border-white/50"><div class="text-[10px] font-bold text-white">TOP 1</div><div class="text-xl font-black text-white mt-1 drop-shadow">28%</div></div>
+                <div class="bg-white/40 glass rounded-xl p-3 text-center border border-white/50"><div class="text-[10px] font-bold text-white">TOP 2</div><div class="text-xl font-black text-white mt-1 drop-shadow">24%</div></div>
+                <div class="bg-white/30 glass rounded-xl p-3 text-center border border-white/40"><div class="text-[10px] font-bold text-white">TOP 3</div><div class="text-xl font-black text-white mt-1 drop-shadow">20%</div></div>
+                <div class="bg-white/30 glass rounded-xl p-3 text-center border border-white/40"><div class="text-[10px] font-bold text-white">TOP 4</div><div class="text-xl font-black text-white mt-1 drop-shadow">16%</div></div>
+                <div class="bg-white/30 glass rounded-xl p-3 text-center border border-white/40"><div class="text-[10px] font-bold text-white">TOP 5</div><div class="text-xl font-black text-white mt-1 drop-shadow">12%</div></div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="bg-white/30 glass rounded-2xl p-4 flex items-center gap-3 border border-white/40"><div class="text-2xl">🍰</div><div class="flex-1"><div class="text-sm font-black text-white drop-shadow">티라미슈 <span class="text-[10px] bg-white/30 text-white border border-white/40 px-1.5 py-0.5 rounded ml-1">TOP 21~31</span></div><div class="text-[11px] text-white/80">부캐 All 면제 + 수동 24개</div></div></div>
+              <div class="bg-white/30 glass rounded-2xl p-4 flex items-center gap-3 border border-white/40"><div class="text-2xl">🥐</div><div class="flex-1"><div class="text-sm font-black text-white drop-shadow">크로아상 <span class="text-[10px] bg-white/30 text-white border border-white/40 px-1.5 py-0.5 rounded ml-1">수로 90,000+</span></div><div class="text-[11px] text-white/80">부캐 All 면제</div></div></div>
+              <div class="bg-white/30 glass rounded-2xl p-4 flex items-center gap-3 border border-white/40"><div class="text-2xl">🎂</div><div class="flex-1"><div class="text-sm font-black text-white drop-shadow">롤케이크 <span class="text-[10px] bg-white/30 text-white border border-white/40 px-1.5 py-0.5 rounded ml-1">55,000~89,999</span></div><div class="text-[11px] text-white/80">부캐 절반 면제</div></div></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500"><i class="fas fa-info-circle mr-1"></i>모던·고급. 흰 글자 가독성·작은 글자 한계. 작업 도구로는 무리</div>
+  </section>
+
+  <!-- 결정 -->
+  <section class="bg-white rounded-2xl p-6 border border-gray-200">
+    <h3 class="font-black text-gray-800 mb-3 text-lg"><i class="fas fa-list-check text-pink-500 mr-1"></i>다음 단계</h3>
+    <div class="text-sm text-gray-700 leading-relaxed space-y-2">
+      <p>이렇게 실제 페이지 구조 그대로 4가지 톤으로 보여드렸어요. 마음에 드는 시안 알려주시면:</p>
+      <ol class="list-decimal list-inside text-[12px] text-gray-600 space-y-1 ml-2">
+        <li>다른 핵심 페이지(길드원·이중길드 감사·신청 처리)도 같은 톤으로 풀 미리보기 제작</li>
+        <li>OK 떨어지면 본 코드(<code class="text-pink-600">index.html</code>)에 점진 적용 — Tailwind 클래스만 바꾸면 되는 부분부터 / 구조 바뀌는 부분은 별도 단계</li>
+        <li>안전망: <code class="text-emerald-600">v1-pre-redesign</code> 태그로 언제든 회귀 가능</li>
+      </ol>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

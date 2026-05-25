@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>guild-manager — 사이드바 메뉴 정리 시안</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', -apple-system, system-ui, sans-serif; background: #f3f4f6; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-7xl mx-auto space-y-10">
+
+  <header class="text-center pb-2 border-b border-gray-300">
+    <h1 class="text-2xl font-black text-gray-800">사이드바 메뉴 정리 — 4가지 안</h1>
+    <p class="text-sm text-gray-500 mt-1">현재 22개 메뉴 → 그룹화/접기/아이콘 슬림 등으로 정리</p>
+  </header>
+
+  <!-- 현재 상태 (문제) -->
+  <section>
+    <div class="text-[11px] font-bold text-red-500 mb-2 uppercase">현재 (문제)</div>
+    <div class="grid grid-cols-5 gap-4">
+      <div class="col-span-1">
+        <div class="bg-white rounded-2xl border-2 border-red-200 shadow-sm w-56 h-[640px] flex flex-col overflow-hidden">
+          <div class="p-3 border-b border-gray-100 flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-pink-400"></div>
+            <div class="text-[10px] font-black text-gray-800">뚠카롱 길드</div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-1.5 space-y-0 text-[10px]">
+            <div class="px-2 py-1 font-bold bg-pink-100 text-pink-700 rounded">🏠 홈</div>
+            <div class="px-2 py-1 text-gray-700">👥 길드원</div>
+            <div class="px-2 py-1 text-gray-700">📊 수로 분석</div>
+            <div class="px-2 py-1 text-gray-700">📈 승강제</div>
+            <div class="px-2 py-1 text-gray-700">🥧 현황</div>
+            <div class="px-2 py-1 text-gray-700">🎁 수로 보상</div>
+            <div class="px-2 py-1 text-gray-700">📋 게시판</div>
+            <div class="px-2 py-1 text-gray-700">💕 뚠뚠 버디</div>
+            <div class="px-2 py-1 text-gray-700">📑 시트 관리</div>
+            <div class="px-2 py-1 text-gray-700">⚒️ 아이템 컨설팅</div>
+            <div class="px-2 py-1 text-gray-700">💎 보석금</div>
+            <div class="px-2 py-1 text-gray-700">⚠️ 벌점</div>
+            <div class="px-2 py-1 text-gray-700">➕ 가입 신청</div>
+            <div class="px-2 py-1 text-gray-700">❓ 면제 신청</div>
+            <div class="px-2 py-1 text-gray-700">💎 보석금 신청</div>
+            <div class="px-2 py-1 text-gray-700">📖 사용 안내</div>
+            <div class="px-2 py-1 text-gray-700">📥 신청 처리</div>
+            <div class="px-2 py-1 text-gray-700">✅ 운영진 할 일</div>
+            <div class="px-2 py-1 text-gray-700 flex justify-between">🛡️ 이중길드<span class="bg-red-500 text-white text-[8px] rounded-full px-1">16</span></div>
+            <div class="text-[8px] text-gray-400 px-2 pt-2 uppercase">관리자</div>
+            <div class="px-2 py-1 text-gray-500">⏱️ 이력</div>
+            <div class="px-2 py-1 text-gray-500">📝 수로 입력</div>
+            <div class="px-2 py-1 text-gray-500">⚙️ 직위 반영</div>
+            <div class="px-2 py-1 text-gray-500">📖 가이드 편집</div>
+            <div class="px-2 py-1 text-gray-500">🔄 동기화</div>
+            <div class="px-2 py-1 text-gray-500">🗄️ DB 시트</div>
+            <div class="px-2 py-1 text-gray-500">⚙️ 설정</div>
+          </nav>
+        </div>
+      </div>
+      <div class="col-span-4 bg-red-50 border border-red-200 rounded-2xl p-4">
+        <h3 class="text-base font-black text-red-700 mb-2"><i class="fas fa-triangle-exclamation mr-1"></i>현재 문제</h3>
+        <ul class="text-[12px] text-gray-700 space-y-1 leading-relaxed">
+          <li>· 메뉴 <strong>26개</strong> · 스크롤 필수 · 찾기 어려움</li>
+          <li>· 비슷한 메뉴가 흩어짐 (예: <strong>보석금 / 보석금 신청 / 벌점</strong>이 세 곳에 분산)</li>
+          <li>· "신청" 계열만 5개 (가입신청, 면제신청, 보석금신청, 신청처리, 운영진할일)</li>
+          <li>· "분석/데이터" 계열도 5개 (수로 분석, 승강제, 현황, 수로 보상, 시트 관리, 컨설팅)</li>
+          <li>· 관리자 메뉴만 카테고리화돼 있고 나머진 평면적</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- 시안 A: 카테고리 그룹화 (가장 가벼움) -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-emerald-500 text-white rounded">시안 A</div>
+      <h2 class="text-lg font-black text-gray-800">카테고리 헤더 그룹화 <span class="text-xs font-bold text-emerald-600 ml-1">(가장 가벼움 · 추천)</span></h2>
+    </div>
+    <div class="grid grid-cols-5 gap-4">
+      <div class="col-span-1">
+        <div class="bg-white rounded-2xl border border-emerald-200 shadow-md w-56 h-[640px] flex flex-col overflow-hidden">
+          <div class="p-3 border-b border-gray-100 flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-pink-400"></div>
+            <div class="text-[10px] font-black text-gray-800">뚠카롱 길드</div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-1.5 space-y-0.5 text-[10.5px]">
+            <div class="px-2 py-1.5 font-bold bg-pink-100 text-pink-700 rounded">🏠 홈</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">길드원</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">👥 길드원</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">📊 수로 분석</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">📈 승강제·현황</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">🎁 수로 보상</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">운영</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">📥 신청 처리</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">💎 보석금·벌점</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">✅ 운영진 할 일</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded flex justify-between">🛡️ 이중길드<span class="bg-red-500 text-white text-[8px] rounded-full px-1">16</span></div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">컨텐츠</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">📋 게시판</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">💕 뚠뚠 버디</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">⚒️ 아이템 컨설팅</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">📖 사용 안내</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">신청 (멤버용)</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">➕ 가입 신청</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">❓ 면제·보석금</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">관리자</div>
+            <div class="px-2 py-1.5 text-gray-500 hover:bg-gray-50 rounded">⚙️ 설정 (이력·수로입력·DB 등)</div>
+          </nav>
+        </div>
+      </div>
+      <div class="col-span-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+        <h3 class="text-base font-black text-emerald-700 mb-2"><i class="fas fa-check mr-1"></i>장점</h3>
+        <ul class="text-[12px] text-gray-700 space-y-1 leading-relaxed mb-3">
+          <li>· 메뉴 <strong>26개 → 16개</strong> (4-5개 통합)</li>
+          <li>· <strong>5개 카테고리</strong>(길드원·운영·컨텐츠·신청·관리자)로 한눈에 분류</li>
+          <li>· 통합 메뉴 안에 탭으로 분리 (보석금 + 벌점 / 면제 + 보석금 신청 / 승강제 + 현황 등)</li>
+          <li>· 관리자 메뉴 7개를 "설정" 안의 탭으로 모음 (자주 안 씀)</li>
+          <li>· <strong>스크롤 거의 없음</strong>, 코드 변경 최소</li>
+        </ul>
+        <h4 class="text-[11px] font-black text-gray-700 mb-1">메뉴 통합 매핑</h4>
+        <table class="w-full text-[10.5px]">
+          <thead class="text-gray-500 border-b border-gray-200"><tr><th class="text-left py-1">통합 후</th><th class="text-left">원래 메뉴들</th></tr></thead>
+          <tbody class="text-gray-700">
+            <tr class="border-b border-gray-100"><td class="py-1 font-bold">승강제·현황</td><td>승강제 + 현황</td></tr>
+            <tr class="border-b border-gray-100"><td class="py-1 font-bold">보석금·벌점</td><td>보석금 + 벌점 (탭으로 분리)</td></tr>
+            <tr class="border-b border-gray-100"><td class="py-1 font-bold">면제·보석금 (신청)</td><td>면제 신청 + 보석금 신청 (탭)</td></tr>
+            <tr><td class="py-1 font-bold">설정 (1개)</td><td>이력 + 수로 입력 + 직위 반영 + 가이드 편집 + 동기화 + DB 시트 + 설정 → 좌측 탭형 모달</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- 시안 B: 접히는 아코디언 -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-blue-500 text-white rounded">시안 B</div>
+      <h2 class="text-lg font-black text-gray-800">접히는 아코디언 그룹</h2>
+    </div>
+    <div class="grid grid-cols-5 gap-4">
+      <div class="col-span-1">
+        <div class="bg-white rounded-2xl border border-blue-200 shadow-md w-56 h-[640px] flex flex-col overflow-hidden">
+          <div class="p-3 border-b border-gray-100 flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-pink-400"></div>
+            <div class="text-[10px] font-black text-gray-800">뚠카롱 길드</div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-1.5 space-y-0.5 text-[10.5px]">
+            <div class="px-2 py-1.5 font-bold bg-pink-100 text-pink-700 rounded">🏠 홈</div>
+
+            <div class="px-2 py-1.5 text-gray-800 font-black bg-blue-50 rounded flex items-center justify-between cursor-pointer"><span>👥 길드원</span><i class="fas fa-chevron-down text-[8px]"></i></div>
+            <div class="pl-5 space-y-0.5">
+              <div class="px-2 py-1 text-gray-600 text-[10px]">· 멤버 목록</div>
+              <div class="px-2 py-1 text-gray-600 text-[10px]">· 수로 분석</div>
+              <div class="px-2 py-1 text-gray-600 text-[10px]">· 승강제</div>
+              <div class="px-2 py-1 text-gray-600 text-[10px]">· 현황</div>
+              <div class="px-2 py-1 text-gray-600 text-[10px]">· 수로 보상</div>
+            </div>
+
+            <div class="px-2 py-1.5 text-gray-700 font-black rounded flex items-center justify-between cursor-pointer"><span>⚙️ 운영</span><i class="fas fa-chevron-right text-[8px]"></i></div>
+            <div class="px-2 py-1.5 text-gray-700 font-black rounded flex items-center justify-between cursor-pointer"><span>💬 컨텐츠</span><i class="fas fa-chevron-right text-[8px]"></i></div>
+            <div class="px-2 py-1.5 text-gray-700 font-black rounded flex items-center justify-between cursor-pointer"><span>📝 신청 (멤버)</span><i class="fas fa-chevron-right text-[8px]"></i></div>
+            <div class="px-2 py-1.5 text-gray-700 font-black rounded flex items-center justify-between cursor-pointer"><span>🛠️ 관리자</span><i class="fas fa-chevron-right text-[8px]"></i></div>
+
+            <div class="px-2 py-1.5 mt-2 text-gray-700 hover:bg-gray-50 rounded flex justify-between font-bold">🛡️ 이중길드<span class="bg-red-500 text-white text-[8px] rounded-full px-1">16</span></div>
+          </nav>
+        </div>
+      </div>
+      <div class="col-span-4 bg-blue-50 border border-blue-200 rounded-2xl p-4">
+        <h3 class="text-base font-black text-blue-700 mb-2"><i class="fas fa-check mr-1"></i>장점/단점</h3>
+        <ul class="text-[12px] text-gray-700 space-y-1 leading-relaxed">
+          <li>✓ 사이드바 최단(<strong>6줄</strong>) · 처음 열면 깔끔</li>
+          <li>✓ 그룹별 카테고리 분명, 확장성 좋음</li>
+          <li>✗ <strong>2-step 클릭</strong> 필요 (그룹 펼침 → 메뉴 클릭)</li>
+          <li>✗ 자주 가는 메뉴도 매번 펼쳐야 함 (귀찮)</li>
+          <li>✗ 이중길드처럼 배지 있는 메뉴는 접혀있으면 안 보임 → 별도 표시 필요</li>
+          <li class="text-blue-700 font-bold mt-2">→ 메뉴가 50개+ 될 때 적합. 26개엔 과잉.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- 시안 C: 아이콘 슬림 사이드바 -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-purple-500 text-white rounded">시안 C</div>
+      <h2 class="text-lg font-black text-gray-800">아이콘 슬림 사이드바</h2>
+    </div>
+    <div class="grid grid-cols-5 gap-4">
+      <div class="col-span-1">
+        <div class="bg-white rounded-2xl border border-purple-200 shadow-md w-16 h-[640px] flex flex-col overflow-hidden">
+          <div class="p-2 border-b border-gray-100 flex justify-center">
+            <div class="w-9 h-9 rounded-xl bg-pink-400 flex items-center justify-center text-white text-[10px] font-black">뚠</div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide py-2 space-y-1 text-center">
+            <div class="mx-2 py-2 bg-pink-100 text-pink-700 rounded-lg" title="홈"><i class="fas fa-home text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="길드원"><i class="fas fa-users text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="수로 분석"><i class="fas fa-chart-line text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="승강제"><i class="fas fa-arrow-up-right-dots text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="보상"><i class="fas fa-gift text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="게시판"><i class="fas fa-clipboard text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="버디"><i class="fas fa-heart text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="컨설팅"><i class="fas fa-wrench text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="보석금/벌점"><i class="fas fa-gem text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="신청 처리"><i class="fas fa-inbox text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg" title="할 일"><i class="fas fa-check text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-500 hover:bg-gray-50 rounded-lg relative" title="이중길드"><i class="fas fa-user-shield text-sm"></i><span class="absolute top-0.5 right-1 bg-red-500 text-white text-[7px] rounded-full px-1 font-black">16</span></div>
+            <hr class="my-2 mx-3 border-gray-200">
+            <div class="mx-2 py-2 text-gray-400 hover:bg-gray-50 rounded-lg" title="안내"><i class="fas fa-book-open text-sm"></i></div>
+            <div class="mx-2 py-2 text-gray-400 hover:bg-gray-50 rounded-lg" title="설정"><i class="fas fa-cog text-sm"></i></div>
+          </nav>
+        </div>
+      </div>
+      <div class="col-span-4 bg-purple-50 border border-purple-200 rounded-2xl p-4">
+        <h3 class="text-base font-black text-purple-700 mb-2"><i class="fas fa-check mr-1"></i>장점/단점</h3>
+        <ul class="text-[12px] text-gray-700 space-y-1 leading-relaxed">
+          <li>✓ 콘텐츠 영역 <strong>크게 확보</strong> (사이드바 64px만)</li>
+          <li>✓ 시각적으로 깔끔, 모던</li>
+          <li>✓ 호버 시 툴팁으로 메뉴명 표시</li>
+          <li>✗ 아이콘만으로 메뉴 식별 어려움 (특히 비슷한 아이콘들)</li>
+          <li>✗ 운영진(자주 안 쓰는 메뉴 있음)에겐 학습 비용</li>
+          <li class="text-purple-700 font-bold mt-2">→ 토글로 펼침/축소 둘 다 지원하면 베스트 (햄버거 메뉴처럼)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- 시안 D: 즐겨찾기 + 정리 -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-amber-500 text-white rounded">시안 D</div>
+      <h2 class="text-lg font-black text-gray-800">즐겨찾기 핀 + 정리 (하이브리드)</h2>
+    </div>
+    <div class="grid grid-cols-5 gap-4">
+      <div class="col-span-1">
+        <div class="bg-white rounded-2xl border border-amber-200 shadow-md w-56 h-[640px] flex flex-col overflow-hidden">
+          <div class="p-3 border-b border-gray-100 flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-pink-400"></div>
+            <div class="text-[10px] font-black text-gray-800">뚠카롱 길드</div>
+          </div>
+          <nav class="flex-1 overflow-y-auto scrollbar-hide p-1.5 space-y-0.5 text-[10.5px]">
+
+            <div class="text-[8px] text-amber-600 px-2 pt-1 pb-0.5 uppercase font-black tracking-wider"><i class="fas fa-star mr-0.5"></i>즐겨찾기 (드래그로 추가)</div>
+            <div class="px-2 py-1.5 font-bold bg-pink-100 text-pink-700 rounded">🏠 홈</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded flex justify-between">🛡️ 이중길드<span class="bg-red-500 text-white text-[8px] rounded-full px-1">16</span></div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">📥 신청 처리</div>
+            <div class="px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded">✅ 운영진 할 일</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">길드원</div>
+            <div class="px-2 py-1 text-gray-600 hover:bg-gray-50 rounded text-[10px]">👥 멤버 · 수로 · 보상</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">운영</div>
+            <div class="px-2 py-1 text-gray-600 hover:bg-gray-50 rounded text-[10px]">💎 보석금·벌점</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">컨텐츠</div>
+            <div class="px-2 py-1 text-gray-600 hover:bg-gray-50 rounded text-[10px]">📋 게시판</div>
+            <div class="px-2 py-1 text-gray-600 hover:bg-gray-50 rounded text-[10px]">💕 뚠뚠 버디</div>
+            <div class="px-2 py-1 text-gray-600 hover:bg-gray-50 rounded text-[10px]">⚒️ 컨설팅</div>
+            <div class="px-2 py-1 text-gray-600 hover:bg-gray-50 rounded text-[10px]">📖 사용 안내</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">멤버 신청</div>
+            <div class="px-2 py-1 text-gray-600 hover:bg-gray-50 rounded text-[10px]">➕ 가입·면제·보석금</div>
+
+            <div class="text-[8px] text-gray-400 px-2 pt-2.5 pb-0.5 uppercase font-black tracking-wider">관리자</div>
+            <div class="px-2 py-1 text-gray-500 hover:bg-gray-50 rounded text-[10px]">⚙️ 설정</div>
+          </nav>
+        </div>
+      </div>
+      <div class="col-span-4 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        <h3 class="text-base font-black text-amber-700 mb-2"><i class="fas fa-check mr-1"></i>장점/단점</h3>
+        <ul class="text-[12px] text-gray-700 space-y-1 leading-relaxed">
+          <li>✓ 자주 가는 메뉴 <strong>맨 위에 핀</strong> (운영진마다 다름 — 개인 설정 저장)</li>
+          <li>✓ 카테고리 그룹화는 시안 A와 동일</li>
+          <li>✓ 일반 멤버 (즐겨찾기 없음)는 그냥 시안 A처럼 봄</li>
+          <li>✗ 즐겨찾기 추가/삭제 UI 필요 → 코드 비용 약간</li>
+          <li>✗ localStorage 또는 admin_whitelist에 저장 — 멤버별 분리 필요</li>
+          <li class="text-amber-700 font-bold mt-2">→ 운영진은 이중길드/신청처리/할일 자주 봄. 일반 멤버는 홈/길드원/수로 위주.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 추천 -->
+  <section class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+    <h3 class="font-black text-gray-800 mb-3 text-lg"><i class="fas fa-list-check text-pink-500 mr-1"></i>추천</h3>
+    <div class="text-sm text-gray-700 leading-relaxed space-y-2">
+      <p><strong class="text-emerald-600">시안 A (카테고리 그룹화)</strong> — 가장 가벼우면서 효과 즉시. 메뉴 통합도 같이 진행하면 26 → 16개로 줄어듦.</p>
+      <p>나중에 운영 들어가면서 자주 가는 메뉴 패턴 보이면 <strong class="text-amber-600">시안 D (즐겨찾기 추가)</strong>로 발전.</p>
+      <p class="text-[11px] text-gray-500 mt-3">⚠ 메뉴 통합(보석금+벌점, 면제+보석금신청, 설정 통합 등)은 사이드바뿐 아니라 라우터·페이지 구조도 손대야 함 — 사이드바 정리부터 → 통합은 단계적.</p>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
