@@ -10133,7 +10133,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const filteredGroups = showViolOnly ? groupKeys.filter(k => groups[k].some(r => r.is_violation)) : groupKeys;
 
     const guildBadge = (g) => {
-      if (!g) return '<span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded">길드 없음</span>';
+      if (!g) return '<span class="text-[10px] font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded">길드 없음</span>';
       const allowed = window._dualIsAllowed(g);
       const isCarol = window.CAROLLING_GUILDS.includes(g);
       const cls = isCarol ? 'bg-emerald-100 text-emerald-700' : allowed ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700';
@@ -10249,10 +10249,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             </div>
           </div>
         </div>` : ''}
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-100"><div class="text-[9px] font-bold text-emerald-500 uppercase">일치</div><div class="text-sm font-black text-emerald-600 mt-0.5">${stats.ok}</div></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-100"><div class="text-[9px] font-bold text-emerald-500 uppercase">일치 (카롱·허용)</div><div class="text-sm font-black text-emerald-600 mt-0.5">${stats.ok + stats.noguild}</div></div>
           <div class="bg-red-50 rounded-lg p-2 text-center border border-red-200"><div class="text-[9px] font-bold text-red-500 uppercase">이중길드 ⚠</div><div class="text-sm font-black text-red-600 mt-0.5">${stats.viol}</div></div>
-          <div class="bg-amber-50 rounded-lg p-2 text-center border border-amber-200"><div class="text-[9px] font-bold text-amber-500 uppercase">길드 없음</div><div class="text-sm font-black text-amber-600 mt-0.5">${stats.noguild}</div></div>
         </div>
       </div>
 

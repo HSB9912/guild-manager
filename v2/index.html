@@ -10171,7 +10171,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const filteredGroups = showViolOnly ? groupKeys.filter(k => groups[k].some(r => r.is_violation)) : groupKeys;
 
     const guildBadge = (g) => {
-      if (!g) return '<span class="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded">길드 없음</span>';
+      if (!g) return '<span class="text-[10px] font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded">길드 없음</span>';
       const allowed = window._dualIsAllowed(g);
       const isCarol = window.CAROLLING_GUILDS.includes(g);
       const cls = isCarol ? 'bg-emerald-100 text-emerald-700' : allowed ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700';
@@ -10287,10 +10287,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             </div>
           </div>
         </div>` : ''}
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-100"><div class="text-[9px] font-bold text-emerald-500 uppercase">일치</div><div class="text-sm font-black text-emerald-600 mt-0.5">${stats.ok}</div></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-100"><div class="text-[9px] font-bold text-emerald-500 uppercase">일치 (카롱·허용)</div><div class="text-sm font-black text-emerald-600 mt-0.5">${stats.ok + stats.noguild}</div></div>
           <div class="bg-red-50 rounded-lg p-2 text-center border border-red-200"><div class="text-[9px] font-bold text-red-500 uppercase">이중길드 ⚠</div><div class="text-sm font-black text-red-600 mt-0.5">${stats.viol}</div></div>
-          <div class="bg-amber-50 rounded-lg p-2 text-center border border-amber-200"><div class="text-[9px] font-bold text-amber-500 uppercase">길드 없음</div><div class="text-sm font-black text-amber-600 mt-0.5">${stats.noguild}</div></div>
         </div>
       </div>
 
@@ -17757,198 +17756,6 @@ function M(c){const e=c.channels();let l=R,u="",w=[];for(let t=0;t<12;t++)w.push
     loadGuides();
   };
 
-  // ───── 길드원 ─────
-  if (!window._v2MembersState) window._v2MembersState = { filter:'all', search:'', sort:'name', order:'asc' };
-
-  window.renderMembers = function(container) {
-    const all = appState?.members || [];
-    const st = window._v2MembersState;
-    let list = all.slice();
-    if (st.filter === '뚠카롱') list = list.filter(m => m.guild === '뚠카롱');
-    if (st.filter === '뚱카롱') list = list.filter(m => m.guild === '뚱카롱');
-    if (st.filter === 'main') list = list.filter(m => m.isMain !== false);
-    if (st.search) {
-      const s = st.search.toLowerCase();
-      list = list.filter(m =>
-        (m.name||'').toLowerCase().includes(s) ||
-        (m.mainCharName||'').toLowerCase().includes(s) ||
-        (m.class||'').toLowerCase().includes(s)
-      );
-    }
-    // sort
-    const dir = st.order === 'asc' ? 1 : -1;
-    list.sort((a,b) => {
-      if (st.sort === 'level') return ((b.level||0) - (a.level||0)) * (dir === 1 ? -1 : 1);
-      return String(a.name||'').localeCompare(String(b.name||'')) * dir;
-    });
-    const truncated = list.length > 300 ? list.slice(0, 300) : list;
-
-    container.innerHTML = `
-      <div class="max-w-6xl mx-auto p-6 space-y-3">
-        <div class="flex items-center gap-2 flex-wrap">
-          <input id="v2MemSearch" type="text" placeholder="닉/본캐/직업 검색" value="${esc(st.search)}"
-            class="px-3 py-1.5 border border-gray-200 rounded text-[11px] w-48 outline-none focus:border-pink-500">
-          <div class="flex gap-1 text-[11px]">
-            ${['all','뚠카롱','뚱카롱','main'].map(f => {
-              const labels = {all:`전체 ${all.length}`, '뚠카롱':`뚠카롱 ${all.filter(m=>m.guild==='뚠카롱').length}`, '뚱카롱':`뚱카롱 ${all.filter(m=>m.guild==='뚱카롱').length}`, main:`본캐만 ${all.filter(m=>m.isMain!==false).length}`};
-              const active = st.filter === f;
-              return `<button onclick="window._v2MembersState.filter='${f}';window.renderMembers(document.getElementById('contentArea'))" class="px-2 py-1 rounded font-medium ${active?'bg-gray-900 text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}">${labels[f]}</button>`;
-            }).join('')}
-          </div>
-          <span class="ml-auto text-[11px] text-gray-500">${truncated.length}명 표시${list.length > 300?` (전체 ${list.length})`:''}</span>
-        </div>
-
-        <table class="v2-mini-table border border-gray-200 rounded overflow-hidden">
-          <thead>
-            <tr>
-              <th class="cursor-pointer hover:bg-gray-100" onclick="window._v2MemSort('name')">닉네임 ${st.sort==='name'?(st.order==='asc'?'▲':'▼'):''}</th>
-              <th>직업</th>
-              <th class="text-right cursor-pointer hover:bg-gray-100" onclick="window._v2MemSort('level')">레벨 ${st.sort==='level'?(st.order==='asc'?'▲':'▼'):''}</th>
-              <th>길드</th>
-              <th>직위</th>
-              <th>본캐</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${truncated.length === 0 ? `<tr><td colspan="6" class="text-center text-gray-400 py-8">결과 없음</td></tr>` :
-              truncated.map(m => `
-                <tr>
-                  <td class="font-bold text-gray-900">${esc(m.name||'')}</td>
-                  <td>${esc(m.class||'-')}</td>
-                  <td class="text-right tabular-nums">${m.level||'-'}</td>
-                  <td>${esc(m.guild||'-')}</td>
-                  <td>${m.role ? `<span class="text-[10px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">${esc(m.role)}</span>` : '<span class="text-gray-300">-</span>'}</td>
-                  <td class="text-gray-500">${m.isMain === false ? esc(m.mainCharName||'-') : '<span class="text-gray-300">본캐</span>'}</td>
-                </tr>
-              `).join('')
-            }
-          </tbody>
-        </table>
-      </div>
-    `;
-    // search debounce
-    const inp = document.getElementById('v2MemSearch');
-    if (inp) {
-      inp.addEventListener('input', e => {
-        clearTimeout(window._v2MemST);
-        window._v2MemST = setTimeout(() => {
-          window._v2MembersState.search = e.target.value;
-          window.renderMembers(document.getElementById('contentArea'));
-          setTimeout(()=>document.getElementById('v2MemSearch')?.focus(), 50);
-        }, 200);
-      });
-    }
-  };
-  window._v2MemSort = (col) => {
-    const st = window._v2MembersState;
-    if (st.sort === col) st.order = st.order === 'asc' ? 'desc' : 'asc';
-    else { st.sort = col; st.order = col === 'level' ? 'desc' : 'asc'; }
-    window.renderMembers(document.getElementById('contentArea'));
-  };
-
-  // ───── 이중길드 감사 ─────
-  window.renderDualGuild = async function(container) {
-    container.innerHTML = '<div class="text-gray-400 text-[11px] py-8 text-center max-w-5xl mx-auto p-6">로딩 중...</div>';
-    if (!window._dualGuildState) window._dualGuildState = { filter:'violation', cacheHours:24 };
-    const st = window._dualGuildState;
-    const [rows, allowed] = await Promise.all([
-      window._dualFetchAllRows?.() || Promise.resolve([]),
-      window._dualFetchAllowed?.() || Promise.resolve([])
-    ]);
-    st.rows = rows;
-    st.allowedGuilds = allowed;
-
-    const stats = { ok: 0, viol: 0, noguild: 0 };
-    rows.forEach(r => {
-      if (!r.real_guild) stats.noguild++;
-      else if (r.is_violation) stats.viol++;
-      else stats.ok++;
-    });
-    window._dualViolationCount = stats.viol;
-    window._dualUpdateBadge?.();
-
-    const groups = {};
-    rows.forEach(r => {
-      const k = r.main_char_name || '(unknown)';
-      if (!groups[k]) groups[k] = [];
-      groups[k].push(r);
-    });
-    const groupKeys = Object.keys(groups).sort();
-    const filter = st.filter || 'violation';
-
-    const filteredGroups = groupKeys.filter(k => {
-      if (filter === 'all') return true;
-      return groups[k].some(r => r.is_violation || !r.real_guild);
-    });
-
-    container.innerHTML = `
-      <div class="max-w-5xl mx-auto p-6 space-y-4">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-[11px] text-gray-500">캐릭 ${rows.length}개 · 본캐 ${groupKeys.length}그룹</span>
-          <div class="ml-auto flex gap-1">
-            <button onclick="window._dualScanAll(false)" ${st.scanning?'disabled':''} class="v2-btn-primary disabled:opacity-50">최신화</button>
-            <button onclick="window._dualScanAll(true)" ${st.scanning?'disabled':''} class="v2-btn-secondary disabled:opacity-50">전체 재검사</button>
-            <button onclick="if(confirm('메애기 세부 검사 — 본캐 1명당 약 2-3초 (모든 부캐). 진행할까요?')) window._dualScanAll(true, true)" ${st.scanning?'disabled':''} class="v2-btn-accent disabled:opacity-50">세부 (메애기)</button>
-          </div>
-        </div>
-
-        ${st.scanning ? `<div class="border border-pink-200 bg-pink-50 rounded p-3 text-[11px] text-pink-700"><i class="fas fa-spinner fa-spin mr-1"></i>검사 중...</div>` : ''}
-
-        <div class="flex divide-x divide-gray-100 border border-gray-200 rounded text-center">
-          <div class="flex-1 py-3"><div class="text-[10px] text-gray-500 uppercase">일치</div><div class="text-xl font-bold text-gray-900 tabular-nums">${stats.ok}</div></div>
-          <div class="flex-1 py-3"><div class="text-[10px] text-gray-500 uppercase">위반</div><div class="text-xl font-bold text-pink-600 tabular-nums">${stats.viol}</div></div>
-          <div class="flex-1 py-3"><div class="text-[10px] text-gray-500 uppercase">길드 없음</div><div class="text-xl font-bold text-gray-700 tabular-nums">${stats.noguild}</div></div>
-        </div>
-
-        <div class="flex gap-1 text-[11px]">
-          <button onclick="window._dualGuildState.filter='violation';window.renderDualGuild(document.getElementById('contentArea'))" class="px-2 py-1 rounded font-medium ${filter==='violation'?'bg-pink-600 text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}">위반·길드없음 (${stats.viol+stats.noguild})</button>
-          <button onclick="window._dualGuildState.filter='all';window.renderDualGuild(document.getElementById('contentArea'))" class="px-2 py-1 rounded font-medium ${filter==='all'?'bg-gray-900 text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}">전체 (${rows.length})</button>
-        </div>
-
-        <div class="border border-gray-200 rounded overflow-hidden">
-          ${filteredGroups.length === 0 ?
-            '<div class="p-8 text-center text-gray-400 text-[11px]">' + (rows.length === 0 ? '데이터 없음 — 최신화 클릭' : '해당 항목 없음') + '</div>' :
-            filteredGroups.map(mainName => {
-              const grp = groups[mainName];
-              const shown = filter === 'violation' ? grp.filter(r => r.is_violation || !r.real_guild) : grp;
-              const violCount = grp.filter(r => r.is_violation).length;
-              const noGuildCount = grp.filter(r => !r.real_guild).length;
-              return `
-                <div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex items-center justify-between">
-                  <div class="text-[12px]"><span class="font-bold text-gray-900">${esc(mainName)}</span><span class="text-gray-500 ml-2">${grp.length}캐릭${violCount?` · 위반 ${violCount}`:''}${noGuildCount?` · 길드없음 ${noGuildCount}`:''}</span></div>
-                </div>
-                <table class="w-full text-[11.5px]">
-                  <tbody class="divide-y divide-gray-100">
-                    ${shown.map(r => {
-                      const guildText = !r.real_guild ? '<span class="text-amber-700 font-bold">길드 없음</span>' :
-                        r.is_violation ? `<span class="text-pink-700 font-bold">⚠ ${esc(r.real_guild)}</span>` :
-                        `<span class="text-gray-500">${esc(r.real_guild)}</span>`;
-                      const safeGuild = (r.real_guild||'').replace(/'/g,"\\'");
-                      return `<tr class="hover:bg-gray-50"><td class="px-3 py-1.5 w-32 font-medium text-gray-900">${esc(r.nickname)}</td><td class="text-gray-700">${esc(r.job_class||'-')}${r.level?` · Lv.${r.level}`:''}</td><td class="px-3">${guildText}</td><td class="px-3 text-right">${r.is_violation?`<button onclick="window._dualAllowFromRow('${safeGuild}')" class="text-[10px] px-2 py-0.5 border border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded">+ 허용</button>`:''}</td></tr>`;
-                    }).join('')}
-                  </tbody>
-                </table>
-              `;
-            }).join('')
-          }
-        </div>
-
-        ${allowed && allowed.length > 0 ? `
-          <div class="border border-gray-200 rounded p-3">
-            <div class="text-[12px] font-bold text-gray-900 mb-2 flex items-center justify-between">
-              <span>허용 길드 (${allowed.length})</span>
-              <button onclick="window._dualAddAllowedGuild()" class="text-[10px] px-2 py-0.5 border border-gray-300 hover:bg-gray-50 rounded font-medium text-gray-600">+ 수동 추가</button>
-            </div>
-            <div class="flex gap-1.5 flex-wrap text-[11px]">
-              ${allowed.map(g => `<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">${esc(g.name)} <button onclick="window._dualRemoveAllowedGuild('${g.name.replace(/'/g,"\\'")}')" class="text-emerald-500 hover:text-emerald-900 ml-1">×</button></span>`).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        <div class="text-[10px] text-gray-400 text-center pt-2">v2 미니멀 톤 · 기능은 main과 동일</div>
-      </div>
-    `;
-  };
  </script>
 </body>
 </html>
