@@ -35,6 +35,21 @@ table td, table th { font-variant-numeric: tabular-nums; }
 .v2-btn-accent { background: #db2777; color: white; padding: 6px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .v2-btn-accent:hover { background: #be185d; }
 
+/* v2 상단 헤더 요소 강제 미니멀화 (main에서 그대로 가져온 요소들) */
+#headerLoginBtn { background-color: #111827 !important; color: white !important; border-radius: 4px !important; box-shadow: none !important; }
+#headerLoginBtn:hover { background-color: #1f2937 !important; }
+#totalMembersCount > *, #totalMembersCountMobile > * { background-color: #f9fafb !important; color: #4b5563 !important; border: 1px solid #e5e7eb !important; border-radius: 4px !important; font-weight: 600 !important; }
+#anniversaryLabel { color: #6b7280 !important; }
+header .bg-pink-50 { background-color: #f9fafb !important; color: #6b7280 !important; border-color: #e5e7eb !important; }
+header .text-pink-600 { color: #6b7280 !important; }
+header .border-pink-100 { border-color: #e5e7eb !important; }
+#visitCountBadge { background-color: #f9fafb !important; color: #6b7280 !important; border-color: #e5e7eb !important; border-radius: 4px !important; }
+#headerUserName { color: #374151 !important; }
+header button.bg-amber-500 { background-color: #6b7280 !important; }
+/* 사이드바 글씨 크기 버튼 미니멀 */
+.font-sz-btn { color: #9ca3af !important; }
+.font-sz-btn.active { color: #111827 !important; background: #e5e7eb !important; }
+
 /* ===== 레트로 픽셀 테마 ===== */
 body.theme-retro{background:#fef3c7 !important;font-family:'Noto Sans KR',sans-serif;}
 body.theme-retro *{transition:none !important;animation-duration:0s !important;}
