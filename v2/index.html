@@ -17693,48 +17693,65 @@ function M(c){const e=c.channels();let l=R,u="",w=[];for(let t=0;t<12;t++)w.push
       </div>
     `;
 
-    // 가이드 데이터 로드 — supaDb는 글로벌 const (window 객체에 없음)
+    // 가이드 데이터 로드 — main과 동일한 defaultHomeTabs 패턴
     const loadGuides = () => {
-      if (typeof supaDb === 'undefined') {
-        setTimeout(loadGuides, 200);
-        return;
-      }
+      if (typeof supaDb === 'undefined') { setTimeout(loadGuides, 200); return; }
       supaDb.from('guide_pages').select('*').order('id').then(({data, error}) => {
         const tabs = document.getElementById('v2HomeGuideTabs');
         const content = document.getElementById('v2HomeGuideContent');
         if (!tabs || !content) return;
-        if (error) {
-          content.innerHTML = `<p class="text-red-500 text-center py-8 text-[12px]">가이드 로드 실패: ${esc(error.message)}</p>`;
-          return;
-        }
-        if (!data || data.length === 0) {
-          content.innerHTML = '<p class="text-gray-400 text-center py-8 text-[12px]">등록된 안내 없음</p>';
-          return;
-        }
-        // 정렬: home_tab_order ASC NULLS LAST, then id
-        data.sort((a, b) => {
-          const ao = a.home_tab_order ?? 99999, bo = b.home_tab_order ?? 99999;
-          if (ao !== bo) return ao - bo;
-          return (a.id || 0) - (b.id || 0);
+        if (error) { content.innerHTML = `<p class="text-red-500 text-center py-8 text-[12px]">${esc(error.message)}</p>`; return; }
+        if (!data || data.length === 0) { content.innerHTML = '<p class="text-gray-400 text-center py-8 text-[12px]">등록된 안내 없음</p>'; return; }
+
+        // slug → data 매핑
+        const bySlug = {};
+        data.forEach(p => { bySlug[p.slug] = p; });
+
+        // main과 동일한 default 탭 정의 + SITE_CONFIG 적용
+        const defaultTabs = [
+          { slug: 'notice1', label: '공지 1' },
+          { slug: 'notice2', label: '공지 2' },
+          { slug: 'notice3', label: '공지 3' },
+          { slug: 'intro',   label: '길드 소개' },
+          { slug: 'ranks',   label: '직위 & 부캐' },
+          { slug: 'links',   label: '링크 모음' },
+        ];
+        const cfg = (typeof SITE_CONFIG !== 'undefined' && SITE_CONFIG) || {};
+        const homeVisible = cfg.guideHomeVisible || {};
+        const orderedTabs = (cfg.guideTabs || defaultTabs).filter(t => {
+          if (homeVisible[t.slug] === false) return false;
+          return !!bySlug[t.slug]; // 실제 데이터가 있는 슬러그만
         });
-        // home에 노출 안 되는 페이지 제외 (show_on_home===false면 숨김)
-        const visible = data.filter(p => p.show_on_home !== false);
-        if (visible.length === 0) {
+        // DB에 있지만 default에 없는 슬러그는 끝에 추가 (title 사용)
+        const knownSlugs = new Set(orderedTabs.map(t => t.slug));
+        data.forEach(p => {
+          if (!knownSlugs.has(p.slug) && homeVisible[p.slug] !== false) {
+            orderedTabs.push({ slug: p.slug, label: p.title || p.slug });
+          }
+        });
+
+        if (orderedTabs.length === 0) {
           content.innerHTML = '<p class="text-gray-400 text-center py-8 text-[12px]">홈에 표시할 안내 없음</p>';
           return;
         }
+
+        // 플레이스홀더 치환 ({{key}} → 동적 값) — main의 replacePlaceholders 있으면 사용
+        const replacePh = (html) => (typeof replacePlaceholders === 'function') ? replacePlaceholders(html) : html;
+
         const renderTab = (i) => {
-          tabs.innerHTML = visible.map((p, idx) => {
-            const label = (p.tab_label || p.slug || '안내').toString().replace(/<[^>]+>/g, '').slice(0, 30);
+          tabs.innerHTML = orderedTabs.map((t, idx) => {
+            const label = String(t.label || t.slug).replace(/<[^>]+>/g, '').slice(0, 30);
             return `<button onclick="window._v2GuideTab(${idx})" class="px-2.5 py-1.5 rounded ${idx===i?'bg-gray-900 text-white':'bg-gray-100 text-gray-700 hover:bg-gray-200'} font-medium">${esc(label)}</button>`;
           }).join('');
-          content.innerHTML = visible[i]?.content || '<p class="text-gray-400">내용 없음</p>';
+          const slug = orderedTabs[i]?.slug;
+          const page = bySlug[slug];
+          content.innerHTML = page ? replacePh(page.content || '') : '<p class="text-gray-400">내용 없음</p>';
         };
         window._v2GuideTab = renderTab;
         renderTab(0);
       }).catch(e => {
         const content = document.getElementById('v2HomeGuideContent');
-        if (content) content.innerHTML = `<p class="text-red-500 text-center py-8 text-[12px]">가이드 로드 에러: ${esc(e.message)}</p>`;
+        if (content) content.innerHTML = `<p class="text-red-500 text-center py-8 text-[12px]">${esc(e.message)}</p>`;
       });
     };
     loadGuides();
