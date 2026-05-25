@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>guild-manager — 디자인 리뉴얼 시안</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', -apple-system, system-ui, sans-serif; }
+  .glass { backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); }
+  .gradient-mesh-1 { background: radial-gradient(at 20% 10%, #fce7f3 0%, transparent 50%), radial-gradient(at 80% 90%, #fef3c7 0%, transparent 50%), radial-gradient(at 40% 80%, #ddd6fe 0%, transparent 50%), #fafafa; }
+  .gradient-mesh-2 { background: radial-gradient(at 30% 20%, #1f2937 0%, transparent 60%), radial-gradient(at 70% 80%, #4c1d95 0%, transparent 50%), #0f0f14; }
+  .neon { box-shadow: 0 0 20px rgba(244, 114, 182, 0.4), 0 0 40px rgba(244, 114, 182, 0.2); }
+  .brutalist { box-shadow: 4px 4px 0 #000; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body class="bg-gray-100 p-4 lg:p-8">
+<div class="max-w-6xl mx-auto space-y-10">
+
+  <header class="text-center">
+    <h1 class="text-2xl font-black text-gray-800">guild-manager — 디자인 리뉴얼 시안</h1>
+    <p class="text-sm text-gray-500 mt-1">동일한 컴포넌트(헤더·통계·멤버·버튼)를 4가지 톤으로 렌더 → 직접 비교</p>
+    <p class="text-xs text-gray-400 mt-1">참고: 현재 사이트는 ①과 비슷한 부드러운 핑크 톤</p>
+  </header>
+
+  <!-- =================================================== -->
+  <!-- 시안 A: 모던 핑크 (현재 톤 강화 — 진화형) -->
+  <!-- =================================================== -->
+  <section>
+    <div class="flex items-baseline gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-pink-500 text-white rounded">시안 A</div>
+      <h2 class="text-lg font-black text-gray-800">모던 핑크 (현재 진화형)</h2>
+      <span class="text-xs text-gray-500">— 부드러운 그라데이션 메시 + 더 세련된 그림자, 현재 스타일 정제판</span>
+    </div>
+
+    <div class="gradient-mesh-1 rounded-3xl p-6 border border-pink-100">
+      <!-- 헤더 -->
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-pink-200"><i class="fas fa-cookie-bite"></i></div>
+        <div>
+          <h3 class="font-black text-gray-800">뚠카롱 길드</h3>
+          <p class="text-[11px] text-gray-500">총 71명 · 본캐 49명</p>
+        </div>
+        <button class="ml-auto px-4 py-2 bg-gradient-to-r from-pink-400 to-rose-500 text-white rounded-2xl text-xs font-black shadow-lg shadow-pink-200/50 hover:scale-105 transition">검사 시작</button>
+      </div>
+      <!-- 통계 -->
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-white/80 backdrop-blur rounded-2xl p-4 border border-white shadow-sm">
+          <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">일치</div>
+          <div class="text-2xl font-black text-emerald-500 mt-1">61</div>
+        </div>
+        <div class="bg-white/80 backdrop-blur rounded-2xl p-4 border border-white shadow-sm">
+          <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">위반</div>
+          <div class="text-2xl font-black text-rose-500 mt-1">7</div>
+        </div>
+        <div class="bg-white/80 backdrop-blur rounded-2xl p-4 border border-white shadow-sm">
+          <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">없음</div>
+          <div class="text-2xl font-black text-amber-500 mt-1">3</div>
+        </div>
+      </div>
+      <!-- 멤버카드 -->
+      <div class="space-y-2">
+        <div class="bg-white/80 backdrop-blur rounded-2xl p-3 flex items-center gap-3 border border-white shadow-sm hover:shadow-md transition">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-200 to-rose-300"></div>
+          <div class="flex-1"><div class="text-sm font-black text-gray-800">너굴님</div><div class="text-[10px] text-gray-400">에반 · Lv.296</div></div>
+          <span class="text-[10px] font-bold bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg">뚠카롱</span>
+        </div>
+        <div class="bg-rose-50/80 backdrop-blur rounded-2xl p-3 flex items-center gap-3 border border-rose-200 shadow-sm">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-300 to-red-400"></div>
+          <div class="flex-1"><div class="text-sm font-black text-gray-800">나로뜸</div><div class="text-[10px] text-gray-400">나이트로드 · Lv.263</div></div>
+          <span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-1 rounded-lg">⚠ 천종맹</span>
+        </div>
+      </div>
+      <div class="mt-4 text-[10px] text-gray-500 text-center"><i class="fas fa-info-circle mr-1"></i>장점: 익숙함, 부드러움 · 단점: 현재와 차이 크지 않음</div>
+    </div>
+  </section>
+
+  <!-- =================================================== -->
+  <!-- 시안 B: 다크 게이밍 (네온 액센트) -->
+  <!-- =================================================== -->
+  <section>
+    <div class="flex items-baseline gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-purple-600 text-white rounded">시안 B</div>
+      <h2 class="text-lg font-black text-gray-800">다크 게이밍 (네온 핑크)</h2>
+      <span class="text-xs text-gray-500">— 메이플 다크 모드 + 핑크/퍼플 네온 글로우, 게임 사이트스러움</span>
+    </div>
+
+    <div class="gradient-mesh-2 rounded-3xl p-6 border border-purple-900/40">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white neon"><i class="fas fa-cookie-bite"></i></div>
+        <div>
+          <h3 class="font-black text-white">뚠카롱 길드</h3>
+          <p class="text-[11px] text-purple-300">총 71명 · 본캐 49명</p>
+        </div>
+        <button class="ml-auto px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl text-xs font-black neon hover:brightness-110 transition">검사 시작</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-white/5 backdrop-blur rounded-2xl p-4 border border-white/10">
+          <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">일치</div>
+          <div class="text-2xl font-black text-emerald-400 mt-1">61</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur rounded-2xl p-4 border border-pink-500/30">
+          <div class="text-[10px] text-pink-300 font-bold uppercase tracking-wider">위반</div>
+          <div class="text-2xl font-black text-pink-400 mt-1" style="text-shadow:0 0 10px #ec4899">7</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur rounded-2xl p-4 border border-white/10">
+          <div class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">없음</div>
+          <div class="text-2xl font-black text-amber-400 mt-1">3</div>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <div class="bg-white/5 backdrop-blur rounded-2xl p-3 flex items-center gap-3 border border-white/10">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-pink-500 to-purple-700"></div>
+          <div class="flex-1"><div class="text-sm font-black text-white">너굴님</div><div class="text-[10px] text-gray-400">에반 · Lv.296</div></div>
+          <span class="text-[10px] font-bold bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg border border-emerald-500/30">뚠카롱</span>
+        </div>
+        <div class="bg-pink-500/10 backdrop-blur rounded-2xl p-3 flex items-center gap-3 border border-pink-500/40">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-red-600"></div>
+          <div class="flex-1"><div class="text-sm font-black text-white">나로뜸</div><div class="text-[10px] text-gray-400">나이트로드 · Lv.263</div></div>
+          <span class="text-[10px] font-bold bg-pink-500/20 text-pink-300 px-2 py-1 rounded-lg border border-pink-500/40">⚠ 천종맹</span>
+        </div>
+      </div>
+      <div class="mt-4 text-[10px] text-purple-300 text-center"><i class="fas fa-info-circle mr-1"></i>장점: 메이플 감성·임팩트 · 단점: 장시간 보면 눈 피로, 가시성 떨어질 수 있음</div>
+    </div>
+  </section>
+
+  <!-- =================================================== -->
+  <!-- 시안 C: 미니멀 화이트 (Notion / Linear 풍) -->
+  <!-- =================================================== -->
+  <section>
+    <div class="flex items-baseline gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-gray-800 text-white rounded">시안 C</div>
+      <h2 class="text-lg font-black text-gray-800">미니멀 화이트 (업무툴 풍)</h2>
+      <span class="text-xs text-gray-500">— 거의 무채색, 액센트 1개. 노션/리니어 느낌. 정보 밀도 ↑</span>
+    </div>
+
+    <div class="bg-white rounded-3xl p-6 border border-gray-200">
+      <div class="flex items-center gap-3 mb-5 pb-4 border-b border-gray-100">
+        <div class="w-9 h-9 rounded-lg bg-gray-900 flex items-center justify-center text-white text-xs font-black">뚠</div>
+        <div>
+          <h3 class="font-black text-gray-900">뚠카롱 길드</h3>
+          <p class="text-[11px] text-gray-500">총 71명 · 본캐 49명</p>
+        </div>
+        <button class="ml-auto px-3 py-1.5 bg-gray-900 text-white rounded-lg text-xs font-bold hover:bg-gray-700 transition">검사 시작 →</button>
+      </div>
+      <div class="grid grid-cols-3 gap-0 mb-5 divide-x divide-gray-100">
+        <div class="px-4">
+          <div class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">일치</div>
+          <div class="text-2xl font-black text-gray-900 mt-1">61<span class="text-xs text-gray-400 font-bold ml-1">명</span></div>
+        </div>
+        <div class="px-4">
+          <div class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">위반</div>
+          <div class="text-2xl font-black text-pink-600 mt-1">7<span class="text-xs text-gray-400 font-bold ml-1">명</span></div>
+        </div>
+        <div class="px-4">
+          <div class="text-[10px] text-gray-500 font-medium uppercase tracking-wider">없음</div>
+          <div class="text-2xl font-black text-gray-700 mt-1">3<span class="text-xs text-gray-400 font-bold ml-1">명</span></div>
+        </div>
+      </div>
+      <div class="divide-y divide-gray-100 border-t border-gray-100">
+        <div class="py-3 flex items-center gap-3 hover:bg-gray-50 transition px-2 -mx-2 rounded">
+          <div class="w-8 h-8 rounded-full bg-gray-200"></div>
+          <div class="flex-1"><div class="text-sm font-bold text-gray-900">너굴님</div><div class="text-[10px] text-gray-500">에반 · Lv.296</div></div>
+          <span class="text-[10px] font-bold text-gray-600 border border-gray-200 px-2 py-0.5 rounded">뚠카롱</span>
+        </div>
+        <div class="py-3 flex items-center gap-3 hover:bg-gray-50 transition px-2 -mx-2 rounded">
+          <div class="w-8 h-8 rounded-full bg-gray-200"></div>
+          <div class="flex-1"><div class="text-sm font-bold text-gray-900">나로뜸</div><div class="text-[10px] text-gray-500">나이트로드 · Lv.263</div></div>
+          <span class="text-[10px] font-bold text-pink-600 border border-pink-300 px-2 py-0.5 rounded">⚠ 천종맹</span>
+        </div>
+      </div>
+      <div class="mt-4 text-[10px] text-gray-500 text-center"><i class="fas fa-info-circle mr-1"></i>장점: 정보 밀도, 가독성, 업무 도구다움 · 단점: 캐주얼 길드 느낌과 거리</div>
+    </div>
+  </section>
+
+  <!-- =================================================== -->
+  <!-- 시안 D: 글래스모피즘 + 컬러풀 (iOS 26 / Apple 풍) -->
+  <!-- =================================================== -->
+  <section>
+    <div class="flex items-baseline gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-cyan-500 text-white rounded">시안 D</div>
+      <h2 class="text-lg font-black text-gray-800">글래스모피즘 (Apple 풍)</h2>
+      <span class="text-xs text-gray-500">— 흐릿한 컬러풀 배경 + 반투명 블러 카드. iOS / macOS 분위기</span>
+    </div>
+
+    <div class="relative rounded-3xl p-6 overflow-hidden" style="background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 25%, #fbc2eb 50%, #fda085 75%, #f6d365 100%); background-size:200% 200%;">
+      <div class="absolute inset-0 backdrop-blur-2xl bg-white/10"></div>
+      <div class="relative">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-2xl bg-white/40 glass border border-white/60 flex items-center justify-center text-white shadow-lg"><i class="fas fa-cookie-bite"></i></div>
+          <div>
+            <h3 class="font-black text-white drop-shadow">뚠카롱 길드</h3>
+            <p class="text-[11px] text-white/80">총 71명 · 본캐 49명</p>
+          </div>
+          <button class="ml-auto px-4 py-2 bg-white/30 glass border border-white/60 text-white rounded-2xl text-xs font-black shadow-lg hover:bg-white/50 transition">검사 시작</button>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="bg-white/30 glass rounded-2xl p-4 border border-white/40 shadow-lg">
+            <div class="text-[10px] text-white/80 font-bold uppercase tracking-wider">일치</div>
+            <div class="text-2xl font-black text-white mt-1 drop-shadow">61</div>
+          </div>
+          <div class="bg-white/30 glass rounded-2xl p-4 border border-white/40 shadow-lg">
+            <div class="text-[10px] text-white/80 font-bold uppercase tracking-wider">위반</div>
+            <div class="text-2xl font-black text-white mt-1 drop-shadow">7</div>
+          </div>
+          <div class="bg-white/30 glass rounded-2xl p-4 border border-white/40 shadow-lg">
+            <div class="text-[10px] text-white/80 font-bold uppercase tracking-wider">없음</div>
+            <div class="text-2xl font-black text-white mt-1 drop-shadow">3</div>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="bg-white/40 glass rounded-2xl p-3 flex items-center gap-3 border border-white/60 shadow-lg">
+            <div class="w-9 h-9 rounded-xl bg-white/60"></div>
+            <div class="flex-1"><div class="text-sm font-black text-gray-900">너굴님</div><div class="text-[10px] text-gray-700">에반 · Lv.296</div></div>
+            <span class="text-[10px] font-bold bg-emerald-500/40 text-white px-2 py-1 rounded-lg border border-white/40">뚠카롱</span>
+          </div>
+          <div class="bg-white/40 glass rounded-2xl p-3 flex items-center gap-3 border border-red-400/60 shadow-lg">
+            <div class="w-9 h-9 rounded-xl bg-white/60"></div>
+            <div class="flex-1"><div class="text-sm font-black text-gray-900">나로뜸</div><div class="text-[10px] text-gray-700">나이트로드 · Lv.263</div></div>
+            <span class="text-[10px] font-bold bg-red-500/50 text-white px-2 py-1 rounded-lg border border-white/40">⚠ 천종맹</span>
+          </div>
+        </div>
+        <div class="mt-4 text-[10px] text-white/90 text-center"><i class="fas fa-info-circle mr-1"></i>장점: 모던·고급스러움 · 단점: 흰 글자 가독성, 작업 화면으로는 과할 수 있음</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================== -->
+  <!-- 비교 요약 -->
+  <!-- =================================================== -->
+  <section>
+    <div class="bg-white rounded-3xl p-6 border border-gray-200">
+      <h3 class="font-black text-gray-800 mb-3"><i class="fas fa-list-check text-pink-500 mr-1"></i>한눈에 비교</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="text-[10px] text-gray-500 uppercase border-b border-gray-200">
+            <tr><th class="py-2 text-left">기준</th><th class="text-center">A 모던핑크</th><th class="text-center">B 다크네온</th><th class="text-center">C 미니멀화이트</th><th class="text-center">D 글래스</th></tr>
+          </thead>
+          <tbody class="text-gray-700 divide-y divide-gray-100">
+            <tr><td class="py-2 font-bold">길드 정체성</td><td class="text-center">★★★★★</td><td class="text-center">★★★</td><td class="text-center">★★</td><td class="text-center">★★★</td></tr>
+            <tr><td class="py-2 font-bold">가독성·정보밀도</td><td class="text-center">★★★★</td><td class="text-center">★★★</td><td class="text-center">★★★★★</td><td class="text-center">★★</td></tr>
+            <tr><td class="py-2 font-bold">현재 대비 차이</td><td class="text-center">조금 (진화형)</td><td class="text-center">매우 큼</td><td class="text-center">매우 큼</td><td class="text-center">큼</td></tr>
+            <tr><td class="py-2 font-bold">운영진 도구로</td><td class="text-center">★★★★</td><td class="text-center">★★★</td><td class="text-center">★★★★★</td><td class="text-center">★★</td></tr>
+            <tr><td class="py-2 font-bold">개발 비용</td><td class="text-center text-emerald-600">낮음</td><td class="text-center text-amber-600">중간</td><td class="text-center text-amber-600">중간</td><td class="text-center text-red-500">높음</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4 text-[11px] text-gray-600 leading-relaxed bg-gray-50 rounded-xl p-3">
+        <strong class="text-gray-800">개인 추천:</strong> 운영자 도구 성격이 강해서 <strong class="text-pink-600">A + C 하이브리드</strong>. 핑크 정체성은 유지하되 (헤더/액센트) 콘텐츠 영역은 C처럼 정보 밀도와 가독성에 집중. B는 게임 사이트 같지만 장시간 작업엔 피곤하고, D는 작은 글자 가독성 손해가 큼.
+      </div>
+      <div class="mt-3 text-[10px] text-rose-700 text-center"><strong>다음 단계:</strong> 마음에 드는 시안 알려주시면 핵심 페이지(메인/멤버 목록/이중길드) 1~2개를 그 톤으로 풀 미리보기 제작</div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
