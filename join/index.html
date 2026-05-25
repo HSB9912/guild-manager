@@ -56,8 +56,9 @@
       <input id="f_nickname" type="text" placeholder="닉네임 *" autocomplete="off"
         class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:border-pink-300 focus:bg-white transition">
       <input id="f_suro" type="text" inputmode="numeric" placeholder="수로 점수 * (최소 10,000점 이상, 예: 15000)"
-        oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/\B(?=(\d{3})+(?!\d))/g,',');checkSuroScore();"
         class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
+      <div id="suroWarn" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 py-2 text-[11px] font-bold"><i class="fas fa-circle-xmark mr-1"></i>수로 <strong>10,000점 미만은 가입 불가</strong>입니다. 점수를 더 올리신 후 신청해주세요.</div>
       <select id="f_job"
         class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300 focus:bg-white transition">
         <option value="">직업 *</option>
@@ -159,6 +160,22 @@
   // 가입경로 / 카테고리 — 영구기록(member_records)과 동일 옵션
   const JOIN_SOURCES = ['인벤', '라운지', '지인', '인게임', '재가입', '고확', '오픈톡', '길드창', '복귀', '추천', '마을', '검색', '디코', '지인소개'];
   const JOIN_CATEGORIES = ['지인 추천', '길드 혜택/성장', '분위기/소통/체계', '홍보물/길드 이미지', '재가입/복귀', '부캐 육성', '기타'];
+  const MIN_SURO = 10000;
+  function checkSuroScore() {
+    const v = (document.getElementById('f_suro')?.value || '').replace(/[^0-9]/g, '');
+    const num = parseInt(v) || 0;
+    const warn = document.getElementById('suroWarn');
+    const btn = document.getElementById('submitBtn');
+    if (num > 0 && num < MIN_SURO) {
+      warn?.classList.remove('hidden');
+      if (btn) { btn.disabled = true; btn.classList.add('opacity-40','cursor-not-allowed'); }
+    } else {
+      warn?.classList.add('hidden');
+      if (btn) { btn.disabled = false; btn.classList.remove('opacity-40','cursor-not-allowed'); }
+    }
+  }
+  window.checkSuroScore = checkSuroScore;
+
   const JOBS = ['히어로','팔라딘','다크나이트','아크메이지(불,독)','아크메이지(썬,콜)','비숍','보우마스터','신궁','패스파인더','나이트로드','섀도어','듀얼블레이더','바이퍼','캡틴','캐논마스터','미하일','소울마스터','플레임위자드','윈드브레이커','나이트워커','스트라이커','아란','에반','루미너스','메르세데스','팬텀','은월','데몬슬레이어','데몬어벤져','블래스터','배틀메이지','와일드헌터','메카닉','제논','카이저','카인','카데나','엔젤릭버스터','라라','호영','아델','일리움','아크','칼리','제로','키네시스','렌'];
   (function fillJoinSelects() {
     const srcEl = document.getElementById('f_source');
