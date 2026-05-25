@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>이중길드 검사 — 진행률 UI 미리보기</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>body { font-family: 'Pretendard', -apple-system, system-ui, sans-serif; background: #f8f9fb; }</style>
+</head>
+<body class="p-6 lg:p-10">
+<div class="max-w-3xl mx-auto space-y-6">
+
+  <header>
+    <h1 class="text-xl font-black text-gray-800">이중길드 검사 — 진행률 UI 미리보기</h1>
+    <p class="text-xs text-gray-500 mt-1">3가지 상태 (시작/진행중/완료직전) 비교</p>
+  </header>
+
+  <!-- 상태 1: 시작 직후 -->
+  <section>
+    <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">① 시작 직후 (0%)</div>
+    <div class="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-3 shadow-sm">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="text-[11px] font-black text-rose-700 flex items-center gap-1.5">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>검사 중 — 0 / 71 <span class="ml-1 px-1.5 py-0.5 bg-white border border-rose-200 rounded text-rose-600">너굴님</span></span>
+        </div>
+        <div class="text-[13px] font-black text-rose-600">0%</div>
+      </div>
+      <div class="h-2.5 bg-white rounded-full overflow-hidden border border-rose-100 mb-1.5">
+        <div class="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-300" style="width:0%"></div>
+      </div>
+      <div class="flex items-center justify-between flex-wrap gap-1.5 text-[10px] text-rose-700">
+        <div class="font-bold flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[8px]"></i>너굴님 · ocid 조회 (넥슨)</div>
+        <div class="flex gap-2 font-bold">
+          <span><i class="fas fa-users mr-0.5 text-rose-400"></i>수집 <span>0</span>캐릭</span>
+          <span class="text-red-600"><i class="fas fa-triangle-exclamation mr-0.5"></i>위반 <span>0</span></span>
+          <span class="text-gray-500"><i class="fas fa-clock mr-0.5"></i><span>2s</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 상태 2: 진행중 메애기 모드 -->
+  <section>
+    <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">② 진행 중 (44%, 메애기 모드)</div>
+    <div class="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-3 shadow-sm">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="text-[11px] font-black text-rose-700 flex items-center gap-1.5">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>검사 중 — 31 / 71 <span class="ml-1 px-1.5 py-0.5 bg-white border border-rose-200 rounded text-rose-600">방울이</span></span>
+        </div>
+        <div class="text-[13px] font-black text-rose-600">44%</div>
+      </div>
+      <div class="h-2.5 bg-white rounded-full overflow-hidden border border-rose-100 mb-1.5">
+        <div class="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-300" style="width:44%"></div>
+      </div>
+      <div class="flex items-center justify-between flex-wrap gap-1.5 text-[10px] text-rose-700">
+        <div class="font-bold flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[8px]"></i>방울이 · 메애기 본캐/부캐 목록 호출 · 남은시간 ~38s</div>
+        <div class="flex gap-2 font-bold">
+          <span><i class="fas fa-users mr-0.5 text-rose-400"></i>수집 <span>247</span>캐릭</span>
+          <span class="text-red-600"><i class="fas fa-triangle-exclamation mr-0.5"></i>위반 <span>3</span></span>
+          <span class="text-gray-500"><i class="fas fa-clock mr-0.5"></i><span>32s</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 상태 3: 폴백/넥슨 모드 부캐 조회 중 -->
+  <section>
+    <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">③ 넥슨 모드 (부캐 7/13 조회 중)</div>
+    <div class="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-3 shadow-sm">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="text-[11px] font-black text-rose-700 flex items-center gap-1.5">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>검사 중 — 58 / 71 <span class="ml-1 px-1.5 py-0.5 bg-white border border-rose-200 rounded text-rose-600">렌드름</span></span>
+        </div>
+        <div class="text-[13px] font-black text-rose-600">82%</div>
+      </div>
+      <div class="h-2.5 bg-white rounded-full overflow-hidden border border-rose-100 mb-1.5">
+        <div class="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-300" style="width:82%"></div>
+      </div>
+      <div class="flex items-center justify-between flex-wrap gap-1.5 text-[10px] text-rose-700">
+        <div class="font-bold flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[8px]"></i>렌드름 · 부캐 7/13 (르르여우) 길드 조회 · 남은시간 ~11s</div>
+        <div class="flex gap-2 font-bold">
+          <span><i class="fas fa-users mr-0.5 text-rose-400"></i>수집 <span>456</span>캐릭</span>
+          <span class="text-red-600"><i class="fas fa-triangle-exclamation mr-0.5"></i>위반 <span>8</span></span>
+          <span class="text-gray-500"><i class="fas fa-clock mr-0.5"></i><span>1m 12s</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 비교: 기존 -->
+  <section>
+    <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">참고: 기존 UI (이전 버전)</div>
+    <div class="text-[11px] text-rose-600 font-bold bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+      <i class="fas fa-spinner fa-spin mr-1"></i>검사 중 — 31 / 71 (방울이)
+    </div>
+    <p class="text-[10px] text-gray-400 mt-1">→ 단순 텍스트. 퍼센트·바·단계·카운터 모두 없음</p>
+  </section>
+
+  <!-- 변경 포인트 -->
+  <div class="bg-white border border-gray-200 rounded-xl p-5 text-xs text-gray-600 leading-relaxed space-y-1.5">
+    <h3 class="font-black text-gray-700 mb-2"><i class="fas fa-list-check text-rose-400 mr-1"></i>추가된 요소</h3>
+    <div><strong>① 퍼센트:</strong> 큰 글자로 우측 상단 + 그래디언트 프로그레스 바</div>
+    <div><strong>② 현재 본캐:</strong> 흰 칩으로 강조 (눈에 확 띄게)</div>
+    <div><strong>③ 세부 단계:</strong> ocid 조회 / 메애기 호출 / 부캐 X/Y 조회 / DB 저장 / 폴백 등 실시간</div>
+    <div><strong>④ 카운터:</strong> 수집된 캐릭 누계 · 위반 누계 · 경과시간 (1초마다 라이브)</div>
+    <div><strong>⑤ ETA:</strong> 진행 속도 기반 남은시간 추정</div>
+    <div class="pt-2 border-t border-gray-100 text-amber-700"><strong>※</strong> 이번엔 미리보기 없이 바로 커밋했음 — 다음부턴 먼저 보여드림</div>
+  </div>
+
+</div>
+</body>
+</html>
