@@ -9782,8 +9782,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const cacheMs = (st.cacheHours || 24) * 3600 * 1000;
     const now = Date.now();
     const nowIso = new Date(now).toISOString();
+    const step = (msg) => { if (typeof opts.onStep === 'function') opts.onStep(msg); };
 
     // 1. 본캐 ocid (메애기 /alt 호출 + 폴백용)
+    step(`${mainCharName} · ocid 조회 (넥슨)`);
     let ocid;
     try {
       const idData = await window._nexonFetch('/maplestory/v1/id', { character_name: mainCharName });
@@ -9796,6 +9798,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     // ===== 메애기 모드: /alt 한 방으로 main + alt 전체 받아옴 =====
     if (opts.meaegi) {
       try {
+        step(`${mainCharName} · 메애기 본캐/부캐 목록 호출`);
         const url = window.MEAEGI_PROXY_URL + encodeURIComponent(mainCharName) + '/alt?ocid=' + encodeURIComponent(ocid);
         const res = await fetch(url);
         if (!res.ok) throw new Error('meaegi /alt ' + res.status);
@@ -9805,6 +9808,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         if (Array.isArray(data.alt)) list.push(...data.alt.map(c => ({ ...c, _isMain: false })));
         if (list.length === 0) throw new Error('meaegi 응답 비어있음');
 
+        step(`${mainCharName} · ${list.length}캐릭 길드 확인·저장 중`);
         const upserts = list.map(c => {
           const guildName = c.guildName || '';
           return {
@@ -9820,14 +9824,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           };
         });
         await supaDb.from('discovered_subchars').upsert(upserts, { onConflict: 'nickname' });
-        return { upserted: upserts.length, total: list.length, source: 'meaegi' };
+        const violations = upserts.filter(u => u.is_violation).length;
+        return { upserted: upserts.length, total: list.length, violations, source: 'meaegi' };
       } catch (e) {
         console.warn('메애기 /alt 실패, 폴백:', mainCharName, e.message);
-        // 폴백: 아래 유챔 경로로 진행
+        step(`${mainCharName} · 메애기 실패 → 넥슨 폴백`);
       }
     }
 
     // ===== 폴백/기본 모드: 유챔 + members + Nexon basic =====
+    step(`${mainCharName} · 유니온 챔피언 조회`);
     let champNicks = [];
     try {
       const champData = await window._nexonFetch('/maplestory/v1/character/union-champion', { ocid });
@@ -9844,10 +9850,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       .select('nickname, last_checked_at').in('nickname', allNicks);
     const existingMap = new Map((existing || []).map(r => [r.nickname, r]));
 
+    const toScan = allNicks.filter(n => {
+      const ex = existingMap.get(n);
+      return force || !ex || (now - new Date(ex.last_checked_at).getTime()) >= cacheMs;
+    });
+
     const upserts = [];
-    for (const nick of allNicks) {
-      const ex = existingMap.get(nick);
-      if (!force && ex && (now - new Date(ex.last_checked_at).getTime()) < cacheMs) continue;
+    let scanIdx = 0;
+    for (const nick of toScan) {
+      scanIdx++;
+      step(`${mainCharName} · 부캐 ${scanIdx}/${toScan.length} (${nick}) 길드 조회`);
       try {
         const id = await window._nexonFetch('/maplestory/v1/id', { character_name: nick });
         const basic = await window._nexonFetch('/maplestory/v1/character/basic', { ocid: id.ocid });
@@ -9869,9 +9881,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       await new Promise(r => setTimeout(r, 150));
     }
     if (upserts.length > 0) {
+      step(`${mainCharName} · DB 저장`);
       await supaDb.from('discovered_subchars').upsert(upserts, { onConflict: 'nickname' });
     }
-    return { upserted: upserts.length, total: allNicks.length, source: 'nexon' };
+    const violations = upserts.filter(u => u.is_violation).length;
+    return { upserted: upserts.length, total: allNicks.length, violations, source: 'nexon' };
   };
 
   // 전체 검사 (force: 캐시 무시, meaegi: 메애기 챔피언까지 수집)
@@ -9881,22 +9895,62 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const mains = (appState.members || []).filter(m => m.is_main !== false);
     if (mains.length === 0) { window.showMsg('본캐 목록이 비어있습니다', 'error'); return; }
     st.scanning = true;
-    st.progress = { done: 0, total: mains.length, current: '' };
-    // 허용 길드 먼저 로드
+    const startTime = Date.now();
+    st.progress = { done: 0, total: mains.length, current: '', step: '준비 중', charsFound: 0, violationsFound: 0, startTime };
     st.allowedGuilds = await window._dualFetchAllowed();
     window.renderDualGuild(document.getElementById('contentArea'));
 
-    for (let i = 0; i < mains.length; i++) {
-      st.progress.current = mains[i].name;
-      st.progress.done = i;
-      // 진행률만 업데이트 (전체 재렌더는 너무 무거움)
-      const pe = document.getElementById('dualProgress');
-      if (pe) pe.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>검사 중 — ${i+1} / ${mains.length} (${mains[i].name})`;
-      try { await window._dualScanOne(mains[i].name, { force, meaegi }); } catch(e) { console.warn(e); }
+    // 진행 UI 갱신 헬퍼 (DOM만 부분 업데이트 — 전체 재렌더 X)
+    const updateUI = () => {
+      const p = st.progress;
+      const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
+      const elapsed = Math.round((Date.now() - p.startTime) / 1000);
+      const eta = p.done > 0 ? Math.round((elapsed / p.done) * (p.total - p.done)) : 0;
+      const elStr = elapsed >= 60 ? `${Math.floor(elapsed/60)}m ${elapsed%60}s` : `${elapsed}s`;
+      const etaStr = eta > 0 ? (eta >= 60 ? ` · 남은시간 ~${Math.floor(eta/60)}m ${eta%60}s` : ` · 남은시간 ~${eta}s`) : '';
+
+      const set = (id, html) => { const e = document.getElementById(id); if (e) e.innerHTML = html; };
+      const setText = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+      const setStyle = (id, prop, val) => { const e = document.getElementById(id); if (e) e.style[prop] = val; };
+
+      set('dualProgressTitle', `검사 중 — ${p.done} / ${p.total} <span class="ml-1 px-1.5 py-0.5 bg-white border border-rose-200 rounded text-rose-600">${esc(p.current || '-')}</span>`);
+      setText('dualProgressPct', pct + '%');
+      setStyle('dualProgressBar', 'width', pct + '%');
+      set('dualProgressStep', `<i class="fas fa-circle-notch fa-spin text-[8px]"></i>${esc(p.step || '대기')}${etaStr}`);
+      setText('dpcChars', p.charsFound);
+      setText('dpcViol', p.violationsFound);
+      setText('dpcElapsed', elStr);
+    };
+
+    // 1초마다 elapsed 라이브 갱신 (멤버별 호출 사이에도 시계 돌아가게)
+    const tick = setInterval(updateUI, 1000);
+
+    try {
+      for (let i = 0; i < mains.length; i++) {
+        st.progress.current = mains[i].name;
+        st.progress.done = i;
+        st.progress.step = `[${i+1}/${mains.length}] ${mains[i].name} 시작`;
+        updateUI();
+        try {
+          const res = await window._dualScanOne(mains[i].name, {
+            force, meaegi,
+            onStep: (step) => { st.progress.step = step; updateUI(); }
+          });
+          if (res && res.upserted) {
+            st.progress.charsFound += res.upserted;
+            st.progress.violationsFound += res.violations || 0;
+          }
+        } catch(e) { console.warn(e); }
+        st.progress.done = i + 1;
+        updateUI();
+      }
+    } finally {
+      clearInterval(tick);
     }
-    st.progress.done = mains.length;
+
     st.scanning = false;
-    window.showMsg(`검사 완료 — 본캐 ${mains.length}명 처리됨`, 'success');
+    const totalElapsed = Math.round((Date.now() - startTime) / 1000);
+    window.showMsg(`검사 완료 — 본캐 ${mains.length}명 / 캐릭 ${st.progress.charsFound}개 / 위반 ${st.progress.violationsFound}건 (${totalElapsed}s)`, 'success');
     window.renderDualGuild(document.getElementById('contentArea'));
     window._dualUpdateBadgeFromDB();
   };
@@ -10015,7 +10069,26 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             <button onclick="if(confirm('메애기 세부 검사 — 일반 검사보다 느립니다 (본캐 1명당 +1초). 모든 본캐 강제 재검사를 실행하시겠습니까?')) window._dualScanAll(true, true)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-[11px] font-black hover:bg-purple-600 shadow disabled:opacity-50" title="메애기 챔피언까지 합쳐 부캐 더 발견 — 날 잡고 한 번 돌리는 용도"><i class="fas fa-magnifying-glass-plus mr-1"></i>세부 검사 (메애기)</button>
           </div>
         </div>
-        ${st.scanning ? `<div id="dualProgress" class="text-[11px] text-rose-600 font-bold bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 mb-2"><i class="fas fa-spinner fa-spin mr-1"></i>검사 진행 중...</div>` : ''}
+        ${st.scanning ? `<div id="dualProgressBox" class="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-3 mb-3 shadow-sm">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="text-[11px] font-black text-rose-700 flex items-center gap-1.5">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span id="dualProgressTitle">검사 시작 중...</span>
+            </div>
+            <div class="text-[13px] font-black text-rose-600" id="dualProgressPct">0%</div>
+          </div>
+          <div class="h-2.5 bg-white rounded-full overflow-hidden border border-rose-100 mb-1.5">
+            <div id="dualProgressBar" class="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-300" style="width:0%"></div>
+          </div>
+          <div class="flex items-center justify-between flex-wrap gap-1.5 text-[10px] text-rose-700">
+            <div id="dualProgressStep" class="font-bold flex items-center gap-1"><i class="fas fa-circle-notch fa-spin text-[8px]"></i>대기 중</div>
+            <div id="dualProgressCounters" class="flex gap-2 font-bold">
+              <span><i class="fas fa-users mr-0.5 text-rose-400"></i>수집 <span id="dpcChars">0</span>캐릭</span>
+              <span class="text-red-600"><i class="fas fa-triangle-exclamation mr-0.5"></i>위반 <span id="dpcViol">0</span></span>
+              <span class="text-gray-500"><i class="fas fa-clock mr-0.5"></i><span id="dpcElapsed">0s</span></span>
+            </div>
+          </div>
+        </div>` : ''}
         <div class="grid grid-cols-3 gap-2">
           <div class="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-100"><div class="text-[9px] font-bold text-emerald-500 uppercase">일치</div><div class="text-sm font-black text-emerald-600 mt-0.5">${stats.ok}</div></div>
           <div class="bg-red-50 rounded-lg p-2 text-center border border-red-200"><div class="text-[9px] font-bold text-red-500 uppercase">이중길드 ⚠</div><div class="text-sm font-black text-red-600 mt-0.5">${stats.viol}</div></div>
