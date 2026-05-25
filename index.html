@@ -9733,6 +9733,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   // 이중길드 감사 (dual guild audit) — 카롱+허용 외 길드 가입 캐릭 감지
   // ============================================================
   window.CAROLLING_GUILDS = ['뚠카롱','뚱카롱','밤카롱','별카롱','달카롱','꿀카롱','솜카롱'];
+  window.MEAEGI_PROXY_URL = 'https://guild-meaegi-proxy.hongsb9912.workers.dev/';
   window._dualGuildState = {
     rows: [],            // discovered_subchars + members 합친 표시 데이터
     allowedGuilds: [],   // allowed_guilds 캐시
@@ -9798,13 +9799,27 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       champNicks = (champData?.union_champion || []).map(c => c.champion_name).filter(Boolean);
     } catch (e) { /* 유챔 없으면 패스 */ }
 
+    // 2-2. (옵션) 메애기 세부 검사 — 챔피언 외 추가 캐릭 발견 가능
+    let meaegiNicks = [];
+    if (opts.meaegi) {
+      try {
+        const res = await fetch(window.MEAEGI_PROXY_URL + encodeURIComponent(mainCharName));
+        if (res.ok) {
+          const txt = await res.text();
+          // champion_name 추출 (RSC/JSON 모두 대응)
+          const matches = [...txt.matchAll(/"champion_name":"([^"]+)"/g)];
+          meaegiNicks = matches.map(m => m[1]);
+        }
+      } catch (e) { console.warn('메애기 호출 실패:', mainCharName, e.message); }
+    }
+
     // 3. members 매핑 부캐
     const memberSubs = (appState.members || [])
       .filter(m => m.main_char_name === mainCharName || m.name === mainCharName)
       .map(m => m.name);
 
     // 4. 합집합 unique
-    const allNicks = [...new Set([mainCharName, ...champNicks, ...memberSubs])];
+    const allNicks = [...new Set([mainCharName, ...champNicks, ...meaegiNicks, ...memberSubs])];
 
     // 5. 각 캐릭 길드 조회 (캐시 만료된 것만)
     const { data: existing } = await supaDb.from('discovered_subchars')
@@ -9826,7 +9841,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           job_class: basic.character_class || '',
           level: Number(basic.character_level) || 0,
           real_guild: guildName,
-          source: champNicks.includes(nick) ? 'union-champion' : (memberSubs.includes(nick) ? 'members' : 'manual'),
+          source: champNicks.includes(nick) ? 'union-champion' : (memberSubs.includes(nick) ? 'members' : meaegiNicks.includes(nick) ? 'meaegi' : 'manual'),
           is_violation: !!guildName && !window._dualIsAllowed(guildName),
           last_checked_at: new Date().toISOString()
         });
@@ -9842,8 +9857,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     return { upserted: upserts.length, total: allNicks.length };
   };
 
-  // 전체 검사
-  window._dualScanAll = async (force = false) => {
+  // 전체 검사 (force: 캐시 무시, meaegi: 메애기 챔피언까지 수집)
+  window._dualScanAll = async (force = false, meaegi = false) => {
     const st = window._dualGuildState;
     if (st.scanning) { window.showMsg('이미 검사 중입니다', 'error'); return; }
     const mains = (appState.members || []).filter(m => m.is_main !== false);
@@ -9860,7 +9875,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       // 진행률만 업데이트 (전체 재렌더는 너무 무거움)
       const pe = document.getElementById('dualProgress');
       if (pe) pe.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>검사 중 — ${i+1} / ${mains.length} (${mains[i].name})`;
-      try { await window._dualScanOne(mains[i].name, { force }); } catch(e) { console.warn(e); }
+      try { await window._dualScanOne(mains[i].name, { force, meaegi }); } catch(e) { console.warn(e); }
     }
     st.progress.done = mains.length;
     st.scanning = false;
@@ -9980,7 +9995,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
           <div class="ml-auto flex gap-1.5 flex-wrap">
             <button onclick="window._dualScanAll(false)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-[11px] font-black hover:bg-rose-600 shadow disabled:opacity-50"><i class="fas fa-rotate mr-1"></i>최신화 (24h 캐시)</button>
             <button onclick="window._dualScanAll(true)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-white border border-rose-300 text-rose-600 rounded-lg text-[11px] font-bold hover:bg-rose-50 disabled:opacity-50"><i class="fas fa-radar mr-1"></i>전체 재검사</button>
-            <button onclick="window.showMsg('메애기 세부 검사 — 워커 배포 후 사용 가능. 진행 원하면 알려주세요','info')" class="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-[11px] font-bold" title="별도 워커(guild-meaegi-proxy) 배포 필요"><i class="fas fa-magnifying-glass-plus mr-1"></i>세부 검사 (예정)</button>
+            <button onclick="if(confirm('메애기 세부 검사 — 일반 검사보다 느립니다 (본캐 1명당 +1초). 모든 본캐 강제 재검사를 실행하시겠습니까?')) window._dualScanAll(true, true)" ${st.scanning ? 'disabled' : ''} class="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-[11px] font-black hover:bg-purple-600 shadow disabled:opacity-50" title="메애기 챔피언까지 합쳐 부캐 더 발견 — 날 잡고 한 번 돌리는 용도"><i class="fas fa-magnifying-glass-plus mr-1"></i>세부 검사 (메애기)</button>
           </div>
         </div>
         ${st.scanning ? `<div id="dualProgress" class="text-[11px] text-rose-600 font-bold bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 mb-2"><i class="fas fa-spinner fa-spin mr-1"></i>검사 진행 중...</div>` : ''}
