@@ -185,41 +185,60 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <div><h1 class="text-lg font-bold text-gray-800 tracking-tight">뚠카롱 길드 현황</h1><p id="publicViewLabel" class="text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">PUBLIC VIEW</p></div>
    <button id="closeSidebar" class="lg:hidden ml-auto text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
   </div>
-  <nav class="p-4 space-y-1 flex-1 overflow-y-auto no-scrollbar">
-   <p class="px-4 pt-2 pb-2 text-[9px] font-bold text-gray-300 uppercase tracking-widest">메뉴</p>
-   <button onclick="router('home')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="home"><i class="fas fa-home w-5 text-center text-xs"></i><span>홈</span></button>
-   <button onclick="router('members')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="members"><i class="fas fa-users w-5 text-center text-xs"></i><span>길드원</span></button>
-   <button onclick="router('analysis')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="analysis"><i class="fas fa-chart-line w-5 text-center text-xs"></i><span>수로 분석</span></button>
-   <button onclick="router('promotion')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="promotion"><i class="fas fa-exchange-alt w-5 text-center text-xs"></i><span>승강제</span></button>
-   <button onclick="router('guild_stats')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="guild_stats"><i class="fas fa-chart-pie w-5 text-center text-xs"></i><span>현황</span></button>
-   <button onclick="router('suro_reward')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="suro_reward"><i class="fas fa-gift w-5 text-center text-xs"></i><span>수로 보상</span></button>
-   <button onclick="router('board')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="board"><i class="fas fa-clipboard w-5 text-center text-xs"></i><span>게시판</span></button>
-   <button onclick="router('buddy')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="buddy"><i class="fas fa-handshake w-5 text-center text-xs"></i><span>뚠뚠 버디</span></button>
-   <button onclick="router('sheet_manage')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="sheet_manage"><i class="fas fa-table-list w-5 text-center text-xs"></i><span>시트 관리</span></button>
-   <button onclick="router('consulting')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="consulting"><i class="fas fa-stethoscope w-5 text-center text-xs"></i><span>아이템 컨설팅</span></button>
-   <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금</span></button>
-   <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="penalty"><i class="fas fa-exclamation-triangle w-5 text-center text-xs"></i><span>벌점</span></button>
-   <button onclick="router('join_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="join_form"><i class="fas fa-user-plus w-5 text-center text-xs"></i><span>가입 신청</span></button>
-   <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form"><i class="fas fa-shield-alt w-5 text-center text-xs"></i><span>면제 신청</span></button>
-   <button onclick="router('bail_form')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail_form"><i class="fas fa-gem w-5 text-center text-xs"></i><span>보석금 신청</span></button>
-   <button onclick="router('manual')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="manual"><i class="fas fa-book-open w-5 text-center text-xs"></i><span>사용 안내</span></button>
-   <button onclick="router('requests')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="requests"><i class="fas fa-inbox w-5 text-center text-xs"></i><span>신청 처리</span><span id="reqQueueBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
-   <button onclick="router('admin_todos')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="admin_todos"><i class="fas fa-clipboard-check w-5 text-center text-xs"></i><span>운영진 할 일</span><span id="adminTodosBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
-   <button onclick="router('dual_guild')" class="nav-item admin-only hidden w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm relative" data-target="dual_guild"><i class="fas fa-user-shield w-5 text-center text-xs"></i><span>이중길드 감사</span><span id="dualGuildBadge" class="hidden absolute right-3 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
-   <div class="admin-only hidden" id="adminMenuSection">
-   <button onclick="const el=document.getElementById('adminMenuList');el.classList.toggle('hidden');this.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-4 pt-4 pb-2 cursor-pointer hover:bg-pink-50/50 rounded-xl transition-all">
-     <span class="text-[9px] font-bold text-gray-300 uppercase tracking-widest">관리자</span>
-     <i class="fas fa-chevron-down text-[8px] text-gray-300 transition-transform"></i>
-   </button>
-   <div id="adminMenuList" class="hidden">
-   <button onclick="router('all_history')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="all_history"><i class="fas fa-history w-5 text-center text-xs"></i><span>이력</span></button>
-   <button onclick="router('suro_input')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="suro_input"><i class="fas fa-keyboard w-5 text-center text-xs"></i><span>수로 입력</span></button>
-   <button onclick="router('role_assign')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="role_assign"><i class="fas fa-medal w-5 text-center text-xs"></i><span>직위 반영</span></button>
-   <button onclick="router('guide_edit')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="guide_edit"><i class="fas fa-edit w-5 text-center text-xs"></i><span>가이드 편집</span></button>
-   <button onclick="router('sync')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="sync"><i class="fas fa-sync w-5 text-center text-xs"></i><span>동기화</span></button>
-   <button onclick="router('sheet')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="sheet"><i class="fas fa-database w-5 text-center text-xs"></i><span>DB 시트</span></button>
-   <button onclick="router('settings')" class="nav-item w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="settings"><i class="fas fa-cog w-5 text-center text-xs"></i><span>설정</span></button>
-   </div>
+  <nav class="p-3 space-y-0.5 flex-1 overflow-y-auto no-scrollbar">
+
+   <!-- 메인 -->
+   <p class="px-3 pt-1 pb-1 text-[9px] font-black text-gray-300 uppercase tracking-widest">메인</p>
+   <button onclick="router('home')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="home"><i class="fas fa-home w-5 text-center text-xs text-gray-400"></i><span>홈</span></button>
+
+   <!-- 길드원 -->
+   <p class="px-3 pt-3 pb-1 text-[9px] font-black text-gray-300 uppercase tracking-widest">길드원</p>
+   <button onclick="router('members')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="members"><i class="fas fa-users w-5 text-center text-xs text-gray-400"></i><span>길드원</span></button>
+   <button onclick="router('analysis')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="analysis"><i class="fas fa-chart-line w-5 text-center text-xs text-gray-400"></i><span>수로 분석</span></button>
+   <button onclick="router('promotion')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="promotion"><i class="fas fa-exchange-alt w-5 text-center text-xs text-gray-400"></i><span>승강제</span></button>
+   <button onclick="router('guild_stats')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="guild_stats"><i class="fas fa-chart-pie w-5 text-center text-xs text-gray-400"></i><span>현황</span></button>
+   <button onclick="router('suro_reward')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="suro_reward"><i class="fas fa-gift w-5 text-center text-xs text-gray-400"></i><span>수로 보상</span></button>
+
+   <!-- 컨텐츠 -->
+   <p class="px-3 pt-3 pb-1 text-[9px] font-black text-gray-300 uppercase tracking-widest">컨텐츠</p>
+   <button onclick="router('board')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="board"><i class="fas fa-clipboard w-5 text-center text-xs text-gray-400"></i><span>게시판</span></button>
+   <button onclick="router('buddy')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="buddy"><i class="fas fa-handshake w-5 text-center text-xs text-gray-400"></i><span>뚠뚠 버디</span></button>
+   <button onclick="router('consulting')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="consulting"><i class="fas fa-stethoscope w-5 text-center text-xs text-gray-400"></i><span>아이템 컨설팅</span></button>
+   <button onclick="router('manual')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="manual"><i class="fas fa-book-open w-5 text-center text-xs text-gray-400"></i><span>사용 안내</span></button>
+
+   <!-- 신청 (멤버용) -->
+   <p class="px-3 pt-3 pb-1 text-[9px] font-black text-gray-300 uppercase tracking-widest">신청 (멤버용)</p>
+   <button onclick="router('join_form')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="join_form"><i class="fas fa-user-plus w-5 text-center text-xs text-gray-400"></i><span>가입 신청</span></button>
+   <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form"><i class="fas fa-shield-alt w-5 text-center text-xs text-gray-400"></i><span>면제 신청</span></button>
+   <button onclick="router('bail_form')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail_form"><i class="fas fa-gem w-5 text-center text-xs text-gray-400"></i><span>보석금 신청</span></button>
+
+   <!-- ===== 관리자 전용 영역 (로즈 강조 + 점선 분리) ===== -->
+   <div class="admin-only hidden">
+     <div class="mt-3 mx-1 border-t-2 border-rose-300 border-dashed"></div>
+     <p class="px-3 pt-2 pb-1 text-[9px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-1 bg-rose-50/60 -mx-1 px-3 rounded"><i class="fas fa-lock text-[8px]"></i>관리자 운영</p>
+     <button onclick="router('requests')" class="nav-item w-full flex items-center justify-between px-3 py-2 mt-0.5 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="requests"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-inbox w-4 text-center text-xs text-rose-400"></i><span>신청 처리</span></span><span id="reqQueueBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
+     <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm" data-target="bail"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-gem w-4 text-center text-xs text-rose-400"></i><span>보석금 관리</span></button>
+     <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm" data-target="penalty"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-exclamation-triangle w-4 text-center text-xs text-rose-400"></i><span>벌점</span></button>
+     <button onclick="router('admin_todos')" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="admin_todos"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-clipboard-check w-4 text-center text-xs text-rose-400"></i><span>운영진 할 일</span></span><span id="adminTodosBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
+     <button onclick="router('dual_guild')" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="dual_guild"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-user-shield w-4 text-center text-xs text-rose-400"></i><span>이중길드 감사</span></span><span id="dualGuildBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
+
+     <p class="px-3 pt-3 pb-1 text-[9px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1"><i class="fas fa-screwdriver-wrench text-[8px]"></i>관리자 도구</p>
+     <button onclick="router('sheet_manage')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/30 border border-rose-100 text-rose-600 hover:bg-rose-100 font-bold text-sm" data-target="sheet_manage"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-table-list w-4 text-center text-xs text-rose-400"></i><span>시트 관리</span></button>
+     <div id="adminMenuSection">
+       <button onclick="const el=document.getElementById('adminMenuList');el.classList.toggle('hidden');this.querySelector('.fa-chevron-down')?.classList.toggle('rotate-180')" class="w-full flex items-center justify-between px-3 py-2 cursor-pointer bg-rose-50/30 border border-rose-100 text-rose-600 hover:bg-rose-100 rounded-xl transition-all font-bold text-sm">
+         <span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-cog w-4 text-center text-xs text-rose-400"></i><span>설정·이력·동기화 등 ▾</span></span>
+         <i class="fas fa-chevron-down text-[8px] text-rose-400 transition-transform"></i>
+       </button>
+       <div id="adminMenuList" class="hidden pl-2 mt-0.5 space-y-0.5">
+         <button onclick="router('all_history')" class="nav-item w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-100 font-bold text-xs" data-target="all_history"><i class="fas fa-history w-4 text-center text-[10px]"></i><span>이력</span></button>
+         <button onclick="router('suro_input')" class="nav-item w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-100 font-bold text-xs" data-target="suro_input"><i class="fas fa-keyboard w-4 text-center text-[10px]"></i><span>수로 입력</span></button>
+         <button onclick="router('role_assign')" class="nav-item w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-100 font-bold text-xs" data-target="role_assign"><i class="fas fa-medal w-4 text-center text-[10px]"></i><span>직위 반영</span></button>
+         <button onclick="router('guide_edit')" class="nav-item w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-100 font-bold text-xs" data-target="guide_edit"><i class="fas fa-edit w-4 text-center text-[10px]"></i><span>가이드 편집</span></button>
+         <button onclick="router('sync')" class="nav-item w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-100 font-bold text-xs" data-target="sync"><i class="fas fa-sync w-4 text-center text-[10px]"></i><span>동기화</span></button>
+         <button onclick="router('sheet')" class="nav-item w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-100 font-bold text-xs" data-target="sheet"><i class="fas fa-database w-4 text-center text-[10px]"></i><span>DB 시트</span></button>
+         <button onclick="router('settings')" class="nav-item w-full flex items-center space-x-3 px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-100 font-bold text-xs" data-target="settings"><i class="fas fa-cog w-4 text-center text-[10px]"></i><span>설정</span></button>
+       </div>
+     </div>
    </div>
   </nav>
   <div class="p-3 border-t border-gray-100 bg-gray-50/50 font-bold space-y-2">
@@ -494,7 +513,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    if (userInfo) userInfo.classList.remove('hidden');
    if (userNameEl) userNameEl.textContent = CURRENT_USER.name || CURRENT_USER.email;
    adminMenus.forEach(el => el.classList.remove('hidden'));
-   if (publicLabel) publicLabel.textContent = 'ADMIN';
+   if (publicLabel) { publicLabel.innerHTML = '<i class="fas fa-shield-halved mr-0.5"></i>ADMIN 모드'; publicLabel.className = 'text-[9px] text-rose-600 font-black uppercase tracking-widest leading-none mt-1'; }
    document.getElementById('adminRequestBtn')?.classList.add('hidden');
    document.getElementById('adminRequestStatus')?.classList.add('hidden');
    } else if (CURRENT_USER) {
@@ -502,13 +521,13 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    if (userInfo) userInfo.classList.remove('hidden');
    if (userNameEl) userNameEl.textContent = CURRENT_USER.name || CURRENT_USER.email;
    adminMenus.forEach(el => el.classList.add('hidden'));
-   if (publicLabel) publicLabel.textContent = 'PUBLIC VIEW';
+   if (publicLabel) { publicLabel.textContent = 'PUBLIC VIEW'; publicLabel.className = 'text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1'; }
    window._checkAdminRequestStatus();
    } else {
    if (loginBtn) loginBtn.classList.remove('hidden');
    if (userInfo) userInfo.classList.add('hidden');
    adminMenus.forEach(el => el.classList.add('hidden'));
-   if (publicLabel) publicLabel.textContent = 'PUBLIC VIEW';
+   if (publicLabel) { publicLabel.textContent = 'PUBLIC VIEW'; publicLabel.className = 'text-[9px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1'; }
    document.getElementById('adminRequestBtn')?.classList.add('hidden');
    document.getElementById('adminRequestStatus')?.classList.add('hidden');
    }
