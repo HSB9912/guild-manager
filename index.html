@@ -195,8 +195,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <p class="px-3 pt-3 pb-1 text-[9px] font-black text-gray-300 uppercase tracking-widest">길드원</p>
    <button onclick="router('members')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="members"><i class="fas fa-users w-5 text-center text-xs text-gray-400"></i><span>길드원</span></button>
    <button onclick="router('analysis')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="analysis"><i class="fas fa-chart-line w-5 text-center text-xs text-gray-400"></i><span>수로 분석</span></button>
-   <button onclick="router('promotion')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="promotion"><i class="fas fa-exchange-alt w-5 text-center text-xs text-gray-400"></i><span>승강제</span></button>
-   <button onclick="router('guild_stats')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="guild_stats"><i class="fas fa-chart-pie w-5 text-center text-xs text-gray-400"></i><span>현황</span></button>
+   <button onclick="router('promotion')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="promotion" data-target-alt="guild_stats"><i class="fas fa-exchange-alt w-5 text-center text-xs text-gray-400"></i><span>승강제 · 현황</span></button>
    <button onclick="router('suro_reward')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="suro_reward"><i class="fas fa-gift w-5 text-center text-xs text-gray-400"></i><span>수로 보상</span></button>
 
    <!-- 컨텐츠 -->
@@ -209,16 +208,14 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
    <!-- 신청 (멤버용) -->
    <p class="px-3 pt-3 pb-1 text-[9px] font-black text-gray-300 uppercase tracking-widest">신청 (멤버용)</p>
    <button onclick="router('join_form')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="join_form"><i class="fas fa-user-plus w-5 text-center text-xs text-gray-400"></i><span>가입 신청</span></button>
-   <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form"><i class="fas fa-shield-alt w-5 text-center text-xs text-gray-400"></i><span>면제 신청</span></button>
-   <button onclick="router('bail_form')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="bail_form"><i class="fas fa-gem w-5 text-center text-xs text-gray-400"></i><span>보석금 신청</span></button>
+   <button onclick="router('exempt_form')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-600 hover:bg-pink-50 font-bold text-sm" data-target="exempt_form" data-target-alt="bail_form"><i class="fas fa-shield-alt w-5 text-center text-xs text-gray-400"></i><span>면제 · 보석금 신청</span></button>
 
    <!-- ===== 관리자 전용 영역 (로즈 강조 + 점선 분리) ===== -->
    <div class="admin-only hidden">
      <div class="mt-3 mx-1 border-t-2 border-rose-300 border-dashed"></div>
      <p class="px-3 pt-2 pb-1 text-[9px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-1 bg-rose-50/60 -mx-1 px-3 rounded"><i class="fas fa-lock text-[8px]"></i>관리자 운영</p>
      <button onclick="router('requests')" class="nav-item w-full flex items-center justify-between px-3 py-2 mt-0.5 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="requests"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-inbox w-4 text-center text-xs text-rose-400"></i><span>신청 처리</span></span><span id="reqQueueBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
-     <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm" data-target="bail"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-gem w-4 text-center text-xs text-rose-400"></i><span>보석금 관리</span></button>
-     <button onclick="router('penalty')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm" data-target="penalty"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-exclamation-triangle w-4 text-center text-xs text-rose-400"></i><span>벌점</span></button>
+     <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm" data-target="bail" data-target-alt="penalty"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-gem w-4 text-center text-xs text-rose-400"></i><span>보석금 · 벌점</span></button>
      <button onclick="router('admin_todos')" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="admin_todos"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-clipboard-check w-4 text-center text-xs text-rose-400"></i><span>운영진 할 일</span></span><span id="adminTodosBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
      <button onclick="router('dual_guild')" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="dual_guild"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-user-shield w-4 text-center text-xs text-rose-400"></i><span>이중길드 감사</span></span><span id="dualGuildBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
 
@@ -1546,7 +1543,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             appState.activeTab = tab;
             const content = document.getElementById('contentArea'); if(!content) return;
             content.innerHTML = '';
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab || el.dataset.targetAlt === tab));
             const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', consulting: '아이템 컨설팅', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영' };
             document.getElementById('pageTitle').innerText = titles[tab] || '';
             if (tab === 'home') window.renderHome(content);
@@ -1586,6 +1583,48 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const adminTabs = ['weekly_log','all_history','suro_input','role_assign','guide_edit','sync','sheet','history','records','settings','requests','admin_todos','dual_guild'];
             const adminList = document.getElementById('adminMenuList');
             if (adminList && adminTabs.includes(tab)) adminList.classList.remove('hidden');
+
+            // ===== 2단계 통합: 관련 페이지 탭 바 자동 주입 =====
+            window._renderRelatedTabs?.(tab);
+        };
+
+        // 통합 그룹 정의 — 같은 그룹의 페이지끼리 페이지 상단 탭으로 빠른 이동
+        window._RELATED_GROUPS = {
+          bail:        { name: '관리자 운영', admin: true,  tabs: [['bail','보석금 관리'], ['penalty','벌점']] },
+          penalty:     { name: '관리자 운영', admin: true,  tabs: [['bail','보석금 관리'], ['penalty','벌점']] },
+          exempt_form: { name: '멤버 신청',  admin: false, tabs: [['exempt_form','면제 신청'], ['bail_form','보석금 신청']] },
+          bail_form:   { name: '멤버 신청',  admin: false, tabs: [['exempt_form','면제 신청'], ['bail_form','보석금 신청']] },
+          promotion:   { name: '길드원',     admin: false, tabs: [['promotion','승강제'], ['guild_stats','현황']] },
+          guild_stats: { name: '길드원',     admin: false, tabs: [['promotion','승강제'], ['guild_stats','현황']] },
+        };
+
+        // contentArea 바깥(main 안)에 떠있는 탭 바 — 페이지 코드와 독립적
+        window._renderRelatedTabs = (currentTab) => {
+          const group = window._RELATED_GROUPS?.[currentTab];
+          let bar = document.getElementById('_relatedTabsBar');
+          if (!group) { if (bar) bar.classList.add('hidden'); return; }
+          if (!bar) {
+            bar = document.createElement('div');
+            bar.id = '_relatedTabsBar';
+            bar.className = 'px-2 sm:px-3 lg:px-6 py-2 border-b shrink-0';
+            const ca = document.getElementById('contentArea');
+            ca?.parentElement?.insertBefore(bar, ca);
+          }
+          const isAdmin = !!group.admin;
+          bar.className = `px-2 sm:px-3 lg:px-6 py-2 border-b shrink-0 ${isAdmin ? 'bg-rose-50/60 border-rose-200' : 'bg-pink-50/40 border-pink-100'}`;
+          bar.innerHTML = `<div class="flex items-center gap-2 text-[11px] flex-wrap">
+            <span class="text-[10px] font-black ${isAdmin?'text-rose-600':'text-gray-500'} flex items-center gap-1">
+              ${isAdmin ? '<i class="fas fa-lock text-[9px]"></i>' : '<i class="fas fa-layer-group text-[9px]"></i>'}${group.name}
+            </span>
+            ${group.tabs.map(([r, label]) => {
+              const active = r === currentTab;
+              const cls = active
+                ? (isAdmin ? 'bg-rose-500 text-white shadow' : 'bg-pink-500 text-white shadow')
+                : (isAdmin ? 'bg-white border border-rose-200 text-rose-600 hover:bg-rose-100' : 'bg-white border border-pink-200 text-gray-600 hover:bg-pink-100');
+              return `<button onclick="router('${r}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${cls}">${label}</button>`;
+            }).join('')}
+          </div>`;
+          bar.classList.remove('hidden');
         };
 
         window.renderDashboard = (container) => {
