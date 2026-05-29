@@ -74,6 +74,9 @@
       <div>• <strong class="text-emerald-700">안정권 = TOP 90 이내</strong> — 강등 거의 없음</div>
       <div>• <strong class="text-yellow-700">90~180등 = 변동성 위험구간</strong> — 갭이 적어 작은 변동에도 강등 가능</div>
       <div>• 🥞 <strong class="text-amber-700">팬케이크 = 하위 20명 (강등권)</strong> · 🍞 스콘 5.5만 미만 (강등 권유)</div>
+      <div class="border-t border-pink-200 mt-1.5 pt-1.5">⚔️ <strong>1기 ↔ 2기 승강제</strong>: 매주 1:1 점수 비교로 자리 교체</div>
+      <div>&nbsp;&nbsp;<strong>2기 → 1기 승급</strong> 조건 (하나만 충족): ① <strong>지난주 1기 180등 점수 돌파</strong> · ② 매칭된 1기 강등권보다 <strong>5,000점 이상</strong> 격차</div>
+      <div>&nbsp;&nbsp;<strong class="text-amber-700">1기 → 2기 강등</strong>: 꼴등 점수 → 매칭된 2기 상위와 자리 교체</div>
     </div>
 
     <!-- 슬라이더 -->
@@ -108,10 +111,15 @@
 
       <!-- 아래쪽 보조 마커: 180등(변동 경계), 평균 -->
       <div class="relative mt-1 h-6 pointer-events-none">
+        <div class="absolute text-center hidden" id="mk_last" style="left:0%; transform:translateX(-50%)">
+          <div class="w-px h-2 bg-red-500 mx-auto"></div>
+          <div class="text-[8px] font-bold text-red-700 leading-none mt-0.5" id="mk_lastv">—</div>
+          <div class="text-[7px] text-red-600 leading-tight">꼴등</div>
+        </div>
         <div class="absolute text-center hidden" id="mk_180" style="left:0%; transform:translateX(-50%)">
           <div class="w-px h-2 bg-yellow-500 mx-auto"></div>
           <div class="text-[8px] font-bold text-yellow-700 leading-none mt-0.5" id="mk_180v">—</div>
-          <div class="text-[7px] text-yellow-600 leading-tight">180등</div>
+          <div class="text-[7px] text-yellow-600 leading-tight">180등·승급컷</div>
         </div>
         <div class="absolute text-center hidden" id="mk_avg" style="left:0%; transform:translateX(-50%)">
           <div class="w-px h-2 bg-gray-400 mx-auto"></div>
@@ -509,18 +517,19 @@
   }
   function applyScState() {
     if (!scState) return;
+    placeMarker('mk_last', scState.cut_last);
     placeMarker('mk_180', scState.cut180);
     placeMarker('mk_90',  scState.cut90);
     placeMarker('mk_avg', scState.avg);
     placeMarker('mk_t21', scState.top21);
     placeMarker('mk_t5',  scState.top5);
-    document.getElementById('mk_180v').textContent = fmtMan(scState.cut180);
-    document.getElementById('mk_90v').textContent  = fmtMan(scState.cut90);
-    document.getElementById('mk_avgv').textContent = fmtMan(scState.avg);
-    document.getElementById('mk_t21v').textContent = fmtMan(scState.top21);
-    document.getElementById('mk_t5v').textContent  = fmtMan(scState.top5);
-    // 마커 다 보이게
-    ['mk_180','mk_90','mk_avg','mk_t21','mk_t5'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+    document.getElementById('mk_lastv').textContent = fmtMan(scState.cut_last);
+    document.getElementById('mk_180v').textContent  = fmtMan(scState.cut180);
+    document.getElementById('mk_90v').textContent   = fmtMan(scState.cut90);
+    document.getElementById('mk_avgv').textContent  = fmtMan(scState.avg);
+    document.getElementById('mk_t21v').textContent  = fmtMan(scState.top21);
+    document.getElementById('mk_t5v').textContent   = fmtMan(scState.top5);
+    ['mk_last','mk_180','mk_90','mk_avg','mk_t21','mk_t5'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
     scLoaded = true;
     updateScore();
   }
@@ -540,6 +549,7 @@
     }
     let rank, msg, color;
     if (v < 10000) { rank = '❌ 가입 불가'; msg = '1만점 미만은 신청 거절'; color = 'text-red-600'; }
+    else if (v < scState.cut_last) { rank = '🚨 꼴등 (즉시 강등 위험)'; msg = `현재 꼴등 ${fmtMan(scState.cut_last)} 미만 — 2기로 트레이드`; color = 'text-red-700'; }
     else if (v < scState.cut180) { rank = '⚠ 팬케이크 (강등권)'; msg = '하위 20명 — 점수 낮은 사람부터 강등'; color = 'text-amber-700'; }
     else if (v < scState.cut90)  { rank = '⚡ 변동성 위험'; msg = '90~180등 — 작은 변동에도 강등 가능'; color = 'text-yellow-700'; }
     else if (v < scState.avg)    { rank = '✓ 안정권'; msg = 'TOP 90 이내 — 강등 거의 없음'; color = 'text-emerald-700'; }
@@ -570,14 +580,15 @@
 
       const total = scores.length;
       const at = (idx) => scores[Math.min(Math.max(idx, 0), total - 1)]?.score || 0;
-      const cut180 = at(179);  // 180등
+      const cut_last = at(total - 1);  // 꼴등 (마지막 등)
+      const cut180 = at(179);  // 180등 (승급 컷)
       const cut90  = at(89);   // 90등 = 안정선
       const top21  = at(20);   // TOP 21 (티라미슈 진입)
       const top5   = at(4);    // TOP 5 (크라운 진입)
       const top1   = at(0);    // TOP 1
       const avg = Math.round(scores.reduce((s, x) => s + x.score, 0) / total);
 
-      scState = { cut180, cut90, avg, top21, top5, top1, total };
+      scState = { cut_last, cut180, cut90, avg, top21, top5, top1, total };
       // 슬라이더 초기값을 안정선 가까이로 (사용자가 첫 인상 "안정권")
       const slider = document.getElementById('scoreSlider');
       if (slider && slider.value === '100000') {
