@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가입 신청 완성본 — 현재 vs 신규 (시안 D 확장)</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', sans-serif; background: #e5e7eb; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* Slider styling */
+  input[type=range].sc-slider {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 8px;
+    background: linear-gradient(to right, #e5e7eb 0%, #e5e7eb 5%, #fef3c7 5%, #fef3c7 80%, #fce7f3 80%, #fce7f3 100%);
+    border-radius: 9999px; outline: none; cursor: pointer; margin: 0;
+  }
+  input[type=range].sc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 22px; height: 22px;
+    background: #10b981; border: 3px solid white; border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25); cursor: grab;
+  }
+  input[type=range].sc-slider::-moz-range-thumb {
+    width: 22px; height: 22px; background: #10b981; border: 3px solid white;
+    border-radius: 9999px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); cursor: grab;
+  }
+</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <header class="text-center pb-2 border-b border-gray-300">
+    <h1 class="text-xl font-bold text-gray-900">가입 신청 완성본 — 현재 vs 신규</h1>
+    <p class="text-xs text-gray-500 mt-1">좌: 현재 페이지 그대로 / 우: 신규 (시안 D + 1만 단위 마커 + 160등 안정권 + 기존 폼 전부)</p>
+    <p class="text-[10px] text-gray-400 mt-1">우측 슬라이더 직접 조작 가능합니다 ↓</p>
+  </header>
+
+  <!-- 비교 그리드 -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- ════════ 좌: 현재 ════════ -->
+    <section>
+      <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">현재</div>
+      <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-4 lg:p-6 min-h-[800px]">
+        <div class="max-w-md mx-auto">
+          <!-- 헤더 -->
+          <div class="text-center mb-6 pt-2">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg mb-3">
+              <i class="fas fa-user-plus text-white text-2xl"></i>
+            </div>
+            <h1 class="text-xl font-black text-gray-800">뚠/뚱카롱 가입 신청</h1>
+            <p class="text-[11px] text-gray-500 mt-1">아래 항목을 작성하면 간부진이 검토 후 안내드립니다</p>
+          </div>
+          <!-- 안내 -->
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 text-[11px] text-gray-600 leading-relaxed space-y-2">
+            <div class="flex items-start gap-2"><i class="fas fa-circle-info text-pink-400 mt-0.5"></i><div>가입 문의 후 <strong class="text-gray-800">12시간 대기</strong>가 있습니다.</div></div>
+            <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-2.5"><i class="fas fa-triangle-exclamation text-red-500 mt-0.5"></i><div class="text-red-700"><strong>수로 10,000점 미만 가입 불가</strong>입니다.</div></div>
+          </div>
+          <!-- 폼 mock -->
+          <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-3">
+            <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider">기본 정보 *</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-400">닉네임 *</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-400">수로 점수 * (최소 10,000)</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-400">직업 *</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-400">전 길드 *</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-400">가입 경로 *</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-400">가입 카테고리 *</div>
+            <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider pt-2">가입 질문</div>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs text-gray-400">질문 1, 2, 3 ...</div>
+            <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider pt-2">핸즈 인증 캡처 *</div>
+            <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 text-[11px] text-amber-800">maple hands+ 12캐릭 보이게 캡처</div>
+            <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center text-[11px] text-gray-400">탭해서 캡처 첨부 / Ctrl+V</div>
+            <button class="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm py-3.5 rounded-2xl shadow mt-2"><i class="fas fa-paper-plane mr-2"></i>가입 신청하기</button>
+          </div>
+        </div>
+      </div>
+      <div class="mt-2 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+        ⚠ 외부인에게 길드 수준·이벤트 정보 없음. 수로 10K만 보임
+      </div>
+    </section>
+
+    <!-- ════════ 우: 신규 완성본 ════════ -->
+    <section>
+      <div class="text-[11px] font-bold text-emerald-700 mb-2 uppercase flex items-center gap-1">신규 — 시안 D 확장 <span class="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">완성본</span></div>
+      <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-4 lg:p-6 min-h-[800px]">
+        <div class="max-w-md mx-auto space-y-4">
+
+          <!-- 헤더 -->
+          <div class="text-center pt-2">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg mb-3">
+              <i class="fas fa-user-plus text-white text-2xl"></i>
+            </div>
+            <h1 class="text-xl font-black text-gray-800">뚠/뚱카롱 가입 신청</h1>
+            <p class="text-[11px] text-gray-500 mt-1">📍 루나 서버 · 6년차 운영 길드 · 1기/2기 분리 운영</p>
+          </div>
+
+          <!-- ✨ NEW: 수로 상시 이벤트 + 점수 분포 (시안 D 확장) -->
+          <div class="bg-white rounded-2xl border border-pink-200 shadow-sm p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-pink-100 text-pink-600 text-xs"><i class="fas fa-gift"></i></span>
+              <div>
+                <div class="text-[12px] font-black text-gray-800">수로 상시 이벤트 안내</div>
+                <div class="text-[9px] text-gray-500">분기(3개월) 평균 점수 기준 · 1기 뚠카롱</div>
+              </div>
+            </div>
+
+            <div class="text-[10.5px] text-gray-600 leading-relaxed space-y-1 mb-3 bg-pink-50/50 rounded-lg p-2.5">
+              <div>• 매주 <strong>수요일 수로</strong> 참여, 분기 평균으로 직위·보상 결정</div>
+              <div>• 상위 <strong>TOP 5 = 크라운</strong> (부캐 면제 + <strong>100억</strong>)</div>
+              <div>• 안정권은 <strong>160등 컷(약 25,000점)</strong> 이상 — 그 이하 2주 연속이면 강등</div>
+              <div>• <strong>수로 미참 시</strong> 보석금 (솔에르다 80개) 납부 시 노블 해제</div>
+            </div>
+
+            <!-- 슬라이더 -->
+            <div class="text-[11px] font-bold text-gray-700 mb-2"><i class="fas fa-location-arrow text-pink-400 mr-1"></i>내 점수 위치 확인 <span class="text-[9px] font-medium text-gray-400 ml-1">슬라이더 조정</span></div>
+
+            <!-- 슬라이더 트랙 + 마커 -->
+            <div class="relative mb-1 pt-7 px-2">
+              <!-- 위쪽 핵심 컷 라벨 -->
+              <div class="absolute top-0 left-0 right-0 h-6 pointer-events-none">
+                <!-- 10K 진입선 -->
+                <div class="absolute" style="left:5%; transform:translateX(-50%)">
+                  <div class="text-[8px] font-bold text-amber-700 whitespace-nowrap">10K 진입선</div>
+                  <div class="w-px h-3 bg-amber-400 mx-auto"></div>
+                </div>
+                <!-- 25K 안정권 (160등) -->
+                <div class="absolute" style="left:12.5%; transform:translateX(-50%)">
+                  <div class="text-[8px] font-bold text-emerald-700 whitespace-nowrap">25K 안정권<br><span class="font-normal text-emerald-500">(160등)</span></div>
+                </div>
+                <!-- 45K 평균 -->
+                <div class="absolute" style="left:22.5%; transform:translateX(-50%)">
+                  <div class="text-[8px] font-bold text-gray-700 whitespace-nowrap">45K 평균</div>
+                </div>
+                <!-- 65K 티라미슈 -->
+                <div class="absolute" style="left:32.5%; transform:translateX(-50%)">
+                  <div class="text-[8px] font-bold text-pink-700 whitespace-nowrap">65K 티라미슈</div>
+                </div>
+                <!-- 95K 크라운 -->
+                <div class="absolute" style="left:47.5%; transform:translateX(-50%)">
+                  <div class="text-[8px] font-bold text-rose-700 whitespace-nowrap">95K 크라운</div>
+                </div>
+              </div>
+
+              <input type="range" min="0" max="200000" value="55000" step="5000" id="scoreSlider" class="sc-slider">
+
+              <!-- 아래쪽 단위 라벨 -->
+              <div class="relative mt-1 h-3 text-[8px] text-gray-400 select-none">
+                <span class="absolute" style="left:0%">0</span>
+                <span class="absolute" style="left:5%; transform:translateX(-50%)">10K</span>
+                <span class="absolute" style="left:10%; transform:translateX(-50%)">20K</span>
+                <span class="absolute" style="left:15%; transform:translateX(-50%)">30K</span>
+                <span class="absolute" style="left:20%; transform:translateX(-50%)">40K</span>
+                <span class="absolute" style="left:25%; transform:translateX(-50%)">50K</span>
+                <span class="absolute" style="left:30%; transform:translateX(-50%)">60K</span>
+                <span class="absolute" style="left:35%; transform:translateX(-50%)">70K</span>
+                <span class="absolute" style="left:40%; transform:translateX(-50%)">80K</span>
+                <span class="absolute" style="left:45%; transform:translateX(-50%)">90K</span>
+                <span class="absolute" style="left:50%; transform:translateX(-50%)">100K</span>
+                <span class="absolute" style="left:75%; transform:translateX(-50%)">150K</span>
+                <span class="absolute" style="right:0%">200K+</span>
+              </div>
+            </div>
+
+            <!-- 결과 카드 -->
+            <div class="grid grid-cols-2 gap-2 mt-2">
+              <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 text-center">
+                <div class="text-[9px] text-emerald-700 uppercase font-bold">내 점수</div>
+                <div class="text-lg font-black text-emerald-700"><span id="scoreVal">55,000</span></div>
+              </div>
+              <div class="bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-center">
+                <div class="text-[9px] text-gray-500 uppercase font-bold">예상 위치</div>
+                <div class="text-sm font-black mt-0.5" id="scoreRank">중상위 (안정권)</div>
+                <div class="text-[9px]" id="scoreMsg">강등 위험 없음</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 안내 (기존) -->
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-[11px] text-gray-600 leading-relaxed space-y-2">
+            <div class="flex items-start gap-2">
+              <i class="fas fa-circle-info text-pink-400 mt-0.5"></i>
+              <div>가입 문의 후 <strong class="text-gray-800">12시간 대기</strong> · 신청 후 핸즈 인증 캡처 첨부 필수</div>
+            </div>
+            <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-2.5">
+              <i class="fas fa-triangle-exclamation text-red-500 mt-0.5"></i>
+              <div class="text-red-700"><strong>수로 10,000점 미만은 가입 불가</strong>. 본캐 점수가 10K 미만이면 신청해도 거절됩니다.</div>
+            </div>
+          </div>
+
+          <!-- 신청 폼 (기존 그대로) -->
+          <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-3">
+            <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider">기본 정보 *</div>
+            <input type="text" placeholder="닉네임 *" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300">
+            <input type="text" placeholder="수로 점수 * (최소 10,000)" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300">
+            <select class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-500"><option>직업 *</option></select>
+            <input type="text" placeholder="전 길드 * (없으면 '없음')" class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-300">
+            <select class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-500"><option>가입 경로 *</option></select>
+            <select class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-500"><option>가입 카테고리 *</option></select>
+
+            <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider pt-3">가입 질문</div>
+            <div class="space-y-2">
+              <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[12px]">
+                <div class="text-[10px] font-bold text-gray-600 mb-1">1. 길드 가입 (1기 / 2기)</div>
+                <input class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-[11px]" placeholder="답변">
+              </div>
+              <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[12px]">
+                <div class="text-[10px] font-bold text-gray-600 mb-1">1-2. 오시게 된 경로</div>
+                <input class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-[11px]" placeholder="답변">
+              </div>
+              <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[12px] text-gray-400">… 질문 3, 4, 5 (DB에서 동적 로드)</div>
+            </div>
+
+            <div class="text-[10px] font-black text-pink-500 uppercase tracking-wider pt-3">핸즈 인증 캡처 *</div>
+            <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3">
+              <div class="flex items-start gap-2 text-[11px] leading-relaxed">
+                <i class="fas fa-circle-exclamation text-amber-600 mt-0.5"></i>
+                <div class="text-amber-800"><strong>maple hands+ 앱</strong>에서 보유 캐릭이 <strong>바둑판식으로 12캐릭 이상</strong> 보이게 캡처</div>
+              </div>
+              <div class="mt-2 text-center">
+                <div class="text-[9px] text-amber-600 mb-1">↓ 캡처 예시</div>
+                <div class="inline-block bg-slate-800 rounded-lg p-1.5">
+                  <div class="grid grid-cols-3 gap-1">
+                    <div class="w-6 h-7 bg-slate-600 rounded"></div><div class="w-6 h-7 bg-slate-600 rounded"></div><div class="w-6 h-7 bg-slate-600 rounded"></div>
+                    <div class="w-6 h-7 bg-slate-600 rounded"></div><div class="w-6 h-7 bg-slate-600 rounded"></div><div class="w-6 h-7 bg-slate-600 rounded"></div>
+                    <div class="w-6 h-7 bg-slate-600 rounded"></div><div class="w-6 h-7 bg-slate-600 rounded"></div><div class="w-6 h-7 bg-slate-600 rounded"></div>
+                    <div class="w-6 h-7 bg-slate-600 rounded"></div><div class="w-6 h-7 bg-slate-600 rounded"></div><div class="w-6 h-7 bg-slate-600 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center">
+              <i class="fas fa-cloud-arrow-up text-gray-400 text-2xl mb-1 block"></i>
+              <span class="text-xs font-bold text-gray-500">탭해서 캡처 첨부</span>
+              <p class="text-[10px] text-gray-400 mt-1">또는 <kbd class="bg-white border border-gray-300 rounded px-1 py-0.5 text-[10px] font-mono">Ctrl+V</kbd> 로 붙여넣기</p>
+            </div>
+
+            <button class="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm py-3.5 rounded-2xl shadow-lg mt-2">
+              <i class="fas fa-paper-plane mr-2"></i>가입 신청하기
+            </button>
+            <p class="text-[10px] text-gray-400 text-center">신청 후 간부진이 검토 · 12시간 대기 후 처리</p>
+          </div>
+
+          <div class="text-center py-2">
+            <p class="text-[10px] text-gray-400"><a href="../" class="hover:text-pink-500"><i class="fas fa-home mr-1"></i>뚠/뚱카롱 메인</a></p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-2 text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-1">
+        ✓ 외부인이 한눈에 "이 길드 수준·이벤트·내 위치" 파악. 강등 위험 인지 가능
+      </div>
+    </section>
+  </div>
+
+  <!-- 추가 정보 -->
+  <section class="bg-white rounded-lg border border-gray-200 p-5">
+    <h3 class="font-bold text-gray-900 mb-2 text-base"><i class="fas fa-list-check text-pink-500 mr-1"></i>변경 포인트</h3>
+    <ul class="text-[12px] text-gray-700 leading-relaxed space-y-1 ml-4 list-disc">
+      <li><strong>맨 위 새 박스</strong>: 수로 상시 이벤트 안내 (4줄 핵심) + 슬라이더</li>
+      <li><strong>마커</strong>: 10K 진입 / <strong class="text-emerald-700">25K 안정권(160등)</strong> / 45K 평균 / 65K 티라미슈 / 95K 크라운</li>
+      <li><strong>슬라이더 범위</strong>: 0~200,000 · <strong>100K까지 1만 단위, 100K~200K는 50K 단위</strong> (사용자 요구)</li>
+      <li><strong>예상 위치</strong>: 슬라이더 값에 따라 자동 — 가입 불가 / 강등 위험 / 안정권 / 중상위 / 상위 10% / 크라운권</li>
+      <li>기존 폼·핸즈·질문·12시간 대기·10K 가드 <strong>전부 살림</strong></li>
+      <li>실제 적용 시 <strong>members.suro 분기 평균</strong>에서 160등·평균·TOP5 등 동적 계산 (현재 미리보기는 임시값)</li>
+    </ul>
+  </section>
+
+</div>
+
+<script>
+const slider = document.getElementById('scoreSlider');
+const scoreVal = document.getElementById('scoreVal');
+const scoreRank = document.getElementById('scoreRank');
+const scoreMsg = document.getElementById('scoreMsg');
+function updateScore() {
+  const v = Number(slider.value);
+  scoreVal.textContent = v.toLocaleString();
+  let rank, msg, color;
+  if (v < 10000) { rank='가입 불가'; msg='10K 미만이면 신청 거절'; color='text-red-600'; }
+  else if (v < 25000) { rank='강등 위험'; msg='안정권(160등) 미만'; color='text-amber-700'; }
+  else if (v < 45000) { rank='안정권'; msg='강등 위험 없음'; color='text-emerald-700'; }
+  else if (v < 65000) { rank='중상위'; msg='평균 이상'; color='text-pink-600'; }
+  else if (v < 95000) { rank='상위 30%'; msg='티라미슈권'; color='text-pink-700'; }
+  else if (v < 150000) { rank='상위 10%'; msg='크라운권'; color='text-rose-700'; }
+  else { rank='최상위'; msg='TOP 5 후보'; color='text-rose-800'; }
+  scoreRank.textContent = rank;
+  scoreRank.className = `text-sm font-black mt-0.5 ${color}`;
+  scoreMsg.textContent = msg;
+  scoreMsg.className = `text-[9px] ${color}`;
+}
+slider.addEventListener('input', updateScore);
+updateScore();
+</script>
+</body>
+</html>
