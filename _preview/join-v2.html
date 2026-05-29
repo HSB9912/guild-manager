@@ -51,8 +51,8 @@
       <div>• 🍨 <strong>파르페 TOP 6~20</strong> = 별도 풀 (TOP 6 11% → TOP 20 4%)</div>
       <div>• 🎂 티라미슈 TOP 21~51 · 🥐 크로칸슈 9만+ · 🍰 롤케이크 9만 미만</div>
       <div>• <strong class="text-emerald-700">안정권 = TOP 90</strong> / <strong class="text-yellow-700">변동 90~180등</strong> / <strong class="text-amber-700">팬케이크 하위 20명(강등권)</strong></div>
-      <div class="border-t border-pink-200 mt-1.5 pt-1.5">⚔️ <strong>1기(뚠카롱) 가입 컷</strong>: <strong class="text-pink-700">꼴등 +5,000 점</strong> 이상 (또는 지난주 180등 점수 돌파) 시 즉시 1기 가입</div>
-      <div>&nbsp;&nbsp;그 미만은 <strong class="text-blue-700">2기(뚱카롱)부터 시작</strong> · ※ 현재 <strong>1기/2기 통합 운영</strong>이라 2기→1기 승급제는 휴지 상태</div>
+      <div class="border-t border-pink-200 mt-1.5 pt-1.5">⚔️ <strong>1기(뚠카롱) 가입 컷</strong>: <strong class="text-pink-700">꼴등 +5,000 점</strong> 이상 → 점수 따라 직위 자동 부여</div>
+      <div>&nbsp;&nbsp;그 미만은 <strong class="text-blue-700">2기(뚱카롱)로 가입</strong> · ※ 현재 <strong>1기/2기 통합 운영</strong>이라 2→1 승급제는 휴지 상태</div>
     </div>
 
     <!-- 슬라이더 -->
@@ -146,14 +146,15 @@
 // 실데이터 (2026-05-21 ~ 05-27 뚠카롱)
 const D = {
   cut_last: 65707,    // 꼴등 (197등)
-  cut180: 77469,      // 180등 (승급컷)
-  cut90: 120000,      // 90등 안정선 (반올림)
+  cut180: 77469,      // 180등
+  cut90: 120000,      // 90등 안정선
   avg: 130000,
-  top21: 190000,
-  top5: 240000,
+  top51: 155000,      // 티라미슈 진입
+  top21: 190000,      // 파르페 진입
+  top5: 240000,       // 크라운 진입
   top1: 286911
 };
-const joinCut1st = Math.min(D.cut_last + 5000, D.cut180);  // = 70,707
+const joinCut1st = D.cut_last + 5000;  // = 70,707 (꼴등+5000만 사용)
 
 function pctOf(v) { return Math.min(v / 300000 * 100, 100); }
 function fmt(n) {
@@ -166,20 +167,20 @@ const scoreVal = document.getElementById('scoreVal');
 const scoreRank = document.getElementById('scoreRank');
 const scoreMsg = document.getElementById('scoreMsg');
 
-// 동적 색구간 갱신
+// 동적 색구간 갱신 (실데이터 매칭)
 function updateBg() {
   const p1 = pctOf(10000);              // 가입 불가 끝
-  const pJ = pctOf(joinCut1st);         // 1기 컷
-  const p180 = pctOf(D.cut180);         // 강등 위험권 끝
-  const p90 = pctOf(D.cut90);           // 변동성 끝
-  const pT21 = pctOf(D.top21);          // 안정~중상위 끝
+  const pJ = pctOf(joinCut1st);         // 2기/1기 경계
+  const p180 = pctOf(D.cut180);         // 팬케이크 끝 (변동성 시작)
+  const p90 = pctOf(D.cut90);           // 변동성 끝 (안정권 시작)
+  const pT51 = pctOf(D.top51);          // 롤케이크 끝 (티라미슈 시작)
   slider.style.background = `linear-gradient(to right,
     #f3f4f6 0%, #f3f4f6 ${p1}%,
     #dbeafe ${p1}%, #dbeafe ${pJ}%,
     #fed7aa ${pJ}%, #fed7aa ${p180}%,
     #fef08a ${p180}%, #fef08a ${p90}%,
-    #d1fae5 ${p90}%, #d1fae5 ${pT21}%,
-    #fce7f3 ${pT21}%, #fce7f3 100%)`;
+    #d1fae5 ${p90}%, #d1fae5 ${pT51}%,
+    #fce7f3 ${pT51}%, #fce7f3 100%)`;
 }
 updateBg();
 
@@ -189,17 +190,18 @@ function updateScore() {
   let rank, msg, color;
   if (v < 10000) { rank='❌ 가입 불가'; msg='1만점 미만은 신청 거절'; color='text-red-600'; }
   else if (v < joinCut1st) {
-    rank = '🌱 2기(뚱카롱) 가입';
+    rank = '🥖 뚱카롱 (2기)';
     msg = `1기 컷 ${fmt(joinCut1st)} 미달 — 꼴등 ${fmt(D.cut_last)}+5천 필요`;
     color = 'text-blue-700';
   }
-  else if (v < D.cut180)  { rank='⚠ 1기 진입 (강등 위험권)'; msg='하위 20명 범위 — 매주 강등 후보'; color='text-amber-700'; }
+  // 이하 1기 뚠카롱 — 점수별 직위
+  else if (v < D.cut180)  { rank='🥞 팬케이크 (1기 강등권)'; msg='하위 20명 범위 — 매주 강등 위협 조심'; color='text-amber-700'; }
   else if (v < D.cut90)   { rank='⚡ 변동성 위험'; msg='90~180등 — 작은 변동에도 강등 가능'; color='text-yellow-700'; }
-  else if (v < D.avg)     { rank='✓ 안정권'; msg='TOP 90 이내 — 강등 거의 없음'; color='text-emerald-700'; }
-  else if (v < D.top21)   { rank='🍰 롤케이크권'; msg='평균 이상 (TOP 51 가까움)'; color='text-emerald-700'; }
-  else if (v < D.top5)    { rank='🎂 티라미슈권'; msg='TOP 21~51 (부캐 All 면제)'; color='text-pink-700'; }
-  else if (v < D.top1)    { rank='👑 크라운권'; msg='TOP 5 후보 (100억 분배)'; color='text-rose-700'; }
-  else                    { rank='👑 최상위'; msg='TOP 1 후보'; color='text-rose-800'; }
+  else if (v < D.top51)   { rank='🍰 롤케이크 (안정권)'; msg='TOP 90 이내 — 강등 거의 없음'; color='text-emerald-700'; }
+  else if (v < D.top21)   { rank='🎂 티라미슈'; msg='TOP 21~51 (부캐 All 면제 + 숫돌 24개)'; color='text-pink-700'; }
+  else if (v < D.top5)    { rank='🍨 파르페'; msg='TOP 6~20 (별도 풀 분배: 11→4%)'; color='text-pink-700'; }
+  else if (v < D.top1)    { rank='👑 크라운'; msg='TOP 1~5 (100억 분배: 28/24/20/16/12%)'; color='text-rose-700'; }
+  else                    { rank='👑 TOP 1'; msg='1위 (28% 분배)'; color='text-rose-800'; }
   scoreRank.textContent = rank;
   scoreRank.className = `text-sm font-black mt-0.5 ${color}`;
   scoreMsg.textContent = msg;
