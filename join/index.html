@@ -87,35 +87,35 @@
           <div class="text-[7px] text-amber-600 leading-tight">진입선</div>
           <div class="w-px h-2 bg-amber-400 mx-auto mt-0.5"></div>
         </div>
-        <div class="absolute text-center" id="mk_90" style="left:19%; transform:translateX(-50%)">
-          <div class="text-[9px] font-black text-emerald-700 leading-none" id="mk_90v">3.8만</div>
+        <div class="absolute text-center hidden" id="mk_90" style="left:0%; transform:translateX(-50%)">
+          <div class="text-[9px] font-black text-emerald-700 leading-none" id="mk_90v">—</div>
           <div class="text-[7px] text-emerald-600 leading-tight whitespace-nowrap">TOP 90·안정선</div>
           <div class="w-px h-2 bg-emerald-500 mx-auto mt-0.5"></div>
         </div>
-        <div class="absolute text-center" id="mk_t21" style="left:32.5%; transform:translateX(-50%)">
-          <div class="text-[9px] font-black text-pink-700 leading-none" id="mk_t21v">6.5만</div>
+        <div class="absolute text-center hidden" id="mk_t21" style="left:0%; transform:translateX(-50%)">
+          <div class="text-[9px] font-black text-pink-700 leading-none" id="mk_t21v">—</div>
           <div class="text-[7px] text-pink-600 leading-tight whitespace-nowrap">TOP 21·티라미슈</div>
           <div class="w-px h-2 bg-pink-400 mx-auto mt-0.5"></div>
         </div>
-        <div class="absolute text-center" id="mk_t5" style="left:47.5%; transform:translateX(-50%)">
-          <div class="text-[9px] font-black text-rose-700 leading-none" id="mk_t5v">9.5만</div>
+        <div class="absolute text-center hidden" id="mk_t5" style="left:0%; transform:translateX(-50%)">
+          <div class="text-[9px] font-black text-rose-700 leading-none" id="mk_t5v">—</div>
           <div class="text-[7px] text-rose-600 leading-tight whitespace-nowrap">TOP 5·크라운</div>
           <div class="w-px h-2 bg-rose-400 mx-auto mt-0.5"></div>
         </div>
       </div>
 
-      <input type="range" min="0" max="300000" value="80000" step="5000" id="scoreSlider" class="sc-slider">
+      <input type="range" min="0" max="300000" value="100000" step="5000" id="scoreSlider" class="sc-slider">
 
       <!-- 아래쪽 보조 마커: 180등(변동 경계), 평균 -->
       <div class="relative mt-1 h-6 pointer-events-none">
-        <div class="absolute text-center" id="mk_180" style="left:6.5%; transform:translateX(-50%)">
+        <div class="absolute text-center hidden" id="mk_180" style="left:0%; transform:translateX(-50%)">
           <div class="w-px h-2 bg-yellow-500 mx-auto"></div>
-          <div class="text-[8px] font-bold text-yellow-700 leading-none mt-0.5" id="mk_180v">1.3만</div>
+          <div class="text-[8px] font-bold text-yellow-700 leading-none mt-0.5" id="mk_180v">—</div>
           <div class="text-[7px] text-yellow-600 leading-tight">180등</div>
         </div>
-        <div class="absolute text-center" id="mk_avg" style="left:22.5%; transform:translateX(-50%)">
+        <div class="absolute text-center hidden" id="mk_avg" style="left:0%; transform:translateX(-50%)">
           <div class="w-px h-2 bg-gray-400 mx-auto"></div>
-          <div class="text-[8px] font-bold text-gray-600 leading-none mt-0.5" id="mk_avgv">4.5만</div>
+          <div class="text-[8px] font-bold text-gray-600 leading-none mt-0.5" id="mk_avgv">—</div>
           <div class="text-[7px] text-gray-500 leading-tight">평균</div>
         </div>
       </div>
@@ -492,8 +492,9 @@
   // 수로 점수 위치 슬라이더 — 최근 주차 1기(뚠카롱) 등수 기반 동적 컷
   // 직위 기준 (가이드): 크라운 TOP 5 / 파르페 6~20 / 티라미슈 21~51 / 팬케이크 하위 20명(강등권)
   // =========================================
-  const SC_DEFAULT = { cut180: 13000, cut90: 38000, avg: 45000, top21: 65000, top5: 95000, top1: 142000, total: 199 };
-  let scState = { ...SC_DEFAULT };
+  // 실데이터 로드 전엔 사용 안 함 (로드 끝나면 마커 hidden 해제)
+  let scState = null;
+  let scLoaded = false;
 
   function pctOf(score) {
     return Math.min(score / 300000 * 100, 100);
@@ -507,6 +508,7 @@
     return (n / 10000).toFixed(1).replace(/\.0$/, '') + '만';
   }
   function applyScState() {
+    if (!scState) return;
     placeMarker('mk_180', scState.cut180);
     placeMarker('mk_90',  scState.cut90);
     placeMarker('mk_avg', scState.avg);
@@ -517,6 +519,9 @@
     document.getElementById('mk_avgv').textContent = fmtMan(scState.avg);
     document.getElementById('mk_t21v').textContent = fmtMan(scState.top21);
     document.getElementById('mk_t5v').textContent  = fmtMan(scState.top5);
+    // 마커 다 보이게
+    ['mk_180','mk_90','mk_avg','mk_t21','mk_t5'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+    scLoaded = true;
     updateScore();
   }
 
@@ -528,6 +533,11 @@
     const rankEl = document.getElementById('scoreRank');
     const msgEl = document.getElementById('scoreMsg');
     if (valEl) valEl.textContent = v.toLocaleString();
+    if (!scLoaded || !scState) {
+      if (rankEl) { rankEl.textContent = '로딩 중'; rankEl.className = 'text-sm font-black mt-0.5 text-gray-500'; }
+      if (msgEl)  { msgEl.textContent = '최근 점수 가져오는 중'; msgEl.className = 'text-[9px] text-gray-400'; }
+      return;
+    }
     let rank, msg, color;
     if (v < 10000) { rank = '❌ 가입 불가'; msg = '1만점 미만은 신청 거절'; color = 'text-red-600'; }
     else if (v < scState.cut180) { rank = '⚠ 팬케이크 (강등권)'; msg = '하위 20명 — 점수 낮은 사람부터 강등'; color = 'text-amber-700'; }
@@ -541,7 +551,7 @@
     if (msgEl)  { msgEl.textContent = msg;   msgEl.className = `text-[9px] ${color}`; }
   }
   document.getElementById('scoreSlider')?.addEventListener('input', updateScore);
-  applyScState();
+  updateScore(); // 로딩 중 메시지 표시
 
   // 실데이터: 최근 주차 1기(뚠카롱) 점수 → 등수 기반 컷 계산
   (async () => {
@@ -568,6 +578,11 @@
       const avg = Math.round(scores.reduce((s, x) => s + x.score, 0) / total);
 
       scState = { cut180, cut90, avg, top21, top5, top1, total };
+      // 슬라이더 초기값을 안정선 가까이로 (사용자가 첫 인상 "안정권")
+      const slider = document.getElementById('scoreSlider');
+      if (slider && slider.value === '100000') {
+        slider.value = String(Math.round(cut90 / 5000) * 5000);
+      }
       applyScState();
 
       const metaEl = document.getElementById('sc_meta');
