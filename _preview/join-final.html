@@ -14,15 +14,15 @@
   .pulse-dot { animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-  /* Slider styling — 가입불가/강등위험/변동성위험/안정권/상위 5구간 색상 */
+  /* Slider styling — 가입불가/강등(180-200등)/변동성(90-180등)/안정(90등이내)/상위 5구간 */
   input[type=range].sc-slider {
     -webkit-appearance: none; appearance: none; width: 100%; height: 10px;
     background: linear-gradient(to right,
-      #f3f4f6 0%, #f3f4f6 5%,           /* 0~10K: 가입 불가 (회색) */
-      #fed7aa 5%, #fed7aa 11%,          /* 10K~22K: 강등 위험 (amber) */
-      #fef08a 11%, #fef08a 19%,         /* 22K~38K: 변동성 위험구간 (yellow) */
-      #d1fae5 19%, #d1fae5 50%,         /* 38K~100K 중 65K까지: 안정~중상위 (emerald) */
-      #fce7f3 50%, #fce7f3 100%);       /* 65K~: 티라미슈·크라운 (pink) */
+      #f3f4f6 0%, #f3f4f6 5%,           /* 0~1만점: 가입 불가 (회색) */
+      #fed7aa 5%, #fed7aa 6.5%,         /* 1만~1.3만점: 강등권 180~200등 (amber) */
+      #fef08a 6.5%, #fef08a 19%,        /* 1.3만~3.8만점: 변동성 위험 90~180등 (yellow) */
+      #d1fae5 19%, #d1fae5 50%,         /* 3.8만~10만점: 안정~중상위 (emerald) */
+      #fce7f3 50%, #fce7f3 100%);       /* 10만점~: 상위 (pink) */
     border-radius: 9999px; outline: none; cursor: pointer; margin: 0;
   }
   input[type=range].sc-slider::-webkit-slider-thumb {
@@ -117,9 +117,9 @@
             <div class="text-[10.5px] text-gray-600 leading-relaxed space-y-1 mb-3 bg-pink-50/50 rounded-lg p-2.5">
               <div>• 매주 <strong>수요일 수로</strong> 참여, 분기 평균으로 직위·보상 결정</div>
               <div>• 상위 <strong>TOP 5 = 크라운</strong> (부캐 면제 + <strong>100억</strong>)</div>
-              <div>• <strong class="text-emerald-700">진짜 안정권 = TOP 90등 이내</strong> (약 38K+) — 강등 거의 없음</div>
-              <div>• <strong class="text-yellow-700">90~140등 = 변동성 위험구간</strong> (약 22K~38K) — 갭이 적어 작은 변동에도 강등 가능</div>
-              <div>• <strong class="text-amber-700">140등 미만 = 강등권</strong> — 2주 연속 미참 시 강퇴</div>
+              <div>• <strong class="text-emerald-700">진짜 안정권 = TOP 90등 이내</strong> (약 3.8만점+) — 강등 거의 없음</div>
+              <div>• <strong class="text-yellow-700">90~180등 = 변동성 위험구간</strong> (약 1.3만~3.8만점) — 갭이 적어 작은 변동에도 강등 가능</div>
+              <div>• <strong class="text-amber-700">180~200등 = 강등권</strong> — 2주 연속 미참 시 강퇴</div>
             </div>
 
             <!-- 슬라이더 -->
@@ -129,49 +129,49 @@
             <div class="relative mb-1 pt-10 px-2">
               <!-- 위쪽 핵심 컷 라벨 (세로 stack) -->
               <div class="absolute top-0 left-0 right-0 h-9 pointer-events-none">
-                <!-- 10K 진입선 -->
+                <!-- 1만점 진입선 (200등) -->
                 <div class="absolute" style="left:5%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-amber-700 whitespace-nowrap text-center">10K<br><span class="font-normal text-amber-500">진입선</span></div>
+                  <div class="text-[8px] font-bold text-amber-700 whitespace-nowrap text-center">1만점<br><span class="font-normal text-amber-500">200등·진입</span></div>
                 </div>
-                <!-- 22K 140등 (변동성 위험 시작) -->
-                <div class="absolute" style="left:11%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-yellow-700 whitespace-nowrap text-center">22K<br><span class="font-normal text-yellow-600">140등</span></div>
+                <!-- 1.3만점 180등 (강등 → 변동성 경계) -->
+                <div class="absolute" style="left:6.5%; transform:translateX(-50%)">
+                  <div class="text-[8px] font-bold text-yellow-700 whitespace-nowrap text-center" style="margin-top:18px">1.3만<br><span class="font-normal text-yellow-600">180등</span></div>
                 </div>
-                <!-- 38K 90등 (안정권 시작) -->
+                <!-- 3.8만점 90등 (안정선) -->
                 <div class="absolute" style="left:19%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-emerald-700 whitespace-nowrap text-center">38K<br><span class="font-normal text-emerald-600">90등·안정선</span></div>
+                  <div class="text-[8px] font-bold text-emerald-700 whitespace-nowrap text-center">3.8만점<br><span class="font-normal text-emerald-600">90등·안정선</span></div>
                 </div>
-                <!-- 45K 평균 -->
+                <!-- 4.5만점 평균 -->
                 <div class="absolute" style="left:22.5%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-gray-600 whitespace-nowrap text-center">45K<br><span class="font-normal text-gray-500">평균</span></div>
+                  <div class="text-[8px] font-bold text-gray-600 whitespace-nowrap text-center" style="margin-top:18px">4.5만<br><span class="font-normal text-gray-500">평균</span></div>
                 </div>
-                <!-- 65K 티라미슈 -->
+                <!-- 6.5만점 티라미슈 -->
                 <div class="absolute" style="left:32.5%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-pink-700 whitespace-nowrap text-center">65K<br><span class="font-normal text-pink-500">티라미슈</span></div>
+                  <div class="text-[8px] font-bold text-pink-700 whitespace-nowrap text-center">6.5만점<br><span class="font-normal text-pink-500">티라미슈</span></div>
                 </div>
-                <!-- 95K 크라운 -->
+                <!-- 9.5만점 크라운 -->
                 <div class="absolute" style="left:47.5%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-rose-700 whitespace-nowrap text-center">95K<br><span class="font-normal text-rose-500">크라운</span></div>
+                  <div class="text-[8px] font-bold text-rose-700 whitespace-nowrap text-center">9.5만점<br><span class="font-normal text-rose-500">크라운</span></div>
                 </div>
               </div>
 
               <input type="range" min="0" max="200000" value="55000" step="5000" id="scoreSlider" class="sc-slider">
 
-              <!-- 아래쪽 단위 라벨 -->
+              <!-- 아래쪽 단위 라벨 (만점 단위) -->
               <div class="relative mt-1 h-3 text-[8px] text-gray-400 select-none">
                 <span class="absolute" style="left:0%">0</span>
-                <span class="absolute" style="left:5%; transform:translateX(-50%)">10K</span>
-                <span class="absolute" style="left:10%; transform:translateX(-50%)">20K</span>
-                <span class="absolute" style="left:15%; transform:translateX(-50%)">30K</span>
-                <span class="absolute" style="left:20%; transform:translateX(-50%)">40K</span>
-                <span class="absolute" style="left:25%; transform:translateX(-50%)">50K</span>
-                <span class="absolute" style="left:30%; transform:translateX(-50%)">60K</span>
-                <span class="absolute" style="left:35%; transform:translateX(-50%)">70K</span>
-                <span class="absolute" style="left:40%; transform:translateX(-50%)">80K</span>
-                <span class="absolute" style="left:45%; transform:translateX(-50%)">90K</span>
-                <span class="absolute" style="left:50%; transform:translateX(-50%)">100K</span>
-                <span class="absolute" style="left:75%; transform:translateX(-50%)">150K</span>
-                <span class="absolute" style="right:0%">200K+</span>
+                <span class="absolute" style="left:5%; transform:translateX(-50%)">1만</span>
+                <span class="absolute" style="left:10%; transform:translateX(-50%)">2만</span>
+                <span class="absolute" style="left:15%; transform:translateX(-50%)">3만</span>
+                <span class="absolute" style="left:20%; transform:translateX(-50%)">4만</span>
+                <span class="absolute" style="left:25%; transform:translateX(-50%)">5만</span>
+                <span class="absolute" style="left:30%; transform:translateX(-50%)">6만</span>
+                <span class="absolute" style="left:35%; transform:translateX(-50%)">7만</span>
+                <span class="absolute" style="left:40%; transform:translateX(-50%)">8만</span>
+                <span class="absolute" style="left:45%; transform:translateX(-50%)">9만</span>
+                <span class="absolute" style="left:50%; transform:translateX(-50%)">10만</span>
+                <span class="absolute" style="left:75%; transform:translateX(-50%)">15만</span>
+                <span class="absolute" style="right:0%">20만+</span>
               </div>
             </div>
 
@@ -270,8 +270,10 @@
     <h3 class="font-bold text-gray-900 mb-2 text-base"><i class="fas fa-list-check text-pink-500 mr-1"></i>변경 포인트</h3>
     <ul class="text-[12px] text-gray-700 leading-relaxed space-y-1 ml-4 list-disc">
       <li><strong>맨 위 새 박스</strong>: 수로 상시 이벤트 안내 (4줄 핵심) + 슬라이더</li>
-      <li><strong>마커</strong>: 10K 진입 / <strong class="text-yellow-700">22K 140등(변동성 위험 시작)</strong> / <strong class="text-emerald-700">38K 90등(안정선)</strong> / 45K 평균 / 65K 티라미슈 / 95K 크라운</li>
-      <li><strong>슬라이더 배경 색구간</strong> (시각 인지): 회색(불가) → amber(강등) → yellow(변동) → 연두(안정) → 핑크(상위)</li>
+      <li><strong>표기</strong>: K → <strong>만점</strong> (1만점 / 2.2만점 / 3.8만점 …)</li>
+      <li><strong>마커</strong>: 1만점(200등·진입) / <strong class="text-amber-700">1.3만(180등·강등 경계)</strong> / <strong class="text-emerald-700">3.8만(90등·안정선)</strong> / 4.5만 평균 / 6.5만 티라미슈 / 9.5만 크라운</li>
+      <li><strong>구간 정의</strong>: 강등권 <strong>180~200등</strong> / 변동성 <strong>90~180등</strong> / 안정권 <strong>90등 이내</strong></li>
+      <li><strong>슬라이더 배경 색구간</strong>: 회색(불가) → amber(강등) → yellow(변동) → 연두(안정) → 핑크(상위)</li>
       <li><strong>슬라이더 범위</strong>: 0~200,000 · <strong>100K까지 1만 단위, 100K~200K는 50K 단위</strong> (사용자 요구)</li>
       <li><strong>예상 위치</strong>: 슬라이더 값에 따라 자동 — 가입 불가 / 강등 위험 / 안정권 / 중상위 / 상위 10% / 크라운권</li>
       <li>기존 폼·핸즈·질문·12시간 대기·10K 가드 <strong>전부 살림</strong></li>
@@ -288,11 +290,11 @@ const scoreRank = document.getElementById('scoreRank');
 const scoreMsg = document.getElementById('scoreMsg');
 function updateScore() {
   const v = Number(slider.value);
-  scoreVal.textContent = v.toLocaleString();
+  scoreVal.textContent = v.toLocaleString() + '점';
   let rank, msg, color;
-  if (v < 10000) { rank='❌ 가입 불가'; msg='10K 미만이면 신청 거절'; color='text-red-600'; }
-  else if (v < 22000) { rank='⚠ 강등권'; msg='140등 미만 — 2주 연속 시 강퇴'; color='text-amber-700'; }
-  else if (v < 38000) { rank='⚡ 변동성 위험'; msg='90~140등 — 갭이 적어 강등 가능'; color='text-yellow-700'; }
+  if (v < 10000) { rank='❌ 가입 불가'; msg='1만점 미만은 신청 거절'; color='text-red-600'; }
+  else if (v < 13000) { rank='⚠ 강등권'; msg='180~200등 — 2주 연속 시 강퇴'; color='text-amber-700'; }
+  else if (v < 38000) { rank='⚡ 변동성 위험'; msg='90~180등 — 갭이 적어 강등 가능'; color='text-yellow-700'; }
   else if (v < 45000) { rank='✓ 안정권'; msg='TOP 90 이내 — 강등 거의 없음'; color='text-emerald-700'; }
   else if (v < 65000) { rank='중상위'; msg='평균 이상'; color='text-emerald-700'; }
   else if (v < 95000) { rank='상위 30%'; msg='티라미슈권'; color='text-pink-700'; }
