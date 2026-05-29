@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>가입 페이지 v2 — 1기 컷·동적 색구간 (실데이터값)</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', sans-serif; background: linear-gradient(135deg, #fdf2f8 0%, #fff1f2 100%); min-height: 100vh; }
+  input[type=range].sc-slider {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 10px;
+    border-radius: 9999px; outline: none; cursor: pointer; margin: 0;
+  }
+  input[type=range].sc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 22px; height: 22px;
+    background: #10b981; border: 3px solid white; border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25); cursor: grab;
+  }
+  input[type=range].sc-slider::-moz-range-thumb {
+    width: 22px; height: 22px; background: #10b981; border: 3px solid white;
+    border-radius: 9999px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); cursor: grab;
+  }
+</style>
+</head>
+<body class="p-4 lg:p-8">
+
+<div class="max-w-md mx-auto">
+
+  <div class="text-center mb-4 pt-2">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg mb-3">
+      <i class="fas fa-user-plus text-white text-2xl"></i>
+    </div>
+    <h1 class="text-xl font-black text-gray-800">뚠/뚱카롱 가입 신청 <span class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">v2 미리보기</span></h1>
+  </div>
+
+  <!-- 수로 이벤트 + 슬라이더 -->
+  <div class="bg-white rounded-2xl border border-pink-200 shadow-sm p-4 mb-4">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-pink-100 text-pink-600 text-xs"><i class="fas fa-gift"></i></span>
+      <div>
+        <div class="text-[12px] font-black text-gray-800">수로 상시 이벤트 안내</div>
+        <div class="text-[9px] text-gray-500">26-05-21(목)~05-27(수) 점수 · 뚠카롱 197명 · 매주 변동</div>
+      </div>
+    </div>
+
+    <div class="text-[10.5px] text-gray-600 leading-relaxed space-y-1 mb-3 bg-pink-50/50 rounded-lg p-2.5">
+      <div>• 매주 <strong>수요일 수로</strong> → 점수 등수로 직위·보상 결정</div>
+      <div>• 👑 <strong>크라운 TOP 5</strong> = 보상 풀 <strong>100억 차등 분배</strong> (28/24/20/16/12%)</div>
+      <div>• 🍨 <strong>파르페 TOP 6~20</strong> = 별도 풀 (TOP 6 11% → TOP 20 4%)</div>
+      <div>• 🎂 티라미슈 TOP 21~51 · 🥐 크로칸슈 9만+ · 🍰 롤케이크 9만 미만</div>
+      <div>• <strong class="text-emerald-700">안정권 = TOP 90</strong> / <strong class="text-yellow-700">변동 90~180등</strong> / <strong class="text-amber-700">팬케이크 하위 20명(강등권)</strong></div>
+      <div class="border-t border-pink-200 mt-1.5 pt-1.5">⚔️ <strong>1기(뚠카롱) 가입 컷</strong>: <strong class="text-pink-700">꼴등 +5,000 점</strong> 이상 (또는 지난주 180등 점수 돌파) 시 즉시 1기 가입</div>
+      <div>&nbsp;&nbsp;그 미만은 <strong class="text-blue-700">2기(뚱카롱)부터 시작</strong> · ※ 현재 <strong>1기/2기 통합 운영</strong>이라 2기→1기 승급제는 휴지 상태</div>
+    </div>
+
+    <!-- 슬라이더 -->
+    <div class="text-[11px] font-bold text-gray-700 mb-2"><i class="fas fa-location-arrow text-pink-400 mr-1"></i>내 점수 위치 확인</div>
+
+    <div class="relative mb-1 pt-12 px-2">
+      <div class="absolute top-0 left-0 right-0 h-11 pointer-events-none">
+        <div class="absolute text-center" style="left:3.3%; transform:translateX(-50%)">
+          <div class="text-[9px] font-black text-amber-700 leading-none">1만</div>
+          <div class="text-[7px] text-amber-600 leading-tight">진입</div>
+          <div class="w-px h-2 bg-amber-400 mx-auto mt-0.5"></div>
+        </div>
+        <div class="absolute text-center" style="left:23.6%; transform:translateX(-50%)">
+          <div class="text-[9px] font-black text-pink-700 leading-none">7만</div>
+          <div class="text-[7px] text-pink-600 leading-tight whitespace-nowrap">1기컷</div>
+          <div class="w-px h-2 bg-pink-500 mx-auto mt-0.5"></div>
+        </div>
+        <div class="absolute text-center" style="left:40%; transform:translateX(-50%)">
+          <div class="text-[9px] font-black text-emerald-700 leading-none">12만</div>
+          <div class="text-[7px] text-emerald-600 leading-tight whitespace-nowrap">90등·안정선</div>
+          <div class="w-px h-2 bg-emerald-500 mx-auto mt-0.5"></div>
+        </div>
+        <div class="absolute text-center" style="left:63.3%; transform:translateX(-50%)">
+          <div class="text-[9px] font-black text-pink-700 leading-none">19만</div>
+          <div class="text-[7px] text-pink-600 leading-tight whitespace-nowrap">티라미슈</div>
+          <div class="w-px h-2 bg-pink-400 mx-auto mt-0.5"></div>
+        </div>
+        <div class="absolute text-center" style="left:80%; transform:translateX(-50%)">
+          <div class="text-[9px] font-black text-rose-700 leading-none">24만</div>
+          <div class="text-[7px] text-rose-600 leading-tight">크라운</div>
+          <div class="w-px h-2 bg-rose-400 mx-auto mt-0.5"></div>
+        </div>
+      </div>
+
+      <input type="range" min="0" max="300000" value="100000" step="5000" id="scoreSlider" class="sc-slider">
+
+      <div class="relative mt-1 h-6 pointer-events-none">
+        <div class="absolute text-center" style="left:21.9%; transform:translateX(-50%)">
+          <div class="w-px h-2 bg-red-500 mx-auto"></div>
+          <div class="text-[8px] font-bold text-red-700 leading-none mt-0.5">6.5만</div>
+          <div class="text-[7px] text-red-600 leading-tight">꼴등</div>
+        </div>
+        <div class="absolute text-center" style="left:25.8%; transform:translateX(-50%)">
+          <div class="w-px h-2 bg-yellow-500 mx-auto"></div>
+          <div class="text-[8px] font-bold text-yellow-700 leading-none mt-0.5">7.7만</div>
+          <div class="text-[7px] text-yellow-600 leading-tight">180등</div>
+        </div>
+        <div class="absolute text-center" style="left:43.3%; transform:translateX(-50%)">
+          <div class="w-px h-2 bg-gray-400 mx-auto"></div>
+          <div class="text-[8px] font-bold text-gray-600 leading-none mt-0.5">13만</div>
+          <div class="text-[7px] text-gray-500 leading-tight">평균</div>
+        </div>
+      </div>
+
+      <div class="relative mt-1.5 h-3 text-[8px] text-gray-400 select-none border-t border-gray-100 pt-1">
+        <span class="absolute" style="left:0%">0</span>
+        <span class="absolute" style="left:3.3%; transform:translateX(-50%)">1만</span>
+        <span class="absolute" style="left:16.7%; transform:translateX(-50%)">5만</span>
+        <span class="absolute" style="left:33.3%; transform:translateX(-50%)">10만</span>
+        <span class="absolute" style="left:50%; transform:translateX(-50%)">15만</span>
+        <span class="absolute" style="left:66.7%; transform:translateX(-50%)">20만</span>
+        <span class="absolute" style="left:83.3%; transform:translateX(-50%)">25만</span>
+        <span class="absolute" style="right:0%">30만+</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 mt-2">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 text-center">
+        <div class="text-[9px] text-emerald-700 uppercase font-bold">내 점수</div>
+        <div class="text-lg font-black text-emerald-700"><span id="scoreVal">100,000</span>점</div>
+      </div>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-center">
+        <div class="text-[9px] text-gray-500 uppercase font-bold">예상 위치</div>
+        <div class="text-sm font-black mt-0.5" id="scoreRank">⚡ 변동성 위험</div>
+        <div class="text-[9px] mt-0.5" id="scoreMsg">90~180등 — 변동에 강등 가능</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-[11px] text-gray-600 space-y-2">
+    <div class="flex items-start gap-2"><i class="fas fa-circle-info text-pink-400 mt-0.5"></i><div>가입 문의 후 <strong>12시간 대기</strong></div></div>
+    <div class="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-2.5">
+      <i class="fas fa-triangle-exclamation text-red-500 mt-0.5"></i>
+      <div class="text-red-700"><strong>본캐 수로 1만점 이상</strong>부터 가입 가능합니다. 미만이면 신청해도 거절돼요.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// 실데이터 (2026-05-21 ~ 05-27 뚠카롱)
+const D = {
+  cut_last: 65707,    // 꼴등 (197등)
+  cut180: 77469,      // 180등 (승급컷)
+  cut90: 120000,      // 90등 안정선 (반올림)
+  avg: 130000,
+  top21: 190000,
+  top5: 240000,
+  top1: 286911
+};
+const joinCut1st = Math.min(D.cut_last + 5000, D.cut180);  // = 70,707
+
+function pctOf(v) { return Math.min(v / 300000 * 100, 100); }
+function fmt(n) {
+  if (n >= 100000) return (n / 10000).toFixed(0) + '만';
+  return (n / 10000).toFixed(1).replace(/\.0$/, '') + '만';
+}
+
+const slider = document.getElementById('scoreSlider');
+const scoreVal = document.getElementById('scoreVal');
+const scoreRank = document.getElementById('scoreRank');
+const scoreMsg = document.getElementById('scoreMsg');
+
+// 동적 색구간 갱신
+function updateBg() {
+  const p1 = pctOf(10000);              // 가입 불가 끝
+  const pJ = pctOf(joinCut1st);         // 1기 컷
+  const p180 = pctOf(D.cut180);         // 강등 위험권 끝
+  const p90 = pctOf(D.cut90);           // 변동성 끝
+  const pT21 = pctOf(D.top21);          // 안정~중상위 끝
+  slider.style.background = `linear-gradient(to right,
+    #f3f4f6 0%, #f3f4f6 ${p1}%,
+    #dbeafe ${p1}%, #dbeafe ${pJ}%,
+    #fed7aa ${pJ}%, #fed7aa ${p180}%,
+    #fef08a ${p180}%, #fef08a ${p90}%,
+    #d1fae5 ${p90}%, #d1fae5 ${pT21}%,
+    #fce7f3 ${pT21}%, #fce7f3 100%)`;
+}
+updateBg();
+
+function updateScore() {
+  const v = Number(slider.value);
+  scoreVal.textContent = v.toLocaleString();
+  let rank, msg, color;
+  if (v < 10000) { rank='❌ 가입 불가'; msg='1만점 미만은 신청 거절'; color='text-red-600'; }
+  else if (v < joinCut1st) {
+    rank = '🌱 2기(뚱카롱) 가입';
+    msg = `1기 컷 ${fmt(joinCut1st)} 미달 — 꼴등 ${fmt(D.cut_last)}+5천 필요`;
+    color = 'text-blue-700';
+  }
+  else if (v < D.cut180)  { rank='⚠ 1기 진입 (강등 위험권)'; msg='하위 20명 범위 — 매주 강등 후보'; color='text-amber-700'; }
+  else if (v < D.cut90)   { rank='⚡ 변동성 위험'; msg='90~180등 — 작은 변동에도 강등 가능'; color='text-yellow-700'; }
+  else if (v < D.avg)     { rank='✓ 안정권'; msg='TOP 90 이내 — 강등 거의 없음'; color='text-emerald-700'; }
+  else if (v < D.top21)   { rank='🍰 롤케이크권'; msg='평균 이상 (TOP 51 가까움)'; color='text-emerald-700'; }
+  else if (v < D.top5)    { rank='🎂 티라미슈권'; msg='TOP 21~51 (부캐 All 면제)'; color='text-pink-700'; }
+  else if (v < D.top1)    { rank='👑 크라운권'; msg='TOP 5 후보 (100억 분배)'; color='text-rose-700'; }
+  else                    { rank='👑 최상위'; msg='TOP 1 후보'; color='text-rose-800'; }
+  scoreRank.textContent = rank;
+  scoreRank.className = `text-sm font-black mt-0.5 ${color}`;
+  scoreMsg.textContent = msg;
+  scoreMsg.className = `text-[9px] mt-0.5 ${color}`;
+}
+slider.addEventListener('input', updateScore);
+updateScore();
+</script>
+</body>
+</html>
