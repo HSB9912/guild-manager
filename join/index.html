@@ -21,15 +21,15 @@
   @keyframes flash { 0%,100% { background: inherit; } 50% { background: #fce7f3; } }
   @supports (padding: env(safe-area-inset-bottom)) { body { padding-bottom: env(safe-area-inset-bottom); } }
 
-  /* 점수 위치 슬라이더 — 5색 구간 */
+  /* 점수 위치 슬라이더 — 5색 구간 (max 30만점 기준) */
   input[type=range].sc-slider {
     -webkit-appearance: none; appearance: none; width: 100%; height: 10px;
     background: linear-gradient(to right,
-      #f3f4f6 0%, #f3f4f6 5%,
-      #fed7aa 5%, #fed7aa 6.5%,
-      #fef08a 6.5%, #fef08a 19%,
-      #d1fae5 19%, #d1fae5 50%,
-      #fce7f3 50%, #fce7f3 100%);
+      #f3f4f6 0%, #f3f4f6 3.3%,         /* 0~1만: 가입 불가 */
+      #fed7aa 3.3%, #fed7aa 6.7%,       /* 1만~2만: 강등 (실데이터로 동적 변경) */
+      #fef08a 6.7%, #fef08a 33.3%,      /* 2만~10만: 변동성 */
+      #d1fae5 33.3%, #d1fae5 66.7%,     /* 10만~20만: 안정~중상위 */
+      #fce7f3 66.7%, #fce7f3 100%);     /* 20만~: 티라미슈·크라운 */
     border-radius: 9999px; outline: none; cursor: pointer; margin: 0;
   }
   input[type=range].sc-slider::-webkit-slider-thumb {
@@ -82,7 +82,7 @@
     <div class="relative mb-1 pt-12 px-2">
       <!-- 위쪽 마커: 1만(진입), 90등(안정), 티라미슈(TOP21), 크라운(TOP5) — 모두 점수 위치 동적 -->
       <div class="absolute top-0 left-0 right-0 h-11 pointer-events-none">
-        <div class="absolute text-center" id="mk_entry" style="left:5%; transform:translateX(-50%)">
+        <div class="absolute text-center" id="mk_entry" style="left:3.3%; transform:translateX(-50%)">
           <div class="text-[9px] font-black text-amber-700 leading-none">1만</div>
           <div class="text-[7px] text-amber-600 leading-tight">진입선</div>
           <div class="w-px h-2 bg-amber-400 mx-auto mt-0.5"></div>
@@ -104,7 +104,7 @@
         </div>
       </div>
 
-      <input type="range" min="0" max="200000" value="50000" step="5000" id="scoreSlider" class="sc-slider">
+      <input type="range" min="0" max="300000" value="80000" step="5000" id="scoreSlider" class="sc-slider">
 
       <!-- 아래쪽 보조 마커: 180등(변동 경계), 평균 -->
       <div class="relative mt-1 h-6 pointer-events-none">
@@ -120,16 +120,16 @@
         </div>
       </div>
 
-      <!-- 단위 라벨 -->
+      <!-- 단위 라벨 (max 30만 기준) -->
       <div class="relative mt-1.5 h-3 text-[8px] text-gray-400 select-none border-t border-gray-100 pt-1">
         <span class="absolute" style="left:0%">0</span>
-        <span class="absolute" style="left:5%; transform:translateX(-50%)">1만</span>
-        <span class="absolute" style="left:15%; transform:translateX(-50%)">3만</span>
-        <span class="absolute" style="left:25%; transform:translateX(-50%)">5만</span>
-        <span class="absolute" style="left:35%; transform:translateX(-50%)">7만</span>
-        <span class="absolute" style="left:50%; transform:translateX(-50%)">10만</span>
-        <span class="absolute" style="left:75%; transform:translateX(-50%)">15만</span>
-        <span class="absolute" style="right:0%">20만+</span>
+        <span class="absolute" style="left:3.3%; transform:translateX(-50%)">1만</span>
+        <span class="absolute" style="left:16.7%; transform:translateX(-50%)">5만</span>
+        <span class="absolute" style="left:33.3%; transform:translateX(-50%)">10만</span>
+        <span class="absolute" style="left:50%; transform:translateX(-50%)">15만</span>
+        <span class="absolute" style="left:66.7%; transform:translateX(-50%)">20만</span>
+        <span class="absolute" style="left:83.3%; transform:translateX(-50%)">25만</span>
+        <span class="absolute" style="right:0%">30만+</span>
       </div>
     </div>
 
@@ -496,7 +496,7 @@
   let scState = { ...SC_DEFAULT };
 
   function pctOf(score) {
-    return Math.min(score / 200000 * 100, 100);
+    return Math.min(score / 300000 * 100, 100);
   }
   function placeMarker(id, score) {
     const el = document.getElementById(id);
