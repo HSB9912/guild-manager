@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>가입 신청 — 수로 분포 표시 시안</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-6xl mx-auto space-y-10">
+
+  <header class="pb-2 border-b border-gray-300">
+    <h1 class="text-xl font-bold text-gray-900">가입 신청 페이지 개선 — 수로 분포 시안 4종</h1>
+    <p class="text-xs text-gray-500 mt-1">외부인이 1기 컷 가늠 가능 · 익명 5천점 단위 · 상위권 5만점++ 단위</p>
+    <p class="text-xs text-gray-400 mt-1">현재 페이지 위 / 시안 A~D 아래. 가입 양식은 4가지 다 동일 (기존 기능 그대로)</p>
+  </header>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 현재 (비교용) -->
+  <!-- ════════════════════════════════════════════ -->
+  <section>
+    <div class="text-[11px] font-bold text-gray-500 mb-2 uppercase">현재 (개선 대상)</div>
+    <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-xl mx-auto">
+      <h2 class="text-lg font-black text-pink-600 text-center">뚠/뚱카롱 길드 가입 신청</h2>
+      <p class="text-xs text-gray-500 text-center mt-1">아래 양식을 작성해주세요</p>
+      <div class="mt-5 space-y-3 text-xs text-gray-400 italic">
+        <div class="p-3 border border-dashed border-gray-300 rounded">닉네임</div>
+        <div class="p-3 border border-dashed border-gray-300 rounded">수로 점수 · 직업 · 이전 길드</div>
+        <div class="p-3 border border-dashed border-gray-300 rounded">질문들…</div>
+        <div class="p-3 border border-dashed border-gray-300 rounded">핸즈 인증 캡처</div>
+      </div>
+      <p class="mt-3 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">→ 외부인이 "여기 들어갈 만한가?" 가늠할 정보가 없음. 가입 기준 보고 "수로 10,000+"만 보임</p>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 시안 A: 막대 분포 (히스토그램) -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="A">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-bold px-2 py-0.5 bg-pink-500 text-white rounded">시안 A</div>
+      <h2 class="text-lg font-bold text-gray-900">막대 히스토그램 — 한눈에 분포 파악</h2>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-xl mx-auto">
+      <div class="text-center mb-5">
+        <h2 class="text-xl font-black text-gray-900">뚠/뚱카롱 길드 가입 신청</h2>
+        <p class="text-xs text-gray-500 mt-1">📍 루나 서버 · 6년차 운영 길드</p>
+      </div>
+
+      <!-- 수로 분포 박스 -->
+      <div class="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200 rounded-xl p-4 mb-5">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-[11px] font-black text-pink-700"><i class="fas fa-chart-bar mr-1"></i>1기 (뚠카롱) 수로 점수 분포</div>
+          <span class="text-[9px] text-pink-500 bg-white px-1.5 py-0.5 rounded">익명 · 분기 평균</span>
+        </div>
+        <p class="text-[10px] text-gray-500 mb-3">내가 어디쯤 들어갈지 가늠해보세요 (5천점 단위 · 상위권 5만+ 통합)</p>
+
+        <!-- 히스토그램 -->
+        <div class="space-y-1 text-[10px]">
+          <div class="flex items-center gap-2"><span class="w-20 text-right text-gray-600 font-mono">~10K</span><div class="flex-1 bg-pink-100 rounded h-4" style="width:0%"></div><span class="text-gray-500 w-8">0명</span></div>
+          <div class="flex items-center gap-2"><span class="w-20 text-right text-gray-600 font-mono">10~15K</span><div class="bg-pink-300 rounded h-4" style="width:8%"></div><span class="text-gray-500 w-8">4명</span></div>
+          <div class="flex items-center gap-2"><span class="w-20 text-right text-gray-600 font-mono">15~20K</span><div class="bg-pink-300 rounded h-4" style="width:12%"></div><span class="text-gray-500 w-8">6명</span></div>
+          <div class="flex items-center gap-2"><span class="w-20 text-right text-gray-600 font-mono">20~30K</span><div class="bg-pink-400 rounded h-4" style="width:24%"></div><span class="text-gray-500 w-8">12명</span></div>
+          <div class="flex items-center gap-2"><span class="w-20 text-right text-gray-600 font-mono">30~40K</span><div class="bg-pink-400 rounded h-4" style="width:30%"></div><span class="text-gray-500 w-8">15명</span></div>
+          <div class="flex items-center gap-2"><span class="w-20 text-right text-gray-600 font-mono">40~50K</span><div class="bg-pink-500 rounded h-4" style="width:36%"></div><span class="text-gray-500 w-8">18명</span></div>
+          <div class="flex items-center gap-2"><span class="w-20 text-right text-rose-600 font-mono font-bold">50~100K</span><div class="bg-rose-500 rounded h-4" style="width:48%"></div><span class="text-rose-600 w-8 font-bold">24명</span></div>
+          <div class="flex items-center gap-2"><span class="w-20 text-right text-rose-700 font-mono font-bold">100K~</span><div class="bg-rose-700 rounded h-4" style="width:14%"></div><span class="text-rose-700 w-8 font-bold">7명</span></div>
+        </div>
+
+        <!-- 한 줄 요약 -->
+        <div class="mt-3 pt-3 border-t border-pink-200 grid grid-cols-3 gap-2 text-center">
+          <div><div class="text-[9px] text-gray-500">진입선</div><div class="text-sm font-black text-gray-800">10,000</div></div>
+          <div><div class="text-[9px] text-gray-500">평균</div><div class="text-sm font-black text-pink-600">~45K</div></div>
+          <div><div class="text-[9px] text-gray-500">상위 10%</div><div class="text-sm font-black text-rose-600">95K+</div></div>
+        </div>
+      </div>
+
+      <div class="text-center text-[10px] text-gray-400">↓ 아래 폼은 동일 (기존 그대로)</div>
+      <div class="mt-2 p-4 border border-dashed border-gray-300 rounded text-center text-[10px] text-gray-400">가입 양식 (닉네임 / 점수 / 직업 / 질문 / 핸즈 인증)</div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500 text-center">장점: 시각적 인상 강함, 외부인이 "어, 5만점이 평균이네" 즉시 파악</div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 시안 B: 컷오프 카드 (Simple Stats) -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="B">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-bold px-2 py-0.5 bg-purple-500 text-white rounded">시안 B</div>
+      <h2 class="text-lg font-bold text-gray-900">컷오프 카드 — 미니멀, 핵심 숫자만</h2>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-xl mx-auto">
+      <div class="text-center mb-5">
+        <h2 class="text-xl font-black text-gray-900">뚠/뚱카롱 길드 가입 신청</h2>
+        <p class="text-xs text-gray-500 mt-1">📍 루나 서버 · 6년차 운영 길드</p>
+      </div>
+
+      <!-- 4개 컷 카드 -->
+      <div class="mb-5">
+        <div class="text-[11px] font-bold text-gray-700 mb-2 flex items-center gap-1">1기(뚠카롱) 수로 점수 컷 <span class="text-[9px] text-gray-400 font-medium ml-auto">익명 · 분기 평균</span></div>
+        <div class="grid grid-cols-4 gap-2 text-center">
+          <div class="border border-gray-200 rounded p-3">
+            <div class="text-[9px] text-gray-500 uppercase">진입선</div>
+            <div class="text-base font-black text-gray-900 mt-0.5">10K</div>
+            <div class="text-[9px] text-gray-400">최소 가입</div>
+          </div>
+          <div class="border border-gray-200 rounded p-3">
+            <div class="text-[9px] text-gray-500 uppercase">평균</div>
+            <div class="text-base font-black text-gray-900 mt-0.5">45K</div>
+            <div class="text-[9px] text-gray-400">전체 중간</div>
+          </div>
+          <div class="border border-pink-200 bg-pink-50 rounded p-3">
+            <div class="text-[9px] text-pink-600 uppercase">상위 30%</div>
+            <div class="text-base font-black text-pink-700 mt-0.5">65K+</div>
+            <div class="text-[9px] text-pink-500">티라미슈</div>
+          </div>
+          <div class="border border-rose-300 bg-rose-50 rounded p-3">
+            <div class="text-[9px] text-rose-700 uppercase">상위 10%</div>
+            <div class="text-base font-black text-rose-700 mt-0.5">95K+</div>
+            <div class="text-[9px] text-rose-500">크라운</div>
+          </div>
+        </div>
+
+        <!-- 1줄 인사이트 -->
+        <p class="text-[10px] text-gray-600 mt-3 bg-gray-50 border border-gray-200 rounded p-2">
+          <i class="fas fa-info-circle text-gray-400 mr-1"></i>
+          <strong>요약:</strong> 1기 활성 멤버 86명 기준. <strong>5만점 이상</strong>이 평균, <strong>10만점+</strong>이 상위권. 가입 후 분기 평균 <strong>4만점 미만</strong>이면 강등 위험.
+        </p>
+      </div>
+
+      <div class="text-center text-[10px] text-gray-400">↓ 아래 폼은 동일</div>
+      <div class="mt-2 p-4 border border-dashed border-gray-300 rounded text-center text-[10px] text-gray-400">가입 양식</div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500 text-center">장점: 가장 미니멀, 화이트 톤. 핵심 4숫자만. 한 줄 인사이트로 의미 전달</div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 시안 C: 직위 + 점수 매핑 -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="C">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-bold px-2 py-0.5 bg-amber-500 text-white rounded">시안 C</div>
+      <h2 class="text-lg font-bold text-gray-900">직위 + 점수 매핑 — 등급 보상이 보임</h2>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-xl mx-auto">
+      <div class="text-center mb-5">
+        <h2 class="text-xl font-black text-gray-900">뚠/뚱카롱 길드 가입 신청</h2>
+        <p class="text-xs text-gray-500 mt-1">📍 루나 서버 · 6년차 운영 길드</p>
+      </div>
+
+      <div class="mb-5">
+        <div class="text-[11px] font-bold text-gray-700 mb-2 flex items-center gap-1">1기 직위별 점수 컷 + 보상 <span class="text-[9px] text-gray-400 font-medium ml-auto">익명 · 분기 평균</span></div>
+
+        <table class="w-full text-[11px] border border-gray-200 rounded overflow-hidden">
+          <thead class="bg-gray-50 text-gray-500 text-[10px] uppercase">
+            <tr><th class="text-left px-3 py-2 font-medium">직위</th><th class="text-left px-3 py-2 font-medium">점수 컷</th><th class="text-left px-3 py-2 font-medium">인원</th><th class="text-left px-3 py-2 font-medium">혜택</th></tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr class="bg-rose-50/40"><td class="px-3 py-2 font-bold text-rose-700">👑 크라운</td><td>TOP 5 <span class="text-gray-500">(95K+)</span></td><td>5명</td><td class="text-rose-600 text-[10px]">부캐 면제 + 100억</td></tr>
+            <tr class="bg-pink-50/40"><td class="px-3 py-2 font-bold text-pink-700">🍨 파르페</td><td>TOP 6~20</td><td>15명</td><td class="text-pink-600 text-[10px]">부캐 면제 + 보너스</td></tr>
+            <tr><td class="px-3 py-2 font-bold text-gray-800">🍰 티라미슈</td><td>TOP 21~31 <span class="text-gray-500">(65K+)</span></td><td>11명</td><td class="text-gray-600 text-[10px]">부캐 면제 + 수동</td></tr>
+            <tr><td class="px-3 py-2 font-bold text-gray-800">🥐 크로아상</td><td>90K+ <span class="text-gray-500">(전체)</span></td><td>—</td><td class="text-gray-600 text-[10px]">부캐 면제</td></tr>
+            <tr><td class="px-3 py-2 font-bold text-gray-800">🍥 롤케이크</td><td>55K~89K</td><td>26명</td><td class="text-gray-600 text-[10px]">부캐 절반 면제</td></tr>
+            <tr class="bg-amber-50/30"><td class="px-3 py-2 font-bold text-amber-700">🥞 팬케이크</td><td><span class="text-amber-700">강등 위험권</span></td><td>20명</td><td class="text-amber-600 text-[10px]">부캐 절반 면제</td></tr>
+            <tr><td class="px-3 py-2 font-bold text-gray-500">🧇 와플</td><td>본캐 95K+</td><td>—</td><td class="text-gray-500 text-[10px]">개별 적용</td></tr>
+            <tr class="text-gray-400"><td class="px-3 py-2 font-bold">🍪 스콘</td><td>10K 미만</td><td>—</td><td class="text-[10px]">강등 → 휴면</td></tr>
+          </tbody>
+        </table>
+
+        <p class="text-[10px] text-gray-600 mt-2 bg-gray-50 border border-gray-200 rounded p-2">
+          <i class="fas fa-lightbulb text-amber-500 mr-1"></i>
+          <strong>가입 가이드:</strong> 분기 평균 <strong>5만점 이상</strong> 안정 추천. 4만점 미만이면 팬케이크(강등권). 10K 미만이면 스콘 → 추방.
+        </p>
+      </div>
+
+      <div class="text-center text-[10px] text-gray-400">↓ 아래 폼은 동일</div>
+      <div class="mt-2 p-4 border border-dashed border-gray-300 rounded text-center text-[10px] text-gray-400">가입 양식</div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500 text-center">장점: 직위 보상 시스템 자체를 어필 (가입 후 어떤 혜택?). 단점: 정보 많음</div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 시안 D: 인터랙티브 슬라이더 -->
+  <!-- ════════════════════════════════════════════ -->
+  <section id="D">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-bold px-2 py-0.5 bg-emerald-500 text-white rounded">시안 D</div>
+      <h2 class="text-lg font-bold text-gray-900">인터랙티브 슬라이더 — 내 점수 입력 → 위치 확인</h2>
+    </div>
+    <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-xl mx-auto">
+      <div class="text-center mb-5">
+        <h2 class="text-xl font-black text-gray-900">뚠/뚱카롱 길드 가입 신청</h2>
+        <p class="text-xs text-gray-500 mt-1">📍 루나 서버 · 6년차 운영 길드</p>
+      </div>
+
+      <div class="mb-5">
+        <div class="text-[11px] font-bold text-gray-700 mb-2 flex items-center gap-1">내 수로 점수 위치 <span class="text-[9px] text-gray-400 font-medium ml-auto">슬라이더 또는 입력</span></div>
+
+        <!-- Slider -->
+        <div class="relative h-12 bg-gradient-to-r from-amber-100 via-gray-100 via-30% via-pink-100 via-65% to-rose-200 rounded mb-1">
+          <!-- 마커 라인 -->
+          <div class="absolute top-0 bottom-0 border-l-2 border-dashed border-gray-400" style="left:10%"><span class="text-[8px] text-gray-500 absolute -top-3 -translate-x-1/2">10K 진입</span></div>
+          <div class="absolute top-0 bottom-0 border-l-2 border-dashed border-gray-500" style="left:35%"><span class="text-[8px] text-gray-600 absolute -top-3 -translate-x-1/2">45K 평균</span></div>
+          <div class="absolute top-0 bottom-0 border-l-2 border-dashed border-pink-500" style="left:60%"><span class="text-[8px] text-pink-700 absolute -top-3 -translate-x-1/2">65K 티라미슈</span></div>
+          <div class="absolute top-0 bottom-0 border-l-2 border-dashed border-rose-600" style="left:85%"><span class="text-[8px] text-rose-700 absolute -top-3 -translate-x-1/2">95K 크라운</span></div>
+          <!-- 사용자 핀 -->
+          <div class="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-lg cursor-pointer" style="left:50%; transform:translate(-50%,-50%)" id="myPin"></div>
+        </div>
+        <input type="range" min="0" max="120000" value="55000" step="5000" oninput="document.getElementById('myScore').textContent=Number(this.value).toLocaleString(); document.getElementById('myPin').style.left=Math.min(this.value/120000*100,100)+'%'; const v=Number(this.value); document.getElementById('myRank').textContent=v<10000?'❌ 가입 불가':v<25000?'위험 (강등권)':v<55000?'중하위':v<95000?'상위 30%':v<150000?'상위 10%':'최상위';" class="w-full">
+
+        <div class="grid grid-cols-2 gap-2 mt-3 text-center">
+          <div class="bg-emerald-50 border border-emerald-200 rounded p-3">
+            <div class="text-[9px] text-emerald-700 uppercase">내 점수</div>
+            <div class="text-lg font-black text-emerald-700"><span id="myScore">55,000</span></div>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded p-3">
+            <div class="text-[9px] text-gray-500 uppercase">예상 위치</div>
+            <div class="text-sm font-black text-gray-800 mt-1" id="myRank">중하위</div>
+          </div>
+        </div>
+
+        <p class="text-[10px] text-gray-600 mt-3 bg-gray-50 border border-gray-200 rounded p-2">
+          <i class="fas fa-info-circle text-gray-400 mr-1"></i>
+          1기(뚠카롱) 86명 기준 · 익명 분기 평균. 슬라이더로 본인 점수 위치 미리 확인.
+        </p>
+      </div>
+
+      <div class="text-center text-[10px] text-gray-400">↓ 아래 폼은 동일</div>
+      <div class="mt-2 p-4 border border-dashed border-gray-300 rounded text-center text-[10px] text-gray-400">가입 양식</div>
+    </div>
+    <div class="mt-2 text-[10px] text-gray-500 text-center">장점: 인터랙티브, 본인 점수 미리 가늠. 단점: 복잡도 ↑</div>
+  </section>
+
+  <!-- ════════════════════════════════════════════ -->
+  <!-- 비교 표 -->
+  <!-- ════════════════════════════════════════════ -->
+  <section class="bg-white rounded-lg p-6 border border-gray-200">
+    <h3 class="font-bold text-gray-900 mb-3"><i class="fas fa-list-check text-pink-500 mr-1"></i>한눈에 비교</h3>
+    <table class="w-full text-[12px]">
+      <thead class="text-[10px] text-gray-500 uppercase border-b border-gray-200">
+        <tr><th class="text-left py-2">기준</th><th class="text-center">A 막대</th><th class="text-center">B 컷오프</th><th class="text-center">C 직위표</th><th class="text-center">D 슬라이더</th></tr>
+      </thead>
+      <tbody class="text-gray-700 divide-y divide-gray-100">
+        <tr><td class="py-2 font-bold">시각 임팩트</td><td class="text-center">★★★★★</td><td class="text-center">★★</td><td class="text-center">★★★</td><td class="text-center">★★★★</td></tr>
+        <tr><td class="py-2 font-bold">정보 명확</td><td class="text-center">★★★</td><td class="text-center">★★★★★</td><td class="text-center">★★★</td><td class="text-center">★★★★</td></tr>
+        <tr><td class="py-2 font-bold">미니멀 v2 톤</td><td class="text-center">★★★</td><td class="text-center">★★★★★</td><td class="text-center">★★★★</td><td class="text-center">★★★</td></tr>
+        <tr><td class="py-2 font-bold">외부인 인상</td><td class="text-center">★★★★★</td><td class="text-center">★★★</td><td class="text-center">★★★★</td><td class="text-center">★★★★</td></tr>
+        <tr><td class="py-2 font-bold">개발 비용</td><td class="text-center text-emerald-600">중간</td><td class="text-center text-emerald-600">낮음</td><td class="text-center text-emerald-600">낮음</td><td class="text-center text-amber-600">중간</td></tr>
+      </tbody>
+    </table>
+    <div class="mt-4 bg-pink-50 border border-pink-200 rounded p-3 text-[11px] text-pink-900 leading-relaxed">
+      <strong>개인 추천:</strong> <strong>A (막대)</strong> — 외부인이 한눈에 "어, 평균 5만이네, 내 점수 어디쯤이지?" 즉시 인지. 정적이라 안전. 또는 <strong>A + B 결합</strong>: 히스토그램 위에 컷 4개 숫자 카드.<br><br>
+      <strong>공통:</strong> 모든 시안은 실제 멤버 데이터(<code>members.suro</code>) 기반으로 매 분기 자동 갱신. 익명·5천점 bin이라 개별 식별 불가. 표시 위치는 폼 위쪽 (가입 양식은 기존 그대로).
+    </div>
+  </section>
+
+</div>
+
+<script>
+// D 시안 슬라이더 초기값 표시
+document.addEventListener('DOMContentLoaded', () => {
+  const r = document.querySelector('input[type="range"]');
+  if (r) { r.dispatchEvent(new Event('input')); }
+});
+</script>
+</body>
+</html>
