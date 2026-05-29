@@ -125,44 +125,54 @@
             <!-- 슬라이더 -->
             <div class="text-[11px] font-bold text-gray-700 mb-2"><i class="fas fa-location-arrow text-pink-400 mr-1"></i>내 점수 위치 확인 <span class="text-[9px] font-medium text-gray-400 ml-1">슬라이더 조정</span></div>
 
-            <!-- 슬라이더 트랙 + 위·아래 2단 마커 (겹침 방지) -->
-            <div class="relative mb-1 pt-9 px-2">
-              <!-- 위쪽: 홀수번 마커 (1만, 3.8만, 6.5만, 9.5만) -->
-              <div class="absolute top-0 left-0 right-0 h-8 pointer-events-none">
-                <div class="absolute" style="left:5%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-amber-700 whitespace-nowrap leading-tight text-center">1만 · 200등</div>
-                  <div class="w-px h-2 bg-amber-400 mx-auto"></div>
+            <!-- 슬라이더 트랙 + 다단 마커 (겹침 방지) -->
+            <div class="relative mb-1 pt-12 px-2">
+              <!-- 위쪽: 큰 컷 4개 (1만, 3.8만, 6.5만, 9.5만) — 2층 구조 (점수 / 의미) -->
+              <div class="absolute top-0 left-0 right-0 h-11 pointer-events-none">
+                <!-- 1만 진입 -->
+                <div class="absolute text-center" style="left:5%; transform:translateX(-50%)">
+                  <div class="text-[9px] font-black text-amber-700 leading-none">1만</div>
+                  <div class="text-[7px] text-amber-600 leading-tight">200등</div>
+                  <div class="w-px h-2 bg-amber-400 mx-auto mt-0.5"></div>
                 </div>
-                <div class="absolute" style="left:19%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-emerald-700 whitespace-nowrap leading-tight text-center">3.8만 · 90등·안정선</div>
-                  <div class="w-px h-2 bg-emerald-400 mx-auto"></div>
+                <!-- 3.8만 안정선 -->
+                <div class="absolute text-center" style="left:19%; transform:translateX(-50%)">
+                  <div class="text-[9px] font-black text-emerald-700 leading-none">3.8만</div>
+                  <div class="text-[7px] text-emerald-600 leading-tight whitespace-nowrap">90등·안정</div>
+                  <div class="w-px h-2 bg-emerald-500 mx-auto mt-0.5"></div>
                 </div>
-                <div class="absolute" style="left:32.5%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-pink-700 whitespace-nowrap leading-tight text-center">6.5만 · 티라미슈</div>
-                  <div class="w-px h-2 bg-pink-400 mx-auto"></div>
+                <!-- 6.5만 티라미슈 -->
+                <div class="absolute text-center" style="left:32.5%; transform:translateX(-50%)">
+                  <div class="text-[9px] font-black text-pink-700 leading-none">6.5만</div>
+                  <div class="text-[7px] text-pink-600 leading-tight">티라미슈</div>
+                  <div class="w-px h-2 bg-pink-400 mx-auto mt-0.5"></div>
                 </div>
-                <div class="absolute" style="left:47.5%; transform:translateX(-50%)">
-                  <div class="text-[8px] font-bold text-rose-700 whitespace-nowrap leading-tight text-center">9.5만 · 크라운</div>
-                  <div class="w-px h-2 bg-rose-400 mx-auto"></div>
+                <!-- 9.5만 크라운 -->
+                <div class="absolute text-center" style="left:47.5%; transform:translateX(-50%)">
+                  <div class="text-[9px] font-black text-rose-700 leading-none">9.5만</div>
+                  <div class="text-[7px] text-rose-600 leading-tight">크라운</div>
+                  <div class="w-px h-2 bg-rose-400 mx-auto mt-0.5"></div>
                 </div>
               </div>
 
               <input type="range" min="0" max="200000" value="55000" step="5000" id="scoreSlider" class="sc-slider">
 
-              <!-- 아래쪽 1단: 짝수번 마커 (1.3만 180등, 4.5만 평균) -->
-              <div class="relative mt-1.5 h-6 pointer-events-none">
-                <div class="absolute" style="left:6.5%; transform:translateX(-50%)">
+              <!-- 아래쪽: 보조 마커 (1.3만 180등, 4.5만 평균) -->
+              <div class="relative mt-1 h-6 pointer-events-none">
+                <div class="absolute text-center" style="left:6.5%; transform:translateX(-50%)">
                   <div class="w-px h-2 bg-yellow-500 mx-auto"></div>
-                  <div class="text-[8px] font-bold text-yellow-700 whitespace-nowrap leading-tight text-center">1.3만 · 180등</div>
+                  <div class="text-[8px] font-bold text-yellow-700 leading-none mt-0.5">1.3만</div>
+                  <div class="text-[7px] text-yellow-600 leading-tight">180등</div>
                 </div>
-                <div class="absolute" style="left:22.5%; transform:translateX(-50%)">
+                <div class="absolute text-center" style="left:22.5%; transform:translateX(-50%)">
                   <div class="w-px h-2 bg-gray-400 mx-auto"></div>
-                  <div class="text-[8px] font-bold text-gray-600 whitespace-nowrap leading-tight text-center">4.5만 · 평균</div>
+                  <div class="text-[8px] font-bold text-gray-600 leading-none mt-0.5">4.5만</div>
+                  <div class="text-[7px] text-gray-500 leading-tight">평균</div>
                 </div>
               </div>
 
-              <!-- 아래쪽 2단: 단위 라벨 (간격 띄움) -->
-              <div class="relative mt-1 h-3 text-[8px] text-gray-400 select-none border-t border-gray-100 pt-1">
+              <!-- 단위 라벨 -->
+              <div class="relative mt-1.5 h-3 text-[8px] text-gray-400 select-none border-t border-gray-100 pt-1">
                 <span class="absolute" style="left:0%">0</span>
                 <span class="absolute" style="left:5%; transform:translateX(-50%)">1만</span>
                 <span class="absolute" style="left:15%; transform:translateX(-50%)">3만</span>
