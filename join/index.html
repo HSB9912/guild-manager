@@ -74,9 +74,8 @@
       <div>• <strong class="text-emerald-700">안정권 = TOP 90 이내</strong> — 강등 거의 없음</div>
       <div>• <strong class="text-yellow-700">90~180등 = 변동성 위험구간</strong> — 갭이 적어 작은 변동에도 강등 가능</div>
       <div>• 🥞 <strong class="text-amber-700">팬케이크 = 하위 20명 (강등권)</strong> · 🍞 스콘 5.5만 미만 (강등 권유)</div>
-      <div class="border-t border-pink-200 mt-1.5 pt-1.5">⚔️ <strong>1기 ↔ 2기 승강제</strong>: 매주 1:1 점수 비교로 자리 교체</div>
-      <div>&nbsp;&nbsp;<strong>2기 → 1기 승급</strong> 조건 (하나만 충족): ① <strong>지난주 1기 180등 점수 돌파</strong> · ② 매칭된 1기 강등권보다 <strong>5,000점 이상</strong> 격차</div>
-      <div>&nbsp;&nbsp;<strong class="text-amber-700">1기 → 2기 강등</strong>: 꼴등 점수 → 매칭된 2기 상위와 자리 교체</div>
+      <div class="border-t border-pink-200 mt-1.5 pt-1.5">⚔️ <strong>1기(뚠카롱) 가입 컷</strong>: <strong class="text-pink-700">꼴등 +5,000점</strong> 이상 → 점수 따라 직위 자동 부여</div>
+      <div>&nbsp;&nbsp;그 미만은 <strong class="text-blue-700">2기(뚱카롱)로 가입</strong> · ※ 현재 <strong>1기/2기 통합 운영</strong>이라 2→1 승급제는 휴지 상태</div>
     </div>
 
     <!-- 슬라이더 -->
@@ -523,6 +522,22 @@
     document.getElementById('mk_t21v').textContent  = fmtMan(scState.top21);
     document.getElementById('mk_t5v').textContent   = fmtMan(scState.top5);
     ['mk_180','mk_90','mk_avg','mk_t21','mk_t5'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+    // 동적 슬라이더 색구간 (가입불가/2기/팬케이크/변동/안정/상위)
+    const slider = document.getElementById('scoreSlider');
+    if (slider) {
+      const p1 = pctOf(10000);
+      const pJ = pctOf(scState.cut_last + 5000);
+      const p180 = pctOf(scState.cut180);
+      const p90 = pctOf(scState.cut90);
+      const pT51 = pctOf(scState.top51);
+      slider.style.background = `linear-gradient(to right,
+        #f3f4f6 0%, #f3f4f6 ${p1}%,
+        #dbeafe ${p1}%, #dbeafe ${pJ}%,
+        #fed7aa ${pJ}%, #fed7aa ${p180}%,
+        #fef08a ${p180}%, #fef08a ${p90}%,
+        #d1fae5 ${p90}%, #d1fae5 ${pT51}%,
+        #fce7f3 ${pT51}%, #fce7f3 100%)`;
+    }
     scLoaded = true;
     updateScore();
   }
@@ -541,15 +556,22 @@
       return;
     }
     let rank, msg, color;
+    // 1기 가입 컷 = 꼴등+5000 (단순화, 통합 운영 중)
+    const joinCut1st = scState.cut_last + 5000;
+
     if (v < 10000) { rank = '❌ 가입 불가'; msg = '1만점 미만은 신청 거절'; color = 'text-red-600'; }
-    else if (v < scState.cut_last) { rank = '🚨 강등권 (즉시 위험)'; msg = `현재 꼴등 ${fmtMan(scState.cut_last)} 미만 — 가입 즉시 1기 꼴등 → 2기 트레이드`; color = 'text-red-700'; }
-    else if (v < scState.cut180) { rank = '⚠ 팬케이크 (강등 위험조)'; msg = `하위 20명 (${fmtMan(scState.cut_last)}~${fmtMan(scState.cut180)}) — 매주 강등 후보`; color = 'text-amber-700'; }
+    else if (v < joinCut1st) {
+      rank = '🥖 뚱카롱 (2기)';
+      msg = `1기 컷 ${fmtMan(joinCut1st)} 미달 — 꼴등 ${fmtMan(scState.cut_last)}+5천 필요`;
+      color = 'text-blue-700';
+    }
+    else if (v < scState.cut180) { rank = '🥞 팬케이크 (1기 강등권)'; msg = '하위 20명 범위 — 매주 강등 위협 조심'; color = 'text-amber-700'; }
     else if (v < scState.cut90)  { rank = '⚡ 변동성 위험'; msg = '90~180등 — 작은 변동에도 강등 가능'; color = 'text-yellow-700'; }
-    else if (v < scState.avg)    { rank = '✓ 안정권'; msg = 'TOP 90 이내 — 강등 거의 없음'; color = 'text-emerald-700'; }
-    else if (v < scState.top21)  { rank = '🍰 롤케이크권'; msg = '평균 이상 (TOP 51 가까움)'; color = 'text-emerald-700'; }
-    else if (v < scState.top5)   { rank = '🎂 티라미슈권'; msg = 'TOP 21~51 (부캐 All 면제)'; color = 'text-pink-700'; }
-    else if (v < scState.top1)   { rank = '👑 크라운권'; msg = 'TOP 5 후보 (100억 분배)'; color = 'text-rose-700'; }
-    else { rank = '👑 최상위'; msg = 'TOP 1 후보'; color = 'text-rose-800'; }
+    else if (v < scState.top51)  { rank = '🍰 롤케이크 (안정권)'; msg = 'TOP 90 이내 — 강등 거의 없음'; color = 'text-emerald-700'; }
+    else if (v < scState.top21)  { rank = '🎂 티라미슈'; msg = 'TOP 21~51 (부캐 All 면제 + 숫돌 24개)'; color = 'text-pink-700'; }
+    else if (v < scState.top5)   { rank = '🍨 파르페'; msg = 'TOP 6~20 (별도 풀 분배: 11→4%)'; color = 'text-pink-700'; }
+    else if (v < scState.top1)   { rank = '👑 크라운'; msg = 'TOP 1~5 (100억 분배: 28/24/20/16/12%)'; color = 'text-rose-700'; }
+    else { rank = '👑 TOP 1'; msg = '1위 (28% 분배)'; color = 'text-rose-800'; }
     if (rankEl) { rankEl.textContent = rank; rankEl.className = `text-sm font-black mt-0.5 ${color}`; }
     if (msgEl)  { msgEl.textContent = msg;   msgEl.className = `text-[9px] ${color}`; }
   }
@@ -574,14 +596,15 @@
       const total = scores.length;
       const at = (idx) => scores[Math.min(Math.max(idx, 0), total - 1)]?.score || 0;
       const cut_last = at(total - 1);  // 꼴등 (마지막 등)
-      const cut180 = at(179);  // 180등 (승급 컷)
+      const cut180 = at(179);  // 180등
       const cut90  = at(89);   // 90등 = 안정선
-      const top21  = at(20);   // TOP 21 (티라미슈 진입)
+      const top51  = at(50);   // TOP 51 (티라미슈 진입)
+      const top21  = at(20);   // TOP 21 (파르페 진입)
       const top5   = at(4);    // TOP 5 (크라운 진입)
       const top1   = at(0);    // TOP 1
       const avg = Math.round(scores.reduce((s, x) => s + x.score, 0) / total);
 
-      scState = { cut_last, cut180, cut90, avg, top21, top5, top1, total };
+      scState = { cut_last, cut180, cut90, avg, top51, top21, top5, top1, total };
       // 슬라이더 초기값을 안정선 가까이로 (사용자가 첫 인상 "안정권")
       const slider = document.getElementById('scoreSlider');
       if (slider && slider.value === '100000') {
