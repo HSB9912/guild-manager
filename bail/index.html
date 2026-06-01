@@ -634,6 +634,8 @@
     const charLines = reqs.map(r => `• **${r.payer_char}** (${r.payer_guild}) ${r.base}×${r.multiplier} = **${r.total_amount}개**${r.offense_count > 1 ? ` _(${r.offense_count}회차)_` : ''}`).join('\n');
 
     const payload = {
+      content: '<@&692099309172162570> <@&692091131646705716> 💎 새 보석금 신청',
+      allowed_mentions: { roles: ['692099309172162570', '692091131646705716'] },
       embeds: [{
         title: `💎 새 보석금 납부 신청 (${reqs.length}캐)`,
         description: `**${first.main_char}** 님이 ${reqs.length}캐릭의 보석금을 신청했습니다`,

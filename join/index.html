@@ -467,6 +467,8 @@
   async function notifyDiscord(req) {
     const ansLines = (req.answers || []).filter(x => x.a).map(x => `**${x.q}**\n${x.a}`).join('\n');
     const payload = {
+      content: '<@&692099309172162570> <@&692091131646705716> 🙋 새 가입 신청',
+      allowed_mentions: { roles: ['692099309172162570', '692091131646705716'] },
       embeds: [{
         title: '🙋 새 길드 가입 신청',
         description: `**${req.nickname}** 님이 가입 신청했습니다`,

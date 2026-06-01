@@ -515,6 +515,8 @@
     const newBadge = req.is_new_member ? ' 🆕 신규 가입 동시' : '';
 
     const payload = {
+      content: '<@&692099309172162570> <@&692091131646705716> 🛡️ 새 면제 신청',
+      allowed_mentions: { roles: ['692099309172162570', '692091131646705716'] },
       embeds: [{
         title: '🛡️ 새 수로 면제 신청',
         description: `**${req.main_char}** 님이 면제 신청했습니다${newBadge}`,
