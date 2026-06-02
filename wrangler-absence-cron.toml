@@ -1,0 +1,15 @@
+name = "guild-absence-cron"
+main = "absence-cron-worker.js"
+compatibility_date = "2026-01-01"
+
+[triggers]
+crons = ["0 14 * * 3"]  # 매주 수요일 UTC 14:00 = KST 23:00
+
+# vars (대시보드에서도 설정 가능)
+# [vars]
+# SUPABASE_URL = "https://luglshrfkkeacmefnvlm.supabase.co"
+
+# secrets (CLI로만 등록):
+#   wrangler secret put SUPABASE_SERVICE_KEY
+#   wrangler secret put DISCORD_ABSENCE_WEBHOOK_URL
+#   wrangler secret put MANUAL_TRIGGER_KEY

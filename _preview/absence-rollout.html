@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>장기 부재 면제 — 사용자 실행 가이드</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }
+  pre { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+  .code-block { position: relative; }
+  .copy-btn { position: absolute; top: 6px; right: 6px; background: #1f2937; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; opacity: 0.7; }
+  .copy-btn:hover { opacity: 1; }
+  .copy-btn.done { background: #059669; }
+</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-4xl mx-auto space-y-5">
+
+  <header class="pb-2 border-b border-gray-300">
+    <h1 class="text-xl font-bold text-gray-900">장기 부재 면제 — 사용자가 할 일 (체크리스트)</h1>
+    <p class="text-xs text-gray-500 mt-1">아래 5단계를 처리 후 결과 알려주세요. 코드는 우측 상단 "복사" 버튼.</p>
+  </header>
+
+  <!-- 전체 체크리스트 -->
+  <section class="bg-white rounded-xl border border-pink-300 p-4">
+    <h2 class="font-bold text-pink-700 mb-3"><i class="fas fa-check-double mr-1"></i>전체 5단계 요약</h2>
+    <ol class="space-y-1.5 text-[12px] text-gray-700">
+      <li><span class="inline-block w-5 text-center font-bold text-pink-600">1.</span><strong>Supabase SQL 실행</strong> (DB 테이블 생성) — 5분</li>
+      <li><span class="inline-block w-5 text-center font-bold text-pink-600">2.</span><strong>Discord 운영진 채널 웹훅 URL 발급</strong> + 알려주기 — 2분</li>
+      <li><span class="inline-block w-5 text-center font-bold text-pink-600">3.</span><strong>Cloudflare Worker 배포</strong> (cron 알림) — 10분</li>
+      <li><span class="inline-block w-5 text-center font-bold text-pink-600">4.</span><strong>Worker 환경변수·Secret 등록</strong> — 5분</li>
+      <li><span class="inline-block w-5 text-center font-bold text-pink-600">5.</span><strong>완료 보고</strong> (워커 URL 알려주기 + 수동 트리거 키)</li>
+    </ol>
+  </section>
+
+  <!-- STEP 1: SQL -->
+  <section class="bg-white rounded-xl border border-emerald-200 p-4">
+    <h2 class="font-bold text-emerald-700 mb-2 text-base">🟢 STEP 1. Supabase SQL 실행</h2>
+    <p class="text-[12px] text-gray-700 mb-3">
+      Supabase Dashboard (<a href="https://supabase.com/dashboard" target="_blank" class="text-pink-600 underline">supabase.com/dashboard</a>) → 프로젝트 선택 → 좌측 <strong>SQL Editor</strong> → 새 쿼리 → 아래 코드 전체 복사·붙여넣기 → <strong>Run</strong>
+    </p>
+    <p class="text-[11px] text-gray-600 mb-2">파일: <code class="bg-gray-100 px-1 rounded">guild-manager/absence-exemptions-schema.sql</code> · 깃에 이미 푸시됨</p>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyText(this, 'sql1')">복사</button>
+      <pre id="sql1" class="bg-gray-900 text-emerald-200 text-[10px] p-3 rounded overflow-x-auto max-h-80"><code>CREATE TABLE IF NOT EXISTS absence_exemptions (
+  id BIGSERIAL PRIMARY KEY,
+  member_id   BIGINT REFERENCES members(id) ON DELETE CASCADE,
+  member_name TEXT NOT NULL,
+  reason_type TEXT NOT NULL,
+  reason_detail TEXT,
+  memo TEXT,
+  start_date DATE NOT NULL,
+  end_date   DATE NOT NULL CHECK (end_date &gt;= start_date),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','ended','cancelled')),
+  decision_by   TEXT,
+  decision_at   TIMESTAMPTZ,
+  decision_note TEXT,
+  notified_weeks TEXT[] DEFAULT '{}',
+  requested_by   TEXT,
+  created_at     TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at     TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_absence_member  ON absence_exemptions(member_id);
+CREATE INDEX IF NOT EXISTS idx_absence_period  ON absence_exemptions(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_absence_status  ON absence_exemptions(status);
+CREATE OR REPLACE FUNCTION update_absence_exemptions_updated_at()
+RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS absence_exemptions_updated_at_trigger ON absence_exemptions;
+CREATE TRIGGER absence_exemptions_updated_at_trigger BEFORE UPDATE ON absence_exemptions
+  FOR EACH ROW EXECUTE FUNCTION update_absence_exemptions_updated_at();
+ALTER TABLE absence_exemptions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS absence_select_anyone ON absence_exemptions;
+CREATE POLICY absence_select_anyone ON absence_exemptions FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS absence_insert_anyone ON absence_exemptions;
+CREATE POLICY absence_insert_anyone ON absence_exemptions FOR INSERT TO anon, authenticated WITH CHECK (status = 'pending');
+DROP POLICY IF EXISTS absence_admin_write ON absence_exemptions;
+CREATE POLICY absence_admin_write ON absence_exemptions FOR UPDATE TO authenticated
+  USING (EXISTS (SELECT 1 FROM admin_whitelist WHERE email = (auth.jwt() -&gt;&gt; 'email') AND status = 'approved'))
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_whitelist WHERE email = (auth.jwt() -&gt;&gt; 'email') AND status = 'approved'));
+DROP POLICY IF EXISTS absence_admin_delete ON absence_exemptions;
+CREATE POLICY absence_admin_delete ON absence_exemptions FOR DELETE TO authenticated
+  USING (EXISTS (SELECT 1 FROM admin_whitelist WHERE email = (auth.jwt() -&gt;&gt; 'email') AND status = 'approved'));</code></pre>
+    </div>
+    <div class="mt-2 bg-emerald-50 border border-emerald-200 rounded p-2 text-[11px] text-emerald-800">
+      ✅ 성공 메시지: <code>Success. No rows returned</code> 또는 <code>CREATE TABLE</code>
+    </div>
+  </section>
+
+  <!-- STEP 2: Discord Webhook -->
+  <section class="bg-white rounded-xl border border-indigo-200 p-4">
+    <h2 class="font-bold text-indigo-700 mb-2 text-base">🔵 STEP 2. Discord 운영진 채널 웹훅 URL</h2>
+    <p class="text-[12px] text-gray-700 mb-2">
+      디스코드 운영진 채널 → 채널 설정(⚙️) → <strong>연동</strong> → <strong>웹후크</strong> → <strong>새 웹후크</strong> →
+      이름: <code>강등보호 알람</code> → <strong>웹후크 URL 복사</strong>
+    </p>
+    <div class="bg-indigo-50 border border-indigo-200 rounded p-2 text-[11px] text-gray-700">
+      💡 기존 <code>guild-join-notify</code> 또는 다른 운영진 알림 채널과 <strong>같은 채널 추천</strong>. 새 채널 만들 필요 없음.
+    </div>
+    <div class="mt-2 bg-yellow-50 border border-yellow-300 rounded p-2 text-[11px] text-yellow-900">
+      ⚠️ <strong>저에게 알려주실 것 (5단계 결과 보고에 같이):</strong>
+      <ul class="list-disc list-inside mt-1 ml-2">
+        <li>웹훅 URL 전체 (https://discord.com/api/webhooks/...)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- STEP 3: Worker 배포 -->
+  <section class="bg-white rounded-xl border border-purple-200 p-4">
+    <h2 class="font-bold text-purple-700 mb-2 text-base">🟣 STEP 3. Cloudflare Worker 배포</h2>
+    <p class="text-[12px] text-gray-700 mb-3">
+      Cloudflare Dashboard → Workers & Pages → <strong>Create Worker</strong> → 이름 <code>guild-absence-cron</code> → Deploy →
+      <strong>Edit code</strong> → 기본 코드 전체 지우고 아래 붙여넣기 → <strong>Save and Deploy</strong>
+    </p>
+    <p class="text-[11px] text-gray-600 mb-2">파일: <code class="bg-gray-100 px-1 rounded">guild-manager/absence-cron-worker.js</code> · 깃에 푸시됨</p>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyFromFile(this, 'absence-cron-worker.js')">코드 보러가기 (GitHub)</button>
+      <pre class="bg-gray-900 text-purple-200 text-[10px] p-3 rounded overflow-x-auto max-h-40"><code>// 매주 수 23:00 KST → 디스코드 강등 보호 알림
+// 전체 코드는 깃에서 복사 (위 버튼)
+// 또는 guild-manager/absence-cron-worker.js</code></pre>
+    </div>
+
+    <h3 class="font-bold text-purple-700 mt-3 mb-2 text-[13px]">3-1. Cron 트리거 설정</h3>
+    <p class="text-[12px] text-gray-700 mb-1">
+      Worker 페이지 → <strong>Settings</strong> → <strong>Triggers</strong> → <strong>Add Cron Trigger</strong>
+    </p>
+    <div class="bg-gray-900 text-purple-200 text-[11px] p-2 rounded font-mono">0 14 * * 3</div>
+    <p class="text-[10px] text-gray-500 mt-1">↑ UTC 수요일 14:00 = KST 수요일 23:00</p>
+  </section>
+
+  <!-- STEP 4: Secret 등록 -->
+  <section class="bg-white rounded-xl border border-rose-200 p-4">
+    <h2 class="font-bold text-rose-700 mb-2 text-base">🔴 STEP 4. Worker 환경변수 + Secret 4개</h2>
+    <p class="text-[12px] text-gray-700 mb-3">
+      Worker 페이지 → <strong>Settings</strong> → <strong>Variables and Secrets</strong> → 아래 4개 추가:
+    </p>
+
+    <div class="space-y-2 text-[11px]">
+      <!-- 1 -->
+      <div class="bg-gray-50 border border-gray-200 rounded p-2.5">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="font-bold text-gray-900">1. SUPABASE_URL <span class="text-[9px] font-normal bg-blue-100 text-blue-700 px-1 rounded ml-1">Plain text</span></div>
+            <div class="text-[10px] text-gray-600 mt-0.5">타입: Plain text (Secret 아님)</div>
+          </div>
+          <button class="copy-btn !static" onclick="copyValue(this, 'https://luglshrfkkeacmefnvlm.supabase.co')">복사</button>
+        </div>
+        <pre class="bg-white border border-gray-200 rounded p-1.5 mt-1 text-[10px] font-mono">https://luglshrfkkeacmefnvlm.supabase.co</pre>
+      </div>
+
+      <!-- 2 -->
+      <div class="bg-rose-50 border border-rose-200 rounded p-2.5">
+        <div class="font-bold text-rose-900">2. SUPABASE_SERVICE_KEY <span class="text-[9px] font-normal bg-rose-200 text-rose-800 px-1 rounded ml-1">🔒 Secret</span></div>
+        <div class="text-[10.5px] text-gray-700 mt-1">
+          Supabase Dashboard → Project Settings → <strong>API</strong> → <strong>service_role</strong> 키 복사<br>
+          ⚠️ <strong class="text-rose-700">절대 코드/슬랙/카톡 공유 금지</strong>. 워커 Secret에만 넣고 저에게도 알리지 마세요.
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <div class="bg-rose-50 border border-rose-200 rounded p-2.5">
+        <div class="font-bold text-rose-900">3. DISCORD_ABSENCE_WEBHOOK_URL <span class="text-[9px] font-normal bg-rose-200 text-rose-800 px-1 rounded ml-1">🔒 Secret</span></div>
+        <div class="text-[10.5px] text-gray-700 mt-1">STEP 2에서 발급한 웹훅 URL 전체 붙여넣기</div>
+      </div>
+
+      <!-- 4 -->
+      <div class="bg-rose-50 border border-rose-200 rounded p-2.5">
+        <div class="font-bold text-rose-900">4. MANUAL_TRIGGER_KEY <span class="text-[9px] font-normal bg-rose-200 text-rose-800 px-1 rounded ml-1">🔒 Secret</span></div>
+        <div class="text-[10.5px] text-gray-700 mt-1">
+          수동 실행할 때 쓸 비밀 키 (아무 문자열·숫자 조합, 예: <code>secret-abc123-xyz</code>).<br>
+          기억하기 쉬운 걸로. 저에게 알려주세요 → 사이트에서 "지금 알람 보내기" 버튼 만들 때 사용.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 5: 결과 보고 -->
+  <section class="bg-white rounded-xl border border-amber-300 p-4">
+    <h2 class="font-bold text-amber-700 mb-2 text-base">🟡 STEP 5. 완료 보고 (저에게 알려주실 정보)</h2>
+    <div class="bg-amber-50 border border-amber-200 rounded p-3 text-[12px] text-gray-800 space-y-1.5">
+      <div>① <strong>Worker URL</strong>: <code>https://guild-absence-cron.???????.workers.dev/</code></div>
+      <div>② <strong>MANUAL_TRIGGER_KEY</strong>: (사용자가 정한 비밀 키)</div>
+      <div class="text-rose-700 text-[11px] mt-2">⚠️ Webhook URL과 SUPABASE_SERVICE_KEY는 알려주지 말 것 (Secret이라 코드에서 안 보임)</div>
+    </div>
+    <div class="mt-2 text-[11px] text-gray-600">
+      이 2개 받으면 → 사이트 본 코드(<code>index.html</code>)에 멤버 모달 면제 UI + 검토 페이지 + 직위 조정 보호 + "지금 알람 보내기" 버튼 추가하고 푸시.
+    </div>
+  </section>
+
+  <!-- 사유 카테고리 참고 -->
+  <section class="bg-white rounded-xl border border-gray-200 p-4">
+    <h3 class="font-bold text-gray-900 mb-2"><i class="fas fa-list text-pink-500 mr-1"></i>UI에 들어갈 사유 카테고리 (참고)</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-[11px]">
+      <div class="border border-gray-200 rounded px-2 py-1">💒 결혼·신행</div>
+      <div class="border border-gray-200 rounded px-2 py-1">🏥 본인 입원·수술</div>
+      <div class="border border-gray-200 rounded px-2 py-1">👨‍👩‍👧 가족 입원·간병</div>
+      <div class="border border-gray-200 rounded px-2 py-1">🕯️ 본인·가족 상사</div>
+      <div class="border border-gray-200 rounded px-2 py-1">🤰 임신·출산·산후</div>
+      <div class="border border-gray-200 rounded px-2 py-1">🪖 군 입대·휴가·전역</div>
+      <div class="border border-gray-200 rounded px-2 py-1">📚 시험 (수능·공시·취업)</div>
+      <div class="border border-gray-200 rounded px-2 py-1">✈️ 장기 출장·해외</div>
+      <div class="border border-gray-200 rounded px-2 py-1">📦 이사·정착</div>
+      <div class="border border-gray-200 rounded px-2 py-1">🧠 정신건강·번아웃</div>
+      <div class="border border-gray-200 rounded px-2 py-1">💼 이직·적응 (장기)</div>
+      <div class="border border-pink-300 bg-pink-50 rounded px-2 py-1 font-bold text-pink-700">✏️ 기타 — 직접 입력</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+function copyText(btn, id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.innerText).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '복사됨 ✓';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('done'); }, 1500);
+  });
+}
+function copyValue(btn, value) {
+  navigator.clipboard.writeText(value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('done'); }, 1500);
+  });
+}
+function copyFromFile(btn) {
+  window.open('https://github.com/HSB9912/guild-manager/blob/main/absence-cron-worker.js', '_blank');
+}
+</script>
+</body>
+</html>
