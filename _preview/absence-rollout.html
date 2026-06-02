@@ -26,14 +26,16 @@
 
   <!-- 전체 체크리스트 -->
   <section class="bg-white rounded-xl border border-pink-300 p-4">
-    <h2 class="font-bold text-pink-700 mb-3"><i class="fas fa-check-double mr-1"></i>전체 5단계 요약</h2>
+    <h2 class="font-bold text-pink-700 mb-3"><i class="fas fa-check-double mr-1"></i>전체 4단계 요약 <span class="text-[10px] font-normal text-emerald-600">(웹훅 발급 단계 제거됨)</span></h2>
     <ol class="space-y-1.5 text-[12px] text-gray-700">
       <li><span class="inline-block w-5 text-center font-bold text-pink-600">1.</span><strong>Supabase SQL 실행</strong> (DB 테이블 생성) — 5분</li>
-      <li><span class="inline-block w-5 text-center font-bold text-pink-600">2.</span><strong>Discord 운영진 채널 웹훅 URL 발급</strong> + 알려주기 — 2분</li>
-      <li><span class="inline-block w-5 text-center font-bold text-pink-600">3.</span><strong>Cloudflare Worker 배포</strong> (cron 알림) — 10분</li>
-      <li><span class="inline-block w-5 text-center font-bold text-pink-600">4.</span><strong>Worker 환경변수·Secret 등록</strong> — 5분</li>
-      <li><span class="inline-block w-5 text-center font-bold text-pink-600">5.</span><strong>완료 보고</strong> (워커 URL 알려주기 + 수동 트리거 키)</li>
+      <li><span class="inline-block w-5 text-center font-bold text-pink-600">2.</span><strong>Cloudflare Worker 배포</strong> (cron 알림) — 10분</li>
+      <li><span class="inline-block w-5 text-center font-bold text-pink-600">3.</span><strong>Worker 환경변수·Secret 3개 등록</strong> — 5분</li>
+      <li><span class="inline-block w-5 text-center font-bold text-pink-600">4.</span><strong>완료 보고</strong> (워커 URL + 수동 트리거 키)</li>
     </ol>
+    <div class="mt-2 bg-emerald-50 border border-emerald-200 rounded p-2 text-[11px] text-emerald-800">
+      ✅ <strong>디스코드 웹훅 새로 발급 불필요</strong> — 기존 면제신청 워커(guild-images의 /discord-notify) 재사용
+    </div>
   </section>
 
   <!-- STEP 1: SQL -->
@@ -89,27 +91,11 @@ CREATE POLICY absence_admin_delete ON absence_exemptions FOR DELETE TO authentic
     </div>
   </section>
 
-  <!-- STEP 2: Discord Webhook -->
-  <section class="bg-white rounded-xl border border-indigo-200 p-4">
-    <h2 class="font-bold text-indigo-700 mb-2 text-base">🔵 STEP 2. Discord 운영진 채널 웹훅 URL</h2>
-    <p class="text-[12px] text-gray-700 mb-2">
-      디스코드 운영진 채널 → 채널 설정(⚙️) → <strong>연동</strong> → <strong>웹후크</strong> → <strong>새 웹후크</strong> →
-      이름: <code>강등보호 알람</code> → <strong>웹후크 URL 복사</strong>
-    </p>
-    <div class="bg-indigo-50 border border-indigo-200 rounded p-2 text-[11px] text-gray-700">
-      💡 기존 <code>guild-join-notify</code> 또는 다른 운영진 알림 채널과 <strong>같은 채널 추천</strong>. 새 채널 만들 필요 없음.
-    </div>
-    <div class="mt-2 bg-yellow-50 border border-yellow-300 rounded p-2 text-[11px] text-yellow-900">
-      ⚠️ <strong>저에게 알려주실 것 (5단계 결과 보고에 같이):</strong>
-      <ul class="list-disc list-inside mt-1 ml-2">
-        <li>웹훅 URL 전체 (https://discord.com/api/webhooks/...)</li>
-      </ul>
-    </div>
-  </section>
+  <!-- STEP 2 (Discord Webhook 제거됨) -->
 
-  <!-- STEP 3: Worker 배포 -->
+  <!-- STEP 2: Worker 배포 -->
   <section class="bg-white rounded-xl border border-purple-200 p-4">
-    <h2 class="font-bold text-purple-700 mb-2 text-base">🟣 STEP 3. Cloudflare Worker 배포</h2>
+    <h2 class="font-bold text-purple-700 mb-2 text-base">🟣 STEP 2. Cloudflare Worker 배포</h2>
     <p class="text-[12px] text-gray-700 mb-3">
       Cloudflare Dashboard → Workers & Pages → <strong>Create Worker</strong> → 이름 <code>guild-absence-cron</code> → Deploy →
       <strong>Edit code</strong> → 기본 코드 전체 지우고 아래 붙여넣기 → <strong>Save and Deploy</strong>
@@ -122,7 +108,7 @@ CREATE POLICY absence_admin_delete ON absence_exemptions FOR DELETE TO authentic
 // 또는 guild-manager/absence-cron-worker.js</code></pre>
     </div>
 
-    <h3 class="font-bold text-purple-700 mt-3 mb-2 text-[13px]">3-1. Cron 트리거 설정</h3>
+    <h3 class="font-bold text-purple-700 mt-3 mb-2 text-[13px]">2-1. Cron 트리거 설정</h3>
     <p class="text-[12px] text-gray-700 mb-1">
       Worker 페이지 → <strong>Settings</strong> → <strong>Triggers</strong> → <strong>Add Cron Trigger</strong>
     </p>
@@ -130,11 +116,11 @@ CREATE POLICY absence_admin_delete ON absence_exemptions FOR DELETE TO authentic
     <p class="text-[10px] text-gray-500 mt-1">↑ UTC 수요일 14:00 = KST 수요일 23:00</p>
   </section>
 
-  <!-- STEP 4: Secret 등록 -->
+  <!-- STEP 3: Secret 등록 -->
   <section class="bg-white rounded-xl border border-rose-200 p-4">
-    <h2 class="font-bold text-rose-700 mb-2 text-base">🔴 STEP 4. Worker 환경변수 + Secret 4개</h2>
+    <h2 class="font-bold text-rose-700 mb-2 text-base">🔴 STEP 3. Worker 환경변수 + Secret 3개</h2>
     <p class="text-[12px] text-gray-700 mb-3">
-      Worker 페이지 → <strong>Settings</strong> → <strong>Variables and Secrets</strong> → 아래 4개 추가:
+      Worker 페이지 → <strong>Settings</strong> → <strong>Variables and Secrets</strong> → 아래 3개 추가:
     </p>
 
     <div class="space-y-2 text-[11px]">
@@ -161,28 +147,26 @@ CREATE POLICY absence_admin_delete ON absence_exemptions FOR DELETE TO authentic
 
       <!-- 3 -->
       <div class="bg-rose-50 border border-rose-200 rounded p-2.5">
-        <div class="font-bold text-rose-900">3. DISCORD_ABSENCE_WEBHOOK_URL <span class="text-[9px] font-normal bg-rose-200 text-rose-800 px-1 rounded ml-1">🔒 Secret</span></div>
-        <div class="text-[10.5px] text-gray-700 mt-1">STEP 2에서 발급한 웹훅 URL 전체 붙여넣기</div>
-      </div>
-
-      <!-- 4 -->
-      <div class="bg-rose-50 border border-rose-200 rounded p-2.5">
-        <div class="font-bold text-rose-900">4. MANUAL_TRIGGER_KEY <span class="text-[9px] font-normal bg-rose-200 text-rose-800 px-1 rounded ml-1">🔒 Secret</span></div>
+        <div class="font-bold text-rose-900">3. MANUAL_TRIGGER_KEY <span class="text-[9px] font-normal bg-rose-200 text-rose-800 px-1 rounded ml-1">🔒 Secret</span></div>
         <div class="text-[10.5px] text-gray-700 mt-1">
           수동 실행할 때 쓸 비밀 키 (아무 문자열·숫자 조합, 예: <code>secret-abc123-xyz</code>).<br>
           기억하기 쉬운 걸로. 저에게 알려주세요 → 사이트에서 "지금 알람 보내기" 버튼 만들 때 사용.
         </div>
       </div>
     </div>
+
+    <div class="mt-2 bg-emerald-50 border border-emerald-200 rounded p-2 text-[11px] text-emerald-800">
+      ✅ <strong>DISCORD_ABSENCE_WEBHOOK_URL 제거</strong> — 면제신청 워커(guild-images) 자동 재사용
+    </div>
   </section>
 
-  <!-- STEP 5: 결과 보고 -->
+  <!-- STEP 4: 결과 보고 -->
   <section class="bg-white rounded-xl border border-amber-300 p-4">
-    <h2 class="font-bold text-amber-700 mb-2 text-base">🟡 STEP 5. 완료 보고 (저에게 알려주실 정보)</h2>
+    <h2 class="font-bold text-amber-700 mb-2 text-base">🟡 STEP 4. 완료 보고 (저에게 알려주실 정보)</h2>
     <div class="bg-amber-50 border border-amber-200 rounded p-3 text-[12px] text-gray-800 space-y-1.5">
       <div>① <strong>Worker URL</strong>: <code>https://guild-absence-cron.???????.workers.dev/</code></div>
       <div>② <strong>MANUAL_TRIGGER_KEY</strong>: (사용자가 정한 비밀 키)</div>
-      <div class="text-rose-700 text-[11px] mt-2">⚠️ Webhook URL과 SUPABASE_SERVICE_KEY는 알려주지 말 것 (Secret이라 코드에서 안 보임)</div>
+      <div class="text-rose-700 text-[11px] mt-2">⚠️ SUPABASE_SERVICE_KEY는 알려주지 말 것 (Secret 보안)</div>
     </div>
     <div class="mt-2 text-[11px] text-gray-600">
       이 2개 받으면 → 사이트 본 코드(<code>index.html</code>)에 멤버 모달 면제 UI + 검토 페이지 + 직위 조정 보호 + "지금 알람 보내기" 버튼 추가하고 푸시.
