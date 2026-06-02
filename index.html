@@ -218,6 +218,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
      <button onclick="router('bail')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm" data-target="bail" data-target-alt="penalty"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-gem w-4 text-center text-xs text-rose-400"></i><span>보석금 · 벌점</span></button>
      <button onclick="router('admin_todos')" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="admin_todos"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-clipboard-check w-4 text-center text-xs text-rose-400"></i><span>운영진 할 일</span></span><span id="adminTodosBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
      <button onclick="router('dual_guild')" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="dual_guild"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-user-shield w-4 text-center text-xs text-rose-400"></i><span>이중길드 감사</span></span><span id="dualGuildBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
+     <button onclick="router('absence')" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/40 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold text-sm relative" data-target="absence"><span class="flex items-center gap-2"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-plane-departure w-4 text-center text-xs text-rose-400"></i><span>장기부재 면제</span></span><span id="absencePendingBadge" class="hidden bg-red-500 text-white text-[9px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center">!</span></button>
 
      <p class="px-3 pt-3 pb-1 text-[9px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1"><i class="fas fa-screwdriver-wrench text-[8px]"></i>관리자 도구</p>
      <button onclick="router('sheet_manage')" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 bg-rose-50/30 border border-rose-100 text-rose-600 hover:bg-rose-100 font-bold text-sm" data-target="sheet_manage"><i class="fas fa-lock text-rose-300 text-[9px] w-3"></i><i class="fas fa-table-list w-4 text-center text-xs text-rose-400"></i><span>시트 관리</span></button>
@@ -1544,7 +1545,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const content = document.getElementById('contentArea'); if(!content) return;
             content.innerHTML = '';
             document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab || el.dataset.targetAlt === tab));
-            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', consulting: '아이템 컨설팅', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영', exempt_form: '면제 신청', bail_form: '보석금 신청', join_form: '가입 신청', manual: '사용 안내', requests: '신청 처리', admin_todos: '운영진 할 일', dual_guild: '이중길드 감사' };
+            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', consulting: '아이템 컨설팅', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영', exempt_form: '면제 신청', bail_form: '보석금 신청', join_form: '가입 신청', manual: '사용 안내', requests: '신청 처리', admin_todos: '운영진 할 일', dual_guild: '이중길드 감사', absence: '장기부재 면제' };
             document.getElementById('pageTitle').innerText = titles[tab] || '';
             if (tab === 'home') window.renderHome(content);
             else if (tab === 'members') window.renderMembers(content);
@@ -1570,6 +1571,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             else if (tab === 'requests' && isAdmin()) window.renderRequestQueue(content);
             else if (tab === 'admin_todos' && isAdmin()) window.renderAdminTodos(content);
             else if (tab === 'dual_guild' && isAdmin()) window.renderDualGuild(content);
+            else if (tab === 'absence' && isAdmin()) window.renderAbsence(content);
             else if (tab === 'sheet' && isAdmin()) window.renderSheet(content);
             else if (tab === 'guide_edit' && isAdmin()) window.renderGuideEditor(content);
             else if (tab === 'history' && isAdmin()) window.renderHistory(content);
@@ -10319,6 +10321,244 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   // 페이지 로드 시 위반 카운트 (사이드바 뱃지)
   setTimeout(() => { window._dualUpdateBadgeFromDB?.(); }, 4500);
   setInterval(() => { window._dualUpdateBadgeFromDB?.(); }, 5 * 60 * 1000);
+
+  // ============ 장기부재 면제 (absence_exemptions) ============
+  window.ABSENCE_REASONS = [
+    '결혼·신행', '본인 입원·수술', '가족 입원·간병', '본인·가족 상사',
+    '임신·출산·산후', '군 입대·휴가·전역', '시험 준비', '장기 출장·해외',
+    '이사·정착', '정신건강·번아웃', '이직·적응', '기타'
+  ];
+  window.ABSENCE_TRIGGER_URL = 'https://guild-absence-cron.hongsb9912.workers.dev';
+  window._absenceState = { tab: 'pending', list: [] };
+
+  window._absenceFetchAll = async () => {
+    const { data, error } = await supaDb.from('absence_exemptions').select('*').order('created_at', { ascending: false });
+    if (error) { window.showMsg('면제 로드 실패: ' + error.message, 'error'); return []; }
+    return data || [];
+  };
+
+  window._absenceUpdateBadge = async () => {
+    const { count } = await supaDb.from('absence_exemptions')
+      .select('*', { count: 'exact', head: true }).eq('status', 'pending');
+    const b = document.getElementById('absencePendingBadge');
+    if (b) {
+      if (count > 0) { b.textContent = count; b.classList.remove('hidden'); }
+      else b.classList.add('hidden');
+    }
+  };
+
+  window._absenceSubmit = async () => {
+    const member_name = document.getElementById('absMember')?.value.trim();
+    let reason_type = document.getElementById('absReason')?.value;
+    const reasonOther = document.getElementById('absReasonOther')?.value.trim();
+    if (reason_type === '기타' && reasonOther) reason_type = reasonOther;
+    const start_date = document.getElementById('absStart')?.value;
+    const end_date = document.getElementById('absEnd')?.value;
+    const memo = document.getElementById('absMemo')?.value.trim();
+    if (!member_name) return window.showMsg('멤버 닉네임을 입력하세요', 'error');
+    if (!reason_type) return window.showMsg('사유를 선택하세요', 'error');
+    if (!start_date || !end_date) return window.showMsg('기간을 입력하세요', 'error');
+    if (end_date < start_date) return window.showMsg('종료일이 시작일보다 이전입니다', 'error');
+
+    // 멤버 매칭
+    const { data: mem } = await supaDb.from('members').select('id, name').eq('name', member_name).maybeSingle();
+    try {
+      const { error } = await supaDb.from('absence_exemptions').insert({
+        member_id: mem?.id || null,
+        member_name: mem?.name || member_name,
+        reason_type,
+        reason_detail: (reason_type !== reasonOther && reasonOther) ? reasonOther : null,
+        memo: memo || null,
+        start_date, end_date,
+        status: 'pending',
+        requested_by: CURRENT_USER?.adminName || CURRENT_USER?.name || '관리자'
+      });
+      if (error) throw error;
+      window.showMsg('면제 신청 등록 — 검토 대기', 'success');
+      window.renderAbsence(document.getElementById('contentArea'));
+    } catch (e) { window.showMsg('등록 실패: ' + e.message, 'error'); }
+  };
+
+  window._absenceDecide = async (id, decision) => {
+    const note = decision === 'rejected' ? (prompt('거절 사유 (선택)') || '') : '';
+    try {
+      const { error } = await supaDb.from('absence_exemptions').update({
+        status: decision,
+        decision_by: CURRENT_USER?.adminName || CURRENT_USER?.name || '관리자',
+        decision_at: new Date().toISOString(),
+        decision_note: note || null
+      }).eq('id', id);
+      if (error) throw error;
+      window.showMsg(decision === 'approved' ? '✓ 승인 완료' : '✕ 거절 완료', 'success');
+      window.renderAbsence(document.getElementById('contentArea'));
+    } catch (e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
+  };
+
+  window._absenceCancel = async (id) => {
+    if (!confirm('이 면제 예약을 취소하시겠습니까?')) return;
+    try {
+      const { error } = await supaDb.from('absence_exemptions').update({ status: 'cancelled' }).eq('id', id);
+      if (error) throw error;
+      window.showMsg('취소됨', 'success');
+      window.renderAbsence(document.getElementById('contentArea'));
+    } catch (e) { window.showMsg('취소 실패: ' + e.message, 'error'); }
+  };
+
+  window._absenceDelete = async (id) => {
+    if (!confirm('이 기록을 완전히 삭제할까요?')) return;
+    try {
+      await supaDb.from('absence_exemptions').delete().eq('id', id);
+      window.showMsg('삭제됨', 'success');
+      window.renderAbsence(document.getElementById('contentArea'));
+    } catch (e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
+  };
+
+  window._absenceManualTrigger = async () => {
+    const key = prompt('MANUAL_TRIGGER_KEY 입력 (워커 설정한 값)');
+    if (!key) return;
+    try {
+      const res = await fetch(`${window.ABSENCE_TRIGGER_URL}/?key=${encodeURIComponent(key)}`);
+      const data = await res.json();
+      if (res.ok) {
+        window.showMsg(`알람 발사 — ${data.sent}명${data.members?.length ? ': ' + data.members.join(', ') : ''}`, 'success');
+      } else {
+        window.showMsg('실패: ' + (data.error || res.status), 'error');
+      }
+    } catch (e) { window.showMsg('워커 호출 실패: ' + e.message, 'error'); }
+  };
+
+  window.renderAbsence = async (container) => {
+    container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
+    const all = await window._absenceFetchAll();
+    window._absenceState.list = all;
+    const tab = window._absenceState.tab;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const counts = {
+      pending: all.filter(r => r.status === 'pending').length,
+      approved: all.filter(r => r.status === 'approved').length,
+      active: all.filter(r => r.status === 'approved' && r.start_date <= today && r.end_date >= today).length,
+      rejected: all.filter(r => r.status === 'rejected').length,
+      ended: all.filter(r => r.status === 'ended' || r.status === 'cancelled').length,
+    };
+    let visible = all;
+    if (tab === 'pending') visible = all.filter(r => r.status === 'pending');
+    else if (tab === 'approved') visible = all.filter(r => r.status === 'approved');
+    else if (tab === 'active') visible = all.filter(r => r.status === 'approved' && r.start_date <= today && r.end_date >= today);
+    else if (tab === 'rejected') visible = all.filter(r => r.status === 'rejected');
+    else if (tab === 'ended') visible = all.filter(r => r.status === 'ended' || r.status === 'cancelled');
+
+    const reasonOptions = window.ABSENCE_REASONS.map(r => `<option value="${r}">${r}</option>`).join('');
+
+    const tabBtn = (k, label, count, color) => `<button onclick="window._absenceState.tab='${k}';window.renderAbsence(document.getElementById('contentArea'))" class="px-3 py-1.5 rounded-lg text-[11px] font-bold ${tab===k?color:'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${label} ${count}</button>`;
+
+    const rowHtml = (r) => {
+      const isActive = r.status === 'approved' && r.start_date <= today && r.end_date >= today;
+      const bg = r.status === 'pending' ? 'bg-amber-50 border-amber-200' :
+                 isActive ? 'bg-emerald-50 border-emerald-200' :
+                 r.status === 'approved' ? 'bg-blue-50 border-blue-200' :
+                 r.status === 'rejected' ? 'bg-gray-50 border-gray-200 opacity-60' :
+                 'bg-gray-50 border-gray-200 opacity-70';
+      const statusLabel = r.status === 'pending' ? '⏳ 검토 대기' :
+                          isActive ? '🔒 진행 중' :
+                          r.status === 'approved' ? '📅 예정' :
+                          r.status === 'rejected' ? '✕ 거절' :
+                          r.status === 'ended' ? '✓ 종료' : '↩ 취소';
+      return `
+        <div class="border ${bg} rounded-xl p-3">
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-1.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-black text-gray-800">${esc(r.member_name)}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 bg-white border border-gray-200 rounded-full">${statusLabel}</span>
+              <span class="text-[11px] text-gray-700">${esc(r.reason_type)}</span>
+              ${r.reason_detail ? `<span class="text-[10px] text-gray-500">— ${esc(r.reason_detail)}</span>` : ''}
+            </div>
+            <span class="text-[10px] text-gray-500 font-mono">${r.start_date} ~ ${r.end_date}</span>
+          </div>
+          ${r.memo ? `<div class="text-[10.5px] text-gray-600 mb-1"><i class="fas fa-comment-dots text-gray-400 mr-1"></i>${esc(r.memo)}</div>` : ''}
+          ${r.decision_note ? `<div class="text-[10px] text-rose-600 mb-1">↳ 거절 사유: ${esc(r.decision_note)}</div>` : ''}
+          <div class="flex items-center justify-between flex-wrap gap-1.5 mt-1.5 pt-1.5 border-t border-gray-200/60">
+            <div class="text-[9px] text-gray-400">신청 ${esc(r.requested_by || '?')} · ${new Date(r.created_at).toLocaleDateString('ko-KR')}${r.decision_by ? ` / 처리 ${esc(r.decision_by)}`:''}</div>
+            <div class="flex gap-1">
+              ${r.status === 'pending' ? `
+                <button onclick="window._absenceDecide(${r.id},'approved')" class="px-2 py-1 bg-emerald-500 text-white rounded text-[10px] font-bold hover:bg-emerald-600"><i class="fas fa-check mr-0.5"></i>승인</button>
+                <button onclick="window._absenceDecide(${r.id},'rejected')" class="px-2 py-1 bg-rose-500 text-white rounded text-[10px] font-bold hover:bg-rose-600"><i class="fas fa-times mr-0.5"></i>거절</button>
+              ` : ''}
+              ${r.status === 'approved' ? `<button onclick="window._absenceCancel(${r.id})" class="px-2 py-1 bg-white border border-gray-300 text-gray-600 rounded text-[10px] font-bold hover:bg-gray-100"><i class="fas fa-ban mr-0.5"></i>취소</button>` : ''}
+              <button onclick="window._absenceDelete(${r.id})" class="px-2 py-1 bg-white border border-gray-200 text-gray-400 rounded text-[10px] hover:text-rose-500"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    container.innerHTML = `
+      <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <div class="flex items-center gap-2 flex-wrap mb-3 pb-3 border-b border-gray-100">
+            <h3 class="text-sm font-black text-gray-800"><i class="fas fa-plane-departure text-rose-500 mr-1"></i>장기부재 면제</h3>
+            <span class="text-[10px] text-gray-400">결혼·신행·입원·시험 등 직위 강등 보호 예약</span>
+            <button onclick="window._absenceManualTrigger()" class="ml-auto px-3 py-1.5 bg-purple-500 text-white rounded-lg text-[11px] font-black hover:bg-purple-600 shadow" title="활성 면제 멤버에게 즉시 디스코드 알림 (cron 수동 발사)"><i class="fas fa-bell mr-1"></i>지금 알람 보내기</button>
+          </div>
+
+          <!-- 신청 폼 -->
+          <details class="mb-3">
+            <summary class="cursor-pointer text-[12px] font-bold text-rose-600 hover:text-rose-800 select-none"><i class="fas fa-plus-circle mr-1"></i>새 면제 신청 추가</summary>
+            <div class="mt-3 bg-rose-50/40 border border-rose-100 rounded-xl p-3 space-y-2">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] font-bold text-gray-600">대상 멤버 닉네임 *</label>
+                  <input id="absMember" type="text" placeholder="예: 정전위험" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[12px]">
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-gray-600">사유 *</label>
+                  <select id="absReason" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[12px] bg-white">
+                    <option value="">선택...</option>
+                    ${reasonOptions}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-gray-600">기타/상세 사유 (선택)</label>
+                <input id="absReasonOther" type="text" placeholder="사유=기타 선택 시 직접 입력 또는 추가 설명" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[12px]">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] font-bold text-gray-600">시작일 *</label>
+                  <input id="absStart" type="date" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[12px]">
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-gray-600">종료일 *</label>
+                  <input id="absEnd" type="date" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[12px]">
+                </div>
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-gray-600">메모 (선택)</label>
+                <input id="absMemo" type="text" placeholder="예: 결혼식 6/7, 신행 6/17 복귀" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[12px]">
+              </div>
+              <button onclick="window._absenceSubmit()" class="w-full bg-rose-500 text-white rounded py-2 text-[12px] font-bold hover:bg-rose-600">+ 신청 등록 (검토 대기로)</button>
+            </div>
+          </details>
+
+          <!-- 탭 -->
+          <div class="flex gap-1 flex-wrap">
+            ${tabBtn('pending', '⏳ 검토 대기', counts.pending, 'bg-amber-500 text-white')}
+            ${tabBtn('active', '🔒 진행 중', counts.active, 'bg-emerald-500 text-white')}
+            ${tabBtn('approved', '📅 전체 승인', counts.approved, 'bg-blue-500 text-white')}
+            ${tabBtn('rejected', '✕ 거절', counts.rejected, 'bg-gray-700 text-white')}
+            ${tabBtn('ended', '✓ 종료', counts.ended, 'bg-gray-500 text-white')}
+            ${tabBtn('all', '전체', all.length, 'bg-gray-900 text-white')}
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          ${visible.length === 0 ? '<div class="bg-white rounded-2xl border border-gray-100 p-12 text-center text-xs text-gray-400">해당 항목 없음</div>' : visible.map(rowHtml).join('')}
+        </div>
+      </div>
+    `;
+    window._absenceUpdateBadge();
+  };
+  setTimeout(() => { if (typeof isAdmin === 'function' && isAdmin()) window._absenceUpdateBadge?.(); }, 5000);
 
   // ============ 수로 면제 현황 ============
   window._suroExemptState = { sortField: 'score', sortOrder: 'desc', search: '', guild: 'all', filter: 'all' };
