@@ -114,25 +114,34 @@ async function runWeeklyNotification(env) {
   return { sent: toNotify.length, label, members: toNotify.map(it => it.member_name) };
 }
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type'
+};
+
 export default {
-  // 매주 수 23:00 KST = UTC 14:00 수 (cron: 0 14 * * 3)
+  // 매주 수 23:00 KST = UTC 14:00 수 (cron 표시상 4 사용 — Cloudflare ISO 요일 매핑)
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runWeeklyNotification(env).catch(e => console.error('cron error:', e)));
   },
 
   // 수동 트리거용 GET 엔드포인트 (?key=비밀키 로 보호)
   async fetch(request, env) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: CORS_HEADERS });
+    }
     const url = new URL(request.url);
     if (url.searchParams.get('key') !== (env.MANUAL_TRIGGER_KEY || 'change-me')) {
-      return new Response('forbidden', { status: 403 });
+      return new Response('forbidden', { status: 403, headers: CORS_HEADERS });
     }
     try {
       const result = await runWeeklyNotification(env);
       return new Response(JSON.stringify(result, null, 2), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' }
       });
     } catch (e) {
-      return new Response('error: ' + e.message, { status: 500 });
+      return new Response('error: ' + e.message, { status: 500, headers: CORS_HEADERS });
     }
   }
 };
