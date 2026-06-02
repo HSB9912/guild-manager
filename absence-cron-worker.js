@@ -1,18 +1,13 @@
 // =====================================================
 // Cloudflare Worker — 장기 부재 면제 자동 관리 (Cron)
-// 매주 수요일 23:00 KST → 디스코드 운영진 채널 알림 (기존 면제신청 워커 재사용)
+// 매주 수요일 23:00 KST → 디스코드 채널 알림
 //
 // 환경변수 (Cloudflare 대시보드 또는 wrangler secret put):
-//   SUPABASE_URL          — https://luglshrfkkeacmefnvlm.supabase.co (Plain)
-//   SUPABASE_SERVICE_KEY  — RLS 우회용 service_role 키 (Secret)
-//   MANUAL_TRIGGER_KEY    — 수동 실행 비밀 키 (Secret)
-//
-// 디스코드 알림: 기존 면제 신청 워커(guild-images)의 /discord-notify 재사용
-// → 별도 Webhook URL Secret 등록 불필요
+//   SUPABASE_URL                — https://luglshrfkkeacmefnvlm.supabase.co (Plain text)
+//   SUPABASE_SERVICE_KEY        — RLS 우회용 service_role 키 (Secret)
+//   MANUAL_TRIGGER_KEY          — 수동 실행 비밀 키 (Secret)
+//   DISCORD_ABSENCE_WEBHOOK_URL — 디스코드 웹훅 URL (Secret)
 // =====================================================
-
-const R2_PROXY_URL = 'https://guild-images.hongsb9912.workers.dev/discord-notify';
-const R2_PROXY_KEY = 'guild-manager-r2-key-2026';
 
 const ROLE_MACARON = '692099309172162570';
 const ROLE_DAKWAJU = '692091131646705716';
@@ -77,12 +72,12 @@ async function sendDiscord(env, items, label) {
       timestamp: new Date().toISOString()
     }]
   };
-  const res = await fetch(R2_PROXY_URL, {
+  const res = await fetch(env.DISCORD_ABSENCE_WEBHOOK_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-API-Key': R2_PROXY_KEY },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  if (!res.ok) throw new Error(`discord proxy ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`discord ${res.status}: ${await res.text()}`);
 }
 
 async function runWeeklyNotification(env) {
