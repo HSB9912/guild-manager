@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>장기 부재 면제 예약 — 미리보기 3시안</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-5xl mx-auto space-y-8">
+
+  <header class="pb-2 border-b border-gray-300">
+    <h1 class="text-xl font-bold text-gray-900">장기 부재 면제 예약 — 운영진이 까먹지 않게</h1>
+    <p class="text-xs text-gray-500 mt-1">예) 정전위협님 결혼·신행 (6/11~17 주차 수로 미참 면제)</p>
+  </header>
+
+  <!-- ════════════════════════════════ -->
+  <!-- 시안 A: 간단 (멤버 카드에 면제 예약) -->
+  <!-- ════════════════════════════════ -->
+  <section>
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-emerald-500 text-white rounded">시안 A</div>
+      <h2 class="text-lg font-bold text-gray-900">간단 — 멤버 카드에 예약 (추천)</h2>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- 멤버 카드 (등록 시) -->
+      <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">멤버 상세 (등록)</div>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-10 h-10 rounded-lg bg-pink-100"></div>
+          <div>
+            <div class="text-sm font-bold text-gray-900">정전위협</div>
+            <div class="text-[10px] text-gray-500">에반 · Lv.296 · 뚠카롱 · 크라운</div>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
+          <div class="text-[11px] font-black text-amber-800 mb-1.5 flex items-center gap-1.5">
+            <i class="fas fa-plane-departure"></i>장기 부재 면제 예약
+          </div>
+          <div class="space-y-2 text-[11px]">
+            <div>
+              <label class="text-[10px] font-bold text-gray-600">사유</label>
+              <select class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[11px] bg-white">
+                <option>결혼·신행</option>
+                <option>입원·수술</option>
+                <option>군 입대·휴가</option>
+                <option>장기 출장</option>
+                <option>기타</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] font-bold text-gray-600">시작</label>
+                <input type="date" value="2026-06-07" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[11px]">
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-gray-600">종료</label>
+                <input type="date" value="2026-06-17" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[11px]">
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-gray-600">메모</label>
+              <input type="text" value="결혼식 6/7, 신행 6/17 복귀" class="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded text-[11px]">
+            </div>
+            <button class="w-full bg-amber-500 text-white rounded py-1.5 text-[11px] font-bold mt-1">+ 면제 예약 추가</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 직위 조정 페이지에서 표시 -->
+      <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">직위 조정 화면 (6/11~17 주차)</div>
+        <div class="text-[12px] text-gray-700 mb-3">자동으로 면제 대상 표시 → 강등 보호</div>
+
+        <table class="w-full text-[11px] border border-gray-200 rounded overflow-hidden">
+          <thead class="bg-gray-50 text-[10px] text-gray-500 uppercase">
+            <tr><th class="text-left px-2 py-1.5">멤버</th><th class="text-right px-2">점수</th><th class="text-center px-2">현재</th><th class="text-center px-2">변경</th></tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr><td class="px-2 py-1.5">너굴님</td><td class="text-right tabular-nums">286,911</td><td class="text-center text-pink-600 font-bold">크라운</td><td class="text-center">→ 크라운</td></tr>
+            <tr><td class="px-2 py-1.5">방울이</td><td class="text-right tabular-nums">98,540</td><td class="text-center">티라미슈</td><td class="text-center">→ 크로칸슈</td></tr>
+            <tr class="bg-amber-50">
+              <td class="px-2 py-1.5">
+                <div class="font-bold">정전위협</div>
+                <div class="text-[10px] text-amber-700 flex items-center gap-1 mt-0.5"><i class="fas fa-plane-departure"></i>결혼·신행 (6/7~17)</div>
+              </td>
+              <td class="text-right tabular-nums text-amber-700">0</td>
+              <td class="text-center text-pink-600 font-bold">크라운</td>
+              <td class="text-center"><span class="bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded text-[10px] font-bold">🔒 강등 보호</span></td>
+            </tr>
+            <tr><td class="px-2 py-1.5">나로뜸</td><td class="text-right tabular-nums">72,000</td><td class="text-center text-amber-700">팬케이크</td><td class="text-center">→ 스콘</td></tr>
+          </tbody>
+        </table>
+
+        <div class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2 mt-3">
+          <i class="fas fa-check-circle mr-1"></i>면제 예약 활성 1건 — 정전위협 (점수 0이라도 직위 유지)
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-[12px] text-gray-700 leading-relaxed">
+      <strong class="text-emerald-700">동작:</strong> 멤버 카드에서 면제 예약 입력 → DB 저장 → 매주 직위 조정 페이지가 그 주차에 활성 예약 자동 조회해서 표시. 직위 조정 시 그 멤버는 <strong>점수 0이어도 직위 유지</strong> (강등 처리 X). 종료일 지나면 자동 해제.<br>
+      <strong>장점:</strong> 멤버 데이터 안에 일관됨, 누가 봐도 명확. <strong>단점:</strong> 직위 조정자가 페이지를 봐야만 알 수 있음
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════ -->
+  <!-- 시안 B: 알림 (디스코드 + 운영진 할 일 자동 등록) -->
+  <!-- ════════════════════════════════ -->
+  <section>
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-blue-500 text-white rounded">시안 B</div>
+      <h2 class="text-lg font-bold text-gray-900">알림 — 디스코드 + 운영진 할 일 자동</h2>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- 운영진 할 일 자동 등록 -->
+      <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">운영진 할 일 (자동 등록)</div>
+        <div class="space-y-2 text-[11px]">
+          <div class="bg-amber-50 border-l-4 border-amber-400 border border-amber-100 rounded p-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold text-amber-800">🔒 정전위협 면제 처리 잊지 마세요</span>
+              <span class="text-[9px] text-amber-600 bg-amber-200 px-1 rounded">6/12</span>
+            </div>
+            <div class="text-[10px] text-gray-700">결혼·신행 (6/7~17) · 6/11~17 주차 수로 미참 → 직위 유지 처리</div>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded p-2.5 text-[10px] text-gray-500">
+            기타 일반 할 일들...
+          </div>
+        </div>
+      </div>
+
+      <!-- 디스코드 알림 -->
+      <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">디스코드 운영진 채널 (자동 알림)</div>
+        <div class="bg-[#36393f] rounded-lg p-3 text-white text-[11px]">
+          <div class="flex items-start gap-2">
+            <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs">🤖</div>
+            <div class="flex-1">
+              <div class="font-bold text-amber-300">길드매니저 BOT <span class="text-[9px] text-gray-400 font-normal">오늘 12:00</span></div>
+              <div class="mt-1 bg-amber-500/10 border-l-4 border-amber-500 rounded-r p-2">
+                <div class="font-bold">🔔 면제 예약 발효 알림</div>
+                <div class="text-[10px] mt-1">@마카롱 @다쿠아즈 — 이번 주(6/11~17) 직위 조정 시 <strong>정전위협</strong>님은 강등 처리하지 마세요</div>
+                <div class="text-[9px] mt-1 text-gray-300">사유: 결혼·신행 · 기간: 6/7~17 · 자동 등록</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3 bg-blue-50 border border-blue-200 rounded-xl p-3 text-[12px] text-gray-700 leading-relaxed">
+      <strong class="text-blue-700">동작:</strong> 면제 예약 등록 시 Cloudflare Worker Cron이 매주 월요일 12시 체크 → 해당 주차에 활성 예약 있으면 ① <strong>운영진 할 일에 자동 todo 추가</strong> ② <strong>디스코드 운영진 채널에 알림</strong>.<br>
+      <strong>장점:</strong> 능동 알림, 까먹기 매우 어려움. <strong>단점:</strong> Worker Cron 설정 필요
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════ -->
+  <!-- 시안 C: 통합 (A + B 결합) -->
+  <!-- ════════════════════════════════ -->
+  <section>
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-[11px] font-black px-2 py-0.5 bg-pink-500 text-white rounded">시안 C</div>
+      <h2 class="text-lg font-bold text-gray-900">통합 (A+B) — 가장 완벽 <span class="text-xs text-pink-600 ml-1">★ 추천</span></h2>
+    </div>
+
+    <div class="bg-white rounded-xl border border-pink-200 p-4 space-y-3">
+      <div class="text-[12px] font-bold text-gray-700">3단계 자동 보호</div>
+      <ol class="list-decimal list-inside text-[11.5px] text-gray-700 space-y-1.5 ml-2">
+        <li><strong>등록</strong>: 멤버 카드에서 면제 예약 (사유·기간·메모)</li>
+        <li><strong>주간 알림</strong>: 발효 주차 월요일 12시 → 디스코드 운영진 채널 + 운영진 할 일 자동 todo</li>
+        <li><strong>직위 조정 페이지 표시</strong>: 활성 예약 멤버는 노란 배경 + 🔒 강등 보호 배지 + 점수 0이어도 직위 유지</li>
+      </ol>
+
+      <div class="bg-pink-50 border border-pink-200 rounded-lg p-3 text-[11px] text-gray-700">
+        <div class="font-bold mb-1">📋 추가 기능</div>
+        <ul class="list-disc list-inside space-y-0.5 ml-2 text-[10.5px]">
+          <li>면제 예약 목록 화면 (운영진 전용) — 활성/예정/종료 분류</li>
+          <li>기간 종료 자동 해제 + 디스코드에 "면제 종료" 알림</li>
+          <li>면제 이력 기록 (영구기록 member_records에 자동 추가)</li>
+          <li>1회 면제 한도? (분기당 1회 등 정책 정할 수 있음)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-3 bg-pink-50 border border-pink-200 rounded-xl p-3 text-[12px] text-gray-700 leading-relaxed">
+      <strong class="text-pink-700">개발 분량:</strong> DB 테이블 1개(absence_exemptions) + 멤버 카드 UI + 직위 조정 페이지 통합 + Worker Cron + Discord 웹훅. 약 <strong>3~4시간 작업</strong>.
+    </div>
+  </section>
+
+  <!-- 결정 -->
+  <section class="bg-white rounded-xl p-5 border border-gray-200">
+    <h3 class="font-bold text-gray-900 mb-3 text-base"><i class="fas fa-list-check text-pink-500 mr-1"></i>다음 단계</h3>
+    <div class="text-[12px] text-gray-700 leading-relaxed space-y-1.5">
+      <p>1. 어떤 시안으로 갈까요? <strong>A 간단</strong> / <strong>B 알림</strong> / <strong>C 통합(추천)</strong></p>
+      <p>2. 시안 선택 시 DB 스키마 + 멤버 카드 UI + 직위 조정 통합 작업 시작</p>
+      <p>3. 정전위협님 케이스(6/7~17 결혼·신행)를 첫 데이터로 등록해서 동작 검증</p>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
