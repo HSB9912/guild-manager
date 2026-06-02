@@ -1284,7 +1284,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             }
         };
 
-        window.autoAssignRoles = () => {
+        window.autoAssignRoles = async () => {
             const excludeRoles = ['마카롱', '다쿠아즈'];
             const targets = appState.members.filter(m => m.guild === '뚠카롱' && !excludeRoles.includes(m.role) && m.isMain !== false);
 
@@ -1293,6 +1293,17 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const headers = appState.suroHeaders || [];
             const latestHeader = headers.length > 0 ? headers[headers.length - 1] : null;
             if(!latestHeader) return window.showMsg("수로 데이터가 없습니다.", "error");
+
+            // ★ 활성 면제 조회 (status=approved + 오늘 기간 안) — 강등 보호
+            const today = new Date().toISOString().slice(0, 10);
+            let absMap = {};
+            try {
+                const { data: absences } = await supaDb.from('absence_exemptions')
+                    .select('member_name, reason_type, end_date')
+                    .eq('status', 'approved')
+                    .lte('start_date', today).gte('end_date', today);
+                (absences || []).forEach(a => { absMap[a.member_name] = a; });
+            } catch (e) { console.warn('면제 조회 실패 (계속 진행):', e.message); }
 
             const scored = targets.map(m => ({
                 ...m,
@@ -1334,11 +1345,18 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             scored.forEach((m) => {
                 const newRole = getRoleForMember(m);
                 if(m.role !== newRole) {
-                    changes.push({ name: m.name, from: m.role, to: newRole, score: m.latestScore });
+                    const abs = absMap[m.name];
+                    changes.push({
+                        name: m.name, from: m.role, to: newRole, score: m.latestScore,
+                        protected: !!abs,
+                        absReason: abs?.reason_type || null,
+                        absEnd: abs?.end_date || null
+                    });
                 }
             });
 
             if(changes.length === 0) return window.showMsg("변경할 직위가 없습니다. 모두 이미 올바른 직위입니다.", "info");
+            const protectedCount = changes.filter(c => c.protected).length;
 
             const existing = document.getElementById('roleConfirmModal'); if(existing) existing.remove();
             const overlay = document.createElement('div');
@@ -1354,6 +1372,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const rows = changes.map((c, i) => {
                 const fromColor = roleColors[c.from] || 'text-gray-500';
                 const toColor = roleColors[c.to] || 'text-gray-500';
+                if (c.protected) {
+                    return `<tr class="border-b border-amber-200 bg-amber-50/80">
+                        <td class="py-2 px-1 text-center"><input type="checkbox" data-role-idx="${i}" class="role-chk w-4 h-4 rounded text-amber-500 cursor-pointer" onchange="window._updateRoleCount()" title="장기부재 면제 — 기본 체크 해제"></td>
+                        <td class="py-2 px-2 text-xs">
+                          <div class="font-bold text-gray-800">${c.name}</div>
+                          <div class="text-[9px] text-amber-700 font-bold mt-0.5">🔒 강등 보호 — ${esc(c.absReason)}${c.absEnd?` (${c.absEnd}까지)`:''}</div>
+                        </td>
+                        <td class="py-2 px-2 text-xs font-bold ${fromColor}">${c.from}</td>
+                        <td class="py-2 px-1 text-gray-300 text-xs">→</td>
+                        <td class="py-2 px-2 text-xs font-black text-amber-700">${c.from} <span class="text-[9px] font-normal">(유지)</span></td>
+                        <td class="py-2 px-2 text-xs text-gray-400 text-right font-mono">${c.score.toLocaleString()}</td>
+                    </tr>`;
+                }
                 return `<tr class="border-b border-gray-50 hover:bg-gray-50">
                     <td class="py-2 px-1 text-center"><input type="checkbox" checked data-role-idx="${i}" class="role-chk w-4 h-4 rounded text-amber-500 cursor-pointer" onchange="window._updateRoleCount()"></td>
                     <td class="py-2 px-2 text-xs font-bold text-gray-800">${c.name}</td>
@@ -1368,7 +1399,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 <div class="p-5 bg-amber-50 border-b border-amber-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="text-sm font-bold text-amber-700 flex items-center gap-2"><i class="fas fa-magic"></i> 직위 자동 부여</h3>
-                        <p class="text-[10px] text-amber-500 mt-1">기준: ${latestHeader} · 변경 대상 <span class="font-black">${changes.length}명</span></p>
+                        <p class="text-[10px] text-amber-500 mt-1">기준: ${latestHeader} · 변경 대상 <span class="font-black">${changes.length}명</span>${protectedCount?` <span class="text-amber-700">(🔒 강등 보호 ${protectedCount}명 — 체크 해제됨)</span>`:''}</p>
                     </div>
                     <button onclick="document.getElementById('roleConfirmModal').remove()" class="w-8 h-8 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center text-amber-500"><i class="fas fa-times"></i></button>
                 </div>
@@ -1397,7 +1428,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             window._pendingRoleChanges = changes;
         };
 
-        window.autoAssignRolesDdung = () => {
+        window.autoAssignRolesDdung = async () => {
             const excludeRoles = ['마카롱', '다쿠아즈', '아인슈페너', '부팬케이크', '부케이크', '수플레', '반죽(휴면)'];
             const targets = appState.members.filter(m => m.guild === '뚱카롱' && !excludeRoles.includes(m.role) && m.isMain !== false);
 
@@ -1406,6 +1437,17 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const headers = appState.suroHeaders || [];
             const latestHeader = headers.length > 0 ? headers[headers.length - 1] : null;
             if(!latestHeader) return window.showMsg("수로 데이터가 없습니다.", "error");
+
+            // ★ 활성 면제 조회
+            const today = new Date().toISOString().slice(0, 10);
+            let absMap = {};
+            try {
+                const { data: absences } = await supaDb.from('absence_exemptions')
+                    .select('member_name, reason_type, end_date')
+                    .eq('status', 'approved')
+                    .lte('start_date', today).gte('end_date', today);
+                (absences || []).forEach(a => { absMap[a.member_name] = a; });
+            } catch (e) { console.warn('면제 조회 실패 (계속):', e.message); }
 
             const getDdungRole = (score) => {
                 const rules = SITE_CONFIG?.autoRankRules?.['뚱카롱'] || [
@@ -1429,11 +1471,16 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             scored.forEach(m => {
                 const newRole = getDdungRole(m.latestScore);
                 if(m.role !== newRole) {
-                    changes.push({ name: m.name, from: m.role, to: newRole, score: m.latestScore });
+                    const abs = absMap[m.name];
+                    changes.push({
+                        name: m.name, from: m.role, to: newRole, score: m.latestScore,
+                        protected: !!abs, absReason: abs?.reason_type || null, absEnd: abs?.end_date || null
+                    });
                 }
             });
 
             if(changes.length === 0) return window.showMsg("변경할 직위가 없습니다. 모두 이미 올바른 직위입니다.", "info");
+            const protectedCount = changes.filter(c => c.protected).length;
 
             const existing = document.getElementById('roleConfirmModal'); if(existing) existing.remove();
             const overlay = document.createElement('div');
@@ -1448,6 +1495,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const rows = changes.map((c, i) => {
                 const fromColor = roleColors[c.from] || 'text-gray-500';
                 const toColor = roleColors[c.to] || 'text-gray-500';
+                if (c.protected) {
+                    return `<tr class="border-b border-amber-200 bg-amber-50/80">
+                        <td class="py-2 px-1 text-center"><input type="checkbox" data-role-idx="${i}" class="role-chk w-4 h-4 rounded text-rose-500 cursor-pointer" onchange="window._updateRoleCount()" title="장기부재 면제 — 기본 체크 해제"></td>
+                        <td class="py-2 px-2 text-xs">
+                          <div class="font-bold text-gray-800">${c.name}</div>
+                          <div class="text-[9px] text-amber-700 font-bold mt-0.5">🔒 강등 보호 — ${esc(c.absReason)}${c.absEnd?` (${c.absEnd}까지)`:''}</div>
+                        </td>
+                        <td class="py-2 px-2 text-xs font-bold ${fromColor}">${c.from}</td>
+                        <td class="py-2 px-1 text-gray-300 text-xs">→</td>
+                        <td class="py-2 px-2 text-xs font-black text-amber-700">${c.from} <span class="text-[9px] font-normal">(유지)</span></td>
+                        <td class="py-2 px-2 text-xs text-gray-400 text-right font-mono">${c.score.toLocaleString()}</td>
+                    </tr>`;
+                }
                 return `<tr class="border-b border-gray-50 hover:bg-gray-50">
                     <td class="py-2 px-1 text-center"><input type="checkbox" checked data-role-idx="${i}" class="role-chk w-4 h-4 rounded text-rose-500 cursor-pointer" onchange="window._updateRoleCount()"></td>
                     <td class="py-2 px-2 text-xs font-bold text-gray-800">${c.name}</td>
@@ -1462,7 +1522,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 <div class="p-5 bg-rose-50 border-b border-rose-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="text-sm font-bold text-rose-700 flex items-center gap-2"><i class="fas fa-magic"></i> 뚱카롱 직위 자동 부여</h3>
-                        <p class="text-[10px] text-rose-500 mt-1">기준: ${latestHeader} · 변경 대상 <span class="font-black">${changes.length}명</span></p>
+                        <p class="text-[10px] text-rose-500 mt-1">기준: ${latestHeader} · 변경 대상 <span class="font-black">${changes.length}명</span>${protectedCount?` <span class="text-amber-700">(🔒 강등 보호 ${protectedCount}명 — 체크 해제됨)</span>`:''}</p>
                     </div>
                     <button onclick="document.getElementById('roleConfirmModal').remove()" class="w-8 h-8 rounded-full bg-rose-100 hover:bg-rose-200 flex items-center justify-center text-rose-500"><i class="fas fa-times"></i></button>
                 </div>
