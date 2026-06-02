@@ -10473,36 +10473,21 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     } catch (e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
   };
 
+  window.ABSENCE_MANUAL_KEY = 'myabsence-2026-secret-xyz';
   window._absenceManualTrigger = async () => {
-    // 저장된 키 있으면 재사용, 없거나 실패 시 prompt
-    let key = localStorage.getItem('_absence_manual_key') || '';
-    if (!key) {
-      key = prompt('MANUAL_TRIGGER_KEY 입력 (워커 Secret 값)\n※ 한 번 입력하면 이 브라우저에 저장돼서 다음부턴 안 물어봅니다');
-      if (!key) return;
-    }
+    const btn = event?.currentTarget;
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
     try {
-      const res = await fetch(`${window.ABSENCE_TRIGGER_URL}/?key=${encodeURIComponent(key)}`);
-      if (res.status === 403) {
-        localStorage.removeItem('_absence_manual_key');
-        const retry = prompt('키가 틀렸어요. 다시 입력해주세요');
-        if (!retry) return;
-        const res2 = await fetch(`${window.ABSENCE_TRIGGER_URL}/?key=${encodeURIComponent(retry)}`);
-        if (res2.status === 403) return window.showMsg('키가 또 틀렸습니다 — 워커 Secret 다시 확인', 'error');
-        localStorage.setItem('_absence_manual_key', retry);
-        const data2 = await res2.json();
-        window.showMsg(`알람 발사 — ${data2.sent}명${data2.members?.length ? ': ' + data2.members.join(', ') : ''}`, 'success');
-        return;
-      }
+      const res = await fetch(`${window.ABSENCE_TRIGGER_URL}/?key=${encodeURIComponent(window.ABSENCE_MANUAL_KEY)}`);
+      if (!res.ok) throw new Error('워커 응답 ' + res.status);
       const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem('_absence_manual_key', key);  // 성공 시 저장
-        window.showMsg(`알람 발사 — ${data.sent}명${data.members?.length ? ': ' + data.members.join(', ') : ''}`, 'success');
-      } else {
-        window.showMsg('실패: ' + (data.error || res.status), 'error');
-      }
-    } catch (e) { window.showMsg('워커 호출 실패: ' + e.message, 'error'); }
+      const msg = data.sent > 0
+        ? `✅ 알람 ${data.sent}명 발사: ${data.members?.join(', ') || ''}`
+        : `ℹ ${data.message || '이번 주 활성 면제 없음'}`;
+      window.showMsg(msg, data.sent > 0 ? 'success' : 'info');
+    } catch (e) { window.showMsg('호출 실패: ' + e.message, 'error'); }
+    finally { if (btn) { btn.disabled = false; btn.style.opacity = '1'; } }
   };
-  window._absenceClearKey = () => { localStorage.removeItem('_absence_manual_key'); window.showMsg('저장된 키 삭제됨', 'info'); };
 
   window.renderAbsence = async (container) => {
     container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
