@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>장기 부재 면제 — 기능 설명</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }
+  .step-num { width: 26px; height: 26px; }
+</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-3xl mx-auto space-y-5">
+
+  <!-- 헤더 -->
+  <header class="bg-gradient-to-r from-amber-500 to-pink-500 text-white rounded-2xl p-5 shadow-lg">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="text-3xl">🔒</div>
+      <div>
+        <h1 class="text-xl font-black">장기 부재 면제 시스템</h1>
+        <p class="text-[12px] opacity-90 mt-0.5">결혼·신행·입원 등 부득이한 사유로 수로 못 돈 멤버 → 직위 강등 보호</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 한 줄 요약 -->
+  <section class="bg-white rounded-xl border border-gray-200 p-4">
+    <div class="text-[11px] font-bold text-gray-500 uppercase mb-2">한 줄 요약</div>
+    <div class="text-sm text-gray-800 leading-relaxed">
+      <span class="font-bold text-amber-700">사유 등록 → 운영진 승인 → 등록된 기간 동안 직위 자동부여에서 강등 보호</span><br>
+      <span class="text-[12px] text-gray-600">매주 수요일 23시 디스코드로 보호 대상 자동 알림</span>
+    </div>
+  </section>
+
+  <!-- 누가 / 언제 / 어떻게 -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <div class="text-[11px] font-bold text-emerald-700 mb-1">👥 누가 신청?</div>
+      <div class="text-[12px] text-gray-700 leading-relaxed">
+        본인 / 운영진 / 친한 사람<br>
+        <span class="text-gray-500">사이트에서 누구나 등록 가능</span>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <div class="text-[11px] font-bold text-violet-700 mb-1">✅ 누가 승인?</div>
+      <div class="text-[12px] text-gray-700 leading-relaxed">
+        간부진(마카롱·다쿠아주)<br>
+        <span class="text-gray-500">사유 보고 직접 결정</span>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <div class="text-[11px] font-bold text-amber-700 mb-1">⏰ 언제 알림?</div>
+      <div class="text-[12px] text-gray-700 leading-relaxed">
+        매주 수요일 23:00<br>
+        <span class="text-gray-500">수로 마감 직후, 직위 조정 전</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 워크플로우 -->
+  <section class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="text-sm font-black text-gray-900 mb-4">📋 전체 흐름</div>
+
+    <div class="space-y-3">
+      <!-- 1 신청 -->
+      <div class="flex gap-3">
+        <div class="step-num flex-shrink-0 rounded-full bg-emerald-500 text-white font-black text-[12px] flex items-center justify-center">1</div>
+        <div class="flex-1">
+          <div class="text-[13px] font-bold text-gray-900">신청 등록</div>
+          <div class="text-[11px] text-gray-600 mt-0.5">사이트 사이드바 → <span class="font-bold">장기부재 면제</span> 메뉴 → 멤버·사유·기간 입력</div>
+          <div class="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-[11px]">
+            <div class="font-bold text-gray-700 mb-1">사유 선택지 (12가지)</div>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-0.5 text-gray-600">
+              <div>💒 결혼·신행</div>
+              <div>🏥 본인 입원·수술</div>
+              <div>👨‍👩‍👧 가족 입원·간병</div>
+              <div>🕯️ 본인·가족 상사</div>
+              <div>🤰 임신·출산·산후</div>
+              <div>🪖 군 입대·휴가</div>
+              <div>📚 시험 준비</div>
+              <div>✈️ 장기 출장·해외</div>
+              <div>📦 이사·정착</div>
+              <div>🧠 정신건강·번아웃</div>
+              <div>💼 이직·적응</div>
+              <div>✏️ 기타 (직접입력)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 승인 -->
+      <div class="flex gap-3">
+        <div class="step-num flex-shrink-0 rounded-full bg-violet-500 text-white font-black text-[12px] flex items-center justify-center">2</div>
+        <div class="flex-1">
+          <div class="text-[13px] font-bold text-gray-900">간부진 검토 & 승인</div>
+          <div class="text-[11px] text-gray-600 mt-0.5">
+            신청 = 즉시 적용 ❌ &nbsp;|&nbsp; 운영진이 사유 보고 <span class="font-bold text-emerald-700">승인</span> / <span class="font-bold text-rose-700">반려</span> 결정<br>
+            <span class="text-gray-500">반려 시 사유 메모 가능</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 보호 -->
+      <div class="flex gap-3">
+        <div class="step-num flex-shrink-0 rounded-full bg-amber-500 text-white font-black text-[12px] flex items-center justify-center">3</div>
+        <div class="flex-1">
+          <div class="text-[13px] font-bold text-gray-900">직위 자동부여에서 강등 보호</div>
+          <div class="text-[11px] text-gray-600 mt-0.5">승인된 기간 동안 직위 자동부여 화면에서 해당 멤버 행이</div>
+          <div class="mt-2 bg-amber-50 border border-amber-300 rounded-lg p-2.5">
+            <div class="flex items-center gap-2 text-[12px]">
+              <div class="w-1 h-6 bg-amber-500 rounded-full"></div>
+              <input type="checkbox" disabled class="opacity-50">
+              <span class="font-bold text-gray-900">정전위험</span>
+              <span class="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded font-bold">🔒 강등 보호</span>
+              <span class="text-[10px] text-gray-500 ml-auto">현재 유지</span>
+            </div>
+          </div>
+          <div class="text-[11px] text-gray-500 mt-1.5">→ 점수 0이어도 직위 변경 체크박스 자동 해제 + 호박색 강조</div>
+        </div>
+      </div>
+
+      <!-- 4 알림 -->
+      <div class="flex gap-3">
+        <div class="step-num flex-shrink-0 rounded-full bg-pink-500 text-white font-black text-[12px] flex items-center justify-center">4</div>
+        <div class="flex-1">
+          <div class="text-[13px] font-bold text-gray-900">매주 수요일 23시 디스코드 자동 알림</div>
+          <div class="text-[11px] text-gray-600 mt-0.5">수로 마감 직후, 직위 조정 시 까먹지 않게 운영진 멘션</div>
+          <div class="mt-2 bg-[#36393f] rounded-lg p-3 text-white text-[11px]">
+            <div class="text-[10px] text-gray-400 mb-1.5">#면제신청-알림</div>
+            <div class="text-amber-300 mb-1">
+              <span class="bg-amber-700/40 px-1 rounded">@마카롱</span>
+              <span class="bg-amber-700/40 px-1 rounded">@다쿠아주</span>
+              🔔 이번 주 직위 조정 시 강등 보호 멤버 (1명)
+            </div>
+            <div class="border-l-4 border-amber-400 pl-2 mt-2">
+              <div class="font-bold text-amber-200">🔒 강등 보호 1명</div>
+              <div class="mt-1 text-gray-200">
+                <span class="font-bold text-white">정전위험</span><br>
+                사유: 💒 결혼·신행<br>
+                기간: 2026-06-07 ~ 2026-06-17
+              </div>
+              <div class="text-[10px] text-gray-400 mt-1.5">직위 자동 부여 시 점수 0이어도 직위 유지해주세요</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 종료 -->
+      <div class="flex gap-3">
+        <div class="step-num flex-shrink-0 rounded-full bg-gray-400 text-white font-black text-[12px] flex items-center justify-center">5</div>
+        <div class="flex-1">
+          <div class="text-[13px] font-bold text-gray-900">자동 종료</div>
+          <div class="text-[11px] text-gray-600 mt-0.5">등록 기간 끝나면 자동 ended 상태 → 다음 주부터 알림·보호 OFF</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 케이스 예시 -->
+  <section class="bg-pink-50 border border-pink-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-pink-700 mb-2">📌 실제 케이스 — 정전위험님</div>
+    <div class="text-[12px] text-gray-800 leading-relaxed">
+      <span class="font-bold">6/7 결혼식 · 6/7~17 신행</span> → 6/11~17 주차 수로 미참 → 직위 강등 위험<br>
+      <span class="text-pink-700 font-bold">→ 면제 등록 완료, 6/10 수요일 23시 자동 알림 예정</span>
+    </div>
+  </section>
+
+  <!-- 안전장치 -->
+  <section class="bg-white rounded-xl border border-gray-200 p-4">
+    <div class="text-[11px] font-bold text-gray-500 uppercase mb-2">🛡️ 악용 방지</div>
+    <ul class="text-[12px] text-gray-700 space-y-1 list-disc list-inside">
+      <li>신청 = 자동 승인 ❌ &nbsp;간부진이 사유 보고 직접 판단</li>
+      <li>승인 / 반려 / 취소 이력 모두 기록 (누가·언제·메모)</li>
+      <li>기간 종료 시 자동 해제 — 무기한 면제 불가</li>
+      <li>운영진은 언제든 수동 종료·삭제 가능</li>
+    </ul>
+  </section>
+
+  <footer class="text-center text-[10px] text-gray-400 pt-2">
+    Guild Manager · 장기 부재 면제 v1.0
+  </footer>
+
+</div>
+</body>
+</html>

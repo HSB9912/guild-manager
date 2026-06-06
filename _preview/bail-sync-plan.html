@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>수로 보석금 ↔ 보석금 관리 연동 플랜</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-4xl mx-auto space-y-5">
+
+  <header class="bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-2xl p-5 shadow-lg">
+    <div class="flex items-center gap-3 mb-1">
+      <div class="text-3xl">💎</div>
+      <div>
+        <h1 class="text-xl font-black">수로 보석금 ↔ 보석금 관리 자동 연동</h1>
+        <p class="text-[12px] opacity-90 mt-0.5">신청 처리 → 보석금 내역 자동 등록 + 기존 누락 일괄 채움</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 문제 -->
+  <section class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-rose-700 mb-2">❌ 현재 문제</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[12px]">
+      <div class="bg-white rounded-lg p-3 border border-rose-100">
+        <div class="font-bold text-gray-700 mb-1">수로 보석금 신청</div>
+        <div class="text-gray-500">멤버가 신청 → 관리자 "입금 확인" or "노블 해제" 클릭</div>
+        <div class="text-[10px] text-rose-600 mt-1 font-bold">→ bail_requests 상태만 바뀜</div>
+      </div>
+      <div class="bg-white rounded-lg p-3 border border-rose-100">
+        <div class="font-bold text-gray-700 mb-1">보석금 관리 화면</div>
+        <div class="text-gray-500">관리자가 별도 화면에서 "납부자/수령자/수량" 손으로 입력해야 보임</div>
+        <div class="text-[10px] text-rose-600 mt-1 font-bold">→ bail_history 따로 입력 안 하면 누락</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 해결 -->
+  <section class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-emerald-700 mb-3">✅ 해결 방안</div>
+
+    <div class="space-y-2 text-[12px]">
+      <div class="bg-white rounded-lg p-3 flex gap-3 items-start">
+        <div class="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0">1</div>
+        <div>
+          <div class="font-bold text-gray-800">스키마: bail_history에 bail_request_id 컬럼 추가</div>
+          <div class="text-gray-500 text-[11px] mt-0.5">신청-내역 1:1 연결 → 중복 방지 + 되돌리기 시 자동 삭제</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg p-3 flex gap-3 items-start">
+        <div class="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0">2</div>
+        <div>
+          <div class="font-bold text-gray-800">자동 sync 훅 4곳 추가</div>
+          <ul class="text-gray-500 text-[11px] mt-0.5 space-y-0.5 list-disc list-inside">
+            <li><span class="font-mono bg-gray-100 px-1 rounded">_bailApprove</span> (입금 확인 단건)</li>
+            <li><span class="font-mono bg-gray-100 px-1 rounded">_bailUnlock</span> (노블 해제 단건)</li>
+            <li><span class="font-mono bg-gray-100 px-1 rounded">_bailBulkProcess('noble_unlocked')</span> (일괄)</li>
+            <li><span class="font-mono bg-gray-100 px-1 rounded">_bailBulkImportSave</span> (엑셀 임포트)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg p-3 flex gap-3 items-start">
+        <div class="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0">3</div>
+        <div>
+          <div class="font-bold text-gray-800">되돌리기·삭제 시 자동 정리</div>
+          <div class="text-gray-500 text-[11px] mt-0.5"><span class="font-mono bg-gray-100 px-1 rounded">_bailRevert</span>·<span class="font-mono bg-gray-100 px-1 rounded">_bailDelete</span> 시 연결된 bail_history 자동 삭제</div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg p-3 flex gap-3 items-start">
+        <div class="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-[11px] flex items-center justify-center flex-shrink-0">4</div>
+        <div>
+          <div class="font-bold text-gray-800">백필: 기존 누락 일괄 채움 버튼</div>
+          <div class="text-gray-500 text-[11px] mt-0.5">approved/noble_unlocked인데 bail_history 없는 row → 한번에 채움</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 매핑 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-gray-500 uppercase mb-2">🔗 필드 매핑</div>
+    <table class="w-full text-[11px]">
+      <thead class="bg-gray-50">
+        <tr class="text-left text-gray-500">
+          <th class="p-2">bail_history (보석금 관리)</th>
+          <th class="p-2">←</th>
+          <th class="p-2">bail_requests (수로 신청)</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr><td class="p-2 font-mono font-bold">date</td><td class="p-2 text-center text-gray-400">←</td><td class="p-2 text-gray-600">processed_at의 날짜 (없으면 오늘)</td></tr>
+        <tr><td class="p-2 font-mono font-bold">payer</td><td class="p-2 text-center text-gray-400">←</td><td class="p-2 text-gray-600">payer_char</td></tr>
+        <tr><td class="p-2 font-mono font-bold">receiver</td><td class="p-2 text-center text-gray-400">←</td><td class="p-2 text-gray-600">processed_by (처리한 관리자)</td></tr>
+        <tr><td class="p-2 font-mono font-bold">amount</td><td class="p-2 text-center text-gray-400">←</td><td class="p-2 text-gray-600">total_amount</td></tr>
+        <tr><td class="p-2 font-mono font-bold">memo</td><td class="p-2 text-center text-gray-400">←</td><td class="p-2 text-gray-600">"[수로] {half_year} {offense_count}회차 ×{multiplier}"</td></tr>
+        <tr class="bg-cyan-50"><td class="p-2 font-mono font-bold">bail_request_id 🆕</td><td class="p-2 text-center text-gray-400">←</td><td class="p-2 text-gray-600">id (신청 row의 PK)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SQL -->
+  <section class="bg-gray-900 text-white rounded-xl p-4">
+    <div class="text-[11px] font-black text-cyan-300 mb-2">📋 Supabase에서 실행할 SQL (1줄)</div>
+    <pre class="text-[11px] font-mono overflow-x-auto bg-black/40 p-3 rounded"><code>ALTER TABLE bail_history ADD COLUMN IF NOT EXISTS bail_request_id BIGINT REFERENCES bail_requests(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_bail_history_request_id ON bail_history(bail_request_id);</code></pre>
+  </section>
+
+  <!-- 백필 버튼 미리보기 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-gray-500 uppercase mb-3">🔘 백필 버튼 (보석금 관리 화면 상단에 추가)</div>
+    <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+      <button class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-black text-xs shadow hover:shadow-lg transition">
+        <i class="fas fa-sync mr-1.5"></i>수로 보석금 누락분 동기화 (예상 OO건)
+      </button>
+      <p class="text-[10px] text-gray-400 mt-2 text-center">처리된 신청 중 보석금 내역에 누락된 것만 일괄 추가</p>
+    </div>
+  </section>
+
+  <!-- 진행 순서 -->
+  <section class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-amber-700 mb-2">⚡ 진행 순서</div>
+    <ol class="text-[12px] text-gray-700 space-y-1 list-decimal list-inside">
+      <li>위 SQL 1줄 Supabase에서 실행</li>
+      <li>코드 패치 → git push (자동 배포)</li>
+      <li>보석금 관리 화면 → "🔄 누락분 동기화" 버튼 1회 클릭 (기존 누락분 한 방에 채움)</li>
+      <li>이후 신청 → 처리 시 자동 등록 (별도 작업 불필요)</li>
+    </ol>
+  </section>
+
+  <footer class="text-center text-[10px] text-gray-400 pt-2">
+    Guild Manager · 보석금 자동 연동 플랜 v1.0
+  </footer>
+
+</div>
+</body>
+</html>

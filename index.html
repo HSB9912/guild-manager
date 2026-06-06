@@ -3810,6 +3810,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                         <button onclick="window.setBailType('deposit')" class="bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all bg-pink-500 text-white shadow-md" data-type="deposit">💎 납부</button>
                         <button onclick="window.setBailType('use')" class="bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all bg-gray-100 text-gray-400 hover:bg-gray-200" data-type="use">📦 사용</button>
                     </div>
+                    ${isAdmin() ? `
+                    <button onclick="window._bailBackfillHistory()" class="w-full mb-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="수로 보석금 신청 중 처리됐는데 내역에 없는 것을 일괄 등록">
+                        <i class="fas fa-sync mr-1.5"></i>수로 보석금 누락분 동기화
+                    </button>` : ''}
                     <div class="space-y-6 flex-1 overflow-y-auto no-scrollbar pb-6">
                         <div id="bailDepositForm">
                             <div class="space-y-4">
@@ -9137,6 +9141,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       if (error) throw error;
       window.showMsg(`${ids.length}건 ${labelMap[action]} 처리됨`, 'success');
       window._bailNotifyBulk(action, rowsForNotify);
+      if (action === 'noble_unlocked') {
+        for (const r of rowsForNotify) {
+          await window._bailSyncToHistory({ ...r, processed_by: me, processed_at: nowIso, unlocked_by: me, unlocked_at: nowIso }, { receiver: me });
+        }
+      }
       st.selectedIds = [];
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) {
@@ -9251,6 +9260,95 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   // 처리 액션 함수들
   const _bailAdminName = () => CURRENT_USER?.adminName || CURRENT_USER?.name || CURRENT_USER?.email?.split('@')[0] || 'admin';
   const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
+
+  // ============ 보석금 관리(bail_history) 자동 연동 ============
+  // 처리 완료된 수로 신청을 bail_history에 1:1로 자동 등록 (bail_request_id로 중복 방지)
+  window._bailSyncToHistory = async (row, opts = {}) => {
+    if (!row || !row.id) return;
+    const receiver = opts.receiver || row.unlocked_by || row.processed_by || _bailAdminName();
+    const dateIso = row.processed_at || row.unlocked_at || new Date().toISOString();
+    const date = String(dateIso).slice(0, 10);
+    const memoExtras = [];
+    if (row.half_year) memoExtras.push(row.half_year);
+    if (row.offense_count) memoExtras.push(`${row.offense_count}회차`);
+    if (row.multiplier && row.multiplier > 1) memoExtras.push(`×${row.multiplier}`);
+    const memo = `[수로] ${memoExtras.join(' ')}`.trim();
+    try {
+      // 이미 동기화된 row면 skip
+      const { data: existing } = await supaDb.from('bail_history')
+        .select('id').eq('bail_request_id', row.id).maybeSingle();
+      if (existing) return;
+      const { error } = await supaDb.from('bail_history').insert({
+        date, payer: row.payer_char, receiver,
+        amount: parseInt(row.total_amount) || 0,
+        memo, bail_request_id: row.id
+      });
+      if (error) console.warn('bail history sync failed:', error.message);
+    } catch (e) { console.warn('bail history sync error:', e); }
+  };
+  window._bailRemoveFromHistory = async (id) => {
+    if (!id) return;
+    try {
+      await supaDb.from('bail_history').delete().eq('bail_request_id', id);
+    } catch (e) { console.warn('bail history remove error:', e); }
+  };
+  window._bailRemoveFromHistoryBulk = async (ids) => {
+    if (!Array.isArray(ids) || ids.length === 0) return;
+    try {
+      await supaDb.from('bail_history').delete().in('bail_request_id', ids);
+    } catch (e) { console.warn('bail history bulk remove error:', e); }
+  };
+
+  // 누락된 수로 보석금 일괄 동기화 (처리됐는데 bail_history에 없는 것)
+  window._bailBackfillHistory = async () => {
+    try {
+      // 1. 처리 완료된 신청 조회
+      const { data: requests, error: reqErr } = await supaDb.from('bail_requests')
+        .select('id, payer_char, total_amount, multiplier, half_year, offense_count, processed_by, processed_at, unlocked_by, unlocked_at')
+        .in('status', ['approved', 'noble_unlocked']);
+      if (reqErr) throw reqErr;
+      if (!requests || requests.length === 0) {
+        window.showMsg('처리 완료된 신청이 없습니다', 'info');
+        return;
+      }
+      // 2. 이미 sync된 request_id 조회
+      const { data: existing, error: histErr } = await supaDb.from('bail_history')
+        .select('bail_request_id').not('bail_request_id', 'is', null);
+      if (histErr) throw histErr;
+      const syncedIds = new Set((existing || []).map(h => h.bail_request_id));
+      const missing = requests.filter(r => !syncedIds.has(r.id));
+      if (missing.length === 0) {
+        window.showMsg('누락분 없음 — 모두 동기화 완료', 'success');
+        return;
+      }
+      if (!confirm(`누락된 ${missing.length}건을 보석금 내역에 일괄 등록하시겠습니까?`)) return;
+      // 3. 누락분 일괄 insert
+      const payload = missing.map(r => {
+        const receiver = r.unlocked_by || r.processed_by || _bailAdminName();
+        const dateIso = r.processed_at || r.unlocked_at || new Date().toISOString();
+        const date = String(dateIso).slice(0, 10);
+        const extras = [];
+        if (r.half_year) extras.push(r.half_year);
+        if (r.offense_count) extras.push(`${r.offense_count}회차`);
+        if (r.multiplier && r.multiplier > 1) extras.push(`×${r.multiplier}`);
+        return {
+          date, payer: r.payer_char, receiver,
+          amount: parseInt(r.total_amount) || 0,
+          memo: `[수로] ${extras.join(' ')}`.trim(),
+          bail_request_id: r.id
+        };
+      });
+      const { error: insErr } = await supaDb.from('bail_history').insert(payload);
+      if (insErr) throw insErr;
+      window.showMsg(`${missing.length}건 동기화 완료 — 화면 새로고침합니다`, 'success');
+      await window.fetchMembers();
+      const content = document.getElementById('contentArea');
+      if (content && window.renderBail) window.renderBail(content);
+    } catch (e) {
+      console.error(e);
+      window.showMsg('백필 실패: ' + e.message, 'error');
+    }
+  };
   const _BAIL_ACTION_META = {
     noble_unlocked: { label: '처리 완료 · 노블 해제',  color: 0x10b981, icon: '🟢' },
     approved:       { label: '입금 확인',             color: 0x3b82f6, icon: '🔵' },
@@ -9307,14 +9405,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     if (!confirm('입금 스샷 확인됨 — 노블 해제 작업 대기로 이동시키시겠습니까?')) return;
     const note = prompt('관리자 메모 (선택)', '') || null;
     const row = window._bailReqState.list.find(r => r.id === id);
+    const me = _bailAdminName();
+    const nowIso = new Date().toISOString();
     try {
       const { error } = await supaDb.from('bail_requests').update({
-        status: 'approved', processed_by: _bailAdminName(),
-        processed_at: new Date().toISOString(), admin_note: note
+        status: 'approved', processed_by: me,
+        processed_at: nowIso, admin_note: note
       }).eq('id', id);
       if (error) throw error;
       window.showMsg('입금 확인 완료', 'success');
-      if (row) window._bailNotifyAction('approved', row, note);
+      if (row) {
+        window._bailNotifyAction('approved', row, note);
+        window._bailSyncToHistory({ ...row, processed_by: me, processed_at: nowIso }, { receiver: me });
+      }
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
   };
@@ -9332,7 +9435,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       }).eq('id', id);
       if (error) throw error;
       window.showMsg('노블 해제 완료 처리됨', 'success');
-      if (row) window._bailNotifyAction('noble_unlocked', row);
+      if (row) {
+        window._bailNotifyAction('noble_unlocked', row);
+        window._bailSyncToHistory({ ...row, processed_by: me, processed_at: nowIso, unlocked_by: me, unlocked_at: nowIso }, { receiver: me });
+      }
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
   };
@@ -9380,7 +9486,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
   // 처리 되돌리기 (잘못 처리한 경우 → 대기로 복귀, 처리자/시각/메모 모두 클리어)
   window._bailRevert = async (id) => {
-    if (!confirm('이 처리를 되돌리시겠습니까? 대기 상태로 복귀하고 처리 기록은 삭제됩니다.')) return;
+    if (!confirm('이 처리를 되돌리시겠습니까? 대기 상태로 복귀하고 처리 기록 + 보석금 내역도 삭제됩니다.')) return;
     try {
       const { error } = await supaDb.from('bail_requests').update({
         status: 'pending',
@@ -9389,7 +9495,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         admin_note: null
       }).eq('id', id);
       if (error) throw error;
-      window.showMsg('대기로 되돌림', 'success');
+      await window._bailRemoveFromHistory(id);
+      window.showMsg('대기로 되돌림 (보석금 내역도 삭제됨)', 'success');
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('되돌리기 실패: ' + e.message, 'error'); }
   };
@@ -9399,7 +9506,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     const st = window._bailReqState;
     const ids = (st.selectedIds || []).slice();
     if (ids.length === 0) return;
-    if (!confirm(`선택한 ${ids.length}건을 일괄 되돌리시겠습니까? (대기 상태로 복귀)`)) return;
+    if (!confirm(`선택한 ${ids.length}건을 일괄 되돌리시겠습니까? (대기 상태로 복귀 + 보석금 내역 삭제)`)) return;
     try {
       const { error } = await supaDb.from('bail_requests').update({
         status: 'pending',
@@ -9408,18 +9515,20 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         admin_note: null
       }).in('id', ids);
       if (error) throw error;
-      window.showMsg(`${ids.length}건 되돌림`, 'success');
+      await window._bailRemoveFromHistoryBulk(ids);
+      window.showMsg(`${ids.length}건 되돌림 (보석금 내역도 삭제됨)`, 'success');
       st.selectedIds = [];
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('일괄 되돌리기 실패: ' + e.message, 'error'); }
   };
 
   window._bailDelete = async (id) => {
-    if (!confirm('이 신청을 영구 삭제하시겠습니까? (되돌릴 수 없습니다)')) return;
+    if (!confirm('이 신청을 영구 삭제하시겠습니까? (보석금 내역도 함께 삭제됩니다)')) return;
     try {
+      await window._bailRemoveFromHistory(id);
       const { error } = await supaDb.from('bail_requests').delete().eq('id', id);
       if (error) throw error;
-      window.showMsg('삭제됨', 'success');
+      window.showMsg('삭제됨 (보석금 내역도 삭제됨)', 'success');
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
   };
@@ -9589,9 +9698,15 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       admin_note: '[기존 이력 · 일괄 임포트]'
     }));
     try {
-      const { error } = await supaDb.from('bail_requests').insert(payload);
+      const { data: inserted, error } = await supaDb.from('bail_requests').insert(payload).select();
       if (error) throw error;
-      window.showMsg(`${rows.length}건 등록 완료`, 'success');
+      // 보석금 관리(bail_history)에도 자동 등록
+      if (Array.isArray(inserted)) {
+        for (const r of inserted) {
+          await window._bailSyncToHistory(r, { receiver: r.processed_by || r.unlocked_by });
+        }
+      }
+      window.showMsg(`${rows.length}건 등록 완료 (보석금 내역 자동 연동됨)`, 'success');
       // 영역 닫고 새로고침
       const area = document.getElementById('bailBulkImportArea');
       if (area) { area.innerHTML = ''; area.dataset.open = ''; }
