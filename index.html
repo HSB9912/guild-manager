@@ -383,7 +383,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
  </div>
 
  <script>
-  const APP_VERSION = '2026.06.17.0020';
+  const APP_VERSION = '2026.06.17.0030';
   const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const supaDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3856,8 +3856,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                     </div>
                     ${isAdmin() ? `
                     <div class="space-y-2 mb-4">
-                      <button onclick="window._bailBackfillHistory()" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="수로 보석금 신청 중 처리됐는데 내역에 없는 것을 일괄 등록">
-                        <i class="fas fa-sync mr-1.5"></i>수로 보석금 누락분 동기화
+                      <button onclick="window._bailBackfillSinceMay14()" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="2026-05-14 이후 처리된 수로 신청만 길드창고로 동기화 (디스코드 기능 도입 이후)">
+                        <i class="fa-brands fa-discord mr-1.5"></i>05.14 이후 길드창고 동기화
+                      </button>
+                      <button onclick="window._bailBackfillHistory()" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="처리된 수로 신청 전체 중 내역에 없는 것을 일괄 등록 (5/14 이전 옛날 것 포함)">
+                        <i class="fas fa-sync mr-1.5"></i>수로 보석금 전체 누락분 동기화
                       </button>
                       <button onclick="window._bailSmartFixReceivers()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="05.14 이전 건은 원래 간부진명으로 복원, 이후 건은 길드창고로 지정">
                         <i class="fas fa-rotate-left mr-1.5"></i>수령자 스마트 정정 (05.14 기준)
@@ -9783,6 +9786,60 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     try {
       await supaDb.from('bail_history').delete().in('bail_request_id', ids);
     } catch (e) { console.warn('bail history bulk remove error:', e); }
+  };
+
+  // 05.14 이후 처리된 수로 신청만 길드창고로 동기화 (디스코드 기능 도입 이후)
+  window._bailBackfillSinceMay14 = async () => {
+    const cutoffStr = '2026-05-14';
+    if (!confirm(`${cutoffStr} 이후 처리된 수로 신청을 길드창고로 동기화합니다. 진행할까요?`)) return;
+    try {
+      // 1. 05.14 이후 처리완료 신청만
+      const { data: requests, error: reqErr } = await supaDb.from('bail_requests')
+        .select('id, payer_char, payer_guild, total_amount, multiplier, half_year, offense_count, processed_at, unlocked_at')
+        .in('status', ['approved', 'noble_unlocked'])
+        .gte('processed_at', cutoffStr);
+      if (reqErr) throw reqErr;
+      if (!requests || requests.length === 0) {
+        window.showMsg(`${cutoffStr} 이후 처리된 신청 없음`, 'info');
+        return;
+      }
+      // 2. 이미 sync된 것 제외
+      const { data: existing, error: histErr } = await supaDb.from('bail_history')
+        .select('bail_request_id').not('bail_request_id', 'is', null);
+      if (histErr) throw histErr;
+      const syncedIds = new Set((existing || []).map(h => h.bail_request_id));
+      const missing = requests.filter(r => !syncedIds.has(r.id));
+      if (missing.length === 0) {
+        window.showMsg('누락분 없음 — 모두 이미 동기화됨', 'success');
+        return;
+      }
+      if (!confirm(`05.14 이후 누락 ${missing.length}건을 길드창고로 등록할까요?`)) return;
+      // 3. 길드창고 receiver로 일괄 insert
+      const payload = missing.map(r => {
+        const receiver = window._bailGuildWarehouse(r.payer_guild);
+        const dateIso = r.processed_at || r.unlocked_at || new Date().toISOString();
+        const date = String(dateIso).slice(0, 10);
+        const extras = [];
+        if (r.half_year) extras.push(r.half_year);
+        if (r.offense_count) extras.push(`${r.offense_count}회차`);
+        if (r.multiplier && r.multiplier > 1) extras.push(`×${r.multiplier}`);
+        return {
+          date, payer: r.payer_char, receiver,
+          amount: parseInt(r.total_amount) || 0,
+          memo: `[수로] ${extras.join(' ')}`.trim(),
+          bail_request_id: r.id
+        };
+      });
+      const { error: insErr } = await supaDb.from('bail_history').insert(payload);
+      if (insErr) throw insErr;
+      window.showMsg(`${missing.length}건 길드창고로 동기화 완료`, 'success');
+      await window.fetchMembers();
+      const content = document.getElementById('contentArea');
+      if (content && window.renderBail) window.renderBail(content);
+    } catch (e) {
+      console.error(e);
+      window.showMsg('동기화 실패: ' + e.message, 'error');
+    }
   };
 
   // 누락된 수로 보석금 일괄 동기화 (처리됐는데 bail_history에 없는 것)
