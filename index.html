@@ -383,7 +383,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
  </div>
 
  <script>
-  const APP_VERSION = '2026.06.16.2345';
+  const APP_VERSION = '2026.06.17.0010';
   const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const supaDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3826,11 +3826,12 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
               const isWh = (s.receiver || '').includes('길드창고');
               const icon = isWh ? '<i class="fas fa-warehouse mr-1 text-cyan-500 text-[10px]"></i>' : '';
               const nameClass = isWh ? 'text-cyan-700' : 'text-gray-700';
-              const bgClass = isWh ? 'bg-cyan-50 border-cyan-200' : 'bg-gray-50 border-gray-100';
+              const bgClass = isWh ? 'bg-cyan-50 border-cyan-200 hover:bg-cyan-100' : 'bg-gray-50 border-gray-100 hover:bg-gray-100';
               const netCls = s.net >= 0 ? 'text-emerald-600' : 'text-red-500';
-              return `<div class="${bgClass} rounded-2xl p-3 border hover:bg-white transition-all shadow-sm">
+              const escName = (s.receiver || '').replace(/'/g, "\\'");
+              return `<div onclick="window._bailShowReceiverDetail('${escName}')" class="${bgClass} rounded-2xl p-3 border transition-all shadow-sm cursor-pointer group" title="클릭하면 ${s.receiver} 상세 이력 보기">
                 <div class="flex justify-between items-center mb-2">
-                  <span class="font-bold ${nameClass} text-xs">${icon}${s.receiver}</span>
+                  <span class="font-bold ${nameClass} text-xs flex items-center gap-1">${icon}${s.receiver}<i class="fas fa-chevron-right text-[8px] text-gray-300 group-hover:text-gray-500 ml-0.5"></i></span>
                   <span class="font-black ${netCls} text-base">${s.net.toLocaleString()}개</span>
                 </div>
                 <div class="flex items-center gap-3 text-[10px] font-bold pt-1.5 border-t border-gray-100">
@@ -3995,6 +3996,77 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 window.showMsg('이동 저장 실패: ' + e.message, 'error');
                 if (btn) { btn.disabled = false; btn.innerText = '↔ 다조 이동 저장'; }
             }
+        };
+
+        // 수령자별 상세 이력 모달 — 카드 클릭 시 띄움
+        window._bailShowReceiverDetail = (receiver) => {
+            const hist = (appState.bailHistory || []).filter(h => h.receiver === receiver);
+            if (hist.length === 0) { window.showMsg('이력 없음', 'info'); return; }
+            const sorted = [...hist].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            const isWh = (receiver || '').includes('길드창고');
+            const inSum = hist.filter(h => parseInt(h.amount) > 0).reduce((s, h) => s + (parseInt(h.amount) || 0), 0);
+            const outSum = hist.filter(h => parseInt(h.amount) < 0).reduce((s, h) => s + (parseInt(h.amount) || 0), 0);
+            const net = inSum + outSum;
+            const inCnt = hist.filter(h => parseInt(h.amount) > 0).length;
+            const outCnt = hist.filter(h => parseInt(h.amount) < 0).length;
+            const esc = s => (s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+
+            let running = 0;
+            const rowsAsc = [...hist].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+              .map(h => { running += (parseInt(h.amount) || 0); return { ...h, balance: running }; });
+            const balanceMap = {};
+            rowsAsc.forEach(r => balanceMap[r.id] = r.balance);
+
+            const rows = sorted.map(h => {
+                const amt = parseInt(h.amount) || 0;
+                const isUse = amt < 0;
+                const isTransfer = (h.memo || '').startsWith('[이동]');
+                let badge;
+                if (isTransfer) badge = '<span class="bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded text-[9px] font-bold">↔ 이동</span>';
+                else if (isUse) badge = '<span class="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded text-[9px] font-bold">사용</span>';
+                else badge = '<span class="bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded text-[9px] font-bold">납부</span>';
+                const amtCls = isUse ? 'text-blue-500' : 'text-pink-500';
+                const amtTxt = isUse ? `${amt}` : `+${amt}`;
+                return `<tr class="border-b border-gray-50 hover:bg-gray-50 text-[11px]">
+                  <td class="p-2 font-mono text-gray-400 text-[10px] whitespace-nowrap">${esc(h.date)}</td>
+                  <td class="p-2 whitespace-nowrap">${badge}</td>
+                  <td class="p-2 text-gray-700 font-bold">${esc(h.payer)}</td>
+                  <td class="p-2 text-[10px] text-gray-400">${esc(h.memo || '')}</td>
+                  <td class="p-2 text-right font-bold ${amtCls} whitespace-nowrap">${amtTxt}</td>
+                  <td class="p-2 text-right font-mono text-gray-500 whitespace-nowrap">${balanceMap[h.id]}</td>
+                  <td class="p-2 text-right whitespace-nowrap">
+                    <button onclick="document.getElementById('_bailRecvDetailModal').remove();window._bailEditEntry(${h.id})" class="text-[10px] text-gray-400 hover:text-amber-500 mr-1" title="수정"><i class="fas fa-pen"></i></button>
+                    <button onclick="document.getElementById('_bailRecvDetailModal').remove();window._bailDeleteEntry(${h.id})" class="text-[10px] text-gray-400 hover:text-red-500" title="삭제"><i class="fas fa-trash"></i></button>
+                  </td>
+                </tr>`;
+            }).join('');
+
+            const headerIcon = isWh ? '<i class="fas fa-warehouse mr-2 text-cyan-500"></i>' : '<i class="fas fa-user mr-2 text-gray-400"></i>';
+            const modal = document.createElement('div');
+            modal.id = '_bailRecvDetailModal';
+            modal.className = 'fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+                <div class="flex items-center justify-between p-5 border-b border-gray-100">
+                  <h3 class="text-base font-black text-gray-900">${headerIcon}${esc(receiver)} <span class="text-xs font-bold text-gray-400 ml-1">상세 이력</span></h3>
+                  <button onclick="document.getElementById('_bailRecvDetailModal').remove()" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="px-5 pt-3 pb-2 grid grid-cols-4 gap-2 text-center border-b border-gray-100 shrink-0">
+                  <div class="bg-pink-50 rounded-lg p-2"><div class="text-[9px] font-bold text-pink-500">입금</div><div class="text-sm font-black text-pink-600">+${inSum.toLocaleString()}</div><div class="text-[9px] text-gray-400">${inCnt}건</div></div>
+                  <div class="bg-blue-50 rounded-lg p-2"><div class="text-[9px] font-bold text-blue-500">출금</div><div class="text-sm font-black text-blue-600">${outSum.toLocaleString()}</div><div class="text-[9px] text-gray-400">${outCnt}건</div></div>
+                  <div class="${net >= 0 ? 'bg-emerald-50' : 'bg-red-50'} rounded-lg p-2"><div class="text-[9px] font-bold ${net >= 0 ? 'text-emerald-500' : 'text-red-500'}">잔액</div><div class="text-sm font-black ${net >= 0 ? 'text-emerald-600' : 'text-red-600'}">${net.toLocaleString()}</div></div>
+                  <div class="bg-gray-50 rounded-lg p-2"><div class="text-[9px] font-bold text-gray-500">총 건수</div><div class="text-sm font-black text-gray-700">${hist.length}</div></div>
+                </div>
+                <div class="flex-1 overflow-y-auto">
+                  <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase sticky top-0">
+                      <tr><th class="p-2">날짜</th><th class="p-2">구분</th><th class="p-2">납부자/사유</th><th class="p-2">메모</th><th class="p-2 text-right">수량</th><th class="p-2 text-right">누적</th><th class="p-2 text-right">관리</th></tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                </div>
+              </div>`;
+            document.body.appendChild(modal);
         };
 
         // 꼬인 이동건 보정 — 음수만 있고 짝(양수) 없는 항목 찾아서 도착지 지정
