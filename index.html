@@ -383,7 +383,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
  </div>
 
  <script>
-  const APP_VERSION = '2026.06.16.2330';
+  const APP_VERSION = '2026.06.16.2345';
   const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const supaDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -787,6 +787,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const stats = {};
             appState.bailHistory.forEach(h => { const amount = parseInt(h.amount) || 0; stats[h.receiver] = (stats[h.receiver] || 0) + amount; });
             return Object.entries(stats).sort((a,b) => a[0].localeCompare(b[0], 'ko'));
+        };
+        // 수령자별 입금/사용/잔액 분리 집계
+        window.getBailStatsByReceiver = () => {
+            const acc = {};
+            (appState.bailHistory || []).forEach(h => {
+                const r = h.receiver || '?';
+                if (!acc[r]) acc[r] = { receiver: r, in: 0, inCnt: 0, out: 0, outCnt: 0 };
+                const a = parseInt(h.amount) || 0;
+                if (a > 0) { acc[r].in += a; acc[r].inCnt++; }
+                else if (a < 0) { acc[r].out += a; acc[r].outCnt++; }
+            });
+            return Object.values(acc).map(x => ({ ...x, net: x.in + x.out }))
+                .sort((a,b) => b.net - a.net);
         };
         window.getBailTotalStats = () => {
             let totalIn = 0, totalOut = 0;
@@ -3808,12 +3821,23 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                   </td>` : '';
                 return `<tr class="hover:bg-gray-50 border-b border-gray-50 h-12 transition-colors font-bold text-xs ${isTransfer ? 'bg-violet-50/30' : ''}"><td class="p-4 font-mono text-gray-400 text-[10px]">${h.date}</td><td class="p-4">${typeBadge}</td><td class="p-4 text-gray-700">${h.payer}${memo}</td><td class="p-4">${receiverDisplay}</td><td class="p-4 text-right ${amtColor}">${amtDisplay}</td>${adminBtns}</tr>`;
             }).join('');
-            const statsHtml = adminStats.map(([name, count]) => {
-              const isWh = (name || '').includes('길드창고');
+            const recvStats = window.getBailStatsByReceiver();
+            const statsHtml = recvStats.map(s => {
+              const isWh = (s.receiver || '').includes('길드창고');
               const icon = isWh ? '<i class="fas fa-warehouse mr-1 text-cyan-500 text-[10px]"></i>' : '';
               const nameClass = isWh ? 'text-cyan-700' : 'text-gray-700';
-              const bgClass = isWh ? 'bg-cyan-50' : 'bg-gray-50';
-              return `<div class="${bgClass} rounded-2xl p-4 flex justify-between items-center border border-gray-100 hover:bg-white transition-all shadow-sm"><span class="font-bold ${nameClass} text-xs">${icon}${name}</span><span class="font-black ${count >= 0 ? 'text-pink-500' : 'text-blue-500'} text-lg">${count}개</span></div>`;
+              const bgClass = isWh ? 'bg-cyan-50 border-cyan-200' : 'bg-gray-50 border-gray-100';
+              const netCls = s.net >= 0 ? 'text-emerald-600' : 'text-red-500';
+              return `<div class="${bgClass} rounded-2xl p-3 border hover:bg-white transition-all shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-bold ${nameClass} text-xs">${icon}${s.receiver}</span>
+                  <span class="font-black ${netCls} text-base">${s.net.toLocaleString()}개</span>
+                </div>
+                <div class="flex items-center gap-3 text-[10px] font-bold pt-1.5 border-t border-gray-100">
+                  <div class="flex-1"><span class="text-pink-500">+${s.in.toLocaleString()}</span> <span class="text-gray-400">(입금 ${s.inCnt})</span></div>
+                  <div class="flex-1 text-right"><span class="text-blue-500">${s.out.toLocaleString()}</span> <span class="text-gray-400">(출금 ${s.outCnt})</span></div>
+                </div>
+              </div>`;
             }).join('');
             container.innerHTML = `<div class="grid grid-cols-1 ${isAdmin() ? 'lg:grid-cols-3' : ''} gap-8 fade-in h-full">
                 ${isAdmin() ? `<div class="lg:col-span-1 bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col lg:h-full lg:overflow-hidden">
@@ -3836,6 +3860,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                       </button>
                       <button onclick="window._bailSmartFixReceivers()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="05.14 이전 건은 원래 간부진명으로 복원, 이후 건은 길드창고로 지정">
                         <i class="fas fa-rotate-left mr-1.5"></i>수령자 스마트 정정 (05.14 기준)
+                      </button>
+                      <button onclick="window._bailFixOrphanTransfers()" class="w-full py-2.5 bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="음수만 있고 짝(양수)이 없는 이동 의심건을 도착지 지정해서 보정">
+                        <i class="fas fa-link-slash mr-1.5"></i>꼬인 이동건 보정
                       </button>
                     </div>` : ''}
                     <div class="space-y-6 flex-1 overflow-y-auto no-scrollbar pb-6">
@@ -3968,6 +3995,103 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 window.showMsg('이동 저장 실패: ' + e.message, 'error');
                 if (btn) { btn.disabled = false; btn.innerText = '↔ 다조 이동 저장'; }
             }
+        };
+
+        // 꼬인 이동건 보정 — 음수만 있고 짝(양수) 없는 항목 찾아서 도착지 지정
+        window._bailFixOrphanTransfers = async () => {
+            const hist = appState.bailHistory || [];
+            const negs = hist.filter(h => {
+                const a = parseInt(h.amount) || 0;
+                if (a >= 0) return false;
+                const p = h.payer || '';
+                const m = h.memo || '';
+                // 이미 이동 모드로 기록된 건은 제외 ([이동] 으로 시작)
+                if (m.startsWith('[이동]')) return false;
+                // 사용 의도가 명확한 건 (예: 메모에 "이벤트", "보상", "사용") 제외
+                const useKeywords = ['이벤트', '보상', '경품', '사용'];
+                if (useKeywords.some(k => m.includes(k) || p.includes(k))) return false;
+                // 이동·납부 키워드 포함하면 의심
+                return /이동|납부|전달|넘김|보냄/.test(p + ' ' + m);
+            });
+            if (negs.length === 0) {
+                window.showMsg('보정 대상 없음 — 의심되는 꼬인 이동건이 없습니다', 'info');
+                return;
+            }
+            const receivers = appState.members.filter(m => m.guild === '뚠카롱' && ['마카롱', '다쿠아즈'].includes(m.role)).sort((a,b) => smartCompare(a, b, 'name', 'asc'));
+            const wh = window._bailWarehouseOptions || [];
+            const recvOpts = `
+              <optgroup label="🏦 길드창고">${wh.map(w => `<option value="${w}">${w}</option>`).join('')}</optgroup>
+              <optgroup label="👤 운영진">${receivers.map(r => `<option value="${r.name}">${r.name}</option>`).join('')}</optgroup>
+            `;
+            const esc = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+            const cards = negs.map(h => {
+                // payer 또는 memo에서 도착지 추론
+                let guess = '';
+                const text = (h.payer || '') + ' ' + (h.memo || '');
+                if (text.includes('길드창고')) guess = '뚠카롱 길드창고';
+                else for (const w of wh) if (text.includes(w.split(' ')[0])) { guess = w; break; }
+                if (!guess) for (const r of receivers) if (text.includes(r.name)) { guess = r.name; break; }
+                return `<div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2">
+                  <div class="text-[11px] font-bold text-gray-700 mb-1">${h.date} · ${esc(h.payer)} · ${esc(h.memo)}</div>
+                  <div class="text-[11px] text-gray-500 mb-2">출발: <span class="font-bold text-rose-600">${esc(h.receiver)}</span> · 차감: <span class="font-bold text-red-500">${h.amount}</span></div>
+                  <label class="text-[10px] font-bold text-gray-500 uppercase">↳ 도착(받은 쪽)</label>
+                  <select id="_fxDest_${h.id}" class="w-full mt-1 px-2 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold">
+                    <option value="">-- 선택 --</option>
+                    ${recvOpts.replace(/value="([^"]+)"/g, (m, v) => v === guess ? `value="${v}" selected` : `value="${v}"`)}
+                  </select>
+                </div>`;
+            }).join('');
+            const modal = document.createElement('div');
+            modal.id = '_bailFixModal';
+            modal.className = 'fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-5 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="text-base font-black text-gray-900"><i class="fas fa-link-slash mr-2 text-rose-500"></i>꼬인 이동건 보정 (${negs.length}건)</h3>
+                  <button onclick="document.getElementById('_bailFixModal').remove()" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
+                </div>
+                <p class="text-[11px] text-gray-500 mb-3">차감만 있고 도착지 입금이 누락된 건들. 도착지를 골라주면 짝(양수) 항목을 자동 생성하고 [이동] 메모로 라벨링.</p>
+                ${cards}
+                <div class="flex gap-2 mt-3">
+                  <button onclick="document.getElementById('_bailFixModal').remove()" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-bold text-xs">취소</button>
+                  <button onclick="window._bailApplyOrphanFix([${negs.map(h => h.id).join(',')}])" class="flex-1 py-2.5 bg-rose-500 text-white rounded-xl font-bold text-xs"><i class="fas fa-wrench mr-1"></i>선택한 도착지로 보정</button>
+                </div>
+              </div>`;
+            document.body.appendChild(modal);
+        };
+
+        window._bailApplyOrphanFix = async (ids) => {
+            const hist = appState.bailHistory || [];
+            let fixed = 0, skipped = 0;
+            for (const id of ids) {
+                const dest = document.getElementById(`_fxDest_${id}`)?.value;
+                if (!dest) { skipped++; continue; }
+                const h = hist.find(x => x.id === id);
+                if (!h) { skipped++; continue; }
+                const amt = Math.abs(parseInt(h.amount) || 0);
+                try {
+                    // 짝(양수) 입금 항목 생성
+                    const newMemo = `[이동] ${h.receiver} → ${dest}${h.memo ? ' · ' + h.memo : ''}`;
+                    const { error: e1 } = await supaDb.from('bail_history').insert({
+                        date: h.date, payer: `(이동) ${h.receiver}`,
+                        receiver: dest, amount: amt, memo: newMemo
+                    });
+                    if (e1) throw e1;
+                    // 기존 음수 항목 메모 [이동]으로 변경
+                    const updMemo = `[이동] ${h.receiver} → ${dest}${h.memo ? ' · ' + h.memo : ''}`;
+                    const { error: e2 } = await supaDb.from('bail_history').update({ memo: updMemo, payer: `(이동) ${h.receiver}` }).eq('id', id);
+                    if (e2) console.warn('memo update fail', e2);
+                    fixed++;
+                } catch (e) {
+                    console.warn('fix fail', id, e);
+                    skipped++;
+                }
+            }
+            window.showMsg(`보정 ${fixed}건 · 스킵 ${skipped}건`, fixed > 0 ? 'success' : 'info');
+            document.getElementById('_bailFixModal')?.remove();
+            await window.fetchMembers();
+            const content = document.getElementById('contentArea');
+            if (content && window.renderBail) window.renderBail(content);
         };
 
         // bail_history 단건 수정 — 모달
