@@ -383,7 +383,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
  </div>
 
  <script>
-  const APP_VERSION = '2026.06.17.0030';
+  const APP_VERSION = '2026.06.17.0040';
   const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const supaDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3855,22 +3855,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                         <button onclick="window.setBailType('transfer')" class="bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all bg-gray-100 text-gray-400 hover:bg-gray-200" data-type="transfer">↔ 이동</button>
                     </div>
                     ${isAdmin() ? `
-                    <div class="space-y-2 mb-4">
-                      <button onclick="window._bailBackfillSinceMay14()" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="2026-05-14 이후 처리된 수로 신청만 길드창고로 동기화 (디스코드 기능 도입 이후)">
-                        <i class="fa-brands fa-discord mr-1.5"></i>05.14 이후 길드창고 동기화
+                    <div class="mb-4">
+                      <button onclick="window._bailBackfillSinceMay14()" class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="수락 누르면 자동 등록되니까 평소엔 안 써도 됨. 누락된 게 있을 때만 1회 클릭">
+                        <i class="fas fa-sync mr-1.5"></i>수로 보석금 누락분 동기화
                       </button>
-                      <button onclick="window._bailBackfillHistory()" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="처리된 수로 신청 전체 중 내역에 없는 것을 일괄 등록 (5/14 이전 옛날 것 포함)">
-                        <i class="fas fa-sync mr-1.5"></i>수로 보석금 전체 누락분 동기화
-                      </button>
-                      <button onclick="window._bailSmartFixReceivers()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="05.14 이전 건은 원래 간부진명으로 복원, 이후 건은 길드창고로 지정">
-                        <i class="fas fa-rotate-left mr-1.5"></i>수령자 스마트 정정 (05.14 기준)
-                      </button>
-                      <button onclick="window._bailFixOrphanTransfers()" class="w-full py-2.5 bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="음수만 있고 짝(양수)이 없는 이동 의심건을 도착지 지정해서 보정">
-                        <i class="fas fa-link-slash mr-1.5"></i>꼬인 이동건 보정
-                      </button>
-                      <button onclick="window._bailRollbackToday()" class="w-full py-2.5 bg-gray-900 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="오늘 작업 전 상태로 bail_history만 되돌림 (수로 신청 DB는 그대로)">
-                        <i class="fas fa-undo mr-1.5"></i>오늘 작업 전 상태로 롤백
-                      </button>
+                      <p class="text-[9px] text-gray-400 text-center mt-1.5">평소엔 자동 — 수락 누르면 길드창고로 자동 등록됨</p>
                     </div>` : ''}
                     <div class="space-y-6 flex-1 overflow-y-auto no-scrollbar pb-6">
                         <div id="bailDepositForm">
