@@ -383,7 +383,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
  </div>
 
  <script>
-  const APP_VERSION = '2026.06.06.1108';
+  const APP_VERSION = '2026.06.16.2300';
   const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const supaDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3790,13 +3790,27 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const historyRows = [...appState.bailHistory].reverse().map(h => {
                 const amt = parseInt(h.amount) || 0;
                 const isUse = amt < 0;
-                const typeBadge = isUse ? '<span class="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded text-[9px] font-bold">사용</span>' : '<span class="bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded text-[9px] font-bold">납부</span>';
-                const amtColor = isUse ? 'text-blue-500' : 'text-pink-500';
-                const amtDisplay = isUse ? `${amt}개` : `+${amt}개`;
+                const isTransfer = (h.memo || '').startsWith('[이동]');
+                const isWarehouse = (h.receiver || '').includes('길드창고');
+                let typeBadge;
+                if (isTransfer) typeBadge = '<span class="bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded text-[9px] font-bold">↔ 이동</span>';
+                else if (isUse) typeBadge = '<span class="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded text-[9px] font-bold">사용</span>';
+                else typeBadge = '<span class="bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded text-[9px] font-bold">납부</span>';
+                const amtColor = isTransfer ? 'text-violet-500' : (isUse ? 'text-blue-500' : 'text-pink-500');
+                const amtDisplay = isTransfer ? `↔ ${Math.abs(amt)}개` : (isUse ? `${amt}개` : `+${amt}개`);
                 const memo = h.memo ? `<span class="text-[10px] text-gray-400 ml-1">(${h.memo})</span>` : '';
-                return `<tr class="hover:bg-gray-50 border-b border-gray-50 h-12 transition-colors font-bold text-xs"><td class="p-4 font-mono text-gray-400 text-[10px]">${h.date}</td><td class="p-4">${typeBadge}</td><td class="p-4 text-gray-700">${h.payer}${memo}</td><td class="p-4 text-blue-500">${h.receiver}</td><td class="p-4 text-right ${amtColor}">${amtDisplay}</td></tr>`;
+                const receiverDisplay = isWarehouse
+                  ? `<span class="text-cyan-600 font-bold"><i class="fas fa-warehouse mr-1 text-[10px]"></i>${h.receiver}</span>`
+                  : `<span class="text-blue-500">${h.receiver}</span>`;
+                return `<tr class="hover:bg-gray-50 border-b border-gray-50 h-12 transition-colors font-bold text-xs ${isTransfer ? 'bg-violet-50/30' : ''}"><td class="p-4 font-mono text-gray-400 text-[10px]">${h.date}</td><td class="p-4">${typeBadge}</td><td class="p-4 text-gray-700">${h.payer}${memo}</td><td class="p-4">${receiverDisplay}</td><td class="p-4 text-right ${amtColor}">${amtDisplay}</td></tr>`;
             }).join('');
-            const statsHtml = adminStats.map(([name, count]) => `<div class="bg-gray-50 rounded-2xl p-4 flex justify-between items-center border border-gray-100 hover:bg-white transition-all shadow-sm"><span class="font-bold text-gray-700 text-xs">${name}</span><span class="font-black ${count >= 0 ? 'text-pink-500' : 'text-blue-500'} text-lg">${count}개</span></div>`).join('');
+            const statsHtml = adminStats.map(([name, count]) => {
+              const isWh = (name || '').includes('길드창고');
+              const icon = isWh ? '<i class="fas fa-warehouse mr-1 text-cyan-500 text-[10px]"></i>' : '';
+              const nameClass = isWh ? 'text-cyan-700' : 'text-gray-700';
+              const bgClass = isWh ? 'bg-cyan-50' : 'bg-gray-50';
+              return `<div class="${bgClass} rounded-2xl p-4 flex justify-between items-center border border-gray-100 hover:bg-white transition-all shadow-sm"><span class="font-bold ${nameClass} text-xs">${icon}${name}</span><span class="font-black ${count >= 0 ? 'text-pink-500' : 'text-blue-500'} text-lg">${count}개</span></div>`;
+            }).join('');
             container.innerHTML = `<div class="grid grid-cols-1 ${isAdmin() ? 'lg:grid-cols-3' : ''} gap-8 fade-in h-full">
                 ${isAdmin() ? `<div class="lg:col-span-1 bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col lg:h-full lg:overflow-hidden">
                     <div class="mb-6">
@@ -3809,16 +3823,29 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                     <div class="flex gap-2 mb-6" id="bailTypeToggle">
                         <button onclick="window.setBailType('deposit')" class="bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all bg-pink-500 text-white shadow-md" data-type="deposit">💎 납부</button>
                         <button onclick="window.setBailType('use')" class="bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all bg-gray-100 text-gray-400 hover:bg-gray-200" data-type="use">📦 사용</button>
+                        <button onclick="window.setBailType('transfer')" class="bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all bg-gray-100 text-gray-400 hover:bg-gray-200" data-type="transfer">↔ 이동</button>
                     </div>
                     ${isAdmin() ? `
-                    <button onclick="window._bailBackfillHistory()" class="w-full mb-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="수로 보석금 신청 중 처리됐는데 내역에 없는 것을 일괄 등록">
+                    <div class="space-y-2 mb-4">
+                      <button onclick="window._bailBackfillHistory()" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="수로 보석금 신청 중 처리됐는데 내역에 없는 것을 일괄 등록">
                         <i class="fas fa-sync mr-1.5"></i>수로 보석금 누락분 동기화
-                    </button>` : ''}
+                      </button>
+                      <button onclick="window._bailFixReceiverToWarehouse()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="수로 신청으로 자동 연동된 건의 수령자를 간부진→길드창고로 일괄 정정">
+                        <i class="fas fa-warehouse mr-1.5"></i>수령자 → 길드창고 일괄 정정
+                      </button>
+                    </div>` : ''}
                     <div class="space-y-6 flex-1 overflow-y-auto no-scrollbar pb-6">
                         <div id="bailDepositForm">
                             <div class="space-y-4">
                                 <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">납부자</label><input type="text" id="bailPayerInput" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-inner" placeholder="닉네임 직접 입력"></div>
-                                <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">수령자</label><select id="bailReceiver" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-sm cursor-pointer">${receivers.map(r=>`<option value="${r.name}">${r.name} (${r.role})</option>`).join('')}</select></div>
+                                <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">수령자</label><select id="bailReceiver" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-sm cursor-pointer">
+                                  <optgroup label="🏦 길드창고">
+                                    ${window._bailWarehouseOptions.map(w => `<option value="${w}">${w}</option>`).join('')}
+                                  </optgroup>
+                                  <optgroup label="👤 운영진">
+                                    ${receivers.map(r=>`<option value="${r.name}">${r.name} (${r.role})</option>`).join('')}
+                                  </optgroup>
+                                </select></div>
                                 <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">수량</label><input type="number" id="bailAmount" value="1" min="1" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-inner"></div>
                                 <button onclick="window.submitBail()" id="btnBailSubmit" class="w-full py-6 bg-gray-900 text-white rounded-[2rem] font-bold text-xs shadow-2xl hover:bg-black transition-all active:scale-[0.98]">💎 납부 확인 및 저장</button>
                             </div>
@@ -3826,9 +3853,39 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                         <div id="bailUseForm" class="hidden">
                             <div class="space-y-4">
                                 <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">사용 사유</label><input type="text" id="bailUseMemo" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-inner" placeholder="예: 길드 이벤트 보상"></div>
-                                <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">담당자</label><select id="bailUseReceiver" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-sm cursor-pointer">${receivers.map(r=>`<option value="${r.name}">${r.name} (${r.role})</option>`).join('')}</select></div>
+                                <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">출처 (어디서 차감)</label><select id="bailUseReceiver" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-sm cursor-pointer">
+                                  <optgroup label="🏦 길드창고">
+                                    ${window._bailWarehouseOptions.map(w => `<option value="${w}">${w}</option>`).join('')}
+                                  </optgroup>
+                                  <optgroup label="👤 운영진">
+                                    ${receivers.map(r=>`<option value="${r.name}">${r.name} (${r.role})</option>`).join('')}
+                                  </optgroup>
+                                </select></div>
                                 <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">사용 수량</label><input type="number" id="bailUseAmount" value="1" min="1" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-inner"></div>
                                 <button onclick="window.submitBailUse()" id="btnBailUseSubmit" class="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-bold text-xs shadow-2xl hover:bg-blue-700 transition-all active:scale-[0.98]">📦 사용 확인 및 저장</button>
+                            </div>
+                        </div>
+                        <div id="bailTransferForm" class="hidden">
+                            <div class="space-y-4">
+                                <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">출발 (From)</label><select id="bailTransferFrom" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-sm cursor-pointer">
+                                  <optgroup label="🏦 길드창고">
+                                    ${window._bailWarehouseOptions.map(w => `<option value="${w}">${w}</option>`).join('')}
+                                  </optgroup>
+                                  <optgroup label="👤 운영진">
+                                    ${receivers.map(r=>`<option value="${r.name}">${r.name} (${r.role})</option>`).join('')}
+                                  </optgroup>
+                                </select></div>
+                                <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">도착 (To)</label><select id="bailTransferTo" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-sm cursor-pointer">
+                                  <optgroup label="🏦 길드창고">
+                                    ${window._bailWarehouseOptions.map((w, i) => `<option value="${w}" ${i===1?'selected':''}>${w}</option>`).join('')}
+                                  </optgroup>
+                                  <optgroup label="👤 운영진">
+                                    ${receivers.map(r=>`<option value="${r.name}">${r.name} (${r.role})</option>`).join('')}
+                                  </optgroup>
+                                </select></div>
+                                <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">이동 수량</label><input type="number" id="bailTransferAmount" value="1" min="1" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-inner"></div>
+                                <div class="space-y-2"><label class="text-[10px] font-bold text-gray-400 ml-1 uppercase">사유 (선택)</label><input type="text" id="bailTransferMemo" class="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm font-bold outline-none shadow-inner" placeholder="예: 길드창고 통합"></div>
+                                <button onclick="window.submitBailTransfer()" id="btnBailTransferSubmit" class="w-full py-6 bg-violet-600 text-white rounded-[2rem] font-bold text-xs shadow-2xl hover:bg-violet-700 transition-all active:scale-[0.98]">↔ 다조 이동 저장</button>
                             </div>
                         </div>
                         <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t">
@@ -3836,7 +3893,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                             <div class="bg-blue-50 rounded-xl p-3 text-center"><p class="text-[9px] text-gray-400 font-bold">총 사용</p><p class="text-sm font-black text-blue-500">-${totalStats.totalOut}</p></div>
                             <div class="bg-gray-50 rounded-xl p-3 text-center"><p class="text-[9px] text-gray-400 font-bold">잔여</p><p class="text-sm font-black ${totalStats.net >= 0 ? 'text-green-500' : 'text-red-500'}">${totalStats.net}</p></div>
                         </div>
-                        <div class="mt-4 border-t pt-4"><h4 class="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest">간부별 수령 총계</h4><div class="grid grid-cols-1 gap-2">${statsHtml || '<p class="text-[10px] text-gray-300 italic text-center">데이터 없음</p>'}</div></div>
+                        <div class="mt-4 border-t pt-4"><h4 class="text-xs font-bold text-gray-400 mb-4 uppercase tracking-widest">수령자별 잔액</h4><div class="grid grid-cols-1 gap-2">${statsHtml || '<p class="text-[10px] text-gray-300 italic text-center">데이터 없음</p>'}</div></div>
                     </div>
                 </div>
                 <div class="lg:col-span-2 bg-white rounded-[3rem] border border-gray-100 shadow-sm flex flex-col lg:h-full lg:overflow-hidden">
@@ -3857,13 +3914,92 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         window.setBailType = (type) => {
             const depForm = document.getElementById('bailDepositForm');
             const useForm = document.getElementById('bailUseForm');
+            const trForm = document.getElementById('bailTransferForm');
             const btns = document.querySelectorAll('.bail-type-btn');
+            const activeColors = { deposit: 'bg-pink-500 text-white shadow-md', use: 'bg-blue-600 text-white shadow-md', transfer: 'bg-violet-600 text-white shadow-md' };
             btns.forEach(b => {
-                if (b.dataset.type === type) { b.className = 'bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all ' + (type === 'deposit' ? 'bg-pink-500 text-white shadow-md' : 'bg-blue-600 text-white shadow-md'); }
+                if (b.dataset.type === type) { b.className = 'bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all ' + (activeColors[type] || activeColors.deposit); }
                 else { b.className = 'bail-type-btn flex-1 py-3 rounded-2xl font-bold text-xs transition-all bg-gray-100 text-gray-400 hover:bg-gray-200'; }
             });
-            if (type === 'deposit') { depForm.classList.remove('hidden'); useForm.classList.add('hidden'); }
-            else { depForm.classList.add('hidden'); useForm.classList.remove('hidden'); }
+            depForm?.classList.add('hidden');
+            useForm?.classList.add('hidden');
+            trForm?.classList.add('hidden');
+            if (type === 'deposit') depForm?.classList.remove('hidden');
+            else if (type === 'use') useForm?.classList.remove('hidden');
+            else if (type === 'transfer') trForm?.classList.remove('hidden');
+        };
+
+        // 다조 이동 — bail_history에 2건(출처 -amount, 도착 +amount) 기록
+        window.submitBailTransfer = async () => {
+            const fI = document.getElementById('bailTransferFrom');
+            const tI = document.getElementById('bailTransferTo');
+            const aI = document.getElementById('bailTransferAmount');
+            const mI = document.getElementById('bailTransferMemo');
+            const btn = document.getElementById('btnBailTransferSubmit');
+            const from = fI.value, to = tI.value, amount = parseInt(aI.value) || 0, memo = mI.value.trim();
+            if (!from || !to || !amount) return window.showMsg('출발/도착/수량을 모두 입력하세요', 'error');
+            if (from === to) return window.showMsg('출발과 도착이 같습니다', 'error');
+            if (!confirm(`${from} → ${to} 다조 ${amount}개 이동을 저장하시겠습니까?`)) return;
+            if (btn) { btn.disabled = true; btn.innerText = '전송 중...'; }
+            const date = new Date().toISOString().slice(0, 10);
+            const baseMemo = `[이동] ${from} → ${to}${memo ? ' · ' + memo : ''}`;
+            try {
+                const { error: e1 } = await supaDb.from('bail_history').insert({
+                    date, payer: `(이동) ${from}`, receiver: from,
+                    amount: -amount, memo: baseMemo
+                });
+                if (e1) throw e1;
+                const { error: e2 } = await supaDb.from('bail_history').insert({
+                    date, payer: `(이동) ${from}`, receiver: to,
+                    amount: amount, memo: baseMemo
+                });
+                if (e2) throw e2;
+                window.showMsg(`이동 완료: ${from} → ${to} (${amount}개)`, 'success');
+                aI.value = '1'; mI.value = '';
+                await window.fetchMembers();
+                const content = document.getElementById('contentArea');
+                if (content && window.renderBail) window.renderBail(content);
+            } catch (e) {
+                console.error(e);
+                window.showMsg('이동 저장 실패: ' + e.message, 'error');
+                if (btn) { btn.disabled = false; btn.innerText = '↔ 다조 이동 저장'; }
+            }
+        };
+
+        // 수령자 → 길드창고 일괄 정정 (bail_request_id 있는 건만)
+        window._bailFixReceiverToWarehouse = async () => {
+            if (!confirm('수로 신청으로 자동 연동된 보석금 내역의 수령자를 길드창고로 일괄 정정합니다. 진행할까요?')) return;
+            try {
+                // bail_request_id 있는 것만 — 정정 대상
+                const { data: linked, error: e1 } = await supaDb.from('bail_history')
+                    .select('id, bail_request_id, receiver')
+                    .not('bail_request_id', 'is', null);
+                if (e1) throw e1;
+                if (!linked || linked.length === 0) { window.showMsg('정정 대상 없음', 'info'); return; }
+                // bail_request의 payer_guild로 길드창고 결정
+                const reqIds = [...new Set(linked.map(h => h.bail_request_id))];
+                const { data: reqs, error: e2 } = await supaDb.from('bail_requests')
+                    .select('id, payer_guild').in('id', reqIds);
+                if (e2) throw e2;
+                const guildMap = {};
+                (reqs || []).forEach(r => { guildMap[r.id] = r.payer_guild; });
+                // 변경 필요한 것만 골라서 update
+                let fixed = 0;
+                for (const h of linked) {
+                    const target = window._bailGuildWarehouse(guildMap[h.bail_request_id]);
+                    if (h.receiver === target) continue;
+                    const { error: e3 } = await supaDb.from('bail_history').update({ receiver: target }).eq('id', h.id);
+                    if (e3) { console.warn('fix failed for', h.id, e3); continue; }
+                    fixed++;
+                }
+                window.showMsg(`${fixed}건 길드창고로 정정됨`, 'success');
+                await window.fetchMembers();
+                const content = document.getElementById('contentArea');
+                if (content && window.renderBail) window.renderBail(content);
+            } catch (e) {
+                console.error(e);
+                window.showMsg('정정 실패: ' + e.message, 'error');
+            }
         };
 
         window.submitBail = async () => {
@@ -9143,7 +9279,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       window._bailNotifyBulk(action, rowsForNotify);
       if (action === 'noble_unlocked') {
         for (const r of rowsForNotify) {
-          await window._bailSyncToHistory({ ...r, processed_by: me, processed_at: nowIso, unlocked_by: me, unlocked_at: nowIso }, { receiver: me });
+          // 다조는 길드창고로 입금됨 — receiver는 자동으로 "{길드} 길드창고"
+          await window._bailSyncToHistory({ ...r, processed_by: me, processed_at: nowIso, unlocked_by: me, unlocked_at: nowIso });
         }
       }
       st.selectedIds = [];
@@ -9262,10 +9399,19 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
 
   // ============ 보석금 관리(bail_history) 자동 연동 ============
+  // 수로 보석금 = 멤버가 길드창고로 직접 입금 (간부진은 승인만, 다조는 길드창고로 들어감)
+  // 따라서 receiver = "{길드} 길드창고" — 간부진 개인 카운트 X
+  // 다조 입금되는 길드창고 = 뚠/뚱 두 개만 존재 (밤·별·달·꿀·솜은 뚠 창고로)
+  window._bailGuildWarehouse = (guild) => {
+    if (guild === '뚱카롱') return '뚱카롱 길드창고';
+    return '뚠카롱 길드창고';
+  };
+  window._bailWarehouseOptions = ['뚠카롱 길드창고', '뚱카롱 길드창고'];
   // 처리 완료된 수로 신청을 bail_history에 1:1로 자동 등록 (bail_request_id로 중복 방지)
   window._bailSyncToHistory = async (row, opts = {}) => {
     if (!row || !row.id) return;
-    const receiver = opts.receiver || row.unlocked_by || row.processed_by || _bailAdminName();
+    // 수로 보석금은 길드창고로 입금됨 — 간부진(processed_by)이 아니라 길드창고가 수령자
+    const receiver = opts.receiver || window._bailGuildWarehouse(row.payer_guild);
     const dateIso = row.processed_at || row.unlocked_at || new Date().toISOString();
     const date = String(dateIso).slice(0, 10);
     const memoExtras = [];
@@ -9322,9 +9468,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
         return;
       }
       if (!confirm(`누락된 ${missing.length}건을 보석금 내역에 일괄 등록하시겠습니까?`)) return;
-      // 3. 누락분 일괄 insert
+      // 3. 누락분 일괄 insert — 길드창고로 지정
       const payload = missing.map(r => {
-        const receiver = r.unlocked_by || r.processed_by || _bailAdminName();
+        const receiver = window._bailGuildWarehouse(r.payer_guild);
         const dateIso = r.processed_at || r.unlocked_at || new Date().toISOString();
         const date = String(dateIso).slice(0, 10);
         const extras = [];
@@ -9416,7 +9562,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       window.showMsg('입금 확인 완료', 'success');
       if (row) {
         window._bailNotifyAction('approved', row, note);
-        window._bailSyncToHistory({ ...row, processed_by: me, processed_at: nowIso }, { receiver: me });
+        // 다조는 길드창고로 입금됨 — receiver는 자동으로 "{길드} 길드창고"
+        window._bailSyncToHistory({ ...row, processed_by: me, processed_at: nowIso });
       }
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
@@ -9437,7 +9584,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       window.showMsg('노블 해제 완료 처리됨', 'success');
       if (row) {
         window._bailNotifyAction('noble_unlocked', row);
-        window._bailSyncToHistory({ ...row, processed_by: me, processed_at: nowIso, unlocked_by: me, unlocked_at: nowIso }, { receiver: me });
+        // 다조는 길드창고로 입금됨 — receiver는 자동으로 "{길드} 길드창고"
+        window._bailSyncToHistory({ ...row, processed_by: me, processed_at: nowIso, unlocked_by: me, unlocked_at: nowIso });
       }
       window.renderBailRequest(document.getElementById('reqQueueContent') || document.getElementById('contentArea'));
     } catch(e) { window.showMsg('처리 실패: ' + e.message, 'error'); }
@@ -9700,10 +9848,10 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     try {
       const { data: inserted, error } = await supaDb.from('bail_requests').insert(payload).select();
       if (error) throw error;
-      // 보석금 관리(bail_history)에도 자동 등록
+      // 보석금 관리(bail_history)에도 자동 등록 — 길드창고로 자동 지정
       if (Array.isArray(inserted)) {
         for (const r of inserted) {
-          await window._bailSyncToHistory(r, { receiver: r.processed_by || r.unlocked_by });
+          await window._bailSyncToHistory(r);
         }
       }
       window.showMsg(`${rows.length}건 등록 완료 (보석금 내역 자동 연동됨)`, 'success');

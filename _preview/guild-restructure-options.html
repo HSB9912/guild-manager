@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>길드 2개 체제 — 운영 리빌딩 옵션</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }
+  .opt-card { transition: transform .2s; }
+  .opt-card:hover { transform: translateY(-2px); }
+  .bar { height: 8px; border-radius: 4px; background: linear-gradient(to right, #10b981 0%, #f59e0b 50%, #ef4444 100%); position: relative; }
+  .marker { position: absolute; top: -4px; width: 16px; height: 16px; border-radius: 50%; background: white; border: 3px solid #1f2937; transform: translateX(-50%); }
+</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-6xl mx-auto space-y-6">
+
+  <!-- 헤더 -->
+  <header class="bg-gradient-to-r from-violet-600 via-pink-500 to-amber-500 text-white rounded-2xl p-6 shadow-lg">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="text-3xl">🏛️</div>
+      <div>
+        <h1 class="text-2xl font-black">길드 2개 체제 — 운영 리빌딩 옵션 5가지</h1>
+        <p class="text-[12px] opacity-90 mt-0.5">밤·별·달·꿀·솜카롱 해체 → 뚠카롱·뚱카롱 2개만 남는 시나리오 대비</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 문제 정의 -->
+  <section class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-rose-700 mb-2">🎯 풀어야 할 문제</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[12px]">
+      <div class="bg-white rounded-lg p-3 border border-rose-100">
+        <div class="font-bold text-gray-800 mb-1">📉 보석금 수입 ↓</div>
+        <div class="text-gray-600 text-[11px]">길드 수↓ → 멤버 수 자연 감소 → 수로 미참 보석금 풀 ↓</div>
+      </div>
+      <div class="bg-white rounded-lg p-3 border border-rose-100">
+        <div class="font-bold text-gray-800 mb-1">📈 운영진 부담 →</div>
+        <div class="text-gray-600 text-[11px]">이벤트·관리 비용은 그대로 (혹은 ↑) → 운영진 사비 부담 위험</div>
+      </div>
+      <div class="bg-white rounded-lg p-3 border border-rose-100">
+        <div class="font-bold text-gray-800 mb-1">😊 멤버 부담 ↓</div>
+        <div class="text-gray-600 text-[11px]">부캐 일일이 수로 안 돌려도 됨 → 자동 혜택 → 좋은 신호</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 옵션 1 -->
+  <section class="opt-card bg-white border-2 border-emerald-300 rounded-2xl p-5 shadow">
+    <div class="flex items-start gap-3 mb-3">
+      <div class="text-2xl">💎</div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-emerald-500 text-white rounded">옵션 1</div>
+          <h2 class="text-lg font-black text-gray-900">길드 가입금 도입</h2>
+        </div>
+        <p class="text-[12px] text-gray-600">신규 가입 시 1회성 메소(예: 5억~10억) 납부 → 안정적 기초 수입</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+      <div class="bg-emerald-50 rounded-lg p-3">
+        <div class="font-bold text-emerald-700 mb-1">✅ 장점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>수입이 명확·예측 가능</li>
+          <li>가입자 진성도 검증 (장벽)</li>
+          <li>잘못 받아도 환불 정책 명확하게 가능</li>
+        </ul>
+      </div>
+      <div class="bg-rose-50 rounded-lg p-3">
+        <div class="font-bold text-rose-700 mb-1">❌ 단점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>신규 모집 진입장벽 ↑</li>
+          <li>"길드인데 돈 받냐" 반발 가능</li>
+          <li>기존 멤버 형평성 이슈 (전환 비용)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-3 flex items-center gap-3">
+      <span class="text-[10px] font-bold text-gray-500 w-16">멤버 부담</span>
+      <div class="flex-1 bar"><div class="marker" style="left:25%"></div></div>
+      <span class="text-[10px] text-gray-400">1회성 5~10억</span>
+    </div>
+  </section>
+
+  <!-- 옵션 2 -->
+  <section class="opt-card bg-white border-2 border-blue-300 rounded-2xl p-5 shadow">
+    <div class="flex items-start gap-3 mb-3">
+      <div class="text-2xl">📊</div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-blue-500 text-white rounded">옵션 2</div>
+          <h2 class="text-lg font-black text-gray-900">활동 점수제 + 차등 보석금</h2>
+        </div>
+        <p class="text-[12px] text-gray-600">월 활동 점수 ≥ X → 보석금 면제/할인 &nbsp; vs &nbsp; 활동 ↓ → 누진 보석금</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+      <div class="bg-emerald-50 rounded-lg p-3">
+        <div class="font-bold text-emerald-700 mb-1">✅ 장점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>활동 적극 멤버는 부담 ↓ (보상감)</li>
+          <li>비활동 멤버는 자동 정리 효과</li>
+          <li>"공정함" 명분 → 반발 적음</li>
+        </ul>
+      </div>
+      <div class="bg-rose-50 rounded-lg p-3">
+        <div class="font-bold text-rose-700 mb-1">❌ 단점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>점수 산정 룰 합의 필요</li>
+          <li>운영진 정산 작업 ↑ (자동화 필수)</li>
+          <li>점수 게이밍 리스크</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-3 flex items-center gap-3">
+      <span class="text-[10px] font-bold text-gray-500 w-16">멤버 부담</span>
+      <div class="flex-1 bar"><div class="marker" style="left:35%"></div></div>
+      <span class="text-[10px] text-gray-400">활동량에 비례</span>
+    </div>
+  </section>
+
+  <!-- 옵션 3 -->
+  <section class="opt-card bg-white border-2 border-amber-300 rounded-2xl p-5 shadow">
+    <div class="flex items-start gap-3 mb-3">
+      <div class="text-2xl">🤝</div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-amber-500 text-white rounded">옵션 3</div>
+          <h2 class="text-lg font-black text-gray-900">이벤트 호스트(스폰서) 모집제</h2>
+        </div>
+        <p class="text-[12px] text-gray-600">운영진은 기획·진행만, 보상 메소는 멤버 스폰서가 분담 → 호스트는 명예/배지</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+      <div class="bg-emerald-50 rounded-lg p-3">
+        <div class="font-bold text-emerald-700 mb-1">✅ 장점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>운영진 사비 부담 ↓↓</li>
+          <li>참여형 운영 → 공동체 강화</li>
+          <li>여유 있는 멤버가 자발적 기여</li>
+        </ul>
+      </div>
+      <div class="bg-rose-50 rounded-lg p-3">
+        <div class="font-bold text-rose-700 mb-1">❌ 단점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>호스트 안 모이면 이벤트 무산</li>
+          <li>"운영진 일 떠넘김" 인식 위험</li>
+          <li>호스트 명예 시스템 별도 설계 필요</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-3 flex items-center gap-3">
+      <span class="text-[10px] font-bold text-gray-500 w-16">멤버 부담</span>
+      <div class="flex-1 bar"><div class="marker" style="left:20%"></div></div>
+      <span class="text-[10px] text-gray-400">자발적 참여만</span>
+    </div>
+  </section>
+
+  <!-- 옵션 4 -->
+  <section class="opt-card bg-white border-2 border-violet-300 rounded-2xl p-5 shadow">
+    <div class="flex items-start gap-3 mb-3">
+      <div class="text-2xl">🏦</div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-violet-500 text-white rounded">옵션 4</div>
+          <h2 class="text-lg font-black text-gray-900">운영 펀드 + 투명 회계 공개</h2>
+        </div>
+        <p class="text-[12px] text-gray-600">길드 금고를 "운영비/이벤트비/예비비"로 분리 → 사이트에서 잔액·지출 실시간 공개</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+      <div class="bg-emerald-50 rounded-lg p-3">
+        <div class="font-bold text-emerald-700 mb-1">✅ 장점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>운영진 투명성 → 신뢰 ↑</li>
+          <li>부족분 명시 → 자발 후원 유도</li>
+          <li>회계 의심·소문 차단</li>
+        </ul>
+      </div>
+      <div class="bg-rose-50 rounded-lg p-3">
+        <div class="font-bold text-rose-700 mb-1">❌ 단점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>회계 기록·공개 작업 필요 (자동화로 해결)</li>
+          <li>그 자체로 수입 증가 효과 ↓</li>
+          <li>다른 옵션과 조합 필요</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-3 flex items-center gap-3">
+      <span class="text-[10px] font-bold text-gray-500 w-16">멤버 부담</span>
+      <div class="flex-1 bar"><div class="marker" style="left:10%"></div></div>
+      <span class="text-[10px] text-gray-400">없음 (인프라성)</span>
+    </div>
+  </section>
+
+  <!-- 옵션 5 -->
+  <section class="opt-card bg-white border-2 border-pink-300 rounded-2xl p-5 shadow">
+    <div class="flex items-start gap-3 mb-3">
+      <div class="text-2xl">🎫</div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-1">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-pink-500 text-white rounded">옵션 5</div>
+          <h2 class="text-lg font-black text-gray-900">월정액 멤버십 (선택제)</h2>
+        </div>
+        <p class="text-[12px] text-gray-600">A형: 월 3~5억 정액 → 보석금 면제 &nbsp; vs &nbsp; B형: 활동제(기존 유지) → 멤버 선택</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+      <div class="bg-emerald-50 rounded-lg p-3">
+        <div class="font-bold text-emerald-700 mb-1">✅ 장점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>안정적 정기 수입 확보</li>
+          <li>멤버 선택권 → 강제성 ↓</li>
+          <li>여유 멤버는 편의성 구매 → 윈윈</li>
+        </ul>
+      </div>
+      <div class="bg-rose-50 rounded-lg p-3">
+        <div class="font-bold text-rose-700 mb-1">❌ 단점</div>
+        <ul class="text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>2가지 트랙 관리 복잡도 ↑</li>
+          <li>"돈으로 면제 사기" 비판 가능</li>
+          <li>가격 책정 합의 어려움</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-3 flex items-center gap-3">
+      <span class="text-[10px] font-bold text-gray-500 w-16">멤버 부담</span>
+      <div class="flex-1 bar"><div class="marker" style="left:40%"></div></div>
+      <span class="text-[10px] text-gray-400">선택형 — 본인 결정</span>
+    </div>
+  </section>
+
+  <!-- 추천 조합 -->
+  <section class="bg-gradient-to-br from-indigo-50 to-violet-50 border-2 border-indigo-300 rounded-2xl p-6">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-2xl">🏆</div>
+      <h2 class="text-lg font-black text-indigo-900">추천 조합 — 2+3+4 하이브리드</h2>
+    </div>
+    <div class="text-[12px] text-gray-700 mb-4">"강제 부담은 줄이고, 자발적 참여는 늘리고, 운영진은 투명성으로 신뢰 확보"</div>
+
+    <div class="space-y-2">
+      <div class="bg-white rounded-lg p-3 flex gap-3 items-start">
+        <div class="text-[10px] font-black px-2 py-1 bg-blue-500 text-white rounded flex-shrink-0">기초</div>
+        <div class="text-[12px]">
+          <span class="font-bold">옵션 2 (활동 점수제)</span> — 멤버 부담은 활동량에 비례, 비활동 자동 정리 효과
+        </div>
+      </div>
+      <div class="bg-white rounded-lg p-3 flex gap-3 items-start">
+        <div class="text-[10px] font-black px-2 py-1 bg-amber-500 text-white rounded flex-shrink-0">이벤트</div>
+        <div class="text-[12px]">
+          <span class="font-bold">옵션 3 (호스트 모집제)</span> — 큰 이벤트는 스폰서 모집, 운영진은 기획·진행
+        </div>
+      </div>
+      <div class="bg-white rounded-lg p-3 flex gap-3 items-start">
+        <div class="text-[10px] font-black px-2 py-1 bg-violet-500 text-white rounded flex-shrink-0">신뢰</div>
+        <div class="text-[12px]">
+          <span class="font-bold">옵션 4 (투명 회계)</span> — 사이트에 금고 현황 공개 + 후원자 명예 표시
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 bg-indigo-100 rounded-lg p-3 text-[11px] text-indigo-900">
+      <span class="font-black">💡 왜 이 조합? </span>
+      옵션 1·5(돈 요구)는 정서적 저항 큼. 2+3+4는 "공정성·자발성·투명성" 3대 명분으로 묶여서 멤버 반발 ↓, 운영진 부담 ↓, 신뢰 ↑. 사이트 자동화로 운영 노동도 줄여줌.
+    </div>
+  </section>
+
+  <!-- 사이트 자동화 항목 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-gray-500 uppercase mb-3">🔧 어떤 옵션을 골라도 사이트가 해줘야 할 것</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+      <div class="bg-gray-50 rounded p-2.5">📊 활동 점수 자동 산정 (수로·토벌·접속)</div>
+      <div class="bg-gray-50 rounded p-2.5">💰 금고 입출금 자동 기록 + 카테고리 분류</div>
+      <div class="bg-gray-50 rounded p-2.5">🎯 호스트·후원자 자동 명예 배지/랭킹</div>
+      <div class="bg-gray-50 rounded p-2.5">📈 멤버별 누적 기여도 대시보드</div>
+      <div class="bg-gray-50 rounded p-2.5">🔔 부족 자금 자동 알림 (디스코드)</div>
+      <div class="bg-gray-50 rounded p-2.5">📋 이벤트 스폰서 모집/마감 자동 처리</div>
+    </div>
+  </section>
+
+  <!-- 다음 액션 -->
+  <section class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-amber-700 mb-2">⚡ 다음 액션</div>
+    <ol class="text-[12px] text-gray-700 space-y-1 list-decimal list-inside">
+      <li><span class="font-bold">옵션 선택</span> — 단독 1개? 추천 조합? 새 조합?</li>
+      <li>선택안 디테일 미리보기 작성 (점수 룰·금액·호스트 룰 등)</li>
+      <li>간부진 검토 → 멤버 공지 초안</li>
+      <li>본서버 적용 D-day 맞춰서 단계 도입</li>
+    </ol>
+  </section>
+
+  <footer class="text-center text-[10px] text-gray-400 pt-2">
+    Guild Manager · 운영 리빌딩 옵션 v1.0 · 2026.06
+  </footer>
+
+</div>
+</body>
+</html>

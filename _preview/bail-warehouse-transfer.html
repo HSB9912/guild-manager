@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>길드창고 + 다조 이동 UI</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-4xl mx-auto space-y-5">
+
+  <header class="bg-gradient-to-r from-cyan-600 to-violet-600 text-white rounded-2xl p-5 shadow-lg">
+    <div class="flex items-center gap-3 mb-1">
+      <div class="text-3xl">📦</div>
+      <div>
+        <h1 class="text-xl font-black">길드창고 + 다조 이동 UI</h1>
+        <p class="text-[12px] opacity-90 mt-0.5">수령자에 길드창고 추가 + 다조 이동 기능 신설</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 변경 요약 -->
+  <section class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-emerald-700 mb-2">✅ 변경 요약</div>
+    <ul class="text-[12px] text-gray-700 space-y-1 list-disc list-inside">
+      <li><b>수령자 옵션 확장</b>: 기존 마카롱·다쿠아주 + <span class="text-cyan-700 font-bold">🏦 뚠카롱 길드창고 / 🏦 뚱카롱 길드창고</span></li>
+      <li><b>수로 보석금 자동연동 변경</b>: 길드창고 입금건은 receiver = "{길드} 길드창고"로 자동 기록</li>
+      <li><b>이동 모드 신설</b>: 납부/사용 외에 <span class="text-violet-700 font-bold">📦 이동</span> 추가 — from → to 다조 이동</li>
+      <li><b>모드 토글</b>: 기존 2개(납부/사용) → 3개(납부/사용/이동)</li>
+    </ul>
+  </section>
+
+  <!-- UI 미리보기 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">🎨 UI 변경 미리보기</div>
+
+    <!-- 토글 -->
+    <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">모드 토글 (3개)</div>
+    <div class="flex gap-2 mb-5">
+      <button class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-pink-500 text-white shadow">💎 납부</button>
+      <button class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-gray-100 text-gray-400">📦 사용</button>
+      <button class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-gray-100 text-gray-400">↔ 이동</button>
+    </div>
+
+    <!-- 납부 모드 -->
+    <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">💎 납부 — 수령자 옵션 확장</div>
+    <div class="bg-gray-50 rounded-xl p-4 mb-5 space-y-3">
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">납부자</label>
+        <input type="text" placeholder="닉네임" class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">수령자 (확장됨)</label>
+        <select class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+          <optgroup label="🏦 길드창고">
+            <option>뚠카롱 길드창고</option>
+            <option>뚱카롱 길드창고</option>
+          </optgroup>
+          <optgroup label="👤 운영진">
+            <option>마카롱A (마카롱)</option>
+            <option>다쿠아주B (다쿠아즈)</option>
+          </optgroup>
+        </select>
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-gray-400 uppercase">수량 (조각)</label>
+        <input type="number" value="80" class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+      </div>
+    </div>
+
+    <!-- 이동 모드 -->
+    <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">↔ 이동 — 새 모드</div>
+    <div class="bg-violet-50 rounded-xl p-4 space-y-3 border border-violet-200">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="text-[10px] font-bold text-violet-700 uppercase">출발 (From)</label>
+          <select class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+            <optgroup label="🏦 길드창고">
+              <option>뚠카롱 길드창고</option>
+              <option>뚱카롱 길드창고</option>
+            </optgroup>
+            <optgroup label="👤 운영진">
+              <option>마카롱A</option>
+              <option>다쿠아주B</option>
+            </optgroup>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-violet-700 uppercase">도착 (To)</label>
+          <select class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+            <optgroup label="🏦 길드창고">
+              <option>뚠카롱 길드창고</option>
+              <option selected>뚱카롱 길드창고</option>
+            </optgroup>
+            <optgroup label="👤 운영진">
+              <option>마카롱A</option>
+              <option>다쿠아주B</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-violet-700 uppercase">이동 수량 (조각)</label>
+        <input type="number" value="500" class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+      </div>
+      <div>
+        <label class="text-[10px] font-bold text-violet-700 uppercase">사유 (선택)</label>
+        <input type="text" placeholder="예: 길드창고 통합" class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm">
+      </div>
+      <button class="w-full py-3 bg-violet-600 text-white rounded-xl font-bold text-xs">↔ 다조 이동 저장</button>
+    </div>
+  </section>
+
+  <!-- 내역 표시 변경 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">📋 내역 표시 변경</div>
+    <table class="w-full text-[12px]">
+      <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase">
+        <tr><th class="p-2 text-left">날짜</th><th class="p-2 text-left">구분</th><th class="p-2 text-left">납부자/사유/출발</th><th class="p-2 text-left">수령자/도착</th><th class="p-2 text-right">수량</th></tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr><td class="p-2 font-mono text-gray-400">26-06-16</td><td class="p-2"><span class="bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded text-[9px] font-bold">납부</span></td><td class="p-2">정전위험</td><td class="p-2 text-cyan-600 font-bold">🏦 뚠카롱 길드창고</td><td class="p-2 text-right text-pink-500 font-bold">+80개</td></tr>
+        <tr class="bg-violet-50"><td class="p-2 font-mono text-gray-400">26-06-16</td><td class="p-2"><span class="bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded text-[9px] font-bold">이동</span></td><td class="p-2 text-violet-600">마카롱A</td><td class="p-2 text-violet-600 font-bold">→ 🏦 뚠카롱 길드창고</td><td class="p-2 text-right text-violet-500 font-bold">↔ 500개</td></tr>
+        <tr><td class="p-2 font-mono text-gray-400">26-06-15</td><td class="p-2"><span class="bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded text-[9px] font-bold">사용</span></td><td class="p-2">길드 이벤트 보상</td><td class="p-2 text-blue-600">마카롱A</td><td class="p-2 text-right text-blue-500 font-bold">-200개</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 데이터 모델 변경 -->
+  <section class="bg-gray-900 text-white rounded-xl p-4">
+    <div class="text-[11px] font-black text-cyan-300 mb-2">⚙️ 데이터 모델 — 기존 스키마 유지</div>
+    <div class="text-[11px] text-gray-300 mb-2">
+      bail_history 테이블 그대로 사용. receiver 필드에 <span class="text-cyan-300 font-bold">"뚠카롱 길드창고"</span> 같은 문자열 저장.
+      이동 = bail_history에 2줄 (출발에서 -amount, 도착에서 +amount) 또는 1줄 + memo로 표현.
+    </div>
+    <div class="text-[10px] text-gray-400">→ <b>SQL 변경 불필요</b>. JS만 수정.</div>
+  </section>
+
+  <!-- 진행 -->
+  <section class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-amber-700 mb-2">⚡ 진행</div>
+    <ol class="text-[12px] text-gray-700 space-y-1 list-decimal list-inside">
+      <li>수령자 드롭다운에 길드창고 옵션 추가</li>
+      <li>수로 보석금 자동연동 → receiver를 길드창고로 자동 매핑</li>
+      <li>이동 모드 UI + 처리 로직 추가</li>
+      <li>내역 표시에 이동 구분 + 길드창고 강조</li>
+      <li>커밋 푸시</li>
+    </ol>
+  </section>
+
+</div>
+</body>
+</html>

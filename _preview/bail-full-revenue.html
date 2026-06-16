@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>보석금 전체 수입 분석</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-5xl mx-auto space-y-5">
+
+  <header class="bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-600 text-white rounded-2xl p-5 shadow-lg">
+    <div class="flex items-center gap-3 mb-1">
+      <div class="text-3xl">💎</div>
+      <div>
+        <h1 class="text-xl font-black">보석금 전체 수입 분석 — 5개월 누적</h1>
+        <p class="text-[12px] opacity-90 mt-0.5">2026.01.01 ~ 2026.06.04 · 88건 · 4,700 솔에르다 조각</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 총괄 -->
+  <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="bg-white rounded-xl p-4 border border-gray-200 text-center">
+      <div class="text-[10px] font-bold text-gray-500 uppercase">총 건수</div>
+      <div class="text-3xl font-black text-gray-900 mt-1">88</div>
+      <div class="text-[10px] text-gray-400">건</div>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-gray-200 text-center">
+      <div class="text-[10px] font-bold text-gray-500 uppercase">총 수입</div>
+      <div class="text-3xl font-black text-cyan-600 mt-1">4,700</div>
+      <div class="text-[10px] text-gray-400">솔에르다 조각</div>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-gray-200 text-center">
+      <div class="text-[10px] font-bold text-gray-500 uppercase">월 평균 건수</div>
+      <div class="text-3xl font-black text-violet-600 mt-1">17.6</div>
+      <div class="text-[10px] text-gray-400">건 / 월</div>
+    </div>
+    <div class="bg-white rounded-xl p-4 border border-gray-200 text-center">
+      <div class="text-[10px] font-bold text-gray-500 uppercase">월 평균 수입</div>
+      <div class="text-3xl font-black text-pink-600 mt-1">940</div>
+      <div class="text-[10px] text-gray-400">조각 / 월</div>
+    </div>
+  </section>
+
+  <!-- 월별 추이 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">📈 월별 추이</div>
+    <div class="space-y-1.5">
+      <div class="flex items-center gap-3 text-[12px]">
+        <div class="w-16 font-bold font-mono">2026-01</div>
+        <div class="flex-1 bg-gray-100 rounded h-7 relative">
+          <div class="bg-gradient-to-r from-indigo-400 to-indigo-500 h-7 rounded" style="width:67.7%"></div>
+          <span class="absolute top-0 left-2 leading-7 text-[10px] font-bold text-white">19건 · 880 조각</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-[12px]">
+        <div class="w-16 font-bold font-mono">2026-02</div>
+        <div class="flex-1 bg-gray-100 rounded h-7 relative">
+          <div class="bg-gradient-to-r from-indigo-400 to-indigo-500 h-7 rounded" style="width:70.8%"></div>
+          <span class="absolute top-0 left-2 leading-7 text-[10px] font-bold text-white">15건 · 920 조각</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-[12px]">
+        <div class="w-16 font-bold font-mono">2026-03</div>
+        <div class="flex-1 bg-gray-100 rounded h-7 relative">
+          <div class="bg-gradient-to-r from-amber-300 to-amber-400 h-7 rounded" style="width:38.5%"></div>
+          <span class="absolute top-0 left-2 leading-7 text-[10px] font-bold text-gray-700">5건 · 500 조각 <span class="text-[9px]">(누진 강세)</span></span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-[12px]">
+        <div class="w-16 font-bold font-mono">2026-04</div>
+        <div class="flex-1 bg-gray-100 rounded h-7 relative">
+          <div class="bg-gradient-to-r from-rose-500 to-pink-500 h-7 rounded" style="width:100%"></div>
+          <span class="absolute top-0 left-2 leading-7 text-[10px] font-bold text-white">🔥 31건 · 1,300 조각 (피크)</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-[12px]">
+        <div class="w-16 font-bold font-mono">2026-05</div>
+        <div class="flex-1 bg-gray-100 rounded h-7 relative">
+          <div class="bg-gradient-to-r from-violet-400 to-violet-500 h-7 rounded" style="width:78.5%"></div>
+          <span class="absolute top-0 left-2 leading-7 text-[10px] font-bold text-white">17건 · 1,020 조각</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 text-[12px]">
+        <div class="w-16 font-bold font-mono text-gray-400">2026-06</div>
+        <div class="flex-1 bg-gray-100 rounded h-7 relative">
+          <div class="bg-gray-300 h-7 rounded" style="width:6.2%"></div>
+          <span class="absolute top-0 left-12 leading-7 text-[10px] font-bold text-gray-500">1건 · 80 조각 (월초)</span>
+        </div>
+      </div>
+    </div>
+    <div class="mt-3 bg-blue-50 rounded-lg p-3 text-[11px] text-gray-700">
+      <span class="font-black text-blue-700">📌 패턴:</span>
+      1·2월 안정 → 3월 급감(설날 면제? 5건만 누진 작동) → <span class="font-bold text-rose-600">4월 폭발 31건</span> → 5월 정상화
+    </div>
+  </section>
+
+  <!-- 길드별 + 손익 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">🏰 길드별 수입 (5개월 누적)</div>
+    <div class="space-y-1.5 text-[12px]">
+      <div class="flex items-center gap-2"><div class="w-20 font-bold">뚠카롱</div><div class="flex-1 bg-pink-50 rounded h-6 relative"><div class="bg-pink-500 h-6 rounded" style="width:66.4%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-white">3,120 / 34건 (66.4%)</span></div><div class="w-16 text-right text-[10px] text-emerald-600 font-bold">✅ 유지</div></div>
+      <div class="flex items-center gap-2"><div class="w-20 font-bold">뚱카롱</div><div class="flex-1 bg-rose-50 rounded h-6 relative"><div class="bg-rose-500 h-6 rounded" style="width:16.2%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-white">760 / 17건 (16.2%)</span></div><div class="w-16 text-right text-[10px] text-emerald-600 font-bold">✅ 유지</div></div>
+      <div class="flex items-center gap-2"><div class="w-20 font-bold text-gray-500">밤카롱</div><div class="flex-1 bg-violet-50 rounded h-6 relative"><div class="bg-violet-400 h-6 rounded" style="width:7.7%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-white">360 / 15건 (7.7%)</span></div><div class="w-16 text-right text-[10px] text-rose-500 font-bold">❌ 소멸</div></div>
+      <div class="flex items-center gap-2"><div class="w-20 font-bold text-gray-500">별카롱</div><div class="flex-1 bg-blue-50 rounded h-6 relative"><div class="bg-blue-400 h-6 rounded" style="width:4.3%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-white">200 / 9건 (4.3%)</span></div><div class="w-16 text-right text-[10px] text-rose-500 font-bold">❌ 소멸</div></div>
+      <div class="flex items-center gap-2"><div class="w-20 font-bold text-gray-500">꿀카롱</div><div class="flex-1 bg-amber-50 rounded h-6 relative"><div class="bg-amber-400 h-6 rounded" style="width:3.0%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-white">140 / 7건 (3.0%)</span></div><div class="w-16 text-right text-[10px] text-rose-500 font-bold">❌ 소멸</div></div>
+      <div class="flex items-center gap-2"><div class="w-20 font-bold text-gray-500">달카롱</div><div class="flex-1 bg-emerald-50 rounded h-6 relative"><div class="bg-emerald-400 h-6 rounded" style="width:2.6%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-white">120 / 6건 (2.6%)</span></div><div class="w-16 text-right text-[10px] text-rose-500 font-bold">❌ 소멸</div></div>
+    </div>
+
+    <div class="mt-4 grid grid-cols-3 gap-3">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
+        <div class="text-[9px] font-bold text-emerald-700 uppercase">유지 (뚠+뚱)</div>
+        <div class="text-xl font-black text-emerald-700 mt-1">82.6%</div>
+        <div class="text-[10px] text-gray-500">3,880 조각 / 5개월</div>
+      </div>
+      <div class="bg-rose-50 border border-rose-200 rounded-lg p-3 text-center">
+        <div class="text-[9px] font-bold text-rose-700 uppercase">손실 (부길드)</div>
+        <div class="text-xl font-black text-rose-700 mt-1">17.4%</div>
+        <div class="text-[10px] text-gray-500">820 조각 / 5개월 = 164/월</div>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+        <div class="text-[9px] font-bold text-amber-700 uppercase">만회 인상률</div>
+        <div class="text-xl font-black text-amber-700 mt-1">+21.1%</div>
+        <div class="text-[10px] text-gray-500">뚠 80→97 · 뚱 40→48</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 누진세 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">⚡ 누진세 작동 상황</div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="bg-emerald-50 rounded-lg p-3">
+        <div class="text-[10px] font-bold text-emerald-700 uppercase">x1 (1차 위반)</div>
+        <div class="text-2xl font-black text-emerald-700 mt-1">77건</div>
+        <div class="text-[11px] text-gray-600">총 3,580 조각 (87.5%)</div>
+      </div>
+      <div class="bg-amber-50 rounded-lg p-3">
+        <div class="text-[10px] font-bold text-amber-700 uppercase">x2 (2차 위반)</div>
+        <div class="text-2xl font-black text-amber-700 mt-1">11건</div>
+        <div class="text-[11px] text-gray-600">총 1,120 조각 (12.5%)</div>
+      </div>
+    </div>
+    <div class="mt-3 bg-rose-50 rounded-lg p-3 text-[11px] text-gray-700">
+      <span class="font-black text-rose-700">📌 x3, x4 단 1건도 없음.</span>
+      반기마다 초기화 + 누진 강도 약함. <span class="font-bold">강화 여지 큼</span> (영구 누적 or x2→x4 점프).
+    </div>
+  </section>
+
+  <!-- Top 납부자 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">🏆 Top 10 납부 캐릭 (5개월 누적)</div>
+    <table class="w-full text-[12px]">
+      <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase">
+        <tr><th class="p-2 text-left">순위</th><th class="p-2 text-left">캐릭</th><th class="p-2 text-right">건수</th><th class="p-2 text-right">총액</th></tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr class="bg-rose-50"><td class="p-2 font-black">🥇 1~5</td><td class="p-2">침상위의남자, 머쯤, 맨릿, 재접, 학급붕괴</td><td class="p-2 text-right font-bold">각 2건</td><td class="p-2 text-right text-rose-600 font-black">각 240</td></tr>
+        <tr><td class="p-2 font-black">🥈 6</td><td class="p-2">먀노</td><td class="p-2 text-right">2건</td><td class="p-2 text-right">120</td></tr>
+        <tr><td class="p-2 font-black">🥉 7</td><td class="p-2">최애의앵버</td><td class="p-2 text-right">2건</td><td class="p-2 text-right">100</td></tr>
+        <tr><td class="p-2">8~10</td><td class="p-2">빈앤트, 알자니아, 최순면</td><td class="p-2 text-right">각 1건</td><td class="p-2 text-right">각 80</td></tr>
+      </tbody>
+    </table>
+    <div class="mt-2 text-[11px] text-gray-600">
+      <span class="font-bold">Top 5 = 1,200 조각 (25.5%).</span> 반복 미참자 5명이 전체 수입의 1/4 차지 → 누진 강화 대상.
+    </div>
+  </section>
+
+  <!-- 핵심 인사이트 -->
+  <section class="bg-gradient-to-br from-indigo-50 to-violet-50 border-2 border-indigo-300 rounded-2xl p-5">
+    <div class="text-sm font-black text-indigo-900 mb-3">🎯 5개월 데이터로 본 핵심 인사이트</div>
+
+    <div class="space-y-2 text-[12px] text-gray-800">
+      <div class="bg-white rounded-lg p-3">
+        <span class="font-black text-indigo-700">①</span> 부길드 비중 <span class="font-bold">17.4% (820/5개월 = 164/월)</span> — 무시하기에는 큼.
+        <span class="text-rose-600 font-bold">→ 단가 인상 없이 만회 필요</span>
+      </div>
+      <div class="bg-white rounded-lg p-3">
+        <span class="font-black text-indigo-700">②</span> 누진세는 x2까지밖에 안 감 (x3·x4 0건).
+        <span class="text-amber-600 font-bold">→ 누진 강화로 자연 수입 ↑ 가능</span>
+      </div>
+      <div class="bg-white rounded-lg p-3">
+        <span class="font-black text-indigo-700">③</span> Top 5 반복 미참자 = 1,200조각 (전체 1/4).
+        <span class="text-violet-600 font-bold">→ 이 5명한테만 누진 강화해도 큰 효과</span>
+      </div>
+      <div class="bg-white rounded-lg p-3">
+        <span class="font-black text-indigo-700">④</span> 4월 31건 폭발 — 평월의 2배.
+        <span class="text-gray-600 font-bold">→ 이벤트·시험기간·집단 사유? 패턴 분석 가치 있음</span>
+      </div>
+      <div class="bg-white rounded-lg p-3">
+        <span class="font-black text-indigo-700">⑤</span> 길드 통합되면 부캐 자동 흡수 → 본캐 1명 보석금이 부캐들 미참까지 커버.
+        <span class="text-emerald-600 font-bold">→ 1인당 부담 증가 없이 수입 유지 가능</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 만회 시나리오 비교 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">⚖️ 부길드 손실 만회 시나리오 비교</div>
+    <table class="w-full text-[12px]">
+      <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase">
+        <tr><th class="p-2 text-left">방식</th><th class="p-2 text-left">방법</th><th class="p-2 text-right">예상 회수</th><th class="p-2 text-left">멤버 부담</th><th class="p-2 text-left">운영진 부담</th></tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr><td class="p-2 font-bold">A</td><td class="p-2">단가 +21%</td><td class="p-2 text-right text-emerald-600">100%</td><td class="p-2 text-rose-600">↑ 모두에게</td><td class="p-2 text-gray-500">없음</td></tr>
+        <tr class="bg-amber-50"><td class="p-2 font-bold">B</td><td class="p-2">누진 영구 누적</td><td class="p-2 text-right text-emerald-600">~50%</td><td class="p-2 text-amber-600">↑ 상습범만</td><td class="p-2 text-gray-500">없음 (자동)</td></tr>
+        <tr class="bg-emerald-50"><td class="p-2 font-bold">C</td><td class="p-2">부캐 그룹 5명 수로 의무</td><td class="p-2 text-right text-emerald-600">100~150%</td><td class="p-2 text-emerald-600">→ 동일 (자동 흡수)</td><td class="p-2 text-emerald-600">↓ 자동화 가능</td></tr>
+        <tr><td class="p-2 font-bold">D</td><td class="p-2">아무것도 안 함</td><td class="p-2 text-right text-rose-600">0%</td><td class="p-2 text-emerald-600">↓ 감소</td><td class="p-2 text-rose-600">금고 줄어듦</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 최종 권장 -->
+  <section class="bg-gradient-to-br from-emerald-100 to-cyan-100 border-2 border-emerald-400 rounded-2xl p-6">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-3xl">🏆</div>
+      <h2 class="text-xl font-black text-emerald-900">권장 = B + C 조합</h2>
+    </div>
+    <div class="text-[13px] text-gray-800 leading-relaxed mb-3">
+      <span class="font-black">"누진 강화 + 부캐 그룹 수로 의무화 — 단가 인상 0, 운영진 부담 0"</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="bg-white rounded-lg p-4">
+        <div class="text-[11px] font-black text-amber-700 mb-1">B. 누진세 영구 누적</div>
+        <ul class="text-[11px] text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>반기 초기화 제거</li>
+          <li>누적 위반 횟수가 배수</li>
+          <li>Top 5 상습범에게만 자동 적용</li>
+          <li>코드 1줄 수정 (사이트 자동 계산)</li>
+        </ul>
+      </div>
+      <div class="bg-white rounded-lg p-4">
+        <div class="text-[11px] font-black text-cyan-700 mb-1">C. 부캐 그룹 수로 의무</div>
+        <ul class="text-[11px] text-gray-700 space-y-0.5 list-disc list-inside">
+          <li>본캐 + 부캐 5명 그룹 등록</li>
+          <li>그룹 전체 수로 의무 (예: 본캐 100%, 부캐 50%)</li>
+          <li>미참 시 보석금 동일 부과</li>
+          <li>사이트가 자동 감지·청구</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-4 bg-white/80 rounded-lg p-3 text-[11px] text-emerald-900">
+      <span class="font-black">기대 효과:</span> 부길드 손실 164/월 완전 만회 + α. 멤버는 추가 부담 없음 (성실 멤버 영향 0). 운영진은 자동화로 노동 ↓.
+    </div>
+  </section>
+
+  <footer class="text-center text-[10px] text-gray-400 pt-2">
+    Guild Manager · 전체 수입 분석 v2.0 · 2026.06
+  </footer>
+
+</div>
+</body>
+</html>

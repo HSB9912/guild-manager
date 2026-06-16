@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>보석금 추이 분석 + 향후 시나리오</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body { font-family: 'Pretendard', sans-serif; background: #f4f4f5; }</style>
+</head>
+<body class="p-4 lg:p-6">
+<div class="max-w-5xl mx-auto space-y-5">
+
+  <header class="bg-gradient-to-r from-cyan-600 to-violet-600 text-white rounded-2xl p-5 shadow-lg">
+    <div class="flex items-center gap-3 mb-1">
+      <div class="text-3xl">📊</div>
+      <div>
+        <h1 class="text-xl font-black">보석금 추이 분석 — 실수입 기준</h1>
+        <p class="text-[12px] opacity-90 mt-0.5">길드 통합 시 손익 + 단가 인상 시뮬 + 인상 없이 가는 방향</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 데이터 정제 -->
+  <section class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-amber-700 mb-2">⚠ 데이터 정제 — 내부 이체 분리</div>
+    <div class="grid grid-cols-2 gap-3 text-[12px]">
+      <div class="bg-white rounded-lg p-3 border border-amber-100">
+        <div class="font-bold text-gray-700">DB 전체 건수</div>
+        <div class="text-2xl font-black text-gray-900 mt-1">88건 <span class="text-sm font-bold text-gray-400">/ 4,700 조각</span></div>
+      </div>
+      <div class="bg-white rounded-lg p-3 border border-emerald-200">
+        <div class="font-bold text-emerald-700">실제 신규 수입 (내부 이체 제외)</div>
+        <div class="text-2xl font-black text-emerald-700 mt-1">15건 <span class="text-sm font-bold text-emerald-400">/ 1,020 조각</span></div>
+      </div>
+    </div>
+    <div class="text-[10px] text-gray-500 mt-2">제외: '일괄 임포트'·'기존 이력' 표시된 73건 / 3,680 조각 (간부진명의 창고 통합 이체)</div>
+  </section>
+
+  <!-- 실수입 월별 추이 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">📅 실수입 월별 추이</div>
+    <table class="w-full text-[12px]">
+      <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase">
+        <tr><th class="p-2 text-left">월</th><th class="p-2 text-right">건수</th><th class="p-2 text-right">총액</th><th class="p-2 text-right">고유 캐릭</th><th class="p-2 text-right">건당 평균</th></tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr><td class="p-2 font-bold">2026-05</td><td class="p-2 text-right">14</td><td class="p-2 text-right text-cyan-600 font-bold">940 조각</td><td class="p-2 text-right">13</td><td class="p-2 text-right">67</td></tr>
+        <tr class="text-gray-400"><td class="p-2 font-bold">2026-06 <span class="text-[9px]">(진행중)</span></td><td class="p-2 text-right">1</td><td class="p-2 text-right">80 조각</td><td class="p-2 text-right">1</td><td class="p-2 text-right">80</td></tr>
+      </tbody>
+    </table>
+    <div class="mt-3 bg-blue-50 rounded-lg p-3 text-[11px]">
+      <span class="font-black text-blue-700">📌 정확한 월 평균:</span> 시스템 도입(2026-05) 직후라 한 달 치(940 조각)만 유효. <span class="font-bold">월 ≈ 940 조각</span>로 잡으면 됨.
+    </div>
+  </section>
+
+  <!-- 길드별 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">🏰 실수입 길드별 (총 1,020 조각)</div>
+    <div class="space-y-1.5 text-[12px]">
+      <div class="flex items-center gap-2"><div class="w-20 font-bold">뚠카롱</div><div class="flex-1 bg-pink-100 rounded h-6 relative"><div class="bg-pink-500 h-6 rounded" style="width:62.7%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-white">640 / 6건 (62.7%)</span></div></div>
+      <div class="flex items-center gap-2"><div class="w-20 font-bold">뚱카롱</div><div class="flex-1 bg-rose-100 rounded h-6 relative"><div class="bg-rose-500 h-6 rounded" style="width:31.4%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-white">320 / 6건 (31.4%)</span></div></div>
+      <div class="flex items-center gap-2"><div class="w-20 font-bold text-gray-500">꿀카롱</div><div class="flex-1 bg-amber-100 rounded h-6 relative"><div class="bg-amber-400 h-6 rounded" style="width:3.9%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-gray-700">40 / 2건 (3.9%)</span></div></div>
+      <div class="flex items-center gap-2"><div class="w-20 font-bold text-gray-500">밤카롱</div><div class="flex-1 bg-violet-100 rounded h-6 relative"><div class="bg-violet-400 h-6 rounded" style="width:2.0%"></div><span class="absolute top-0 left-2 leading-6 text-[10px] font-bold text-gray-700">20 / 1건 (2.0%)</span></div></div>
+    </div>
+  </section>
+
+  <!-- 핵심: 길드 통합 손실 분석 -->
+  <section class="bg-gradient-to-br from-emerald-50 to-cyan-50 border-2 border-emerald-300 rounded-2xl p-5">
+    <div class="text-sm font-black text-emerald-900 mb-3">🎯 길드 통합 시 손실 분석 — <span class="text-emerald-700">반전!</span></div>
+
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="bg-white rounded-xl p-3 text-center">
+        <div class="text-[10px] font-bold text-gray-500 uppercase">유지될 수입</div>
+        <div class="text-2xl font-black text-emerald-600 mt-1">94.1%</div>
+        <div class="text-[10px] text-gray-400">뚠+뚱 (960 조각)</div>
+      </div>
+      <div class="bg-white rounded-xl p-3 text-center">
+        <div class="text-[10px] font-bold text-gray-500 uppercase">잃을 수입</div>
+        <div class="text-2xl font-black text-rose-600 mt-1">5.9%</div>
+        <div class="text-[10px] text-gray-400">부길드 (60 조각/월)</div>
+      </div>
+      <div class="bg-white rounded-xl p-3 text-center">
+        <div class="text-[10px] font-bold text-gray-500 uppercase">단가 인상 시</div>
+        <div class="text-2xl font-black text-amber-600 mt-1">+6.3%</div>
+        <div class="text-[10px] text-gray-400">만회 가능</div>
+      </div>
+    </div>
+
+    <div class="bg-white/80 rounded-lg p-3 text-[12px] text-gray-700 leading-relaxed">
+      <span class="font-black text-emerald-700">💡 결론:</span>
+      부길드(밤·별·달·꿀·솜) 실제 수입은 <span class="font-bold">월 60조각 (5.9%)</span>뿐.
+      뚠·뚱 단가는 <span class="font-bold">인상 안 해도 됨</span>. 만약 인상해도 6.3%(뚠 80→85, 뚱 40→43) 수준이면 만회.
+    </div>
+  </section>
+
+  <!-- 단가 인상 시뮬 -->
+  <section class="bg-white border border-gray-200 rounded-xl p-5">
+    <div class="text-sm font-black text-gray-900 mb-3">💸 단가 인상 시뮬 (만회용)</div>
+    <table class="w-full text-[12px]">
+      <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase">
+        <tr><th class="p-2 text-left">방식</th><th class="p-2 text-right">뚠카롱</th><th class="p-2 text-right">뚱카롱</th><th class="p-2 text-right">반기 추가</th><th class="p-2 text-left">평가</th></tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr><td class="p-2">균일 비율 +6.3%</td><td class="p-2 text-right font-mono">80 → 85</td><td class="p-2 text-right font-mono">40 → 43</td><td class="p-2 text-right">+60 조각</td><td class="p-2 text-[10px] text-emerald-700">✅ 가장 덜 거슬림</td></tr>
+        <tr><td class="p-2">정액 +16/건</td><td class="p-2 text-right font-mono">80 → 96</td><td class="p-2 text-right font-mono">40 → 56</td><td class="p-2 text-right">+60 조각</td><td class="p-2 text-[10px] text-amber-700">⚠ 뚱카롱 부담률 ↑</td></tr>
+        <tr class="bg-emerald-50"><td class="p-2 font-bold">⛔ 인상 없음</td><td class="p-2 text-right font-mono">80 (유지)</td><td class="p-2 text-right font-mono">40 (유지)</td><td class="p-2 text-right text-rose-600">-60 조각</td><td class="p-2 text-[10px] text-emerald-700 font-bold">✅ 추천 — 손실 미미</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 인상 없이 더 좋은 방향 -->
+  <section class="bg-gradient-to-br from-violet-50 to-pink-50 border-2 border-violet-300 rounded-2xl p-5">
+    <div class="text-sm font-black text-violet-900 mb-4">🚀 인상 없이 — 운영진 부담도 안 늘리는 방향 4가지</div>
+
+    <div class="space-y-3">
+
+      <div class="bg-white rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-emerald-500 text-white rounded">방향 1</div>
+          <div class="text-sm font-bold text-gray-900">그냥 둔다 — 5.9% 손실 무시</div>
+        </div>
+        <div class="text-[11px] text-gray-700 leading-relaxed">
+          월 60조각 손실 ≈ 운영진 1명당 30조각 → 무의미한 규모.
+          <span class="font-bold text-emerald-700">아무것도 안 하는 게 베스트 선택지일 수 있음.</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-blue-500 text-white rounded">방향 2</div>
+          <div class="text-sm font-bold text-gray-900">길드 그룹 5캐릭에 수로 의무 부과</div>
+        </div>
+        <div class="text-[11px] text-gray-700 leading-relaxed">
+          본캐 1 + 부캐 5명도 혜택 받으니까 수로 의무도 분담 (예: 본캐 100%, 부캐 50% 의무).
+          미참 시 부캐도 보석금 청구 → <span class="font-bold text-blue-700">자연 수입 ↑, 운영진 노동은 자동화로 처리</span>.
+        </div>
+        <div class="text-[10px] text-gray-500 mt-1">⚠ 룰 합의 필요 — 부캐 의무율이 핵심</div>
+      </div>
+
+      <div class="bg-white rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-amber-500 text-white rounded">방향 3</div>
+          <div class="text-sm font-bold text-gray-900">누진세 영구 누적 (반기 초기화 제거)</div>
+        </div>
+        <div class="text-[11px] text-gray-700 leading-relaxed">
+          현재 누진은 반기마다 리셋되어 약함 (x2 11건만, 전체의 12.5%).
+          영구 누적 시 상습 미참자 부담 ↑, 성실 멤버 영향 0.
+          <span class="font-bold text-amber-700">단가 인상 없이도 같은 사람한테 알아서 누진.</span>
+        </div>
+        <div class="text-[10px] text-gray-500 mt-1">💡 누진 정책 강화는 사이트 코드 1줄 수정으로 가능</div>
+      </div>
+
+      <div class="bg-white rounded-lg p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="text-[10px] font-black px-2 py-0.5 bg-rose-500 text-white rounded">방향 4</div>
+          <div class="text-sm font-bold text-gray-900">운영진 노동 자동화 (수입은 그대로, 부담만 ↓)</div>
+        </div>
+        <div class="text-[11px] text-gray-700 leading-relaxed">
+          진짜 문제는 "수입"이 아니라 "운영진 노동 시간".
+          <ul class="list-disc list-inside mt-1 space-y-0.5">
+            <li>입금 스샷 자동 검증 (이미지에서 메모/금액 OCR)</li>
+            <li>노블 해제 알림 → 인게임 매크로 안내</li>
+            <li>솔에르다 자동 환금 트래커 (시세 자동 계산)</li>
+            <li>이벤트 보상 자동 분배 풀</li>
+            <li>주간 미참 자동 감지·자동 청구 메시지</li>
+          </ul>
+          <span class="font-bold text-rose-700">→ 운영진 손 안 가게 만드는 게 핵심.</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 최종 추천 -->
+  <section class="bg-gradient-to-br from-indigo-100 to-blue-100 border-2 border-indigo-400 rounded-2xl p-6">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="text-3xl">🏆</div>
+      <h2 class="text-xl font-black text-indigo-900">최종 추천 — 방향 1 + 4</h2>
+    </div>
+    <div class="text-[13px] text-gray-800 leading-relaxed mb-3">
+      <span class="font-black">"단가 그대로, 부길드 손실 무시, 운영진 노동만 자동화로 줄이기"</span>
+    </div>
+    <ul class="space-y-2 text-[12px] text-gray-800">
+      <li class="flex gap-2"><span class="text-emerald-600 font-black">✓</span> 보석금 단가 그대로 (뚠 80, 뚱 40)</li>
+      <li class="flex gap-2"><span class="text-emerald-600 font-black">✓</span> 부길드 사라져도 월 -60 조각만 손실 → 무시 가능</li>
+      <li class="flex gap-2"><span class="text-emerald-600 font-black">✓</span> 누진세는 그대로 유지 (현재 반기 초기화 방식 OK)</li>
+      <li class="flex gap-2"><span class="text-emerald-600 font-black">✓</span> 운영진 노동 자동화 항목 → 사이트가 다 해주게</li>
+      <li class="flex gap-2"><span class="text-emerald-600 font-black">✓</span> 멤버에게 "추가 부담 없음" 메시지 → 반발 0</li>
+    </ul>
+    <div class="mt-4 bg-white/70 rounded-lg p-3 text-[11px] text-indigo-900">
+      <span class="font-black">근거:</span> 실데이터 보니 부길드 비중 5.9%로 작음. 인상하면 멤버 반발 + 형평성 시비 비용이 더 클 것. 진짜 부담은 운영 노동이므로 그쪽을 자동화 — 운영진 손은 줄고 수입은 유지.
+    </div>
+  </section>
+
+  <!-- 다음 액션 -->
+  <section class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+    <div class="text-[11px] font-black text-amber-700 mb-2">⚡ 다음 액션 결정</div>
+    <ol class="text-[12px] text-gray-700 space-y-1 list-decimal list-inside">
+      <li><span class="font-bold">방향 1+4로 확정?</span> — 단가 그대로 + 운영 자동화 항목 우선순위 정하기</li>
+      <li>방향 2(부캐 의무)도 같이 가고 싶으면 → 부캐 의무율 룰 합의 필요</li>
+      <li>방향 3(누진 영구 누적)은 옵션 — 상습범 많아지면 그때 켜기</li>
+    </ol>
+  </section>
+
+  <footer class="text-center text-[10px] text-gray-400 pt-2">
+    Guild Manager · 보석금 추이 분석 v1.0 · 2026.06.06
+  </footer>
+
+</div>
+</body>
+</html>
