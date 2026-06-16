@@ -383,7 +383,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
  </div>
 
  <script>
-  const APP_VERSION = '2026.06.16.2300';
+  const APP_VERSION = '2026.06.16.2310';
   const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const supaDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3830,8 +3830,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                       <button onclick="window._bailBackfillHistory()" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="수로 보석금 신청 중 처리됐는데 내역에 없는 것을 일괄 등록">
                         <i class="fas fa-sync mr-1.5"></i>수로 보석금 누락분 동기화
                       </button>
-                      <button onclick="window._bailFixReceiverToWarehouse()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="수로 신청으로 자동 연동된 건의 수령자를 간부진→길드창고로 일괄 정정">
-                        <i class="fas fa-warehouse mr-1.5"></i>수령자 → 길드창고 일괄 정정
+                      <button onclick="window._bailSmartFixReceivers()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="05.14 이전 건은 원래 간부진명으로 복원, 이후 건은 길드창고로 지정">
+                        <i class="fas fa-rotate-left mr-1.5"></i>수령자 스마트 정정 (05.14 기준)
                       </button>
                     </div>` : ''}
                     <div class="space-y-6 flex-1 overflow-y-auto no-scrollbar pb-6">
@@ -3966,33 +3966,42 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             }
         };
 
-        // 수령자 → 길드창고 일괄 정정 (bail_request_id 있는 건만)
-        window._bailFixReceiverToWarehouse = async () => {
-            if (!confirm('수로 신청으로 자동 연동된 보석금 내역의 수령자를 길드창고로 일괄 정정합니다. 진행할까요?')) return;
+        // 보석금 내역 수령자 정정 — 05.14 기준 분기
+        //  · 05.14 이전 처리 = 길드 시스템 도입 전 → 원래 간부진(processed_by/unlocked_by) 이름으로 복원
+        //  · 05.14 이후 처리 = 길드창고 입금 → "{길드} 길드창고"로 유지/지정
+        window._bailSmartFixReceivers = async () => {
+            const cutoffStr = '2026-05-14';
+            if (!confirm(`수령자 정정 (${cutoffStr} 기준 분기):\n- 이전 건은 원래 간부진명으로 복원\n- 이후 건은 길드창고로 지정\n진행할까요?`)) return;
             try {
-                // bail_request_id 있는 것만 — 정정 대상
                 const { data: linked, error: e1 } = await supaDb.from('bail_history')
                     .select('id, bail_request_id, receiver')
                     .not('bail_request_id', 'is', null);
                 if (e1) throw e1;
                 if (!linked || linked.length === 0) { window.showMsg('정정 대상 없음', 'info'); return; }
-                // bail_request의 payer_guild로 길드창고 결정
                 const reqIds = [...new Set(linked.map(h => h.bail_request_id))];
                 const { data: reqs, error: e2 } = await supaDb.from('bail_requests')
-                    .select('id, payer_guild').in('id', reqIds);
+                    .select('id, payer_guild, processed_at, unlocked_at, processed_by, unlocked_by').in('id', reqIds);
                 if (e2) throw e2;
-                const guildMap = {};
-                (reqs || []).forEach(r => { guildMap[r.id] = r.payer_guild; });
-                // 변경 필요한 것만 골라서 update
-                let fixed = 0;
+                const reqMap = {};
+                (reqs || []).forEach(r => { reqMap[r.id] = r; });
+                const cutoff = new Date(cutoffStr + 'T00:00:00');
+                let restored = 0, warehoused = 0, skipped = 0;
                 for (const h of linked) {
-                    const target = window._bailGuildWarehouse(guildMap[h.bail_request_id]);
-                    if (h.receiver === target) continue;
+                    const r = reqMap[h.bail_request_id];
+                    if (!r) { skipped++; continue; }
+                    const procDate = r.processed_at ? new Date(r.processed_at) : (r.unlocked_at ? new Date(r.unlocked_at) : null);
+                    let target;
+                    if (procDate && procDate < cutoff) {
+                        target = r.unlocked_by || r.processed_by;
+                    } else {
+                        target = window._bailGuildWarehouse(r.payer_guild);
+                    }
+                    if (!target || h.receiver === target) { skipped++; continue; }
                     const { error: e3 } = await supaDb.from('bail_history').update({ receiver: target }).eq('id', h.id);
-                    if (e3) { console.warn('fix failed for', h.id, e3); continue; }
-                    fixed++;
+                    if (e3) { console.warn('fix failed for', h.id, e3); skipped++; continue; }
+                    if (procDate && procDate < cutoff) restored++; else warehoused++;
                 }
-                window.showMsg(`${fixed}건 길드창고로 정정됨`, 'success');
+                window.showMsg(`복원 ${restored}건 · 길드창고 ${warehoused}건 · 스킵 ${skipped}건`, 'success');
                 await window.fetchMembers();
                 const content = document.getElementById('contentArea');
                 if (content && window.renderBail) window.renderBail(content);
@@ -4001,6 +4010,8 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 window.showMsg('정정 실패: ' + e.message, 'error');
             }
         };
+        // 구버전 호환 (옛 버튼이 누르면 똑똑한 버전으로)
+        window._bailFixReceiverToWarehouse = window._bailSmartFixReceivers;
 
         window.submitBail = async () => {
             const pI = document.getElementById('bailPayerInput'), rI = document.getElementById('bailReceiver'), aI = document.getElementById('bailAmount'), btn = document.getElementById('btnBailSubmit');
