@@ -383,7 +383,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
  </div>
 
  <script>
-  const APP_VERSION = '2026.06.17.0010';
+  const APP_VERSION = '2026.06.17.0020';
   const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const supaDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3865,6 +3865,9 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                       <button onclick="window._bailFixOrphanTransfers()" class="w-full py-2.5 bg-gradient-to-r from-violet-500 to-pink-500 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="음수만 있고 짝(양수)이 없는 이동 의심건을 도착지 지정해서 보정">
                         <i class="fas fa-link-slash mr-1.5"></i>꼬인 이동건 보정
                       </button>
+                      <button onclick="window._bailRollbackToday()" class="w-full py-2.5 bg-gray-900 text-white rounded-2xl font-black text-[11px] shadow hover:shadow-lg transition-all active:scale-[0.98]" title="오늘 작업 전 상태로 bail_history만 되돌림 (수로 신청 DB는 그대로)">
+                        <i class="fas fa-undo mr-1.5"></i>오늘 작업 전 상태로 롤백
+                      </button>
                     </div>` : ''}
                     <div class="space-y-6 flex-1 overflow-y-auto no-scrollbar pb-6">
                         <div id="bailDepositForm">
@@ -3995,6 +3998,56 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 console.error(e);
                 window.showMsg('이동 저장 실패: ' + e.message, 'error');
                 if (btn) { btn.disabled = false; btn.innerText = '↔ 다조 이동 저장'; }
+            }
+        };
+
+        // 오늘 작업 전 상태로 bail_history DB 롤백
+        //  1) bail_request_id 있는 행(=오늘 자동연동/백필) 전부 삭제
+        //  2) 꼬인 이동건 보정으로 생긴 양수 짝(같은 date+memo의 [이동] 양수) 삭제
+        //  3) id 84(흰색에게 이동), id 86(길드창고로 다조 납부)의 payer/memo 원상복구
+        window._bailRollbackToday = async () => {
+            if (!confirm('⚠ 보석금 내역을 오늘 작업 전 상태로 되돌립니다.\n\n· 수로 신청 자동연동된 88건 삭제\n· 꼬인 이동건 보정으로 추가된 양수 짝 삭제\n· id 84/86 음수 항목 원상복구\n\n진행할까요?')) return;
+            try {
+                let removedLinked = 0, removedPairs = 0, restored = 0;
+                // 1) linked 삭제
+                const { data: linked, error: e1 } = await supaDb.from('bail_history').select('id').not('bail_request_id', 'is', null);
+                if (e1) throw e1;
+                if (linked && linked.length > 0) {
+                    const ids = linked.map(x => x.id);
+                    const { error: e1d } = await supaDb.from('bail_history').delete().in('id', ids);
+                    if (e1d) throw e1d;
+                    removedLinked = ids.length;
+                }
+                // 2) 꼬인 보정 짝 삭제 (id 84/86에서 만들어진 양수)
+                // 흰색 +620 / 2026-05-15 / payer="(이동) 경록남"
+                const pairFilter1 = await supaDb.from('bail_history').select('id').eq('date', '2026-05-15').eq('amount', 620).eq('receiver', '흰색');
+                if (pairFilter1.data) {
+                    for (const r of pairFilter1.data) {
+                        const { error } = await supaDb.from('bail_history').delete().eq('id', r.id);
+                        if (!error) removedPairs++;
+                    }
+                }
+                // 뚠카롱 길드창고 +360 / 2026-05-23 / payer="(이동) 너굴님"
+                const pairFilter2 = await supaDb.from('bail_history').select('id').eq('date', '2026-05-23').eq('amount', 360).eq('receiver', '뚠카롱 길드창고');
+                if (pairFilter2.data) {
+                    for (const r of pairFilter2.data) {
+                        const { error } = await supaDb.from('bail_history').delete().eq('id', r.id);
+                        if (!error) removedPairs++;
+                    }
+                }
+                // 3) id 84/86 원상복구
+                const r1 = await supaDb.from('bail_history').update({ payer: '흰색에게 이동', memo: '흰색에게 이동' }).eq('id', 84);
+                if (!r1.error) restored++;
+                const r2 = await supaDb.from('bail_history').update({ payer: '길드창고로 다조 납부', memo: '길드창고로 다조 납부' }).eq('id', 86);
+                if (!r2.error) restored++;
+
+                window.showMsg(`롤백 완료: linked 삭제 ${removedLinked} / 짝 삭제 ${removedPairs} / 원상복구 ${restored}`, 'success');
+                await window.fetchMembers();
+                const content = document.getElementById('contentArea');
+                if (content && window.renderBail) window.renderBail(content);
+            } catch (e) {
+                console.error(e);
+                window.showMsg('롤백 실패: ' + e.message, 'error');
             }
         };
 
