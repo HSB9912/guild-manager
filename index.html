@@ -383,7 +383,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
  </div>
 
  <script>
-  const APP_VERSION = '2026.06.16.2310';
+  const APP_VERSION = '2026.06.16.2330';
   const SUPABASE_URL = 'https://luglshrfkkeacmefnvlm.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const supaDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -3802,7 +3802,11 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 const receiverDisplay = isWarehouse
                   ? `<span class="text-cyan-600 font-bold"><i class="fas fa-warehouse mr-1 text-[10px]"></i>${h.receiver}</span>`
                   : `<span class="text-blue-500">${h.receiver}</span>`;
-                return `<tr class="hover:bg-gray-50 border-b border-gray-50 h-12 transition-colors font-bold text-xs ${isTransfer ? 'bg-violet-50/30' : ''}"><td class="p-4 font-mono text-gray-400 text-[10px]">${h.date}</td><td class="p-4">${typeBadge}</td><td class="p-4 text-gray-700">${h.payer}${memo}</td><td class="p-4">${receiverDisplay}</td><td class="p-4 text-right ${amtColor}">${amtDisplay}</td></tr>`;
+                const adminBtns = isAdmin() ? `<td class="p-2 text-right whitespace-nowrap">
+                    <button onclick="window._bailEditEntry(${h.id})" class="text-[10px] text-gray-400 hover:text-amber-500 mr-1" title="수정"><i class="fas fa-pen"></i></button>
+                    <button onclick="window._bailDeleteEntry(${h.id})" class="text-[10px] text-gray-400 hover:text-red-500" title="삭제"><i class="fas fa-trash"></i></button>
+                  </td>` : '';
+                return `<tr class="hover:bg-gray-50 border-b border-gray-50 h-12 transition-colors font-bold text-xs ${isTransfer ? 'bg-violet-50/30' : ''}"><td class="p-4 font-mono text-gray-400 text-[10px]">${h.date}</td><td class="p-4">${typeBadge}</td><td class="p-4 text-gray-700">${h.payer}${memo}</td><td class="p-4">${receiverDisplay}</td><td class="p-4 text-right ${amtColor}">${amtDisplay}</td>${adminBtns}</tr>`;
             }).join('');
             const statsHtml = adminStats.map(([name, count]) => {
               const isWh = (name || '').includes('길드창고');
@@ -3903,7 +3907,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                     </div>
                     <div class="flex-1 overflow-y-auto no-scrollbar">
                         <table class="w-full text-left text-xs">
-                            <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase"><tr><th class="p-5">날짜</th><th class="p-5">구분</th><th class="p-5">납부자/사유</th><th class="p-5">수령자</th><th class="p-5 text-right">수량</th></tr></thead>
+                            <thead class="bg-gray-50 text-[10px] font-bold text-gray-500 uppercase"><tr><th class="p-5">날짜</th><th class="p-5">구분</th><th class="p-5">납부자/사유</th><th class="p-5">수령자</th><th class="p-5 text-right">수량</th>${isAdmin() ? '<th class="p-3 text-right">관리</th>' : ''}</tr></thead>
                             <tbody class="divide-y divide-gray-50">${historyRows || '<tr><td colspan="5" class="p-20 text-center text-gray-300 font-bold italic">내역이 존재하지 않습니다.</td></tr>'}</tbody>
                         </table>
                     </div>
@@ -3964,6 +3968,82 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
                 window.showMsg('이동 저장 실패: ' + e.message, 'error');
                 if (btn) { btn.disabled = false; btn.innerText = '↔ 다조 이동 저장'; }
             }
+        };
+
+        // bail_history 단건 수정 — 모달
+        window._bailEditEntry = (id) => {
+            const h = (appState.bailHistory || []).find(x => x.id === id);
+            if (!h) return window.showMsg('내역을 찾을 수 없음', 'error');
+            const recvList = appState.members.filter(m => m.guild === '뚠카롱' && ['마카롱', '다쿠아즈'].includes(m.role)).sort((a,b) => smartCompare(a, b, 'name', 'asc'));
+            const wh = window._bailWarehouseOptions || [];
+            const isInWh = wh.includes(h.receiver);
+            const isInRecv = recvList.some(r => r.name === h.receiver);
+            const recvOpts = `
+              <optgroup label="🏦 길드창고">
+                ${wh.map(w => `<option value="${w}" ${h.receiver === w ? 'selected' : ''}>${w}</option>`).join('')}
+              </optgroup>
+              <optgroup label="👤 운영진">
+                ${recvList.map(r => `<option value="${r.name}" ${h.receiver === r.name ? 'selected' : ''}>${r.name} (${r.role})</option>`).join('')}
+              </optgroup>
+              ${(h.receiver && !isInWh && !isInRecv) ? `<optgroup label="기타"><option value="${h.receiver}" selected>${h.receiver}</option></optgroup>` : ''}
+            `;
+            const escAttr = s => (s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+            const modal = document.createElement('div');
+            modal.id = '_bailEditModal';
+            modal.className = 'fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-base font-black text-gray-900"><i class="fas fa-pen mr-2 text-amber-500"></i>보석금 내역 수정</h3>
+                  <button onclick="document.getElementById('_bailEditModal').remove()" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="space-y-3">
+                  <div><label class="text-[10px] font-bold text-gray-500 uppercase">날짜</label><input id="_beDate" type="date" value="${escAttr(h.date)}" class="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold"></div>
+                  <div><label class="text-[10px] font-bold text-gray-500 uppercase">납부자 / 사유</label><input id="_bePayer" type="text" value="${escAttr(h.payer)}" class="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold"></div>
+                  <div><label class="text-[10px] font-bold text-gray-500 uppercase">수령자</label><select id="_beReceiver" class="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold">${recvOpts}</select></div>
+                  <div><label class="text-[10px] font-bold text-gray-500 uppercase">수량 (음수 = 사용)</label><input id="_beAmount" type="number" value="${h.amount}" class="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold"></div>
+                  <div><label class="text-[10px] font-bold text-gray-500 uppercase">메모</label><input id="_beMemo" type="text" value="${escAttr(h.memo)}" class="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold"></div>
+                  ${h.bail_request_id ? `<div class="bg-amber-50 border border-amber-200 rounded-lg p-2 text-[10px] text-amber-700"><i class="fas fa-link mr-1"></i>이 내역은 수로 신청 ID #${h.bail_request_id}와 연결됨</div>` : ''}
+                </div>
+                <div class="flex gap-2 mt-5">
+                  <button onclick="document.getElementById('_bailEditModal').remove()" class="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-bold text-xs hover:bg-gray-200">취소</button>
+                  <button onclick="window._bailSaveEditEntry(${h.id})" class="flex-1 py-2.5 bg-amber-500 text-white rounded-xl font-bold text-xs hover:bg-amber-600"><i class="fas fa-save mr-1"></i>저장</button>
+                </div>
+              </div>`;
+            document.body.appendChild(modal);
+        };
+
+        window._bailSaveEditEntry = async (id) => {
+            const date = document.getElementById('_beDate')?.value;
+            const payer = document.getElementById('_bePayer')?.value.trim();
+            const receiver = document.getElementById('_beReceiver')?.value;
+            const amount = parseInt(document.getElementById('_beAmount')?.value);
+            const memo = document.getElementById('_beMemo')?.value.trim();
+            if (!date || !payer || !receiver || isNaN(amount)) return window.showMsg('필수 항목 누락', 'error');
+            try {
+                const { error } = await supaDb.from('bail_history').update({ date, payer, receiver, amount, memo }).eq('id', id);
+                if (error) throw error;
+                window.showMsg('수정 완료', 'success');
+                document.getElementById('_bailEditModal')?.remove();
+                await window.fetchMembers();
+                const content = document.getElementById('contentArea');
+                if (content && window.renderBail) window.renderBail(content);
+            } catch (e) { window.showMsg('수정 실패: ' + e.message, 'error'); }
+        };
+
+        window._bailDeleteEntry = async (id) => {
+            const h = (appState.bailHistory || []).find(x => x.id === id);
+            if (!h) return;
+            const warn = h.bail_request_id ? '\n⚠ 수로 신청과 연동된 내역입니다. 동기화 버튼 누르면 재생성될 수 있음.' : '';
+            if (!confirm(`이 보석금 내역을 삭제하시겠습니까?\n\n${h.date} · ${h.payer} → ${h.receiver} · ${h.amount}개${warn}`)) return;
+            try {
+                const { error } = await supaDb.from('bail_history').delete().eq('id', id);
+                if (error) throw error;
+                window.showMsg('삭제 완료', 'success');
+                await window.fetchMembers();
+                const content = document.getElementById('contentArea');
+                if (content && window.renderBail) window.renderBail(content);
+            } catch (e) { window.showMsg('삭제 실패: ' + e.message, 'error'); }
         };
 
         // 보석금 내역 수령자 정정 — 05.14 기준 분기
