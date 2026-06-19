@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Guild Manager — Remaster v1 (버니·늑대·쿠거)</title>
+<link rel="icon" href="../favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Pretendard', sans-serif; background: #0f172a; color: #e2e8f0; }
+  .glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
+  .bunny-grad { background: linear-gradient(135deg, #fbcfe8 0%, #f9a8d4 50%, #ec4899 100%); }
+  .wolf-grad  { background: linear-gradient(135deg, #cbd5e1 0%, #64748b 50%, #1e293b 100%); }
+  .cougar-grad { background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #92400e 100%); }
+  .accent-bunny { color: #ec4899; }
+  .accent-wolf  { color: #94a3b8; }
+  .accent-cougar { color: #f59e0b; }
+  .frame-bunny { border-color: rgba(236, 72, 153, 0.4); }
+  .frame-wolf  { border-color: rgba(148, 163, 184, 0.4); }
+  .frame-cougar { border-color: rgba(245, 158, 11, 0.4); }
+</style>
+</head>
+<body class="p-4 lg:p-8">
+<div class="max-w-7xl mx-auto space-y-10">
+
+  <!-- ════════════════════════ -->
+  <!-- 헤더: 브랜드 아이덴티티     -->
+  <!-- ════════════════════════ -->
+  <header class="relative overflow-hidden rounded-3xl p-8 glass">
+    <div class="absolute top-0 right-0 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl"></div>
+    <div class="relative">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="text-[11px] font-black tracking-[0.3em] text-pink-400 uppercase">Guild Manager · Remaster v1</div>
+        <div class="h-px flex-1 bg-gradient-to-r from-pink-500/40 to-transparent"></div>
+      </div>
+      <h1 class="text-4xl lg:text-5xl font-black text-white leading-tight">
+        🐰 <span class="text-pink-300">버니</span> · 🐺 <span class="text-slate-300">늑대</span> · 🐆 <span class="text-amber-300">쿠거</span>
+      </h1>
+      <p class="text-sm text-slate-400 mt-2">3종 길드 통합 운영 시스템 — 길드 대규모 개편 대응 리마스터</p>
+    </div>
+  </header>
+
+  <!-- ════════════════════════ -->
+  <!-- 1. 브랜드 컨셉 (3길드)    -->
+  <!-- ════════════════════════ -->
+  <section>
+    <div class="text-[11px] font-black tracking-[0.3em] text-slate-400 mb-4">① BRAND IDENTITY</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+      <!-- 버니 -->
+      <div class="glass rounded-3xl overflow-hidden border-2 frame-bunny">
+        <div class="bunny-grad p-6 text-white">
+          <div class="text-7xl mb-2">🐰</div>
+          <div class="text-[10px] font-black tracking-[0.3em] opacity-80">1기 · 1ST</div>
+          <h3 class="text-3xl font-black mt-1">버니</h3>
+          <p class="text-[11px] opacity-90 mt-1">BUNNY · 뚠카롱</p>
+        </div>
+        <div class="p-5 space-y-2 text-[12px]">
+          <div class="flex justify-between text-pink-300"><span class="font-bold">색감</span><span>Pink · Pastel</span></div>
+          <div class="flex justify-between text-pink-300"><span class="font-bold">분위기</span><span>귀엽 · 화사</span></div>
+          <div class="flex justify-between text-pink-300"><span class="font-bold">시그니처</span><span>🥕 당근</span></div>
+        </div>
+      </div>
+
+      <!-- 늑대 -->
+      <div class="glass rounded-3xl overflow-hidden border-2 frame-wolf">
+        <div class="wolf-grad p-6 text-white">
+          <div class="text-7xl mb-2">🐺</div>
+          <div class="text-[10px] font-black tracking-[0.3em] opacity-80">2기 · 2ND</div>
+          <h3 class="text-3xl font-black mt-1">늑대</h3>
+          <p class="text-[11px] opacity-90 mt-1">WOLF · 뚱카롱</p>
+        </div>
+        <div class="p-5 space-y-2 text-[12px]">
+          <div class="flex justify-between text-slate-300"><span class="font-bold">색감</span><span>Slate · Steel</span></div>
+          <div class="flex justify-between text-slate-300"><span class="font-bold">분위기</span><span>차분 · 강인</span></div>
+          <div class="flex justify-between text-slate-300"><span class="font-bold">시그니처</span><span>🌙 달밤</span></div>
+        </div>
+      </div>
+
+      <!-- 쿠거 -->
+      <div class="glass rounded-3xl overflow-hidden border-2 frame-cougar">
+        <div class="cougar-grad p-6 text-white">
+          <div class="text-7xl mb-2">🐆</div>
+          <div class="text-[10px] font-black tracking-[0.3em] opacity-80">3기 · 3RD</div>
+          <h3 class="text-3xl font-black mt-1">쿠거</h3>
+          <p class="text-[11px] opacity-90 mt-1">COUGAR · 밤카롱</p>
+        </div>
+        <div class="p-5 space-y-2 text-[12px]">
+          <div class="flex justify-between text-amber-300"><span class="font-bold">색감</span><span>Amber · Tan</span></div>
+          <div class="flex justify-between text-amber-300"><span class="font-bold">분위기</span><span>야성 · 강렬</span></div>
+          <div class="flex justify-between text-amber-300"><span class="font-bold">시그니처</span><span>🔥 야생</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════ -->
+  <!-- 2. 와꾸 — 메인 대시보드   -->
+  <!-- ════════════════════════ -->
+  <section>
+    <div class="text-[11px] font-black tracking-[0.3em] text-slate-400 mb-4">② LAYOUT — MAIN DASHBOARD</div>
+    <div class="glass rounded-3xl overflow-hidden">
+      <div class="flex h-[600px]">
+        <!-- 사이드바 -->
+        <aside class="w-56 bg-slate-950/60 border-r border-white/5 p-4 space-y-1">
+          <div class="px-2 py-3 mb-2">
+            <div class="text-[10px] font-black tracking-[0.25em] text-slate-500">GUILD MANAGER</div>
+            <div class="text-base font-black text-white mt-0.5">🐰🐺🐆 통합 운영</div>
+          </div>
+          <div class="text-[9px] font-bold text-slate-600 uppercase tracking-widest px-2 py-1.5">대시보드</div>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/10 text-white text-xs font-bold"><i class="fas fa-home text-pink-400"></i>홈</button>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-400 text-xs font-bold"><i class="fas fa-users"></i>멤버</button>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-400 text-xs font-bold"><i class="fas fa-chart-bar"></i>수로 점수</button>
+          <div class="text-[9px] font-bold text-slate-600 uppercase tracking-widest px-2 py-1.5 mt-3">관리</div>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-400 text-xs font-bold"><i class="fas fa-gem text-amber-400"></i>보석금</button>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-400 text-xs font-bold"><i class="fas fa-shield"></i>면제</button>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-400 text-xs font-bold"><i class="fas fa-exclamation"></i>벌점</button>
+          <div class="text-[9px] font-bold text-slate-600 uppercase tracking-widest px-2 py-1.5 mt-3">길드</div>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-pink-500/10 text-pink-300 text-xs font-bold border-l-2 border-pink-500"><span>🐰</span>버니</button>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-500/10 text-slate-300 text-xs font-bold border-l-2 border-slate-500"><span>🐺</span>늑대</button>
+          <button class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-500/10 text-amber-300 text-xs font-bold border-l-2 border-amber-500"><span>🐆</span>쿠거</button>
+        </aside>
+
+        <!-- 메인 -->
+        <main class="flex-1 p-6 overflow-y-auto bg-slate-900/30">
+          <!-- 상단 KPI -->
+          <div class="flex justify-between items-end mb-4">
+            <div>
+              <div class="text-[10px] font-black tracking-[0.25em] text-slate-500">DASHBOARD</div>
+              <h2 class="text-xl font-black text-white mt-0.5">이번 주 운영 현황</h2>
+            </div>
+            <div class="text-[10px] text-slate-500">26.06.17(수) · 23:00 알림 예정</div>
+          </div>
+
+          <!-- 3길드 카드 -->
+          <div class="grid grid-cols-3 gap-3 mb-5">
+            <div class="rounded-2xl p-4 bg-pink-500/10 border border-pink-500/30">
+              <div class="flex items-center justify-between mb-2"><div class="text-xl">🐰</div><div class="text-[9px] font-black text-pink-300">버니</div></div>
+              <div class="text-2xl font-black text-white">187<span class="text-xs text-pink-300">명</span></div>
+              <div class="text-[10px] text-pink-300/80 mt-1">미참 5명 · 면제 1명</div>
+            </div>
+            <div class="rounded-2xl p-4 bg-slate-500/10 border border-slate-500/30">
+              <div class="flex items-center justify-between mb-2"><div class="text-xl">🐺</div><div class="text-[9px] font-black text-slate-300">늑대</div></div>
+              <div class="text-2xl font-black text-white">92<span class="text-xs text-slate-300">명</span></div>
+              <div class="text-[10px] text-slate-300/80 mt-1">미참 6명 · 면제 0명</div>
+            </div>
+            <div class="rounded-2xl p-4 bg-amber-500/10 border border-amber-500/30">
+              <div class="flex items-center justify-between mb-2"><div class="text-xl">🐆</div><div class="text-[9px] font-black text-amber-300">쿠거</div></div>
+              <div class="text-2xl font-black text-white">34<span class="text-xs text-amber-300">명</span></div>
+              <div class="text-[10px] text-amber-300/80 mt-1">미참 2명 · 면제 0명</div>
+            </div>
+          </div>
+
+          <!-- 작은 카드들 -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="glass rounded-2xl p-4">
+              <div class="text-[10px] font-bold text-slate-400 uppercase mb-2">🔒 강등 보호</div>
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400"><i class="fas fa-plane-departure text-xs"></i></div>
+                <div class="text-xs font-bold text-white">정전위험</div>
+                <div class="text-[10px] text-slate-400 ml-auto">결혼·신행</div>
+              </div>
+            </div>
+            <div class="glass rounded-2xl p-4">
+              <div class="text-[10px] font-bold text-slate-400 uppercase mb-2">💎 길드창고 잔액</div>
+              <div class="flex justify-between text-xs">
+                <span class="text-pink-300 font-bold">🐰 버니창고</span><span class="font-black text-white">3,520</span>
+              </div>
+              <div class="flex justify-between text-xs mt-1">
+                <span class="text-slate-300 font-bold">🐺 늑대창고</span><span class="font-black text-white">1,180</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════ -->
+  <!-- 3. 직위 시각화           -->
+  <!-- ════════════════════════ -->
+  <section>
+    <div class="text-[11px] font-black tracking-[0.3em] text-slate-400 mb-4">③ NEW ROLES — 직위 시스템</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- 버니 직위 -->
+      <div class="glass rounded-3xl p-6 border-2 frame-bunny">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="text-2xl">🐰</div>
+          <h3 class="text-lg font-black text-pink-300">버니 직위 (1기)</h3>
+        </div>
+        <div class="space-y-1.5 text-[12px]">
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400"></span><span class="w-20 font-black text-pink-200">버니버니</span><span class="text-slate-500 text-[10px]">마스터</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400/80"></span><span class="w-20 font-black text-pink-200">당근당근</span><span class="text-slate-500 text-[10px]">부마스터</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400/70"></span><span class="w-20 font-black text-white">로얄버니</span><span class="text-slate-400 text-[10px]">TOP 5 (크라운)</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400/60"></span><span class="w-20 font-black text-white">문버니</span><span class="text-emerald-400 text-[10px]">TOP 6~25 · +5명</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400/50"></span><span class="w-20 font-black text-white">스타버니</span><span class="text-emerald-400 text-[10px]">TOP 26~60 · +5명</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400/40"></span><span class="w-20 font-black text-white">코튼버니</span><span class="text-amber-400 text-[10px]">13.0+ (기존 9.0)</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400/30"></span><span class="w-20 font-black text-slate-300">토끼풀</span><span class="text-amber-400 text-[10px]">≤9.99 (기존 8.99)</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400/20"></span><span class="w-20 font-black text-slate-400">새싹</span><span class="text-slate-500 text-[10px]">하위 20</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-pink-400/10"></span><span class="w-20 font-black text-slate-500">돌멩이</span><span class="text-rose-400 text-[10px]">미참</span></div>
+        </div>
+      </div>
+
+      <!-- 늑대 직위 -->
+      <div class="glass rounded-3xl p-6 border-2 frame-wolf">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="text-2xl">🐺</div>
+          <h3 class="text-lg font-black text-slate-200">늑대 직위 (2기)</h3>
+        </div>
+        <div class="space-y-1.5 text-[12px]">
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-300"></span><span class="w-20 font-black text-slate-100">늑대</span><span class="text-slate-500 text-[10px]">마스터</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-300/80"></span><span class="w-20 font-black text-slate-100">울프</span><span class="text-slate-500 text-[10px]">부마스터</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-300/70"></span><span class="w-20 font-black text-white">딩고</span><span class="text-slate-400 text-[10px]">뚠케이크</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-300/60"></span><span class="w-20 font-black text-white">허스키</span><span class="text-slate-400 text-[10px]">뚠바게트</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-300/50"></span><span class="w-20 font-black text-white">강아지</span><span class="text-slate-400 text-[10px]">뚠브레드</span></div>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-300/40"></span><span class="w-20 font-black text-slate-400">발자국</span><span class="text-slate-500 text-[10px]">뚠스콘</span></div>
+        </div>
+        <div class="mt-4 text-[10px] text-slate-500 italic">※ 직위별 혜택 카드는 추후 별도 페이지로</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════ -->
+  <!-- 4. 멤버 카드 시안        -->
+  <!-- ════════════════════════ -->
+  <section>
+    <div class="text-[11px] font-black tracking-[0.3em] text-slate-400 mb-4">④ MEMBER CARD — 멤버 카드</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <!-- 버니 멤버 -->
+      <div class="glass rounded-3xl overflow-hidden border frame-bunny">
+        <div class="h-2 bunny-grad"></div>
+        <div class="p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl">🐰</div>
+            <div>
+              <div class="text-sm font-black text-white">정전위험</div>
+              <div class="text-[10px] text-pink-300">에반 · Lv.296</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="text-[9px] font-black px-2 py-1 bg-pink-500/20 text-pink-200 rounded-full">로얄버니</div>
+            <div class="text-[9px] font-black px-2 py-1 bg-amber-500/20 text-amber-200 rounded-full">🔒 보호</div>
+          </div>
+          <div class="space-y-1.5 text-[11px]">
+            <div class="flex justify-between"><span class="text-slate-400">수로</span><span class="font-black text-pink-300">68,420</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">그룹</span><span class="text-white">본캐 + 5</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 늑대 멤버 -->
+      <div class="glass rounded-3xl overflow-hidden border frame-wolf">
+        <div class="h-2 wolf-grad"></div>
+        <div class="p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-2xl bg-slate-500/20 flex items-center justify-center text-2xl">🐺</div>
+            <div>
+              <div class="text-sm font-black text-white">최애의앵버</div>
+              <div class="text-[10px] text-slate-300">팔라딘 · Lv.281</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="text-[9px] font-black px-2 py-1 bg-slate-500/20 text-slate-200 rounded-full">딩고</div>
+          </div>
+          <div class="space-y-1.5 text-[11px]">
+            <div class="flex justify-between"><span class="text-slate-400">수로</span><span class="font-black text-slate-300">42,180</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">그룹</span><span class="text-white">본캐 + 3</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 쿠거 멤버 -->
+      <div class="glass rounded-3xl overflow-hidden border frame-cougar">
+        <div class="h-2 cougar-grad"></div>
+        <div class="p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-2xl">🐆</div>
+            <div>
+              <div class="text-sm font-black text-white">호건이</div>
+              <div class="text-[10px] text-amber-300">루미너스 · Lv.275</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-3">
+            <div class="text-[9px] font-black px-2 py-1 bg-amber-500/20 text-amber-200 rounded-full">쿠거</div>
+          </div>
+          <div class="space-y-1.5 text-[11px]">
+            <div class="flex justify-between"><span class="text-slate-400">수로</span><span class="font-black text-amber-300">28,640</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">그룹</span><span class="text-white">본캐 + 2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════ -->
+  <!-- 5. 색감 팔레트            -->
+  <!-- ════════════════════════ -->
+  <section>
+    <div class="text-[11px] font-black tracking-[0.3em] text-slate-400 mb-4">⑤ COLOR PALETTE</div>
+    <div class="glass rounded-3xl p-6">
+      <div class="grid grid-cols-3 gap-6">
+        <div>
+          <div class="text-[10px] font-black text-pink-300 mb-2">🐰 BUNNY</div>
+          <div class="flex gap-1.5 h-12 rounded-xl overflow-hidden">
+            <div class="flex-1" style="background:#fdf2f8"></div>
+            <div class="flex-1" style="background:#fbcfe8"></div>
+            <div class="flex-1" style="background:#f9a8d4"></div>
+            <div class="flex-1" style="background:#ec4899"></div>
+            <div class="flex-1" style="background:#9d174d"></div>
+          </div>
+          <div class="text-[9px] text-slate-500 mt-1 font-mono">#fdf2f8 → #9d174d</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-black text-slate-300 mb-2">🐺 WOLF</div>
+          <div class="flex gap-1.5 h-12 rounded-xl overflow-hidden">
+            <div class="flex-1" style="background:#f8fafc"></div>
+            <div class="flex-1" style="background:#cbd5e1"></div>
+            <div class="flex-1" style="background:#64748b"></div>
+            <div class="flex-1" style="background:#334155"></div>
+            <div class="flex-1" style="background:#0f172a"></div>
+          </div>
+          <div class="text-[9px] text-slate-500 mt-1 font-mono">#f8fafc → #0f172a</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-black text-amber-300 mb-2">🐆 COUGAR</div>
+          <div class="flex gap-1.5 h-12 rounded-xl overflow-hidden">
+            <div class="flex-1" style="background:#fffbeb"></div>
+            <div class="flex-1" style="background:#fde68a"></div>
+            <div class="flex-1" style="background:#f59e0b"></div>
+            <div class="flex-1" style="background:#b45309"></div>
+            <div class="flex-1" style="background:#451a03"></div>
+          </div>
+          <div class="text-[9px] text-slate-500 mt-1 font-mono">#fffbeb → #451a03</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 결정사항 -->
+  <section class="glass rounded-3xl p-6">
+    <div class="text-[11px] font-black tracking-[0.3em] text-pink-400 mb-4">⚡ 결정 필요</div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[12px] text-slate-300">
+      <div class="bg-white/5 rounded-xl p-3">
+        <span class="font-black text-white">전체 톤</span><br>
+        지금 시안은 <span class="text-pink-300 font-bold">다크 모드</span>. 라이트로 갈지?
+      </div>
+      <div class="bg-white/5 rounded-xl p-3">
+        <span class="font-black text-white">3길드 표현</span><br>
+        이모지 🐰🐺🐆 가는지 / 일러스트 마스코트 따로 만들지
+      </div>
+      <div class="bg-white/5 rounded-xl p-3">
+        <span class="font-black text-white">레이아웃</span><br>
+        사이드바 + 메인 구조 OK? 카드 모양·라운드 더 부드럽게?
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[10px] text-slate-600 pt-2 pb-6">Guild Manager · Remaster v1 · 2026.06.17</footer>
+
+</div>
+</body>
+</html>
