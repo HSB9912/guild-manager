@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>버니 · C. Bold Playful</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+:root{
+  --night:#1A1626; --moon:#EDE6DA; --grey:#9B93A8;
+  --bunny-main:#FF8FAB; --bunny-light:#FFC9DE; --bunny-cream:#FFE8D6; --bunny-deep:#B5446E;
+  --panel:#241E33;
+}
+*{font-family:'Noto Sans KR',sans-serif;}
+body{background:var(--night);color:var(--moon);margin:0;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:18px;color:var(--grey);font-weight:700;font-size:14px;transition:.2s;cursor:pointer;}
+.nav-item:hover{background:var(--panel);color:var(--moon);transform:translateX(3px);}
+.nav-item.active{background:var(--bunny-main);color:var(--night);box-shadow:0 8px 20px -6px var(--bunny-deep);}
+.card{background:var(--panel);border-radius:28px;}
+.badge{font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px;}
+table{border-collapse:separate;border-spacing:0 8px;}
+td{padding:14px 18px;font-size:13px;background:var(--panel);}
+td:first-child{border-radius:16px 0 0 16px;}
+td:last-child{border-radius:0 16px 16px 0;}
+th{font-size:11px;color:var(--grey);font-weight:800;text-align:left;padding:0 18px 4px;}
+</style>
+</head>
+<body class="min-h-screen flex">
+  <!-- Sidebar -->
+  <aside class="w-64 p-5 flex flex-col gap-2">
+    <div class="flex items-center gap-3 px-2 pb-6">
+      <div class="w-12 h-12 rounded-2xl grid place-items-center text-2xl" style="background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep))">🐰</div>
+      <div><div class="font-black text-lg leading-none">버니</div><div class="text-[11px] mt-1" style="color:var(--grey)">GUILD MANAGER</div></div>
+    </div>
+    <div class="nav-item active"><i class="fa-solid fa-house w-5"></i> 대시보드</div>
+    <div class="nav-item"><i class="fa-solid fa-users w-5"></i> 멤버 관리</div>
+    <div class="nav-item"><i class="fa-solid fa-chart-line w-5"></i> 출석 · 점수</div>
+    <div class="nav-item"><i class="fa-solid fa-user-plus w-5"></i> 가입 신청<span class="ml-auto badge" style="background:var(--bunny-light);color:var(--night)">3</span></div>
+    <div class="nav-item"><i class="fa-solid fa-gem w-5"></i> 보석금</div>
+    <div class="nav-item"><i class="fa-solid fa-calendar w-5"></i> 일정</div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 p-6 pl-2">
+    <!-- Hero header -->
+    <header class="rounded-[32px] p-7 mb-6 relative overflow-hidden" style="background:linear-gradient(120deg,var(--bunny-deep),var(--bunny-main))">
+      <div class="absolute right-6 top-1/2 -translate-y-1/2 text-[120px] opacity-20">🐰</div>
+      <div class="relative">
+        <div class="text-sm font-bold text-white/80">2026.06 · 3주차</div>
+        <h1 class="text-3xl font-black text-white mt-1">버니 길드, 이번주도 화이팅! 🥕</h1>
+        <div class="flex gap-3 mt-5">
+          <div class="bg-white/20 backdrop-blur rounded-2xl px-5 py-3 text-white"><div class="text-xs opacity-80">멤버</div><div class="text-2xl font-black">48명</div></div>
+          <div class="bg-white/20 backdrop-blur rounded-2xl px-5 py-3 text-white"><div class="text-xs opacity-80">주간 평균</div><div class="text-2xl font-black">86점</div></div>
+          <div class="bg-white/20 backdrop-blur rounded-2xl px-5 py-3 text-white"><div class="text-xs opacity-80">정모 출석</div><div class="text-2xl font-black">94%</div></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Quick cards -->
+    <div class="grid grid-cols-3 gap-5 mb-6">
+      <div class="card p-6 flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl grid place-items-center text-xl" style="background:rgba(255,143,171,.15);color:var(--bunny-main)"><i class="fa-solid fa-user-plus"></i></div>
+        <div><div class="text-2xl font-black">3</div><div class="text-xs" style="color:var(--grey)">가입 신청 대기</div></div>
+      </div>
+      <div class="card p-6 flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl grid place-items-center text-xl" style="background:rgba(244,183,64,.15);color:#F4B740"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div><div class="text-2xl font-black">5</div><div class="text-xs" style="color:var(--grey)">출석 주의 멤버</div></div>
+      </div>
+      <div class="card p-6 flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl grid place-items-center text-xl" style="background:rgba(94,200,224,.15);color:#5EC8E0"><i class="fa-solid fa-gem"></i></div>
+        <div><div class="text-2xl font-black">2</div><div class="text-xs" style="color:var(--grey)">보석금 처리 대기</div></div>
+      </div>
+    </div>
+
+    <!-- Member table -->
+    <div class="flex items-center justify-between mb-2 px-2">
+      <h2 class="font-black text-lg">멤버 현황</h2>
+      <button class="text-xs font-bold rounded-full px-4 py-2" style="background:var(--panel);color:var(--bunny-main)">전체 보기 →</button>
+    </div>
+    <table class="w-full">
+      <thead><tr><th>닉네임</th><th>역할</th><th>주간점수</th><th>출석</th><th>상태</th></tr></thead>
+      <tbody>
+        <tr><td class="font-bold rounded-l-2xl">🐰 달토끼</td><td style="color:var(--grey)">부길드장</td><td class="font-black">98</td><td>7/7</td><td><span class="badge" style="background:rgba(255,143,171,.18);color:var(--bunny-light)">활동중</span></td></tr>
+        <tr><td class="font-bold">🍫 초코롱</td><td style="color:var(--grey)">멤버</td><td class="font-black">91</td><td>6/7</td><td><span class="badge" style="background:rgba(255,143,171,.18);color:var(--bunny-light)">활동중</span></td></tr>
+        <tr><td class="font-bold">🌙 밤하늘</td><td style="color:var(--grey)">멤버</td><td class="font-black">74</td><td>4/7</td><td><span class="badge" style="background:rgba(244,183,64,.18);color:#F4B740">주의</span></td></tr>
+        <tr><td class="font-bold">🥛 민트우유</td><td style="color:var(--grey)">신입</td><td class="font-black">88</td><td>7/7</td><td><span class="badge" style="background:rgba(255,143,171,.18);color:var(--bunny-light)">활동중</span></td></tr>
+        <tr><td class="font-bold">☁️ 구름빵</td><td style="color:var(--grey)">멤버</td><td class="font-black">52</td><td>2/7</td><td><span class="badge" style="background:rgba(181,68,110,.25);color:var(--bunny-main)">결석多</span></td></tr>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

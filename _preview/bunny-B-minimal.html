@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>버니 · B. Minimal Mono</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+:root{
+  --night:#1A1626; --moon:#EDE6DA; --grey:#9B93A8;
+  --bunny-main:#FF8FAB; --bunny-light:#FFC9DE; --bunny-cream:#FFE8D6; --bunny-deep:#B5446E;
+  --line:rgba(237,230,218,.1); --panel:#211C2E;
+}
+*{font-family:'Noto Sans KR',sans-serif;}
+body{background:var(--night);color:var(--moon);margin:0;}
+.nav-item{display:flex;align-items:center;gap:13px;padding:9px 12px;border-radius:8px;color:var(--grey);font-weight:500;font-size:14px;transition:.15s;cursor:pointer;}
+.nav-item:hover{color:var(--moon);}
+.nav-item.active{color:var(--moon);background:var(--panel);}
+.nav-item.active i{color:var(--bunny-main);}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;}
+th{font-size:11px;letter-spacing:.04em;color:var(--grey);font-weight:600;text-align:left;padding:10px 18px;border-bottom:1px solid var(--line);}
+td{padding:14px 18px;font-size:13px;border-bottom:1px solid var(--line);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.kpi{font-variant-numeric:tabular-nums;}
+.spark{display:flex;align-items:flex-end;gap:3px;height:34px;}
+.spark span{width:5px;background:var(--bunny-deep);border-radius:2px;opacity:.5;}
+.spark span.hi{background:var(--bunny-main);opacity:1;}
+.badge{font-size:11px;font-weight:600;padding:2px 9px;border-radius:6px;}
+</style>
+</head>
+<body class="min-h-screen flex">
+  <!-- Sidebar -->
+  <aside class="w-60 border-r p-5 flex flex-col gap-1" style="border-color:var(--line)">
+    <div class="flex items-center gap-2.5 px-1 pb-6 mb-2">
+      <div class="w-8 h-8 rounded-lg grid place-items-center text-base" style="background:var(--bunny-main);color:var(--night)">🐰</div>
+      <div class="font-black tracking-tight">버니 길드</div>
+    </div>
+    <div class="text-[10px] uppercase tracking-wider px-2 mb-1" style="color:var(--grey)">메뉴</div>
+    <div class="nav-item active"><i class="fa-solid fa-house w-4 text-xs"></i> 대시보드</div>
+    <div class="nav-item"><i class="fa-solid fa-users w-4 text-xs"></i> 멤버 관리</div>
+    <div class="nav-item"><i class="fa-solid fa-chart-line w-4 text-xs"></i> 출석 · 점수</div>
+    <div class="nav-item"><i class="fa-solid fa-user-plus w-4 text-xs"></i> 가입 신청 <span class="ml-auto text-[10px] rounded px-1.5 py-0.5" style="background:var(--bunny-main);color:var(--night)">3</span></div>
+    <div class="nav-item"><i class="fa-solid fa-gem w-4 text-xs"></i> 보석금</div>
+    <div class="nav-item"><i class="fa-solid fa-calendar w-4 text-xs"></i> 일정</div>
+    <div class="mt-auto text-xs flex items-center gap-2.5 pt-4 border-t" style="border-color:var(--line);color:var(--grey)">
+      <div class="w-7 h-7 rounded-full grid place-items-center text-[11px] font-bold" style="background:var(--panel);color:var(--moon)">홍</div>
+      운영진 · 관리자
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="flex-1 px-10 py-8 max-w-[1100px]">
+    <div class="flex items-end justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-black tracking-tight">대시보드</h1>
+        <p class="text-sm mt-1" style="color:var(--grey)">2026년 6월 3주차 · 목요일 정모 기준</p>
+      </div>
+      <button class="text-sm px-4 py-2 rounded-lg font-semibold" style="background:var(--bunny-main);color:var(--night)">주간 리포트</button>
+    </div>
+
+    <!-- KPI row -->
+    <div class="grid grid-cols-4 gap-5 mb-8">
+      <div><div class="text-xs mb-1" style="color:var(--grey)">총 멤버</div><div class="text-3xl font-black kpi">48</div><div class="text-xs mt-1" style="color:var(--bunny-main)">▲ 2</div></div>
+      <div><div class="text-xs mb-1" style="color:var(--grey)">주간 평균점수</div><div class="text-3xl font-black kpi">86.4</div><div class="text-xs mt-1" style="color:var(--bunny-main)">▲ 4.1</div></div>
+      <div><div class="text-xs mb-1" style="color:var(--grey)">가입 대기</div><div class="text-3xl font-black kpi">3</div><div class="text-xs mt-1" style="color:var(--grey)">검토 필요</div></div>
+      <div><div class="text-xs mb-1" style="color:var(--grey)">결석률</div><div class="text-3xl font-black kpi">6%</div><div class="text-xs mt-1" style="color:var(--bunny-main)">▼ 안정</div></div>
+    </div>
+
+    <hr class="mb-8" style="border-color:var(--line)">
+
+    <!-- Member table -->
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold">멤버 현황</h2>
+      <div class="flex items-center gap-2 text-xs" style="color:var(--grey)">
+        <span class="px-2.5 py-1 rounded-md" style="background:var(--panel)">전체 48</span>
+        <span class="px-2.5 py-1 rounded-md">주의 5</span>
+      </div>
+    </div>
+    <div class="panel overflow-hidden">
+      <table class="w-full">
+        <thead><tr><th>닉네임</th><th>역할</th><th>주간점수</th><th>최근 추이</th><th>출석</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td class="font-semibold">달토끼</td><td style="color:var(--grey)">부길드장</td><td class="font-bold kpi">98</td><td><div class="spark"><span style="height:60%"></span><span style="height:75%"></span><span style="height:70%"></span><span class="hi" style="height:95%"></span></div></td><td class="kpi">7/7</td><td><span class="badge" style="color:var(--bunny-light);background:rgba(255,143,171,.12)">활동중</span></td></tr>
+          <tr><td class="font-semibold">초코롱</td><td style="color:var(--grey)">멤버</td><td class="font-bold kpi">91</td><td><div class="spark"><span style="height:80%"></span><span style="height:65%"></span><span style="height:85%"></span><span class="hi" style="height:90%"></span></div></td><td class="kpi">6/7</td><td><span class="badge" style="color:var(--bunny-light);background:rgba(255,143,171,.12)">활동중</span></td></tr>
+          <tr><td class="font-semibold">밤하늘</td><td style="color:var(--grey)">멤버</td><td class="font-bold kpi">74</td><td><div class="spark"><span style="height:90%"></span><span style="height:70%"></span><span style="height:50%"></span><span class="hi" style="height:55%"></span></div></td><td class="kpi">4/7</td><td><span class="badge" style="color:#F4B740;background:rgba(244,183,64,.12)">주의</span></td></tr>
+          <tr><td class="font-semibold">민트우유</td><td style="color:var(--grey)">신입</td><td class="font-bold kpi">88</td><td><div class="spark"><span style="height:40%"></span><span style="height:65%"></span><span style="height:80%"></span><span class="hi" style="height:88%"></span></div></td><td class="kpi">7/7</td><td><span class="badge" style="color:var(--bunny-light);background:rgba(255,143,171,.12)">활동중</span></td></tr>
+          <tr><td class="font-semibold">구름빵</td><td style="color:var(--grey)">멤버</td><td class="font-bold kpi">52</td><td><div class="spark"><span style="height:70%"></span><span style="height:45%"></span><span style="height:30%"></span><span class="hi" style="height:35%"></span></div></td><td class="kpi">2/7</td><td><span class="badge" style="color:var(--bunny-main);background:rgba(181,68,110,.18)">결석多</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>
