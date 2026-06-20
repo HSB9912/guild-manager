@@ -535,14 +535,51 @@ async function buildPenalty(){
 }
 
 /* ----- 가입 신청 (멤버 제출 폼) ----- */
+let _joinCuts=null;
+function _fmtMan(n){ return n>=100000?(n/10000).toFixed(0)+'만':(n/10000).toFixed(1).replace(/\.0$/,'')+'만'; }
+function _joinSliderBg(c){ const p=s=>Math.min(s/300000*100,100); return `linear-gradient(to right,#f3f4f6 0%,#f3f4f6 ${p(10000)}%,#dbeafe ${p(10000)}%,#dbeafe ${p(c.cut_last+5000)}%,#fed7aa ${p(c.cut_last+5000)}%,#fed7aa ${p(c.cut180)}%,#fef08a ${p(c.cut180)}%,#fef08a ${p(c.cut90)}%,#d1fae5 ${p(c.cut90)}%,#d1fae5 ${p(c.top51)}%,#fce7f3 ${p(c.top51)}%,#fce7f3 100%)`; }
+function _joinRankFor(v,c){
+  if(!c) return {rank:'로딩 중',msg:'최근 점수 가져오는 중',color:'var(--dim)'};
+  const joinCut=c.cut_last+5000;
+  if(v<10000) return {rank:'❌ 가입 불가',msg:'1만점 미만은 신청 거절',color:'#C03A3A'};
+  if(v<joinCut) return {rank:'🥖 뚱카롱 (2기)',msg:`1기 컷 ${_fmtMan(joinCut)} 미달 — 꼴등 ${_fmtMan(c.cut_last)}+5천 필요`,color:'#2a87a6'};
+  if(v<c.cut180) return {rank:'🥞 팬케이크 (1기 강등권)',msg:'하위 20명 범위 — 매주 강등 위협',color:'#B07A10'};
+  if(v<c.cut90)  return {rank:'⚡ 변동성 위험',msg:'90~180등 — 작은 변동에도 강등 가능',color:'#9a8200'};
+  if(v<c.top51)  return {rank:'🍰 롤케이크 (안정권)',msg:'TOP 90 이내 — 강등 거의 없음',color:'#1A8A4A'};
+  if(v<c.top21)  return {rank:'🎂 티라미슈',msg:'TOP 21~51 (부캐 All 면제 + 숫돌 24개)',color:'#B5446E'};
+  if(v<c.top5)   return {rank:'🍨 파르페',msg:'TOP 6~20 (별도 풀 분배)',color:'#B5446E'};
+  if(v<c.top1)   return {rank:'👑 크라운',msg:'TOP 1~5 (100억 분배)',color:'#9D174D'};
+  return {rank:'👑 TOP 1',msg:'1위 (28% 분배)',color:'#9D174D'};
+}
+window._joinScoreUpdate=()=>{ const sl=document.getElementById('jf_score'); if(!sl)return; const v=Number(sl.value); const r=_joinRankFor(v,_joinCuts); const vEl=document.getElementById('jf_scoreVal'),rEl=document.getElementById('jf_scoreRank'),mEl=document.getElementById('jf_scoreMsg'); if(vEl)vEl.textContent=v.toLocaleString(); if(rEl){rEl.textContent=r.rank;rEl.style.color=r.color;} if(mEl){mEl.textContent=r.msg;mEl.style.color=r.color;} };
 async function buildJoinForm(){
+  _joinCuts=null;
+  try{
+    const {data:periods}=await db().from('suro_periods').select('id,period_label').order('period_label',{ascending:false}).limit(1);
+    if(periods&&periods[0]){
+      const {data:scores}=await db().from('suro_scores').select('score').eq('period_id',periods[0].id).eq('guild',GUILD).gt('score',0).order('score',{ascending:false}).limit(4000);
+      if(scores&&scores.length){ const total=scores.length, at=(i)=>scores[Math.min(Math.max(i,0),total-1)]?.score||0;
+        _joinCuts={ cut_last:at(total-1),cut180:at(179),cut90:at(89),top51:at(50),top21:at(20),top5:at(4),top1:at(0),avg:Math.round(scores.reduce((s,x)=>s+x.score,0)/total),total,label:periods[0].period_label }; }
+    }
+  }catch(e){}
+  const c=_joinCuts; const initV=c?Math.round(c.cut90/5000)*5000:50000; const init=_joinRankFor(initV,c); const gaugeBg=c?_joinSliderBg(c):'var(--panel-2)';
   const cats=['지인 추천','길드 혜택/성장','홍보물/길드 이미지','재가입/복귀','기타'];
   const fld=(label,inner)=>`<div style="margin-bottom:16px"><label style="display:block;font-weight:800;font-size:13px;margin-bottom:6px">${label}</label>${inner}</div>`;
   const inp='width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;color:var(--text);outline:0;';
   return headerHTML('가입 신청',`${fac().label} 길드에 들어오기`) +
     `<div class="panel" style="border-radius:24px;padding:26px;max-width:620px">
       ${fld('닉네임 *', `<input id="jf_nick" style="${inp}" placeholder="메이플 캐릭터 닉네임">`)}
-      ${fld('수로 점수 *', `<input id="jf_score" style="${inp}" placeholder="예: 50,000">`)}
+      <div style="margin-bottom:16px">
+        <label style="display:block;font-weight:800;font-size:13px;margin-bottom:6px">수로 점수 * <span class="dim" style="font-weight:600">— 슬라이더로 예상 직위 확인</span></label>
+        <div class="panel tone-light" style="border-radius:16px;padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;gap:10px">
+            <div style="min-width:0"><div class="dim" style="font-size:10px;font-weight:700">예상 직위 / 기수</div><div id="jf_scoreRank" style="font-size:16px;font-weight:900;color:${init.color}">${init.rank}</div><div id="jf_scoreMsg" style="font-size:10px;font-weight:700;color:${init.color}">${init.msg}</div></div>
+            <div style="text-align:right;flex-shrink:0"><div class="dim" style="font-size:10px;font-weight:700">수로 점수</div><div style="font-size:24px;font-weight:900;color:var(--bunny-deep)"><span id="jf_scoreVal">${initV.toLocaleString()}</span></div></div>
+          </div>
+          <input id="jf_score" type="range" min="0" max="300000" step="1000" value="${initV}" oninput="_joinScoreUpdate()" style="width:100%;height:16px;border-radius:8px;-webkit-appearance:none;appearance:none;cursor:pointer;background:${gaugeBg}">
+          <div class="dim" style="font-size:10px;font-weight:700;margin-top:8px;text-align:center">${c?'기준: '+escHtml(c.label.slice(0,17))+' · 뚠카롱 '+c.total+'명 · 매주 변동':'최근 점수 로딩 실패 — 점수만 참고'}</div>
+        </div>
+      </div>
       ${fld('직업 *', `<input id="jf_job" style="${inp}" placeholder="예: 나이트로드">`)}
       ${fld('이전 길드', `<input id="jf_prev" style="${inp}" placeholder="없으면 비워두세요">`)}
       ${fld('가입 경로', `<select id="jf_cat" style="${inp}">${cats.map(c=>`<option>${c}</option>`).join('')}</select>`)}
@@ -553,9 +590,10 @@ async function buildJoinForm(){
 }
 window._joinSubmit = async ()=>{
   const v=id=>document.getElementById(id).value.trim();
-  const nick=v('jf_nick'), score=v('jf_score'), job=v('jf_job');
-  if(!nick||!score||!job) return alert('닉네임·수로 점수·직업은 필수예요.');
-  const row={ nickname:nick, suro_score:score, job, prev_guild:v('jf_prev')||null, join_category:v('jf_cat'), answers:v('jf_ans')||null, status:'pending', join_source:'bunny-site' };
+  const nick=v('jf_nick'), job=v('jf_job'); const scoreNum=Number(document.getElementById('jf_score')?.value||0);
+  if(!nick||!job) return alert('닉네임·직업은 필수예요.');
+  if(scoreNum<10000 && !confirm('수로 점수 1만점 미만은 가입 거절될 수 있어요. 그래도 신청할까요?')) return;
+  const row={ nickname:nick, suro_score:scoreNum.toLocaleString(), job, prev_guild:v('jf_prev')||null, join_category:v('jf_cat'), answers:v('jf_ans')||null, status:'pending', join_source:'bunny-site' };
   const { error } = await db().from('join_requests').insert(row);
   if(error) return alert('신청 실패: '+error.message);
   document.getElementById('pageBody').innerHTML = headerHTML('가입 신청','신청 완료') +
