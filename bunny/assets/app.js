@@ -189,66 +189,82 @@ function placeholderHTML(k){
   </div>`;
 }
 
-/* ---------- 홈 대시보드 (G 벤토) — MOCK에서 데이터 읽음 ---------- */
-function homeHTML(){
-  const d = MOCK;
-  const roleChip = (r)=> r[7]==='deep'?`<span class="chip" style="background:var(--bunny-deep);color:#fff">${r[2]}</span>`
-    : r[7]==='new'?`<span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep)">${r[2]}</span>`
-    : `<span class="chip" style="background:var(--line);color:var(--text)">${r[2]}</span>`;
-  const stChip = (s)=> s==='활동중'?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">활동중</span>'
-    : s==='주의'?'<span class="chip" style="background:var(--warn-bg);color:var(--warn-tx)">주의</span>'
-    : '<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx)">결석多</span>';
-  const tbody = d.members.map(r=>`<tr style="border-bottom:1px solid var(--line)">
-    <td style="padding:12px 8px;font-weight:700;display:flex;align-items:center;gap:8px;"><span style="width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;background:${r[6]}">${r[0]}</span>${r[1]}</td>
-    <td>${roleChip(r)}</td><td style="text-align:center;font-weight:900">${r[3]}</td><td style="text-align:center">${r[4]}</td><td style="text-align:center;padding-right:8px">${stChip(r[5])}</td></tr>`).join('');
-  const bars = d.weeklyBars.map((h,idx)=>`<div style="flex:1;border-radius:8px 8px 0 0;height:${h}%;background:${idx===5?'var(--bunny-deep)':h>=70?'var(--bunny-main)':'var(--bunny-light)'}"></div>`).join('');
-  const queue = d.joinQueue.map(r=>`
-    <div class="${r[4]}" style="display:flex;align-items:center;justify-content:space-between;border-radius:12px;padding:10px 16px;">
-      <div style="display:flex;align-items:center;gap:12px;"><span style="width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;background:${r[3]}">${r[0]}</span><div><p style="font-size:14px;font-weight:700;margin:0">${r[1]}</p><p class="dim" style="font-size:11px;margin:0">${r[2]}</p></div></div>
-      <div style="display:flex;gap:6px;"><button style="width:32px;height:32px;border:0;border-radius:8px;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-check"></i></button><button style="width:32px;height:32px;border:0;border-radius:8px;color:#fff;background:#C03A3A;cursor:pointer"><i class="fa-solid fa-xmark"></i></button></div>
-    </div>`).join('');
+/* ---------- 홈 대시보드 (G 벤토) — 실데이터 ---------- */
+async function buildHome(){
+  const [memCnt, joinPend, bailPend, periodsR, membersR, joinsR] = await Promise.all([
+    db().from('members').select('id',{count:'exact',head:true}).eq('guild',GUILD).eq('is_main',true),
+    db().from('join_requests').select('id',{count:'exact',head:true}).or('status.is.null,status.eq.pending'),
+    db().from('bail_requests').select('id',{count:'exact',head:true}).in('status',['pending','hold']),
+    db().from('suro_periods').select('id,period_label').order('start_date',{ascending:false}).limit(1),
+    db().from('members').select('id,name,role').eq('guild',GUILD).eq('is_main',true).limit(3000),
+    db().from('join_requests').select('id,nickname,job,suro_score,created_at').or('status.is.null,status.eq.pending').order('created_at',{ascending:false}).limit(5),
+  ]);
+  const totalMem=memCnt.count||0, joinPending=joinPend.count||0, bailPending=bailPend.count||0;
+  const memMap={}; (membersR.data||[]).forEach(m=>memMap[m.id]={name:m.name,role:m.role});
+  const pid=periodsR.data?.[0]?.id; const periodLabel=periodsR.data?.[0]?.period_label||'';
+  let avg=0, partRate=0, partCnt=0, warn=0, top=[], buckets=[0,0,0,0,0];
+  if(pid){
+    const {data:scores}=await db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',pid).limit(4000);
+    const list=(scores||[]).map(s=>({name:memMap[s.member_id]?.name||('#'+s.member_id),role:memMap[s.member_id]?.role||'',score:Number(s.score)||0})).sort((a,b)=>b.score-a.score);
+    const sum=list.reduce((a,b)=>a+b.score,0); avg=list.length?Math.round(sum/list.length):0;
+    warn=list.filter(x=>x.score===0).length; partCnt=list.filter(x=>x.score>0).length; partRate=list.length?Math.round(partCnt/list.length*100):0;
+    top=list.slice(0,6);
+    list.forEach(x=>{ const s=x.score; buckets[s>=90000?4:s>=70000?3:s>=50000?2:s>=30000?1:0]++; });
+  }
+  const fmt=(n)=>(Number(n)||0).toLocaleString();
+  const stChip=(sc)=> sc===0?'<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx)">미참</span>':sc<30000?'<span class="chip" style="background:var(--warn-bg);color:var(--warn-tx)">주의</span>':'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">활동중</span>';
+  const tbody=top.length?top.map(r=>`<tr style="border-bottom:1px solid var(--line)">
+    <td style="padding:12px 8px;font-weight:700;display:flex;align-items:center;gap:8px;"><span style="width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;background:${avatarColor(r.name)}">${(r.name||'?').slice(0,1)}</span>${escHtml(r.name)}</td>
+    <td>${memRoleChip(r.role||'-')}</td><td style="text-align:center;font-weight:900">${fmt(r.score)}</td><td style="text-align:center;padding-right:8px">${stChip(r.score)}</td></tr>`).join('')
+    :'<tr><td colspan="4" class="dim" style="padding:24px;text-align:center;font-weight:700">점수 데이터 없음</td></tr>';
+  const maxB=Math.max(1,...buckets);
+  const bars=buckets.map((b,i)=>`<div style="flex:1;border-radius:8px 8px 0 0;height:${Math.max(6,b/maxB*100)}%;background:${i>=3?'var(--bunny-main)':i===2?'var(--bunny-light)':'var(--bunny-deep)'}" title="${b}명"></div>`).join('');
+  const joins=joinsR.data||[];
+  const queue=joins.length?joins.map(r=>`<div class="tone-light" style="display:flex;align-items:center;justify-content:space-between;border-radius:12px;padding:10px 16px;">
+      <div style="display:flex;align-items:center;gap:12px;"><span style="width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;background:${avatarColor(r.nickname)}">${(r.nickname||'?').slice(0,1)}</span><div><p style="font-size:14px;font-weight:700;margin:0">${escHtml(r.nickname||'-')}</p><p class="dim" style="font-size:11px;margin:0">${escHtml(r.job||'')} · 수로 ${escHtml(r.suro_score||'-')}</p></div></div>
+      <a href="requests.html" class="chip" style="background:var(--bunny-light);color:var(--bunny-deep);text-decoration:none">심사 →</a>
+    </div>`).join('')
+    :'<div class="dim" style="padding:24px;text-align:center;font-weight:700">대기 중인 가입 신청이 없어요</div>';
 
   return headerHTML('대시보드','길드 현황 한눈에 보기') + `<div class="bento">
     <div class="panel tone-rose" style="border-radius:24px;padding:24px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;">
-      <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:700;opacity:.9">총 멤버</span><i class="fa-solid fa-users" style="opacity:.8"></i></div>
-      <div><p style="font-size:48px;font-weight:900;line-height:1;margin:0">${d.totalMembers}</p><p style="font-size:12px;font-weight:700;margin:8px 0 0;opacity:.9"><i class="fa-solid fa-arrow-up"></i> 이번 주 ${d.totalDelta}명</p></div>
+      <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:700;opacity:.9">총 멤버 (본캐)</span><i class="fa-solid fa-users" style="opacity:.8"></i></div>
+      <div><p style="font-size:48px;font-weight:900;line-height:1;margin:0">${totalMem}</p><p style="font-size:12px;font-weight:700;margin:8px 0 0;opacity:.9">버니 길드</p></div>
     </div>
     <div class="panel tone-light" style="border-radius:24px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;">
       <div style="display:flex;align-items:center;justify-content:space-between"><span class="dim" style="font-size:14px;font-weight:700">주간 평균점수</span><i class="fa-solid fa-star" style="color:var(--bunny-main)"></i></div>
-      <div><p style="font-size:36px;font-weight:900;line-height:1;margin:0">${d.weeklyAvg}</p>
-        <svg class="spark" style="margin-top:8px;width:100%" height="26" viewBox="0 0 120 26" preserveAspectRatio="none"><path d="M0 20 L20 14 L40 17 L60 8 L80 12 L100 5 L120 9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-      </div>
+      <div><p style="font-size:36px;font-weight:900;line-height:1;margin:0">${fmt(avg)}</p><p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">${escHtml(periodLabel.slice(0,17))}</p></div>
     </div>
     <div class="panel tone-cream" style="border-radius:24px;padding:24px;display:flex;align-items:center;gap:20px;">
-      <div class="donut" style="width:80px;height:80px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><div style="width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--panel)"><span style="font-weight:900;font-size:18px">${d.attendRate}</span></div></div>
-      <div><p class="dim" style="font-size:14px;font-weight:700;margin:0">정모 출석률</p><p class="dim" style="font-size:12px;margin:4px 0 0">지난주 대비 <span style="font-weight:700;color:var(--bunny-deep)">${d.attendDelta}</span></p><p class="dim" style="font-size:12px;margin:2px 0 0">${d.attendCount}</p></div>
+      <div class="donut" style="width:80px;height:80px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:conic-gradient(var(--bunny-main) 0 ${partRate}%, var(--line) ${partRate}% 100%)"><div style="width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--panel)"><span style="font-weight:900;font-size:18px">${partRate}%</span></div></div>
+      <div><p class="dim" style="font-size:14px;font-weight:700;margin:0">수로 참여율</p><p class="dim" style="font-size:12px;margin:4px 0 0">참여 <span style="font-weight:700;color:var(--bunny-deep)">${partCnt}</span>명</p><p class="dim" style="font-size:12px;margin:2px 0 0">미참 ${warn}명</p></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:18px;">
-      <div class="panel tone-light" style="border-radius:24px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex:1"><div><p class="dim" style="font-size:12px;font-weight:700;margin:0">가입 대기</p><p style="font-size:24px;font-weight:900;margin:0">${d.joinPending}</p></div><i class="fa-solid fa-user-clock" style="font-size:20px;color:var(--ice)"></i></div>
-      <div class="panel tone-cream" style="border-radius:24px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex:1"><div><p class="dim" style="font-size:12px;font-weight:700;margin:0">출석 주의</p><p style="font-size:24px;font-weight:900;margin:0">${d.attendWarn}</p></div><i class="fa-solid fa-triangle-exclamation" style="font-size:20px;color:var(--amber)"></i></div>
+      <div class="panel tone-light" style="border-radius:24px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex:1"><div><p class="dim" style="font-size:12px;font-weight:700;margin:0">가입 대기</p><p style="font-size:24px;font-weight:900;margin:0">${joinPending}</p></div><i class="fa-solid fa-user-clock" style="font-size:20px;color:var(--ice)"></i></div>
+      <div class="panel tone-cream" style="border-radius:24px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex:1"><div><p class="dim" style="font-size:12px;font-weight:700;margin:0">수로 미참</p><p style="font-size:24px;font-weight:900;margin:0">${warn}</p></div><i class="fa-solid fa-triangle-exclamation" style="font-size:20px;color:var(--amber)"></i></div>
     </div>
 
     <div class="panel" style="border-radius:24px;padding:24px;grid-column:span 2;grid-row:span 2;display:flex;flex-direction:column;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><h3 style="font-weight:900;font-size:18px;margin:0"><i class="fa-solid fa-list-check" style="margin-right:8px;color:var(--bunny-main)"></i>멤버 현황</h3><a href="members.html" class="dim" style="font-size:12px;font-weight:700;text-decoration:none">전체 보기 <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></a></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><h3 style="font-weight:900;font-size:18px;margin:0"><i class="fa-solid fa-ranking-star" style="margin-right:8px;color:var(--bunny-main)"></i>수로 TOP</h3><a href="analysis.html" class="dim" style="font-size:12px;font-weight:700;text-decoration:none">전체 분석 <i class="fa-solid fa-chevron-right" style="font-size:10px"></i></a></div>
       <div class="scroll" style="overflow-x:auto;"><table style="width:100%;font-size:14px;border-collapse:collapse;">
-        <thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:1px solid var(--line)"><th style="text-align:left;padding:10px 8px">닉네임</th><th style="text-align:left;padding:10px 0">역할</th><th style="text-align:center;padding:10px 0">주간점수</th><th style="text-align:center;padding:10px 0">출석</th><th style="text-align:center;padding:10px 8px">상태</th></tr></thead>
+        <thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:1px solid var(--line)"><th style="text-align:left;padding:10px 8px">닉네임</th><th style="text-align:left;padding:10px 0">직위</th><th style="text-align:center;padding:10px 0">주간점수</th><th style="text-align:center;padding:10px 8px">상태</th></tr></thead>
         <tbody style="font-weight:500">${tbody}</tbody>
       </table></div>
     </div>
 
     <div class="panel tone-cream" style="border-radius:24px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;">
       <div style="display:flex;align-items:center;justify-content:space-between"><span class="dim" style="font-size:14px;font-weight:700">보석금 대기</span><i class="fa-solid fa-gem" style="color:var(--bunny-deep)"></i></div>
-      <div><p style="font-size:36px;font-weight:900;line-height:1;margin:0">${d.bailPending}</p><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">건 처리 대기중</p></div>
+      <div><p style="font-size:36px;font-weight:900;line-height:1;margin:0">${bailPending}</p><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">건 처리 대기중</p></div>
     </div>
 
     <div class="panel tone-light" style="border-radius:24px;padding:24px;display:flex;flex-direction:column;">
-      <span class="dim" style="font-size:14px;font-weight:700;margin-bottom:12px">주간 활동량</span>
+      <span class="dim" style="font-size:14px;font-weight:700;margin-bottom:12px">점수 분포</span>
       <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px;flex:1;min-height:70px;">${bars}</div>
-      <div class="dim" style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;margin-top:8px"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+      <div class="dim" style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;margin-top:8px"><span>~3만</span><span>3만</span><span>5만</span><span>7만</span><span>9만+</span></div>
     </div>
 
     <div class="panel" style="border-radius:24px;padding:24px;grid-column:span 2;display:flex;flex-direction:column;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><h3 style="font-weight:900;font-size:16px;margin:0"><i class="fa-solid fa-user-plus" style="margin-right:8px;color:var(--ice)"></i>가입 신청 대기 <span class="chip" style="margin-left:4px;background:var(--bunny-deep);color:#fff">${d.joinPending}</span></h3><a href="requests.html" class="dim" style="font-size:12px;font-weight:700;text-decoration:none">심사하기</a></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><h3 style="font-weight:900;font-size:16px;margin:0"><i class="fa-solid fa-user-plus" style="margin-right:8px;color:var(--ice)"></i>가입 신청 대기 <span class="chip" style="margin-left:4px;background:var(--bunny-deep);color:#fff">${joinPending}</span></h3><a href="requests.html" class="dim" style="font-size:12px;font-weight:700;text-decoration:none">심사하기</a></div>
       <div style="display:flex;flex-direction:column;gap:10px;">${queue}</div>
     </div>
   </div>`;
@@ -433,9 +449,26 @@ async function buildRequests(){
 }
 window._joinAct = async (id, status)=>{
   if(!isAdmin()) return alert('운영진만 처리할 수 있어요. 로그인 후 이용해주세요.');
-  if(!confirm(status==='approved'?'이 신청을 승인할까요?':'이 신청을 거절할까요?')) return;
-  const { error } = await db().from('join_requests').update({ status, processed_at:new Date().toISOString(), processed_by:CURRENT.email }).eq('id',id);
-  if(error) return alert('처리 실패: '+error.message);
+  const me = CURRENT.name || CURRENT.email || '운영진';
+  let r=null; try{ const {data}=await db().from('join_requests').select('*').eq('id',id).single(); r=data; }catch(e){}
+  if(status==='approved'){
+    const suroNum=Number(String(r?.suro_score||'').replace(/[^\d]/g,''))||0;
+    let msg='이 가입 신청을 승인할까요?\n· 상태 → 승인\n· 영구기록(member_records)에 자동 등록';
+    if(suroNum>0&&suroNum<10000) msg='⚠ 수로 점수 '+suroNum.toLocaleString()+'점 (가입 기준 10,000 미만)\n그래도 승인할까요?\n\n'+msg;
+    if(!confirm(msg)) return;
+    const { error } = await db().from('join_requests').update({ status:'approved', processed_by:me, processed_at:new Date().toISOString() }).eq('id',id);
+    if(error) return alert('처리 실패: '+error.message);
+    let reasonAns=''; if(Array.isArray(r?.answers)){ const f=r.answers.find(x=>x&&x.q&&String(x.q).includes('이유')); reasonAns=f?.a||''; }
+    const rec={ join_date:new Date().toISOString().slice(0,10), nickname:r?.nickname, job_class:r?.job||'', suro_score:r?.suro_score||'', prev_guild:r?.prev_guild||'', join_source:r?.join_source||'', join_category:r?.join_category||'', join_reason:reasonAns, status:'active' };
+    const { error:re } = await db().from('member_records').insert(rec);
+    alert(re ? ('승인됨 — 단 영구기록 등록 실패: '+re.message) : '가입 승인 + 영구기록 자동 등록 완료 ✓');
+  } else {
+    const reason=prompt('거절 사유 (선택)','')||null;
+    if(!confirm('이 가입 신청을 거절할까요?')) return;
+    const { error } = await db().from('join_requests').update({ status:'rejected', processed_by:me, processed_at:new Date().toISOString(), admin_note:reason }).eq('id',id);
+    if(error) return alert('처리 실패: '+error.message);
+    alert('거절 처리됨');
+  }
   render();
 };
 
@@ -987,6 +1020,7 @@ window._syncAdd=async ()=>{
 };
 
 const PAGES = {
+  home:      buildHome,
   members:   buildMembers,
   promotion: buildPromotion,
   requests:  buildRequests,
@@ -1012,114 +1046,262 @@ const PAGES = {
 /* ----- 보석금 신청 (멤버 폼) ----- */
 const BASE_AMOUNT = { '뚠카롱':80, '뚱카롱':40, '밤카롱':20 };
 function curHalfYear(){ const d=new Date(); return `${d.getFullYear()}-H${(d.getMonth()+1)<=6?1:2}`; }
+const BAIL_MEAEGI_URL = 'https://guild-meaegi-proxy.hongsb9912.workers.dev/';
+const BAIL_R2 = { worker:'https://guild-images.hongsb9912.workers.dev', publicUrl:'https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev', apiKey:'guild-manager-r2-key-2026', bucket:'bail-images' };
+const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
+let _bailState = { mainChar:null, allChars:[], payers:[], halfYear:'', proofUrl:null, proofUploading:false, latestPeriod:null };
+function _bailNormGuild(g){ const s=String(g||'').trim(); if(!s)return ''; const known=['뚠카롱','뚱카롱','밤카롱','별카롱','달카롱','꿀카롱','솜카롱']; for(const k of known) if(s===k||s.includes(k)) return k; return s; }
+function _bailBaseFor(guild){ return BASE_AMOUNT[guild]||20; }
 async function buildBailForm(){
-  const inp='width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;color:var(--text);outline:0;';
-  const fld=(l,i)=>`<div style="margin-bottom:16px"><label style="display:block;font-weight:800;font-size:13px;margin-bottom:6px">${l}</label>${i}</div>`;
-  const facOpts=Object.values(FACTIONS).map(f=>`<option value="${f.key}">${f.label} (${f.key})</option>`).join('');
+  _bailState = { mainChar:null, allChars:[], payers:[], halfYear:curHalfYear(), proofUrl:null, proofUploading:false, latestPeriod:null };
+  const inp='width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;font-weight:600;color:var(--text);outline:0;font-size:14px;';
+  const half=_bailState.halfYear;
   return headerHTML('보석금 신청','수로 미참 보석금 납부 (노블 해제용)') +
-    `<div class="panel" style="border-radius:24px;padding:26px;max-width:620px">
-      <div class="dim" style="font-size:12px;font-weight:700;background:var(--panel-2);border-radius:12px;padding:12px;margin-bottom:18px;line-height:1.6">
-        <i class="fa-solid fa-circle-info" style="color:var(--bunny-main);margin-right:5px"></i>보석금 = <b style="color:var(--text)">길드 기준액 × 누진세 × 미참 회차</b><br>
-        기준액: 버니 80 · 늑대 40 · 쿠거 20 / 누진세: 같은 반기(${curHalfYear()}) 재신청 시 ×2 → ×3 가산
+    `<div style="max-width:620px">
+      <div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px">
+        <h3 class="dim" style="font-size:11px;font-weight:800;letter-spacing:.04em;margin:0 0 12px;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-circle-info" style="color:var(--bunny-main)"></i>보석금 안내</h3>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">뚠카롱 (버니)</span><span style="font-weight:900;color:var(--bunny-deep)">조각 80개</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">뚱카롱 (늑대)</span><span style="font-weight:900;color:var(--bunny-deep)">조각 40개</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">밤 / 별 / 달 / 꿀 / 솜카롱</span><span style="font-weight:900;color:var(--bunny-deep)">조각 20개</span></div>
+        </div>
+        <div style="background:var(--warn-bg);color:var(--warn-tx);border-radius:12px;padding:10px 13px;font-size:11px;font-weight:700;line-height:1.6"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i><b>누진세</b> · 동일 캐릭이 같은 반기에 또 보석금 시 <b>×2 → ×3 → ×4</b> 가산. 반기(<b>${escHtml(half)}</b>) 기준 자동 초기화.</div>
       </div>
-      ${fld('납부 캐릭명 *', `<input id="bf_char" style="${inp}" placeholder="보석금 낼 캐릭 닉네임">`)}
-      ${fld('소속 길드 *', `<select id="bf_guild" style="${inp}">${facOpts}</select>`)}
-      ${fld('미참 회차 수 *', `<input id="bf_offense" type="number" min="1" value="1" style="${inp}">`)}
-      ${fld('카톡 닉네임', `<input id="bf_kakao" style="${inp}" placeholder="운영진 확인용">`)}
-      ${fld('사유', `<input id="bf_reason" style="${inp}" placeholder="예: 단순 미참">`)}
-      ${fld('증빙 이미지 URL', `<input id="bf_proof" style="${inp}" placeholder="선택 (스샷 링크)">`)}
-      <button onclick="_bailSubmit()" style="width:100%;border:0;border-radius:14px;padding:14px;font-weight:900;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer;margin-top:6px">보석금 납부 신청 💎</button>
-      <p class="dim" style="font-size:12px;font-weight:700;margin:14px 0 0;text-align:center">신청 후 운영진이 확인하면 노블 해제돼요</p>
+      <div class="panel" style="border-radius:24px;padding:24px">
+        <div style="margin-bottom:16px">
+          <label style="display:block;font-weight:800;font-size:13px;margin-bottom:6px">본캐닉 *</label>
+          <div style="display:flex;gap:8px">
+            <input id="bf_main" onkeydown="if(event.key==='Enter'){event.preventDefault();_bailSearch();}" placeholder="본캐 닉네임 입력" autocomplete="off" style="${inp};flex:1">
+            <button id="bf_searchBtn" onclick="_bailSearch()" style="border:0;border-radius:12px;padding:11px 18px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer;white-space:nowrap"><i class="fa-solid fa-magnifying-glass"></i></button>
+          </div>
+        </div>
+        <div id="bf_result"></div>
+        <div id="bf_amount" style="display:none"></div>
+        <div id="bf_proofArea" style="display:none;margin-bottom:16px">
+          <label style="display:block;font-weight:800;font-size:13px;margin-bottom:6px">입금 인증 스샷 *</label>
+          <div style="background:var(--bad-bg);color:var(--bad-tx);border-radius:14px;padding:11px 13px;font-size:11px;font-weight:700;line-height:1.55;margin-bottom:10px"><i class="fa-solid fa-circle-exclamation" style="margin-right:5px"></i><b>반드시 길드창고 입금내역 스샷</b>이어야 합니다.</div>
+          <div id="bf_proofWrap" style="background:var(--panel-2);border:2px dashed var(--line);border-radius:14px;padding:14px">
+            <input id="bf_proofInput" type="file" accept="image/*" style="display:none" onchange="_bailProofChange(event)">
+            <div id="bf_proofEmpty"><button onclick="document.getElementById('bf_proofInput').click()" style="width:100%;border:0;background:none;padding:18px 0;cursor:pointer;color:var(--dim)"><i class="fa-solid fa-cloud-arrow-up" style="font-size:28px;display:block;margin-bottom:8px"></i><span style="font-size:13px;font-weight:800">탭해서 스샷 첨부 (또는 Ctrl+V)</span></button></div>
+            <div id="bf_proofPreview" style="display:none"><img id="bf_proofImg" style="width:100%;max-height:260px;object-fit:contain;border-radius:12px;margin-bottom:8px;background:var(--panel)"><div style="display:flex;gap:8px"><button onclick="document.getElementById('bf_proofInput').click()" style="flex:1;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px;font-size:12px;font-weight:800;color:var(--text);cursor:pointer">다시 선택</button><button onclick="_bailClearProof()" style="border:0;background:var(--bad-bg);color:var(--bad-tx);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer"><i class="fa-solid fa-trash"></i></button></div><p id="bf_proofStatus" class="dim" style="font-size:11px;text-align:center;margin:8px 0 0;font-weight:700"></p></div>
+          </div>
+        </div>
+        <div id="bf_reasonArea" style="display:none;margin-bottom:16px"><label style="display:block;font-weight:800;font-size:13px;margin-bottom:6px">사유 / 비고 <span class="dim" style="font-weight:600">(선택)</span></label><textarea id="bf_reason" rows="3" placeholder="미참 사유 등" style="${inp};resize:vertical"></textarea></div>
+        <div id="bf_kakaoArea" style="display:none;margin-bottom:16px"><label style="display:block;font-weight:800;font-size:13px;margin-bottom:6px">오픈채팅 닉 <span class="dim" style="font-weight:600">(선택)</span></label><input id="bf_kakao" placeholder="카톡 오픈챗 닉" style="${inp}"></div>
+        <button id="bf_submitBtn" onclick="_bailSubmit()" style="display:none;width:100%;border:0;border-radius:14px;padding:14px;font-weight:900;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer;margin-top:4px"><i class="fa-solid fa-paper-plane" style="margin-right:8px"></i><span id="bf_submitLabel">보석금 납부 신청</span></button>
+        <p id="bf_submitNote" class="dim" style="display:none;font-size:11px;font-weight:700;margin:12px 0 0;text-align:center">신청 후 운영진이 입금 확인 → 노블 해제</p>
+      </div>
+      <div id="bf_historyCard" class="panel" style="border-radius:24px;padding:22px;margin-top:16px;display:none"><h3 style="font-weight:900;font-size:15px;margin:0 0 14px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--bunny-main);margin-right:8px"></i>내 신청 내역</h3><div id="bf_historyList" style="display:flex;flex-direction:column;gap:8px"></div></div>
     </div>`;
 }
-window._bailSubmit = async ()=>{
-  const v=id=>document.getElementById(id).value.trim();
-  const char=v('bf_char'), guild=v('bf_guild'), offense=Math.max(1,parseInt(v('bf_offense'))||1);
-  if(!char) return alert('납부 캐릭명을 입력해주세요.');
-  const base=BASE_AMOUNT[guild]||20, half=curHalfYear();
-  let prior=0;
-  try{ const { count } = await db().from('bail_requests').select('id',{count:'exact',head:true}).eq('payer_char',char).eq('half_year',half); prior=count||0; }catch(e){}
-  const multi=prior+1, total=base*multi*offense;
-  if(!confirm(`${char} · 기준 ${base} × ${multi}배 × ${offense}회 = ${total}개\n신청할까요?`)) return;
-  const { error } = await db().from('bail_requests').insert({
-    payer_char:char, payer_guild:guild, base_amount:base, multiplier:multi, total_amount:total,
-    offense_count:offense, half_year:half, reason:v('bf_reason')||null, kakao_nick:v('bf_kakao')||null,
-    proof_image_url:v('bf_proof')||null, status:'pending'
-  });
-  if(error) return alert('신청 실패: '+error.message);
-  document.getElementById('pageBody').innerHTML = headerHTML('보석금 신청','신청 완료') +
-    `<div class="panel" style="border-radius:24px;padding:48px;text-align:center;max-width:620px"><div style="font-size:46px;margin-bottom:12px">💎✅</div><h3 style="font-weight:900;font-size:20px;margin:0 0 8px">보석금 신청 완료!</h3><p class="dim" style="font-weight:700;margin:0">${char} · 총 <b style="color:var(--bunny-deep)">${total}개</b> · 운영진 확인 후 노블 해제</p></div>`;
+if(!window._bailPasteBound){ window._bailPasteBound=true; window.addEventListener('paste', async(e)=>{ const area=document.getElementById('bf_proofArea'); if(!area||area.style.display==='none')return; const items=e.clipboardData&&e.clipboardData.items; if(!items)return; for(const it of items){ if(it.type&&it.type.startsWith('image/')){ const f=it.getAsFile(); if(f){ e.preventDefault(); await _bailUploadProof(f); return; } } } }); }
+window._bailSearch = async ()=>{
+  const name=(document.getElementById('bf_main')?.value||'').trim(); if(!name) return alert('본캐닉을 입력해주세요.');
+  const btn=document.getElementById('bf_searchBtn'); if(btn){btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>';}
+  const res=document.getElementById('bf_result'); if(res)res.innerHTML='<div class="dim" style="text-align:center;padding:16px;font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>조회 중…</div>';
+  _bailState.payers=[]; _bailHideAmount(); _bailHideSubmit();
+  try{
+    if(!_bailState.latestPeriod){ try{ const {data:p}=await db().from('suro_periods').select('id,period_label').order('id',{ascending:false}).limit(1); if(p&&p[0])_bailState.latestPeriod=p[0]; }catch(e){} }
+    const { data:members, error }=await db().from('members').select('*').eq('name',name); if(error)throw error;
+    let mainRow=(members||[]).find(m=>m.is_main!==false)||(members||[])[0]||null;
+    let chars=[];
+    if(mainRow){ const {data:subs}=await db().from('members').select('*').eq('main_char_name',name); const subList=(subs||[]).filter(s=>s.is_main===false);
+      chars=[{name:mainRow.name,guild:_bailNormGuild(mainRow.guild),role:mainRow.role,is_main:true,id:mainRow.id||null,class:mainRow.class||''},...subList.map(s=>({name:s.name,guild:_bailNormGuild(s.guild),role:s.role,is_main:false,id:s.id||null,class:s.class||''}))]; }
+    try{ const mres=await fetch(BAIL_MEAEGI_URL+encodeURIComponent(name)+'/alt'); if(mres.ok){ const md=await mres.json(); const raw=[]; if(md&&md.main)raw.push({...md.main,_isMain:true}); if(md&&Array.isArray(md.alt))raw.push(...md.alt.map(c=>({...c,_isMain:false}))); if(!raw.length&&Array.isArray(md))raw.push(...md.map((c,i)=>({...c,_isMain:i===0}))); const have=new Set(chars.map(c=>c.name)); for(const c of raw){ const nm=c.nickname||c.name||c.character_name||''; if(!nm||have.has(nm))continue; have.add(nm); chars.push({name:nm,guild:_bailNormGuild(c.guildName||c.guild||''),role:null,is_main:false,id:null,class:c.className||c.class||''}); } if(!mainRow&&raw.length){ const mm=raw.find(r=>r._isMain)||raw[0]; mainRow={name:mm.nickname||mm.name||name}; const idx=chars.findIndex(c=>c.name===mainRow.name); if(idx>=0)chars[idx].is_main=true; } } }catch(e){ console.warn('메애기 보강 실패(무시)'); }
+    if(mainRow&&chars.length){ _bailState.mainChar={name:mainRow.name}; _bailState.allChars=chars; _bailRenderCharSelect(); }
+    else { _bailState.mainChar=null; _bailState.allChars=[]; if(res)res.innerHTML='<div style="background:var(--warn-bg);color:var(--warn-tx);border-radius:14px;padding:16px;font-weight:700"><div style="font-size:13px;font-weight:900;margin-bottom:4px"><i class="fa-solid fa-circle-info" style="margin-right:6px"></i>등록된 본캐를 찾지 못했어요</div><p style="font-size:12px;margin:0">본캐 닉을 확인하거나 운영진에게 등록 요청해주세요.</p></div>'; }
+  }catch(e){ if(res)res.innerHTML=`<div style="text-align:center;padding:16px;color:var(--bad-tx);font-weight:700">조회 실패: ${escHtml(e.message||e)}</div>`; }
+  finally{ if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-magnifying-glass"></i>';} }
+  _bailLoadHistory(name);
 };
+function _bailRenderCharSelect(){
+  const rows=_bailState.allChars.map((c,i)=>{ const guild=c.guild||'?'; const base=_bailBaseFor(guild); const sel=_bailState.payers.some(p=>p.idx===i);
+    const gBg=guild==='뚠카롱'?'var(--bunny-light)':guild==='뚱카롱'?'#fecdd3':'var(--panel-3)';
+    return `<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--panel-2);border:${sel?'2px solid var(--bunny-main)':'1px solid var(--line)'};border-radius:14px;cursor:pointer"><input type="checkbox" ${sel?'checked':''} onchange="_bailToggle(${i})" style="width:16px;height:16px;accent-color:var(--bunny-main)"><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(c.name)}${c.is_main?' <span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep)">본캐</span>':''}</div><div class="dim" style="font-size:11px;font-weight:700">${escHtml(c.class||'직업?')} · ${escHtml(c.role||'직위?')}</div></div><span style="background:${gBg};color:var(--bunny-deep);font-size:10px;font-weight:900;padding:4px 8px;border-radius:8px">${escHtml(guild)}</span><span class="dim" style="background:var(--line);color:var(--text);font-size:10px;font-weight:900;padding:4px 8px;border-radius:8px">${base}개</span></label>`; }).join('');
+  const res=document.getElementById('bf_result'); if(res)res.innerHTML=`<div style="background:var(--ok-bg);color:var(--ok-tx);border-radius:14px;padding:11px 13px;margin-bottom:10px"><div style="font-size:12px;font-weight:900"><i class="fa-solid fa-circle-check" style="margin-right:5px"></i>본캐 매칭 — 보석금 낼 캐릭 선택 (여러 개 가능)</div></div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">${rows}</div>`;
+}
+window._bailToggle = async (idx)=>{
+  const ex=_bailState.payers.findIndex(p=>p.idx===idx); if(ex>=0){ _bailState.payers.splice(ex,1); _bailFinalize(); return; }
+  const c=_bailState.allChars[idx]; if(!c)return; const base=_bailBaseFor(c.guild);
+  const payer={idx,name:c.name,guild:c.guild,role:c.role,is_main:!!c.is_main,member_id:c.id||null,base,multi:1,total:base,offenseCnt:1,missPeriod:null,calculating:true};
+  _bailState.payers.push(payer); _bailRenderCharSelect(); _bailShowAmountLoading();
+  try{ const {count,error}=await db().from('bail_requests').select('id',{count:'exact',head:true}).eq('payer_char',c.name).eq('half_year',_bailState.halfYear).in('status',['approved','noble_unlocked','pending']); if(error)throw error; payer.offenseCnt=(count||0)+1; payer.multi=payer.offenseCnt; payer.total=payer.base*payer.multi; }catch(e){}
+  if(payer.member_id&&_bailState.latestPeriod){ try{ const {data:sc}=await db().from('suro_scores').select('score').eq('member_id',payer.member_id).eq('period_id',_bailState.latestPeriod.id).maybeSingle(); if(!sc||!sc.score||Number(sc.score)===0) payer.missPeriod={label:_bailState.latestPeriod.period_label}; }catch(e){} }
+  payer.calculating=false; _bailFinalize();
+};
+function _bailFinalize(){ if(_bailState.payers.length===0){_bailHideAmount();_bailHideSubmit();}else{_bailRenderAmount();_bailShowSubmit();} _bailRenderCharSelect(); }
+function _bailShowAmountLoading(){ const el=document.getElementById('bf_amount'); if(!el)return; el.style.display=''; el.innerHTML='<div class="dim" style="background:var(--panel-2);border-radius:14px;padding:16px;text-align:center;font-weight:700;margin-bottom:16px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>금액 계산 중…</div>'; }
+function _bailHideAmount(){ const el=document.getElementById('bf_amount'); if(el){el.style.display='none';el.innerHTML='';} }
+function _bailRenderAmount(){
+  const rows=_bailState.payers.map(p=>{ const mClr=p.multi<=1?['var(--ok-bg)','var(--ok-tx)']:p.multi===2?['var(--warn-bg)','var(--warn-tx)']:['var(--bad-bg)','var(--bad-tx)'];
+    const gBg=p.guild==='뚠카롱'?'var(--bunny-light)':p.guild==='뚱카롱'?'#fecdd3':'var(--panel-3)';
+    return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:6px"><div style="font-size:14px;font-weight:900">${escHtml(p.name)}</div><span style="background:${gBg};color:var(--bunny-deep);font-size:9px;font-weight:900;padding:2px 6px;border-radius:5px">${escHtml(p.guild)}</span></div><span style="font-size:9px;background:${p.offenseCnt===1?'var(--ok-bg)':'var(--warn-bg)'};color:${p.offenseCnt===1?'var(--ok-tx)':'var(--warn-tx)'};border-radius:5px;padding:2px 6px;font-weight:800">${p.offenseCnt===1?'반기 첫 신청':p.offenseCnt+'회차 누진'}</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div class="dim" style="font-size:9px;font-weight:800">기본</div><div style="font-size:14px;font-weight:900">${p.base}개</div></div><div><div class="dim" style="font-size:9px;font-weight:800">배수</div><div style="font-size:14px;font-weight:900;display:inline-block;padding:1px 8px;border-radius:6px;background:${mClr[0]};color:${mClr[1]}">×${p.multi}</div></div><div><div class="dim" style="font-size:9px;font-weight:800">납부</div><div style="font-size:14px;font-weight:900;color:var(--bunny-deep)">${p.calculating?'<i class="fa-solid fa-spinner fa-spin"></i>':p.total}개</div></div></div></div>`; }).join('');
+  const totalSum=_bailState.payers.reduce((s,p)=>s+(p.calculating?0:p.total),0);
+  const el=document.getElementById('bf_amount'); if(el){ el.style.display=''; el.innerHTML=`<div class="panel tone-light" style="border-radius:18px;padding:16px;margin-bottom:16px"><div style="font-size:11px;font-weight:900;color:var(--bunny-deep);margin-bottom:12px"><i class="fa-solid fa-calculator" style="margin-right:5px"></i>자동 계산 (${_bailState.payers.length}캐)</div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">${rows}</div><div style="background:var(--panel);border:2px solid var(--bunny-main);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between"><div><div class="dim" style="font-size:10px;font-weight:800">총 납부 금액</div></div><div style="font-size:26px;font-weight:900;color:var(--bunny-deep)">${totalSum}<span class="dim" style="font-size:12px;margin-left:3px">개</span></div></div></div>`; }
+  const lbl=document.getElementById('bf_submitLabel'); if(lbl)lbl.textContent=_bailState.payers.length>1?`${_bailState.payers.length}캐릭 일괄 신청`:'보석금 납부 신청';
+}
+function _bailShowSubmit(){ ['bf_proofArea','bf_reasonArea','bf_kakaoArea','bf_submitBtn','bf_submitNote'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='';}); }
+function _bailHideSubmit(){ ['bf_proofArea','bf_reasonArea','bf_kakaoArea','bf_submitBtn','bf_submitNote'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';}); }
+window._bailProofChange = async (e)=>{ const f=e.target.files&&e.target.files[0]; if(f)await _bailUploadProof(f); };
+async function _bailUploadProof(file){
+  if(!file.type.startsWith('image/')){alert('이미지 파일만');return;} if(file.size>10*1024*1024){alert('10MB 이하만');return;}
+  const reader=new FileReader(); reader.onload=(ev)=>{ const img=document.getElementById('bf_proofImg'); if(img)img.src=ev.target.result; const e=document.getElementById('bf_proofEmpty'); if(e)e.style.display='none'; const pr=document.getElementById('bf_proofPreview'); if(pr)pr.style.display=''; }; reader.readAsDataURL(file);
+  _bailState.proofUploading=true; _bailState.proofUrl=null; const st=document.getElementById('bf_proofStatus'); if(st)st.innerHTML='<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>업로드 중…';
+  try{ const ext=(file.name.split('.').pop()||'png').toLowerCase(); const safe=['png','jpg','jpeg','gif','webp'].includes(ext)?ext:'png'; const fn=`bail-${Date.now()}-${Math.random().toString(36).slice(2,8)}.${safe}`;
+    const res=await fetch(`${BAIL_R2.worker}/upload/${BAIL_R2.bucket}/${fn}`,{method:'POST',headers:{'Content-Type':file.type,'X-API-Key':BAIL_R2.apiKey},body:file}); if(!res.ok)throw new Error('업로드 실패: '+res.status);
+    const j=await res.json().catch(()=>({})); _bailState.proofUrl=j.url||`${BAIL_R2.publicUrl}/${BAIL_R2.bucket}/${fn}`; if(st)st.innerHTML='<span style="color:var(--ok-tx)"><i class="fa-solid fa-circle-check" style="margin-right:5px"></i>업로드 완료</span>';
+  }catch(err){ if(st)st.innerHTML=`<span style="color:var(--bad-tx)">업로드 실패: ${escHtml(err.message||err)}</span>`; _bailState.proofUrl=null; }finally{ _bailState.proofUploading=false; }
+}
+window._bailClearProof = ()=>{ _bailState.proofUrl=null;_bailState.proofUploading=false; const i=document.getElementById('bf_proofInput');if(i)i.value=''; const e=document.getElementById('bf_proofEmpty');if(e)e.style.display=''; const pr=document.getElementById('bf_proofPreview');if(pr)pr.style.display='none'; const st=document.getElementById('bf_proofStatus');if(st)st.innerHTML=''; };
+window._bailSubmit = async ()=>{
+  if(!_bailState.mainChar){alert('본캐를 먼저 검색해주세요.');return;} if(_bailState.payers.length===0){alert('보석금 낼 캐릭을 1개 이상 선택해주세요.');return;}
+  if(_bailState.payers.some(p=>p.calculating)){alert('금액 계산 중입니다.');return;} if(!_bailState.proofUrl){ if(_bailState.proofUploading){alert('스샷 업로드 중입니다.');return;} alert('길드창고 입금내역 스샷을 첨부해주세요.');return; }
+  const reason=(document.getElementById('bf_reason')?.value||'').trim()||null, kakao=(document.getElementById('bf_kakao')?.value||'').trim()||null;
+  const rows=_bailState.payers.map(p=>({ main_char:_bailState.mainChar.name, payer_char:p.name, payer_guild:p.guild, payer_role:p.role||null, payer_is_main:!!p.is_main, base_amount:p.base, multiplier:p.multi, total_amount:p.total, offense_count:p.offenseCnt, half_year:_bailState.halfYear, miss_period_id:(_bailState.latestPeriod&&_bailState.latestPeriod.id)||null, miss_period_label:(p.missPeriod&&p.missPeriod.label)||null, proof_image_url:_bailState.proofUrl, reason, kakao_nick:kakao, status:'pending' }));
+  const btn=document.getElementById('bf_submitBtn'); if(btn){btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>제출 중…';}
+  try{ const {data,error}=await db().from('bail_requests').insert(rows).select(); if(error)throw error;
+    try{ await _bailNotifyDiscord(data||rows); }catch(e){}
+    const total=rows.reduce((s,r)=>s+(Number(r.total_amount)||0),0);
+    const body=document.getElementById('pageBody'); if(body)body.innerHTML=headerHTML('보석금 신청','신청 완료')+`<div class="panel" style="border-radius:24px;padding:48px;text-align:center;max-width:620px"><div style="font-size:46px;margin-bottom:12px">💎✅</div><h3 style="font-weight:900;font-size:20px;margin:0 0 8px">보석금 신청 완료! (${rows.length}캐릭)</h3><p class="dim" style="font-weight:700;margin:0 0 16px">총 <b style="color:var(--bunny-deep)">${total}개</b> · 운영진 입금 확인 후 노블 해제</p><button onclick="(async()=>{const el=document.getElementById('pageBody');if(el)el.innerHTML=await buildBailForm();})()" style="border:0;border-radius:12px;padding:11px 22px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer">다시 신청</button></div>`;
+  }catch(e){ alert('신청 실패: '+(e.message||e)); if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-paper-plane" style="margin-right:8px"></i><span id="bf_submitLabel">보석금 납부 신청</span>';} }
+};
+async function _bailNotifyDiscord(reqs){
+  if(!reqs||reqs.length===0)return; const totalAmt=reqs.reduce((s,r)=>s+(Number(r.total_amount)||0),0); const maxMulti=Math.max(...reqs.map(r=>r.multiplier||1));
+  const color=maxMulti===1?0x06b6d4:maxMulti===2?0xf59e0b:maxMulti===3?0xea580c:0xdc2626; const first=reqs[0];
+  const charLines=reqs.map(r=>`• **${r.payer_char}** (${r.payer_guild}) ${r.base_amount}×${r.multiplier} = **${r.total_amount}개**${r.offense_count>1?` _(${r.offense_count}회차)_`:''}`).join('\n');
+  const payload={ content:'<@&692099309172162570> <@&692091131646705716> 💎 새 보석금 신청', allowed_mentions:{roles:['692099309172162570','692091131646705716']}, embeds:[{ title:`💎 새 보석금 납부 신청 (${reqs.length}캐)`, description:`**${first.main_char}** 님이 ${reqs.length}캐릭의 보석금을 신청했습니다`, color, fields:[{name:'캐릭별 내역',value:charLines,inline:false},{name:'총 납부',value:`**${totalAmt}개**`,inline:true},{name:'반기',value:first.half_year,inline:true}], image:first.proof_image_url?{url:first.proof_image_url}:undefined, footer:{text:first.reason?`사유: ${first.reason}`:'입금 확인 후 노블 해제'}, timestamp:new Date().toISOString() }] };
+  const res=await fetch(BAIL_NOTIFY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); if(!res.ok)throw new Error('Discord '+res.status);
+}
+async function _bailLoadHistory(mainCharName){
+  const card=document.getElementById('bf_historyCard'), list=document.getElementById('bf_historyList'); if(!card||!list)return;
+  try{ const {data,error}=await db().from('bail_requests').select('id,status,payer_char,payer_guild,total_amount,multiplier,half_year,processed_at,created_at,admin_note').eq('main_char',mainCharName).order('created_at',{ascending:false}).limit(15); if(error)throw error;
+    if(!data||data.length===0){card.style.display='none';return;} list.innerHTML=data.map(_bailHistoryRow).join(''); card.style.display='';
+  }catch(e){ card.style.display='none'; }
+}
+function _bailHistoryRow(r){
+  const map={pending:['var(--warn-bg)','var(--warn-tx)','확인 대기','fa-clock'],hold:['var(--warn-bg)','var(--warn-tx)','보류 중','fa-pause'],approved:['var(--ok-bg)','var(--ok-tx)','입금 확인됨','fa-check'],noble_unlocked:['var(--ok-bg)','var(--ok-tx)','노블 해제됨','fa-unlock'],rejected:['var(--bad-bg)','var(--bad-tx)','거절됨','fa-circle-xmark']};
+  const s=map[r.status]||map.pending; const dt=r.processed_at?new Date(r.processed_at).toLocaleDateString('ko-KR'):new Date(r.created_at).toLocaleDateString('ko-KR');
+  return `<div style="background:${s[0]};border-radius:14px;padding:11px 13px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:900;color:${s[1]}"><i class="fa-solid ${s[3]}" style="margin-right:4px"></i>${s[2]}</span><span class="dim" style="font-size:10px;font-weight:700">${escHtml(dt)}</span></div><div style="font-size:14px;font-weight:800">${escHtml(r.payer_char)} <span class="dim" style="font-size:10px;font-weight:600">(${escHtml(r.payer_guild)})</span></div><div class="dim" style="font-size:11px;font-weight:700;margin-top:3px">${r.total_amount}개 · ×${r.multiplier} · ${escHtml(r.half_year)}</div>${r.admin_note?`<div style="font-size:11px;color:${s[1]};margin-top:4px;font-weight:700">메모: ${escHtml(r.admin_note)}</div>`:''}</div>`;
+}
 
 /* ----- 아이템 컨설팅 (넥슨 장비 조회) ----- */
+function _consultGradeStyle(g){ if(!g)return{label:'',color:'var(--dim)'}; const k=String(g).toLowerCase(); if(k.includes('레전')||k.includes('legend'))return{label:'레전드리',color:'#1A8A4A'}; if(k.includes('유니')||k.includes('unique'))return{label:'유니크',color:'#E0A020'}; if(k.includes('에픽')||k.includes('epic'))return{label:'에픽',color:'#9B59B6'}; if(k.includes('레어')||k.includes('rare'))return{label:'레어',color:'#3BA9C7'}; return{label:String(g),color:'var(--dim)'}; }
+function _consultDetectSpecialRing(name){ return /(컨티뉴어스|리스트레인트|웨폰\s*퍼프|웨퍼)/i.test(name||''); }
+function _consultNormalizeEq(eq){
+  const slot=eq?.item_equipment_slot||eq?.item_equipment_part||''; const isSlotSpecial=slot.includes('특수'); const isNameSpecial=_consultDetectSpecialRing(eq?.item_name);
+  let srLv=parseInt(eq?.special_ring_level)||0; if(srLv===0&&(isSlotSpecial||isNameSpecial))srLv=1;
+  const ao=eq?.item_add_option||{}; const addOpts=[];
+  const aoMap=[['STR',ao.str],['DEX',ao.dex],['INT',ao.int],['LUK',ao.luk],['올스탯',ao.all_stat,'%'],['공격력',ao.attack_power],['마력',ao.magic_power],['보스',ao.boss_damage,'%'],['데미지',ao.damage,'%'],['HP',ao.max_hp]];
+  for(const [label,val,suffix] of aoMap){ const n=parseInt(val)||0; if(n>0)addOpts.push(`${label}+${n}${suffix||''}`); }
+  return { slot, name:eq?.item_name||'', icon:eq?.item_icon||'', stars:parseInt(eq?.starforce)||0, upgrade:parseInt(eq?.scroll_upgrade)||0, pot_grade:eq?.potential_option_grade||'', pots:[eq?.potential_option_1,eq?.potential_option_2,eq?.potential_option_3].filter(Boolean), add_grade:eq?.additional_potential_option_grade||'', adds:[eq?.additional_potential_option_1,eq?.additional_potential_option_2,eq?.additional_potential_option_3].filter(Boolean), soul_name:eq?.soul_name||'', soul_option:eq?.soul_option||'', special_ring_level:srLv, add_opts:addOpts };
+}
+function _consultPresetScore(items){ if(!Array.isArray(items))return 0; let s=0; for(const eq of items){ s+=parseInt(eq?.starforce)||0; s+=parseInt(eq?.scroll_upgrade)||0; const g=(eq?.potential_option_grade||'').toLowerCase(); if(g.includes('레전')||g.includes('legend'))s+=12; else if(g.includes('유니')||g.includes('unique'))s+=6; else if(g.includes('에픽')||g.includes('epic'))s+=2; const ag=(eq?.additional_potential_option_grade||'').toLowerCase(); if(ag.includes('레전')||ag.includes('legend'))s+=10; else if(ag.includes('유니')||ag.includes('unique'))s+=5; else if(ag.includes('에픽')||ag.includes('epic'))s+=1; } return s; }
+function _consultMergePreset(equipData,n){ const preset=equipData?.[`item_equipment_preset_${n}`]||[]; const legacy=equipData?.item_equipment||[]; const ps=new Set(preset.map(e=>e.item_equipment_slot||e.item_equipment_part)); const extras=legacy.filter(e=>!ps.has(e.item_equipment_slot||e.item_equipment_part)); return preset.length?[...preset,...extras]:legacy; }
+function _consultPickBestPreset(equipData){ const presets=[1,2,3].map(n=>({no:n,items:equipData?.[`item_equipment_preset_${n}`]||[],score:_consultPresetScore(equipData?.[`item_equipment_preset_${n}`]||[])})); const valid=presets.filter(p=>p.items.length>0); if(!valid.length)return Number(equipData?.preset_no)||1; valid.sort((a,b)=>b.score-a.score); return valid[0].no; }
+function _consultItemCardHtml(d){
+  const isSpecial=(d.special_ring_level||0)>0; const potG=isSpecial?{label:'특수',color:'#3BA9C7'}:_consultGradeStyle(d.pot_grade); const addG=_consultGradeStyle(d.add_grade); const stars=parseInt(d.stars)||0,upgrade=parseInt(d.upgrade)||0;
+  const topLine=isSpecial?`<span class="chip" style="background:#3BA9C71f;color:#3BA9C7;font-weight:800">Lv.${d.special_ring_level}/6</span>`:`${stars>0?`<span class="chip" style="background:rgba(224,160,32,.15);color:#E0A020;font-weight:800"><i class="fa-solid fa-star" style="font-size:9px;margin-right:3px"></i>${stars}</span>`:''}${upgrade>0?`<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx);font-weight:800">+${upgrade}</span>`:''}`;
+  const potLine=(!isSpecial&&d.pots.length)?`<div style="font-size:12px;font-weight:700;line-height:1.5;margin-top:4px"><span style="color:${potG.color};font-weight:900;margin-right:5px">${escHtml(potG.label||'잠재')}</span><span class="dim">${escHtml(d.pots.join(', '))}</span></div>`:'';
+  const addLine=(!isSpecial&&d.adds.length)?`<div style="font-size:12px;font-weight:700;line-height:1.5"><span style="color:${addG.color};font-weight:900;margin-right:5px">${escHtml(addG.label||'에디')}</span><span class="dim">${escHtml(d.adds.join(', '))}</span></div>`:'';
+  const addOptLine=(d.add_opts&&d.add_opts.length)?`<div style="font-size:12px;font-weight:700;line-height:1.5"><span style="color:var(--bunny-deep);font-weight:900;margin-right:5px">추옵</span><span class="dim">${escHtml(d.add_opts.join(' · '))}</span></div>`:'';
+  const soulLine=d.soul_name?`<div style="font-size:12px;font-weight:700;line-height:1.5"><span style="color:var(--bunny-main);font-weight:900;margin-right:5px">소울</span><span class="dim">${escHtml(d.soul_name)}${d.soul_option?', '+escHtml(d.soul_option):''}</span></div>`:'';
+  return `<div class="panel" style="border-radius:16px;padding:12px;display:flex;gap:10px;border-left:3px solid ${potG.color}"><div style="flex-shrink:0;width:44px;height:44px;background:var(--panel-2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden">${d.icon?`<img src="${escAttr(d.icon)}" style="width:36px;height:36px;image-rendering:pixelated" onerror="this.style.display='none'">`:`<i class="fa-solid fa-shield-halved dim"></i>`}</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">${topLine}<span class="chip" style="background:var(--panel-2);color:var(--dim);font-weight:800">${escHtml(d.slot||'-')}</span></div><div style="font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(d.name||'-')}</div>${potLine}${addLine}${addOptLine}${soulLine}</div></div>`;
+}
 async function buildConsulting(){
   const inp='border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;color:var(--text);outline:0;';
   return headerHTML('아이템 컨설팅','캐릭터 장비 조회') +
     `<div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px">
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input id="ct_char" onkeydown="if(event.key==='Enter')_consultFetch()" placeholder="캐릭터 닉네임" style="${inp};flex:1;min-width:200px">
-        <button onclick="_consultFetch()" style="border:0;border-radius:12px;padding:11px 22px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-magnifying-glass"></i> 불러오기</button>
+        <button id="ct_btn" onclick="_consultFetch()" style="border:0;border-radius:12px;padding:11px 22px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-magnifying-glass"></i> 불러오기</button>
       </div>
-      <p class="dim" style="font-size:12px;font-weight:700;margin:10px 0 0">넥슨 Open API로 장비·잠재등급을 조회합니다</p>
+      <p class="dim" style="font-size:12px;font-weight:700;margin:10px 0 0">넥슨 Open API — 장비·스타포스·잠재등급·추가옵션 · 가장 강한 프리셋 자동선택</p>
     </div>
     <div id="consultResult"></div>`;
 }
 window._consultFetch = async ()=>{
-  const name=document.getElementById('ct_char').value.trim(); if(!name) return alert('캐릭터 닉네임을 입력해주세요.');
-  const box=document.getElementById('consultResult');
-  box.innerHTML=`<div class="panel" style="border-radius:24px;padding:40px;text-align:center"><span class="dim" style="font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>${name} 조회 중…</span></div>`;
+  const name=document.getElementById('ct_char')?.value.trim(); if(!name)return alert('캐릭터 닉네임을 입력해주세요.');
+  const box=document.getElementById('consultResult'), btn=document.getElementById('ct_btn'); if(btn){btn.disabled=true;btn.style.opacity='.6';}
+  box.innerHTML=`<div class="panel" style="border-radius:24px;padding:40px;text-align:center"><span class="dim" style="font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>${escHtml(name)} 조회 중…</span></div>`;
   try{
     const id=await nexonFetch('/maplestory/v1/id',{character_name:name});
-    const [basic,equip]=await Promise.all([
-      nexonFetch('/maplestory/v1/character/basic',{ocid:id.ocid}),
-      nexonFetch('/maplestory/v1/character/item-equipment',{ocid:id.ocid}),
-    ]);
-    const items=equip.item_equipment||[];
-    const gc=(g)=> g==='레전드리'?'#1A8A4A':g==='유니크'?'#E0A020':g==='에픽'?'#9B59B6':g==='레어'?'#3BA9C7':'var(--dim)';
-    const cards=items.map(it=>`<div class="panel tone-light" style="border-radius:16px;padding:12px;display:flex;gap:10px;align-items:center">
-      ${it.item_icon?`<img src="${it.item_icon}" style="width:36px;height:36px;image-rendering:pixelated">`:''}
-      <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:13px">${it.item_equipment_slot||it.item_equipment_part||''}</div><div class="dim" style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.item_name||'-'}</div></div>
-      ${it.starforce&&+it.starforce>0?`<span class="chip" style="background:rgba(224,160,32,.15);color:#E0A020">★${it.starforce}</span>`:''}
-      ${it.potential_option_grade?`<span class="chip" style="background:${gc(it.potential_option_grade)}22;color:${gc(it.potential_option_grade)}">${it.potential_option_grade}</span>`:''}
-    </div>`).join('');
-    box.innerHTML=`<div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px">
-        ${basic.character_image?`<img src="${basic.character_image}" style="width:96px;height:96px;background:var(--panel-2);border-radius:16px">`:''}
-        <div><h3 style="font-weight:900;font-size:20px;margin:0">${basic.character_name||name}</h3>
-          <p class="dim" style="font-weight:700;margin:4px 0 0">Lv.${basic.character_level||0} · ${basic.character_class||''}${basic.character_guild_name?' · '+basic.character_guild_name:''}</p></div>
-      </div>
-      <div class="bento" style="grid-template-columns:repeat(2,1fr)">${cards||'<div class="dim" style="padding:30px;text-align:center;font-weight:700">장비 정보 없음</div>'}</div>`;
-  }catch(e){ box.innerHTML=`<div class="panel" style="border-radius:24px;padding:30px;text-align:center"><span style="font-weight:800;color:var(--bad-tx)">${e.message||e}</span><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">닉네임을 확인해주세요.</p></div>`; }
+    const [basic,equipData]=await Promise.all([ nexonFetch('/maplestory/v1/character/basic',{ocid:id.ocid}), nexonFetch('/maplestory/v1/character/item-equipment',{ocid:id.ocid}) ]);
+    const bestNo=_consultPickBestPreset(equipData); const equips=_consultMergePreset(equipData,bestNo); const cards=equips.map(eq=>_consultItemCardHtml(_consultNormalizeEq(eq))).join('');
+    let charImg=basic?.character_image||''; if(charImg&&!/[?&]width=/.test(charImg))charImg+=(charImg.includes('?')?'&':'?')+'width=200&height=250';
+    box.innerHTML=`<div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">${charImg?`<img src="${escAttr(charImg)}" style="width:96px;height:120px;object-fit:contain;background:var(--panel-2);border-radius:16px" onerror="this.style.display='none'">`:''}<div style="flex:1;min-width:160px"><h3 style="font-weight:900;font-size:22px;margin:0">${escHtml(basic?.character_name||name)}</h3><p class="dim" style="font-weight:700;margin:6px 0 0;font-size:14px">Lv.${basic?.character_level||0} · ${escHtml(basic?.character_class||'')}${basic?.character_guild_name?' · '+escHtml(basic.character_guild_name):''}${basic?.world_name?' · '+escHtml(basic.world_name):''}</p></div><span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep);font-weight:800">장비 ${equips.length}개 · 프리셋 ${bestNo}</span></div><div class="bento" style="grid-template-columns:repeat(2,1fr)">${cards||'<div class="dim" style="grid-column:span 2;padding:30px;text-align:center;font-weight:700">장비 정보 없음</div>'}</div>`;
+  }catch(e){ box.innerHTML=`<div class="panel" style="border-radius:24px;padding:30px;text-align:center"><span style="font-weight:800;color:var(--bad-tx)">${escHtml(e.message||String(e))}</span><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">닉네임을 확인해주세요.</p></div>`; }
+  finally{ if(btn){btn.disabled=false;btn.style.opacity='1';} }
 };
 
-/* ----- 버니버디 (랜덤 짝꿍 매칭) ----- */
-let _buddyM=[];
+/* ----- 버니버디 (멘토-멘티 버디팀 · 옛 뚠뚠버디 포팅) ----- */
+const BUDDY_ST={active:['var(--ok-bg)','var(--ok-tx)','진행 중'],completed:['rgba(59,169,199,.15)','#3BA9C7','완료'],failed:['var(--bad-bg)','var(--bad-tx)','실패'],cancelled:['var(--panel-2)','var(--dim)','취소']};
 async function buildBuddy(){
-  const { data, error } = await db().from('members').select('name,role').eq('guild',GUILD).eq('is_main',true).limit(2000);
+  const { data:teams, error } = await db().from('buddy_teams').select('*').order('created_at',{ascending:false}).limit(200);
   if(error) throw error;
-  _buddyM=(data||[]).map(m=>m.name);
-  return headerHTML('버니버디','멤버 랜덤 짝꿍 매칭') +
-    `<div class="panel" style="border-radius:24px;padding:28px;text-align:center">
-      <div style="font-size:40px;margin-bottom:10px">🐰💞🐰</div>
-      <p style="font-weight:800;margin:0 0 4px">버니 본캐 ${_buddyM.length}명 중에서 랜덤 짝꿍을 뽑아요</p>
-      <p class="dim" style="font-size:13px;font-weight:700;margin:0 0 18px">정모 파티·멘토링·이벤트용</p>
-      <button onclick="_buddyShuffle()" style="border:0;border-radius:14px;padding:13px 28px;font-weight:900;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer">🎲 짝꿍 뽑기</button>
-      <div id="buddyResult" style="margin-top:20px"></div>
-    </div>`;
+  const active=(teams||[]).filter(t=>t.status==='active'), done=(teams||[]).filter(t=>t.status!=='active');
+  const card=(t)=>{ const s=BUDDY_ST[t.status]||BUDDY_ST.cancelled; return `<div class="panel" style="border-radius:18px;overflow:hidden;display:flex;cursor:pointer;margin-bottom:10px" onclick="_buddyDetail(${t.id})">
+    ${t.team_image?`<div style="width:120px;flex-shrink:0;background:var(--panel-2)"><img src="${t.team_image}" style="width:100%;height:100%;object-fit:cover;min-height:90px"></div>`:''}
+    <div style="padding:16px;flex:1;display:flex;align-items:center;gap:12px;min-width:0">
+      ${t.team_image?'':'<div style="font-size:24px">🤝</div>'}
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:900">${t.team_name||(t.mentor_name+' × '+t.mentee_name)}</span>
+          <span class="chip" style="background:${s[0]};color:${s[1]}">${s[2]}</span>
+          ${t.reward_choice?`<span class="chip" style="background:${t.reward_choice==='A'?'var(--ok-bg)':'rgba(155,89,182,.15)'};color:${t.reward_choice==='A'?'var(--ok-tx)':'#9B59B6'}">${t.reward_choice}보상</span>`:''}
+        </div>
+        <div class="dim" style="font-size:12px;font-weight:700;margin-top:4px"><span style="color:var(--amber)">멘토</span> ${t.mentor_name} · <span style="color:var(--ice)">멘티</span> ${t.mentee_name}${t.start_date?' · '+t.start_date:''}</div>
+      </div>
+      <i class="fa-solid fa-chevron-right dim"></i>
+    </div></div>`; };
+  return headerHTML('버니버디','멘토-멘티 버디팀') +
+    `<div class="panel" style="border-radius:20px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-weight:800"><i class="fa-solid fa-handshake" style="color:var(--amber);margin-right:6px"></i>진행 ${active.length}팀 · 완료 ${done.length}팀</span>
+      ${isAdmin()?`<button onclick="_buddyCreate()" style="margin-left:auto;border:0;border-radius:10px;padding:9px 16px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer"><i class="fa-solid fa-plus"></i> 팀 생성</button>`:''}
+    </div>
+    ${active.length?active.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:30px;text-align:center"><span class="dim" style="font-weight:700">진행 중인 버디팀이 없어요</span></div>'}
+    ${done.length?`<h3 class="dim" style="font-weight:900;font-size:13px;margin:18px 0 10px">완료된 버디팀 (${done.length})</h3>${done.map(card).join('')}`:''}`;
 }
-window._buddyShuffle = ()=>{
-  const a=_buddyM.slice();
-  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
-  let html='<div style="display:flex;flex-direction:column;gap:10px;max-width:480px;margin:0 auto">';
-  for(let i=0;i<a.length;i+=2){
-    const p1=a[i], p2=a[i+1];
-    html+=`<div class="panel tone-cream" style="border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:center;gap:14px;font-weight:800">
-      <span style="display:inline-flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;background:${avatarColor(p1)}">${(p1||'?').slice(0,1)}</span>${p1}</span>
-      <i class="fa-solid fa-heart" style="color:var(--bunny-main)"></i>
-      ${p2?`<span style="display:inline-flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900;background:${avatarColor(p2)}">${(p2||'?').slice(0,1)}</span>${p2}</span>`:'<span class="dim">혼자 (홀수)</span>'}
-    </div>`;
-  }
-  html+='</div>';
-  document.getElementById('buddyResult').innerHTML=html;
+window._buddyBack=async ()=>{ const el=document.getElementById('pageBody'); if(!el)return; el.innerHTML=loadingHTML('buddy'); try{ el.innerHTML=await buildBuddy(); }catch(e){ el.innerHTML=errorHTML('buddy',e); } };
+window._buddyDetail=async (id)=>{
+  const el=document.getElementById('pageBody'); if(!el)return; el.innerHTML=loadingHTML('buddy');
+  try{
+    const [{data:team},{data:missions}]=await Promise.all([
+      db().from('buddy_teams').select('*').eq('id',id).single(),
+      db().from('buddy_missions').select('*').eq('team_id',id).order('week_number'),
+    ]);
+    const s=BUDDY_ST[team.status]||BUDDY_ST.cancelled;
+    const ck=(v)=> v?'<i class="fa-solid fa-circle-check" style="color:var(--ok-tx)"></i>':'<span class="dim">–</span>';
+    const rows=(missions||[]).map(m=>`<tr style="border-bottom:1px solid var(--line)">
+      <td style="padding:10px 8px;font-weight:900">${m.week_number}주차</td>
+      <td style="text-align:center">${(m.mentor_score!=null?Number(m.mentor_score).toLocaleString():'-')} ${ck(m.mentor_clear)}</td>
+      <td style="text-align:center">${(m.mentee_score!=null?Number(m.mentee_score).toLocaleString():'-')} ${ck(m.mentee_clear)}</td>
+      <td style="text-align:center">${m.admin_verified?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">인증</span>':'<span class="chip" style="background:var(--warn-bg);color:var(--warn-tx)">대기</span>'}</td>
+    </tr>`).join('');
+    el.innerHTML = headerHTML('버니버디', team.team_name||(team.mentor_name+' × '+team.mentee_name)) +
+      `<button onclick="_buddyBack()" style="border:0;background:var(--panel-2);color:var(--text);border-radius:10px;padding:8px 16px;font-weight:800;cursor:pointer;margin-bottom:14px"><i class="fa-solid fa-arrow-left"></i> 목록</button>
+       <div class="panel" style="border-radius:24px;padding:0;overflow:hidden;margin-bottom:16px">
+         ${team.team_image?`<img src="${team.team_image}" style="width:100%;max-height:220px;object-fit:cover">`:''}
+         <div style="padding:20px">
+           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px"><span class="chip" style="background:${s[0]};color:${s[1]}">${s[2]}</span>${team.reward_choice?`<span class="chip" style="background:${team.reward_choice==='A'?'var(--ok-bg)':'rgba(155,89,182,.15)'};color:${team.reward_choice==='A'?'var(--ok-tx)':'#9B59B6'}">${team.reward_choice} 보상</span>`:''}${team.start_date?`<span class="dim" style="font-size:12px;font-weight:700">${team.start_date} 시작</span>`:''}</div>
+           <p style="font-weight:800;margin:0"><span style="color:var(--amber)">멘토</span> ${team.mentor_name} · <span style="color:var(--ice)">멘티</span> ${team.mentee_name}</p>
+         </div>
+       </div>
+       <div class="panel" style="border-radius:24px;padding:20px">
+         <h3 style="font-weight:900;font-size:16px;margin:0 0 14px"><i class="fa-solid fa-list-check" style="color:var(--bunny-main);margin-right:8px"></i>주차별 미션</h3>
+         <div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:440px">
+           <thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:10px 8px">주차</th><th style="text-align:center;padding:10px 0">멘토 점수</th><th style="text-align:center;padding:10px 0">멘티 점수</th><th style="text-align:center;padding:10px 0">인증</th></tr></thead>
+           <tbody style="font-weight:600">${rows||'<tr><td colspan="4" class="dim" style="padding:24px;text-align:center;font-weight:700">미션 기록 없음</td></tr>'}</tbody></table></div>
+       </div>`;
+  }catch(e){ el.innerHTML=errorHTML('buddy',e); }
+};
+window._buddyCreate=async ()=>{
+  if(!isAdmin()) return alert('운영진만 생성할 수 있어요.');
+  const mentor=prompt('멘토 닉네임'); if(!mentor) return;
+  const mentee=prompt('멘티 닉네임'); if(!mentee) return;
+  const reward=(prompt('보상 선택 — A(조각) / B(룰렛)','A')||'A').toUpperCase();
+  const { error } = await db().from('buddy_teams').insert({ mentor_name:mentor.trim(), mentee_name:mentee.trim(), reward_choice:(reward==='B'?'B':'A'), status:'active', start_date:new Date().toISOString().slice(0,10) });
+  if(error) return alert('생성 실패: '+error.message);
+  _buddyBack();
 };
 
 /* ---------- 다크모드 ---------- */
@@ -1142,8 +1324,7 @@ function render(){
   const hasBuilder = !!PAGES[page] && !blocked;
 
   let content;
-  if(page === 'home')        content = homeHTML();
-  else if(blocked)           content = denyHTML(page);          // 관리자 전용 차단
+  if(blocked)                content = denyHTML(page);          // 관리자 전용 차단
   else if(hasBuilder)        content = `<div id="pageBody">${loadingHTML(page)}</div>`;  // 실데이터 페이지
   else                       content = placeholderHTML(page);   // 아직 와꾸
 
