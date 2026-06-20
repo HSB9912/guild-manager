@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>버니 길드 · 대시보드 (Bento)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+:root{
+  --bunny-main:#FF8FAB;
+  --bunny-light:#FFC9DE;
+  --bunny-cream:#FFE8D6;
+  --bunny-deep:#B5446E;
+  --amber:#E0A020;
+  --ice:#3BA9C7;
+  /* 라이트 테마 (기본) */
+  --bg:#FFF5F8;
+  --text:#3A2832;
+  --dim:#9A8189;
+  --panel:#FFFFFF;
+  --line:#F4DDE6;
+  --panel-2:#FFF0F5;
+  --panel-3:#FFF7EF;
+  --shadow:0 6px 24px rgba(181,68,110,.08);
+}
+body.dark{
+  --night:#1A1626;
+  --moon:#EDE6DA;
+  --bg:#141021;
+  --text:#EDE6DA;
+  --dim:#8E84A0;
+  --panel:#241E33;
+  --line:#352C49;
+  --panel-2:#2B2240;
+  --panel-3:#2E2438;
+  --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+*{font-family:'Noto Sans KR',sans-serif;}
+body{background:var(--bg);color:var(--text);transition:background .3s,color .3s;}
+.panel{background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);}
+.tone-rose{background:linear-gradient(145deg,var(--bunny-light),var(--bunny-main));}
+.tone-light{background:var(--panel-2);}
+.tone-cream{background:var(--panel-3);}
+.dim{color:var(--dim);}
+.line{border-color:var(--line);}
+.scroll::-webkit-scrollbar{width:6px;height:6px;}
+.scroll::-webkit-scrollbar-thumb{background:var(--bunny-light);border-radius:8px;}
+.nav-item{transition:.2s;}
+.nav-item:hover{background:var(--panel-2);}
+.nav-active{background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff!important;box-shadow:0 4px 14px rgba(255,143,171,.4);}
+.bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(120px,auto);gap:18px;}
+.donut{background:conic-gradient(var(--bunny-main) 0 94%, var(--line) 94% 100%);}
+.spark path{stroke:var(--bunny-deep);}
+.chip{font-size:11px;padding:2px 9px;border-radius:999px;font-weight:700;}
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- 다크 토글 -->
+<button onclick="document.body.classList.toggle('dark')"
+  class="fixed top-5 right-5 z-50 w-11 h-11 rounded-full panel flex items-center justify-center text-lg hover:scale-110 transition">
+  🌙
+</button>
+
+<div class="flex min-h-screen">
+
+  <!-- 사이드바 -->
+  <aside class="w-60 shrink-0 panel border-y-0 border-l-0 flex flex-col p-5">
+    <div class="flex items-center gap-3 mb-8 px-1">
+      <div class="w-12 h-12 rounded-2xl tone-rose flex items-center justify-center text-2xl shadow-lg">🐰</div>
+      <div>
+        <h1 class="font-black text-lg leading-tight">버니 길드</h1>
+        <p class="text-xs dim font-medium">뚠뚱카롱 연합</p>
+      </div>
+    </div>
+
+    <nav class="flex flex-col gap-1.5 text-sm font-bold">
+      <a class="nav-item nav-active flex items-center gap-3 px-4 py-3 rounded-xl"><i class="fa-solid fa-gauge-high w-5"></i>대시보드</a>
+      <a class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl"><i class="fa-solid fa-users w-5"></i>멤버 관리</a>
+      <a class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl"><i class="fa-solid fa-clipboard-check w-5"></i>출석·점수</a>
+      <a class="nav-item flex items-center justify-between px-4 py-3 rounded-xl">
+        <span class="flex items-center gap-3"><i class="fa-solid fa-user-plus w-5"></i>가입 신청</span>
+        <span class="chip" style="background:var(--bunny-deep);color:#fff;">3</span>
+      </a>
+      <a class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl"><i class="fa-solid fa-gem w-5"></i>보석금</a>
+      <a class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl"><i class="fa-solid fa-calendar-days w-5"></i>일정</a>
+    </nav>
+
+    <div class="mt-auto pt-6">
+      <div class="tone-cream rounded-2xl p-4 text-center">
+        <p class="text-xs dim font-bold mb-1">이번 주 정모</p>
+        <p class="font-black text-base">토 · 21:00</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <main class="flex-1 p-7 overflow-y-auto scroll">
+    <header class="flex items-end justify-between mb-7 pr-16">
+      <div>
+        <p class="text-sm dim font-bold mb-1">2026년 6월 20일 · 토요일</p>
+        <h2 class="text-3xl font-black">대시보드 <span class="text-base font-bold dim ml-1">길드 현황 한눈에 보기</span></h2>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="panel rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm font-bold">
+          <i class="fa-solid fa-magnifying-glass dim"></i><span class="dim">멤버 검색</span>
+        </div>
+        <div class="w-10 h-10 rounded-full tone-rose flex items-center justify-center text-white font-black">길</div>
+      </div>
+    </header>
+
+    <!-- 벤토 그리드 -->
+    <div class="bento">
+
+      <!-- 총 멤버 (대형 KPI) -->
+      <div class="panel rounded-3xl p-6 flex flex-col justify-between col-span-1 row-span-1 tone-rose text-white">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-bold opacity-90">총 멤버</span>
+          <i class="fa-solid fa-users opacity-80"></i>
+        </div>
+        <div>
+          <p class="text-5xl font-black leading-none">48</p>
+          <p class="text-xs font-bold mt-2 opacity-90"><i class="fa-solid fa-arrow-up"></i> 이번 주 +2명</p>
+        </div>
+      </div>
+
+      <!-- 주간 평균점수 -->
+      <div class="panel rounded-3xl p-6 flex flex-col justify-between tone-light">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-bold dim">주간 평균점수</span>
+          <i class="fa-solid fa-star" style="color:var(--bunny-main)"></i>
+        </div>
+        <div>
+          <p class="text-4xl font-black leading-none">86.4</p>
+          <svg class="spark mt-2 w-full" height="26" viewBox="0 0 120 26" fill="none" preserveAspectRatio="none">
+            <path d="M0 20 L20 14 L40 17 L60 8 L80 12 L100 5 L120 9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 정모 출석률 도넛 -->
+      <div class="panel rounded-3xl p-6 flex items-center gap-5 tone-cream">
+        <div class="donut w-20 h-20 rounded-full flex items-center justify-center shrink-0">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background:var(--panel)">
+            <span class="font-black text-lg">94%</span>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm font-bold dim">정모 출석률</p>
+          <p class="text-xs dim mt-1">지난주 대비 <span class="font-bold" style="color:var(--bunny-deep)">+3%</span></p>
+          <p class="text-xs dim mt-0.5">45/48명 참석</p>
+        </div>
+      </div>
+
+      <!-- 알림 스택 (세로 작은 3개 묶음) -->
+      <div class="flex flex-col gap-[18px]">
+        <div class="panel rounded-3xl px-5 py-4 flex items-center justify-between flex-1 tone-light">
+          <div><p class="text-xs dim font-bold">가입 대기</p><p class="text-2xl font-black">3</p></div>
+          <i class="fa-solid fa-user-clock text-xl" style="color:var(--ice)"></i>
+        </div>
+        <div class="panel rounded-3xl px-5 py-4 flex items-center justify-between flex-1 tone-cream">
+          <div><p class="text-xs dim font-bold">출석 주의</p><p class="text-2xl font-black">5</p></div>
+          <i class="fa-solid fa-triangle-exclamation text-xl" style="color:var(--amber)"></i>
+        </div>
+      </div>
+
+      <!-- 멤버 현황 테이블 (대형: 2칸 x 2줄) -->
+      <div class="panel rounded-3xl p-6 col-span-2 row-span-2 flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-black text-lg"><i class="fa-solid fa-list-check mr-2" style="color:var(--bunny-main)"></i>멤버 현황</h3>
+          <span class="text-xs font-bold dim cursor-pointer hover:underline">전체 보기 <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+        </div>
+        <div class="overflow-x-auto scroll -mx-2 px-2">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-xs dim font-bold border-b line">
+                <th class="text-left py-2.5 pl-2">닉네임</th>
+                <th class="text-left py-2.5">역할</th>
+                <th class="text-center py-2.5">주간점수</th>
+                <th class="text-center py-2.5">출석</th>
+                <th class="text-center py-2.5 pr-2">상태</th>
+              </tr>
+            </thead>
+            <tbody class="font-medium">
+              <tr class="border-b line">
+                <td class="py-3 pl-2 font-bold flex items-center gap-2"><span class="w-7 h-7 rounded-full tone-rose flex items-center justify-center text-white text-xs font-black">달</span>달토끼</td>
+                <td><span class="chip" style="background:var(--bunny-deep);color:#fff">부길드장</span></td>
+                <td class="text-center font-black">98</td>
+                <td class="text-center">7/7</td>
+                <td class="text-center pr-2"><span class="chip" style="background:#DEF7E6;color:#1A8A4A">활동중</span></td>
+              </tr>
+              <tr class="border-b line">
+                <td class="py-3 pl-2 font-bold flex items-center gap-2"><span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-black" style="background:var(--bunny-main)">초</span>초코롱</td>
+                <td><span class="chip" style="background:var(--line);color:var(--text)">멤버</span></td>
+                <td class="text-center font-black">91</td>
+                <td class="text-center">6/7</td>
+                <td class="text-center pr-2"><span class="chip" style="background:#DEF7E6;color:#1A8A4A">활동중</span></td>
+              </tr>
+              <tr class="border-b line">
+                <td class="py-3 pl-2 font-bold flex items-center gap-2"><span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-black" style="background:var(--amber)">밤</span>밤하늘</td>
+                <td><span class="chip" style="background:var(--line);color:var(--text)">멤버</span></td>
+                <td class="text-center font-black">74</td>
+                <td class="text-center">4/7</td>
+                <td class="text-center pr-2"><span class="chip" style="background:#FCEFD3;color:#B07A10">주의</span></td>
+              </tr>
+              <tr class="border-b line">
+                <td class="py-3 pl-2 font-bold flex items-center gap-2"><span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-black" style="background:var(--ice)">민</span>민트우유</td>
+                <td><span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep)">신입</span></td>
+                <td class="text-center font-black">88</td>
+                <td class="text-center">7/7</td>
+                <td class="text-center pr-2"><span class="chip" style="background:#DEF7E6;color:#1A8A4A">활동중</span></td>
+              </tr>
+              <tr class="border-b line">
+                <td class="py-3 pl-2 font-bold flex items-center gap-2"><span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-black" style="background:#C75050">구</span>구름빵</td>
+                <td><span class="chip" style="background:var(--line);color:var(--text)">멤버</span></td>
+                <td class="text-center font-black">52</td>
+                <td class="text-center">2/7</td>
+                <td class="text-center pr-2"><span class="chip" style="background:#FBE0E0;color:#C03A3A">결석多</span></td>
+              </tr>
+              <tr>
+                <td class="py-3 pl-2 font-bold flex items-center gap-2"><span class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-black" style="background:var(--bunny-deep)">별</span>별사탕</td>
+                <td><span class="chip" style="background:var(--line);color:var(--text)">멤버</span></td>
+                <td class="text-center font-black">79</td>
+                <td class="text-center">5/7</td>
+                <td class="text-center pr-2"><span class="chip" style="background:#DEF7E6;color:#1A8A4A">활동중</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 보석금 대기 -->
+      <div class="panel rounded-3xl p-6 flex flex-col justify-between tone-cream">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-bold dim">보석금 대기</span>
+          <i class="fa-solid fa-gem" style="color:var(--bunny-deep)"></i>
+        </div>
+        <div>
+          <p class="text-4xl font-black leading-none">2</p>
+          <p class="text-xs dim font-bold mt-2">건 처리 대기중</p>
+        </div>
+      </div>
+
+      <!-- 주간 활동 미니 바차트 -->
+      <div class="panel rounded-3xl p-6 tone-light flex flex-col">
+        <span class="text-sm font-bold dim mb-3">주간 활동량</span>
+        <div class="flex items-end justify-between gap-2 flex-1 min-h-[70px]">
+          <div class="flex-1 rounded-t-lg" style="height:45%;background:var(--bunny-light)"></div>
+          <div class="flex-1 rounded-t-lg" style="height:70%;background:var(--bunny-light)"></div>
+          <div class="flex-1 rounded-t-lg" style="height:55%;background:var(--bunny-main)"></div>
+          <div class="flex-1 rounded-t-lg" style="height:90%;background:var(--bunny-main)"></div>
+          <div class="flex-1 rounded-t-lg" style="height:65%;background:var(--bunny-light)"></div>
+          <div class="flex-1 rounded-t-lg" style="height:100%;background:var(--bunny-deep)"></div>
+          <div class="flex-1 rounded-t-lg" style="height:80%;background:var(--bunny-main)"></div>
+        </div>
+        <div class="flex justify-between text-[10px] dim font-bold mt-2"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+      </div>
+
+      <!-- 가입 대기 미리보기 (가로 2칸) -->
+      <div class="panel rounded-3xl p-6 col-span-2 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-black text-base"><i class="fa-solid fa-user-plus mr-2" style="color:var(--ice)"></i>가입 신청 대기 <span class="chip ml-1" style="background:var(--bunny-deep);color:#fff">3</span></h3>
+          <span class="text-xs font-bold dim cursor-pointer hover:underline">심사하기</span>
+        </div>
+        <div class="flex flex-col gap-2.5">
+          <div class="flex items-center justify-between tone-light rounded-xl px-4 py-2.5">
+            <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black" style="background:var(--bunny-main)">솜</span>
+              <div><p class="text-sm font-bold">솜사탕</p><p class="text-[11px] dim">2시간 전 신청</p></div></div>
+            <div class="flex gap-1.5">
+              <button class="w-8 h-8 rounded-lg text-white text-xs" style="background:#1A8A4A"><i class="fa-solid fa-check"></i></button>
+              <button class="w-8 h-8 rounded-lg text-white text-xs" style="background:#C03A3A"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between tone-cream rounded-xl px-4 py-2.5">
+            <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black" style="background:var(--ice)">감</span>
+              <div><p class="text-sm font-bold">감자전</p><p class="text-[11px] dim">5시간 전 신청</p></div></div>
+            <div class="flex gap-1.5">
+              <button class="w-8 h-8 rounded-lg text-white text-xs" style="background:#1A8A4A"><i class="fa-solid fa-check"></i></button>
+              <button class="w-8 h-8 rounded-lg text-white text-xs" style="background:#C03A3A"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between tone-light rounded-xl px-4 py-2.5">
+            <div class="flex items-center gap-3"><span class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black" style="background:var(--bunny-deep)">노</span>
+              <div><p class="text-sm font-bold">노른자</p><p class="text-[11px] dim">어제 신청</p></div></div>
+            <div class="flex gap-1.5">
+              <button class="w-8 h-8 rounded-lg text-white text-xs" style="background:#1A8A4A"><i class="fa-solid fa-check"></i></button>
+              <button class="w-8 h-8 rounded-lg text-white text-xs" style="background:#C03A3A"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

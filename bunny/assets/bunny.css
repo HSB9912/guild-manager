@@ -1,0 +1,52 @@
+/* ===== 버니 길드 공통 스타일 (G · Bento) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+:root{
+  --bunny-main:#FF8FAB; --bunny-light:#FFC9DE; --bunny-cream:#FFE8D6; --bunny-deep:#B5446E;
+  --amber:#E0A020; --ice:#3BA9C7;
+  /* 라이트 (기본) */
+  --bg:#FFF5F8; --text:#3A2832; --dim:#9A8189;
+  --panel:#FFFFFF; --line:#F4DDE6; --panel-2:#FFF0F5; --panel-3:#FFF7EF;
+  --shadow:0 6px 24px rgba(181,68,110,.08);
+  --ok-bg:#DEF7E6; --ok-tx:#1A8A4A; --warn-bg:#FCEFD3; --warn-tx:#B07A10; --bad-bg:#FBE0E0; --bad-tx:#C03A3A;
+}
+body.dark{
+  --bg:#141021; --text:#EDE6DA; --dim:#8E84A0;
+  --panel:#241E33; --line:#352C49; --panel-2:#2B2240; --panel-3:#2E2438;
+  --shadow:0 6px 24px rgba(0,0,0,.35);
+  --ok-bg:#16331F; --ok-tx:#5FD389; --warn-bg:#352711; --warn-tx:#E0A020; --bad-bg:#3A1A1A; --bad-tx:#F08A8A;
+}
+*{font-family:'Noto Sans KR',sans-serif;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);margin:0;transition:background .3s,color .3s;}
+
+.panel{background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);}
+.tone-rose{background:linear-gradient(145deg,var(--bunny-light),var(--bunny-main));}
+.tone-light{background:var(--panel-2);}
+.tone-cream{background:var(--panel-3);}
+.dim{color:var(--dim);}
+.line{border-color:var(--line);}
+
+.scroll::-webkit-scrollbar{width:6px;height:6px;}
+.scroll::-webkit-scrollbar-thumb{background:var(--bunny-light);border-radius:8px;}
+
+.nav-item{transition:.18s;cursor:pointer;color:var(--text);text-decoration:none;}
+.nav-item:hover{background:var(--panel-2);}
+.nav-active{background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff!important;box-shadow:0 4px 14px rgba(255,143,171,.4);}
+.nav-active .dim{color:#fff!important;opacity:.85;}
+.grp-label{font-size:10px;letter-spacing:.12em;font-weight:900;color:var(--dim);text-transform:uppercase;padding:0 8px;}
+
+.bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(120px,auto);gap:18px;}
+@media(max-width:1100px){.bento{grid-template-columns:repeat(2,1fr);}}
+.donut{background:conic-gradient(var(--bunny-main) 0 94%, var(--line) 94% 100%);}
+.spark path{stroke:var(--bunny-deep);}
+.chip{font-size:11px;padding:2px 9px;border-radius:999px;font-weight:700;}
+
+.fade{animation:fade .3s ease-out;}
+@keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* 레이아웃 골격 */
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{width:256px;flex-shrink:0;height:100vh;position:sticky;top:0;display:flex;flex-direction:column;}
+.main{flex:1;height:100vh;overflow-y:auto;}
+.dark-btn{position:fixed;top:20px;right:20px;z-index:50;width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:transform .15s;}
+.dark-btn:hover{transform:scale(1.1);}
