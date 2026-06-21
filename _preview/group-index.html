@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계정 그룹 묶기 — 미리보기 비교</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../assets/bunny.css">
+<style>
+  body{padding:36px 28px;max-width:920px;margin:0 auto}
+  h1{font-size:26px;font-weight:900;margin:0}
+  .sub{color:var(--dim);font-weight:700;margin:6px 0 26px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:780px){.cards{grid-template-columns:1fr}}
+  a.card{border-radius:22px;padding:22px;text-decoration:none;color:var(--text);display:block;transition:.15s}
+  a.card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(181,68,110,.15)}
+  .ic{font-size:30px;margin-bottom:10px}
+  .nm{font-size:18px;font-weight:900}
+  .de{font-size:13px;font-weight:700;color:var(--dim);margin-top:7px;line-height:1.55}
+  .tag{display:inline-block;font-size:11px;font-weight:800;background:var(--panel-3);color:var(--dim);border-radius:999px;padding:3px 10px;margin-top:12px}
+  .note{background:var(--panel-2);border-radius:18px;padding:18px;margin-top:26px;font-size:13px;font-weight:700;line-height:1.7}
+</style>
+</head>
+<body>
+  <h1>🔗 길드원 계정 그룹 묶기 — 미리보기</h1>
+  <p class="sub">계정 그룹끼리 묶어서 <b>대표캐릭의 수로 여부</b>를 파악하는 화면 3안. 클릭해서 비교해봐.</p>
+
+  <div class="cards">
+    <a class="card panel" href="group-A-cards.html">
+      <div class="ic">🗂️</div>
+      <div class="nm">A · 그룹 카드</div>
+      <div class="de">그룹마다 카드 한 장. 대표 + 수로 상태 큰 배지, 부캐는 펼쳐보기. KPI(완료 N/M)·미참 필터.</div>
+      <span class="tag">한눈에 · 카드형</span>
+    </a>
+    <a class="card panel" href="group-B-tree.html">
+      <div class="ic">🌳</div>
+      <div class="nm">B · 트리 테이블</div>
+      <div class="de">대표/부캐 들여쓰기 표. 대표 행에 수로 여부. <b>묶기 편집</b> 모드로 부캐를 다른 대표에 옮기거나 대표 승격.</div>
+      <span class="tag">묶기 관리 · 표형</span>
+    </a>
+    <a class="card panel" href="group-C-rollcall.html">
+      <div class="ic">📋</div>
+      <div class="nm">C · 수로 점호</div>
+      <div class="de">이번 주 점호판. 완료율 바 + ✅/❌ 타일(미참 먼저), 타일 클릭하면 옆에 부캐·점수. 미참 알림까지.</div>
+      <span class="tag">점호 · 작업형</span>
+    </a>
+  </div>
+
+  <div class="note">
+    <b>💡 데이터 출처</b> — 묶기 기준은 <code>members.main_char_name</code>(본/부캐 링크) + 넥슨 계정그룹 동기화. 대표 수로 여부는 최신 회차 <code>suro_scores</code>(대표=본캐 점수&gt;0)로 판정.<br>
+    <b>섞어 쓰기도 가능</b> — 예: 길드원 페이지엔 <b>A(카드)</b>를 기본, 수로 입력 전 점검용으로 <b>C(점호)</b>를 별도 탭, 운영진 묶기 관리에 <b>B(편집)</b>. 맘에 드는 거 / 섞을 조합 알려줘.
+  </div>
+</body>
+</html>

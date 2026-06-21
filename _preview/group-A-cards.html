@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>그룹 묶기 미리보기 A · 그룹 카드</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../assets/bunny.css">
+<style>
+  body{padding:28px;max-width:1080px;margin:0 auto;}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+  h1{font-size:24px;font-weight:900;margin:0}
+  .sub{color:var(--dim);font-weight:700;font-size:13px;margin:4px 0 0}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+  .kpi{border-radius:20px;padding:18px}
+  .kpi .v{font-size:30px;font-weight:900;margin:4px 0 0}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .fbtn{border:0;border-radius:11px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text)}
+  .fbtn.on{background:var(--bunny-main);color:#fff}
+  .groups{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:820px){.groups{grid-template-columns:1fr}.kpis{grid-template-columns:1fr}}
+  .gcard{border-radius:22px;padding:18px;border-left:5px solid var(--ok-tx);cursor:pointer;transition:.15s}
+  .gcard:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(181,68,110,.13)}
+  .gcard.miss{border-left-color:var(--bad-tx)}
+  .ghead{display:flex;align-items:center;gap:13px}
+  .av{width:50px;height:50px;border-radius:15px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:19px;flex-shrink:0}
+  .gname{font-size:18px;font-weight:900}
+  .suro{margin-left:auto;text-align:right;flex-shrink:0}
+  .suroBig{display:inline-flex;align-items:center;gap:7px;border-radius:13px;padding:9px 14px;font-weight:900;font-size:15px}
+  .ok{background:var(--ok-bg);color:var(--ok-tx)} .bad{background:var(--bad-bg);color:var(--bad-tx)}
+  .subline{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .altchips{display:flex;gap:6px;flex-wrap:wrap}
+  .more{margin-left:auto;color:var(--dim);font-weight:800;font-size:12px}
+  .alts{margin-top:13px;border-top:1px dashed var(--line);padding-top:13px;display:none;flex-direction:column;gap:7px}
+  .alts.open{display:flex}
+  .altrow{display:flex;align-items:center;gap:10px;background:var(--panel-2);border-radius:11px;padding:8px 12px}
+  .toggle{margin-top:6px}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div>
+      <h1>🐰 길드원 · 계정 그룹</h1>
+      <p class="sub">A안 — 그룹 카드 · 대표캐릭 수로 여부를 카드별로 한눈에 (이번 주: 24주차)</p>
+    </div>
+    <button class="fbtn" onclick="document.body.classList.toggle('dark')"><i class="fa-solid fa-circle-half-stroke"></i> 다크</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi panel"><span class="dim" style="font-size:13px;font-weight:700">계정 그룹</span><div class="v">8<span style="font-size:15px;color:var(--dim)"> 그룹 · 22캐릭</span></div></div>
+    <div class="kpi tone-light"><span class="dim" style="font-size:13px;font-weight:700">대표 수로 완료</span><div class="v" style="color:var(--ok-tx)">5<span style="font-size:15px;color:var(--dim)"> / 8</span></div></div>
+    <div class="kpi" style="background:var(--bad-bg)"><span style="font-size:13px;font-weight:700;color:var(--bad-tx)">대표 미참</span><div class="v" style="color:var(--bad-tx)">3<span style="font-size:15px;opacity:.7"> 그룹</span></div></div>
+  </div>
+
+  <div class="filters">
+    <button class="fbtn on" onclick="filt(this,'all')">전체</button>
+    <button class="fbtn" onclick="filt(this,'miss')">🔴 수로 미참만</button>
+    <button class="fbtn" onclick="filt(this,'bunny')">🐰 버니</button>
+    <button class="fbtn" onclick="filt(this,'wolf')">🐺 늑대</button>
+    <button class="fbtn" onclick="filt(this,'cougar')">🐆 쿠거</button>
+  </div>
+
+  <div class="groups" id="groups"></div>
+
+<script>
+const GROUPS=[
+  {rep:'달토끼',role:'부길드장',fac:'bunny',col:'#B5446E',suro:92,alts:[['당근파워','팔라딘',281],['달토끼부','비숍',270],['흰털뭉치','메르세데스',262]]},
+  {rep:'별사탕',role:'운영',fac:'bunny',col:'#FF8FAB',suro:96,alts:[['별빛','루미너스',275],['사탕별','섀도어',268],['은하수','호영',260]]},
+  {rep:'밤하늘',role:'멤버',fac:'bunny',col:'#3BA9C7',suro:74,alts:[['밤톨','히어로',249]]},
+  {rep:'민트우유',role:'신입',fac:'bunny',col:'#3BA9C7',suro:88,alts:[]},
+  {rep:'감자전',role:'멤버',fac:'bunny',col:'#E0A020',suro:81,alts:[['감자튀김','듀얼블레이드',252]]},
+  {rep:'초코롱',role:'멤버',fac:'bunny',col:'#B5446E',suro:0,alts:[['초코칩','나이트로드',265],['초코우유','신궁',258]]},
+  {rep:'구름빵',role:'멤버',fac:'wolf',col:'#6C8EBF',suro:0,alts:[['구름솜','아델',255],['뭉게구름','카인',240]]},
+  {rep:'노른자',role:'멤버',fac:'cougar',col:'#C98A42',suro:0,alts:[['흰자','패스파인더',245]]},
+];
+function card(g,i){
+  const miss=g.suro<=0;
+  const chips=g.alts.slice(0,4).map(a=>`<span class="chip" style="background:var(--panel-3);color:var(--dim)">${a[0]}</span>`).join('');
+  const altrows=g.alts.map(a=>`<div class="altrow"><i class="fa-solid fa-angle-right dim" style="font-size:11px"></i><b style="font-weight:800">${a[0]}</b><span class="dim" style="font-size:12px;font-weight:700">${a[1]} · Lv.${a[2]}</span></div>`).join('')||'<div class="dim" style="font-size:12px;font-weight:700;padding:4px 2px">부캐 없음 — 단일 캐릭</div>';
+  return `<div class="gcard panel ${miss?'miss':''}" data-fac="${g.fac}" data-miss="${miss?1:0}" onclick="this.querySelector('.alts').classList.toggle('open');this.querySelector('.toggle').textContent=this.querySelector('.alts').classList.contains('open')?'부캐 접기 ▲':'부캐 ${g.alts.length}개 펼치기 ▼'">
+    <div class="ghead">
+      <div class="av" style="background:${g.col}">${g.rep.slice(0,1)}</div>
+      <div style="min-width:0">
+        <div class="gname">${g.rep} <span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep)">대표</span></div>
+        <div class="dim" style="font-size:12px;font-weight:700;margin-top:2px">${g.role} · 캐릭 ${g.alts.length+1}개</div>
+      </div>
+      <div class="suro"><span class="suroBig ${miss?'bad':'ok'}">${miss?'<i class="fa-solid fa-xmark"></i> 미참':'<i class="fa-solid fa-check"></i> '+g.suro+'점'}</span></div>
+    </div>
+    <div class="subline">
+      <div class="altchips">${chips||'<span class="dim" style="font-size:12px;font-weight:700">단일 캐릭</span>'}</div>
+      <span class="more toggle">${g.alts.length?`부캐 ${g.alts.length}개 펼치기 ▼`:''}</span>
+    </div>
+    <div class="alts">${altrows}</div>
+  </div>`;
+}
+function render(list){document.getElementById('groups').innerHTML=list.map(card).join('');}
+render(GROUPS);
+function filt(btn,f){
+  document.querySelectorAll('.filters .fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  let list=GROUPS;
+  if(f==='miss')list=GROUPS.filter(g=>g.suro<=0);
+  else if(['bunny','wolf','cougar'].includes(f))list=GROUPS.filter(g=>g.fac===f);
+  render(list);
+}
+</script>
+</body>
+</html>

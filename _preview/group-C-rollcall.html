@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>그룹 묶기 미리보기 C · 수로 점호</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../assets/bunny.css">
+<style>
+  body{padding:28px;max-width:1080px;margin:0 auto;}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+  h1{font-size:24px;font-weight:900;margin:0}
+  .sub{color:var(--dim);font-weight:700;font-size:13px;margin:4px 0 0}
+  .btn{border:0;border-radius:11px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text)}
+  .btn.on{background:var(--bunny-main);color:#fff}
+  .prog{border-radius:22px;padding:20px;margin-bottom:18px}
+  .ptop{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+  .pct{font-size:34px;font-weight:900;color:var(--bunny-deep)}
+  .track{height:16px;border-radius:99px;background:var(--panel-3);overflow:hidden}
+  .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--bunny-main),var(--bunny-deep))}
+  .layout{display:grid;grid-template-columns:1fr 300px;gap:16px}
+  @media(max-width:840px){.layout{grid-template-columns:1fr}}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;align-content:start}
+  .tile{border-radius:18px;padding:16px 14px;text-align:center;cursor:pointer;border:2px solid transparent;transition:.15s}
+  .tile:hover{transform:translateY(-2px)}
+  .tile.sel{border-color:var(--bunny-main)}
+  .tile.miss{background:var(--bad-bg)}
+  .tile.done{background:var(--ok-bg)}
+  .ti{font-size:30px;margin-bottom:4px}
+  .tn{font-weight:900;font-size:15px}
+  .ts{font-size:11px;font-weight:800;margin-top:3px}
+  .miss .tn,.miss .ts{color:var(--bad-tx)} .done .tn,.done .ts{color:var(--ok-tx)}
+  .drawer{border-radius:20px;padding:18px;position:sticky;top:20px;align-self:start}
+  .dhead{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+  .av{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:18px}
+  .altr{display:flex;align-items:center;gap:9px;background:var(--panel-2);border-radius:11px;padding:9px 12px;margin-bottom:7px}
+  .badge{display:inline-flex;align-items:center;gap:6px;border-radius:11px;padding:7px 13px;font-weight:900;font-size:14px}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div>
+      <h1>📋 수로 점호 · 계정 그룹</h1>
+      <p class="sub">C안 — 이번 주(24주차) 대표캐릭 수로 했나? 미참 그룹 먼저 · 타일 클릭하면 부캐까지</p>
+    </div>
+    <button class="btn" onclick="document.body.classList.toggle('dark')"><i class="fa-solid fa-circle-half-stroke"></i> 다크</button>
+  </div>
+
+  <div class="prog panel">
+    <div class="ptop">
+      <div><span class="dim" style="font-size:13px;font-weight:800">대표 수로 완료율</span><div class="pct">62<span style="font-size:18px">%</span> <span style="font-size:15px;color:var(--dim);font-weight:800">· 5 / 8 그룹</span></div></div>
+      <button class="btn" id="mbtn" onclick="toggleMiss(this)">🔴 미참 3그룹만 보기</button>
+    </div>
+    <div class="track"><div class="fill" style="width:62%"></div></div>
+  </div>
+
+  <div class="layout">
+    <div class="grid" id="grid"></div>
+    <div class="drawer panel" id="drawer"></div>
+  </div>
+
+<script>
+const GROUPS=[
+  {rep:'초코롱',role:'멤버',fac:'🐰',col:'#B5446E',suro:0,alts:[['초코칩','나이트로드',265],['초코우유','신궁',258]]},
+  {rep:'구름빵',role:'멤버',fac:'🐺',col:'#6C8EBF',suro:0,alts:[['구름솜','아델',255],['뭉게구름','카인',240]]},
+  {rep:'노른자',role:'멤버',fac:'🐆',col:'#C98A42',suro:0,alts:[['흰자','패스파인더',245]]},
+  {rep:'별사탕',role:'운영',fac:'🐰',col:'#FF8FAB',suro:96,alts:[['별빛','루미너스',275],['사탕별','섀도어',268],['은하수','호영',260]]},
+  {rep:'달토끼',role:'부길드장',fac:'🐰',col:'#B5446E',suro:92,alts:[['당근파워','팔라딘',281],['달토끼부','비숍',270]]},
+  {rep:'민트우유',role:'신입',fac:'🐰',col:'#3BA9C7',suro:88,alts:[]},
+  {rep:'감자전',role:'멤버',fac:'🐰',col:'#E0A020',suro:81,alts:[['감자튀김','듀얼블레이드',252]]},
+  {rep:'밤하늘',role:'멤버',fac:'🐰',col:'#3BA9C7',suro:74,alts:[['밤톨','히어로',249]]},
+];
+let missOnly=false, selIdx=0;
+function tile(g,i){const miss=g.suro<=0;return `<div class="tile ${miss?'miss':'done'} ${i===selIdx?'sel':''}" onclick="sel(${i})">
+  <div class="ti">${miss?'❌':'✅'}</div><div class="tn">${g.fac} ${g.rep}</div>
+  <div class="ts">${miss?'수로 미참':g.suro+'점'} · 캐릭 ${g.alts.length+1}</div></div>`}
+function render(){
+  const list=GROUPS.map((g,i)=>({g,i})).filter(x=>!missOnly||x.g.suro<=0);
+  document.getElementById('grid').innerHTML=list.map(x=>tile(x.g,x.i)).join('');
+  drawer();
+}
+function sel(i){selIdx=i;render()}
+function drawer(){
+  const g=GROUPS[selIdx];const miss=g.suro<=0;
+  const alts=g.alts.map(a=>`<div class="altr"><i class="fa-solid fa-angle-right dim" style="font-size:11px"></i><b style="font-weight:800">${a[0]}</b><span class="dim" style="font-size:12px;font-weight:700;margin-left:auto">${a[1]} · Lv.${a[2]}</span></div>`).join('')||'<div class="dim" style="font-size:12px;font-weight:700">부캐 없음 (단일 캐릭)</div>';
+  document.getElementById('drawer').innerHTML=`
+    <div class="dhead"><div class="av" style="background:${g.col}">${g.rep.slice(0,1)}</div>
+      <div><div style="font-weight:900;font-size:17px">${g.rep}</div><div class="dim" style="font-size:12px;font-weight:700">${g.fac} ${g.role} · 대표</div></div></div>
+    <div style="text-align:center;margin-bottom:14px"><span class="badge ${miss?'':''}" style="background:${miss?'var(--bad-bg)':'var(--ok-bg)'};color:${miss?'var(--bad-tx)':'var(--ok-tx)'}">${miss?'<i class="fa-solid fa-xmark"></i> 이번 주 수로 미참':'<i class="fa-solid fa-check"></i> 수로 '+g.suro+'점 완료'}</span></div>
+    <div class="dim" style="font-size:11px;font-weight:800;letter-spacing:.04em;margin-bottom:8px">부캐 ${g.alts.length}개</div>
+    ${alts}
+    <button class="btn" style="width:100%;margin-top:12px;background:var(--bunny-main);color:#fff"><i class="fa-solid fa-bell"></i> 미참 알림 보내기</button>`;
+}
+function toggleMiss(b){missOnly=!missOnly;b.classList.toggle('on');b.textContent=missOnly?'전체 보기':'🔴 미참 3그룹만 보기';if(missOnly&&GROUPS[selIdx].suro>0)selIdx=0;render()}
+render();
+</script>
+</body>
+</html>

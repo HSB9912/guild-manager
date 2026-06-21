@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>그룹 묶기 미리보기 B · 트리 테이블</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../assets/bunny.css">
+<style>
+  body{padding:28px;max-width:1040px;margin:0 auto;}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+  h1{font-size:24px;font-weight:900;margin:0}
+  .sub{color:var(--dim);font-weight:700;font-size:13px;margin:4px 0 0}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .btn{border:0;border-radius:11px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text)}
+  .btn.primary{background:var(--bunny-main);color:#fff}
+  .btn.on{background:var(--bunny-deep);color:#fff}
+  .wrap{border-radius:22px;padding:10px 6px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:680px}
+  th{text-align:left;color:var(--dim);font-size:12px;font-weight:800;padding:10px 12px;border-bottom:2px solid var(--line)}
+  td{padding:10px 12px;border-bottom:1px solid var(--line)}
+  tr.rep td{background:var(--panel-2)}
+  tr.rep .nm{font-weight:900;font-size:15px}
+  tr.alt .nm{font-weight:700;padding-left:26px;position:relative;color:var(--text)}
+  tr.alt .nm::before{content:'└';position:absolute;left:8px;color:var(--dim)}
+  tr.alt td{background:var(--panel)}
+  .av{width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:13px;margin-right:9px;vertical-align:middle}
+  .repchip{font-size:10px;padding:1px 7px;border-radius:999px;font-weight:800;background:var(--bunny-light);color:var(--bunny-deep);margin-left:6px}
+  .st{display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 11px;font-weight:900;font-size:13px}
+  .ok{background:var(--ok-bg);color:var(--ok-tx)} .bad{background:var(--bad-bg);color:var(--bad-tx)} .na{color:var(--dim);font-weight:700}
+  .mv{display:none}
+  body.edit .mv{display:inline-flex}
+  body.edit tr.alt:hover td{outline:2px dashed var(--bunny-main);outline-offset:-2px}
+  .sel{border:0;border-radius:8px;background:var(--panel-3);color:var(--text);font-weight:700;padding:5px 8px;font-size:12px;cursor:pointer}
+  .hint{background:var(--warn-bg);color:var(--warn-tx);border-radius:12px;padding:10px 14px;font-size:12px;font-weight:800;margin-bottom:14px;display:none}
+  body.edit .hint{display:block}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div>
+      <h1>🐰 길드원 · 계정 그룹 묶기</h1>
+      <p class="sub">B안 — 대표/부캐 트리 테이블 · 대표 행에 수로 여부, 부캐는 들여쓰기</p>
+    </div>
+    <button class="btn" onclick="document.body.classList.toggle('dark')"><i class="fa-solid fa-circle-half-stroke"></i> 다크</button>
+  </div>
+
+  <div class="bar">
+    <button class="btn primary"><i class="fa-solid fa-magnifying-glass"></i> 닉네임 검색</button>
+    <button class="btn">정렬: 대표 수로 미참순 ▾</button>
+    <span style="margin-left:auto"></span>
+    <button class="btn" id="editBtn" onclick="document.body.classList.toggle('edit');this.classList.toggle('on');this.innerHTML=document.body.classList.contains('edit')?'<i class=\'fa-solid fa-check\'></i> 묶기 편집 종료':'<i class=\'fa-solid fa-link\'></i> 묶기 편집'"><i class="fa-solid fa-link"></i> 묶기 편집</button>
+  </div>
+
+  <div class="hint"><i class="fa-solid fa-circle-info"></i> 묶기 편집 모드 — 부캐 행의 <b>대표 변경</b> 드롭다운으로 다른 그룹에 옮기거나, <b>대표로 승격</b>할 수 있어요. (저장 전까지 반영 안 됨)</div>
+
+  <div class="wrap panel">
+    <table>
+      <thead><tr><th>캐릭터</th><th>직업</th><th>레벨</th><th>이번 주 수로</th><th>그룹 관리</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+
+<script>
+const GROUPS=[
+  {rep:['초코롱','멤버','#B5446E'],suro:0,alts:[['초코칩','나이트로드',265],['초코우유','신궁',258]]},
+  {rep:['구름빵','멤버(늑대)','#6C8EBF'],suro:0,alts:[['구름솜','아델',255],['뭉게구름','카인',240]]},
+  {rep:['노른자','멤버(쿠거)','#C98A42'],suro:0,alts:[['흰자','패스파인더',245]]},
+  {rep:['달토끼','부길드장','#B5446E'],suro:92,alts:[['당근파워','팔라딘',281],['달토끼부','비숍',270],['흰털뭉치','메르세데스',262]]},
+  {rep:['별사탕','운영','#FF8FAB'],suro:96,alts:[['별빛','루미너스',275],['사탕별','섀도어',268]]},
+  {rep:['감자전','멤버','#E0A020'],suro:81,alts:[['감자튀김','듀얼블레이드',252]]},
+];
+const allReps=GROUPS.map(g=>g.rep[0]);
+function av(n,c){return `<span class="av" style="background:${c}">${n.slice(0,1)}</span>`}
+let html='';
+GROUPS.forEach(g=>{
+  const miss=g.suro<=0;
+  html+=`<tr class="rep"><td class="nm">${av(g.rep[0],g.rep[2])}${g.rep[0]}<span class="repchip">대표</span></td>
+    <td class="dim" style="font-weight:700">${g.rep[1]}</td><td>—</td>
+    <td><span class="st ${miss?'bad':'ok'}">${miss?'<i class="fa-solid fa-xmark"></i> 미참':'<i class="fa-solid fa-check"></i> '+g.suro+'점'}</span></td>
+    <td><span class="dim" style="font-size:12px;font-weight:700">부캐 ${g.alts.length}</span></td></tr>`;
+  g.alts.forEach(a=>{
+    const opts=allReps.map(r=>`<option ${r===g.rep[0]?'selected':''}>${r}</option>`).join('');
+    html+=`<tr class="alt"><td class="nm">${a[0]}</td><td class="dim" style="font-weight:700">${a[1]}</td><td>Lv.${a[2]}</td>
+      <td><span class="na">부캐 (수로 미집계)</span></td>
+      <td><span class="mv"><select class="sel">${opts}</select> <button class="sel" title="이 부캐를 대표로 승격"><i class="fa-solid fa-arrow-up"></i> 대표로</button></span><span class="dim" style="font-size:11px;font-weight:700;display:inline" >　</span></td></tr>`;
+  });
+});
+document.getElementById('tb').innerHTML=html;
+</script>
+</body>
+</html>
