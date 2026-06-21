@@ -281,8 +281,13 @@ const FACTIONS = {
   wolf:   { key:'뚱카롱', nexon:'늑대', label:'늑대', emoji:'🐺', main:'#6C8EBF', light:'#8B9DC3', cream:'#DCE7F3', deep:'#2C3E57', bg:'#F2F6FB', p2:'#EAF1F9', p3:'#EEF3F8' },
   cougar: { key:'밤카롱', nexon:'쿠거', label:'쿠거', emoji:'🐆', main:'#C98A42', light:'#F0D6A8', cream:'#F5E6CC', deep:'#6E3D1C', bg:'#FBF7F0', p2:'#FBF3E6', p3:'#FAF6EE' },
 };
-function facKey(){ return 'bunny'; }  // 전역 앱은 버니 고정 (팩션 전환은 길드원 탭에서만)
+function facKey(){ return 'bunny'; }  // 전역 앱은 버니 고정 (메인/부길드 전환은 길드원 탭에서만)
 function fac(){ return FACTIONS[facKey()]||FACTIONS.bunny; }
+/* DB 길드키(뚠/뚱/밤카롱) → 표시명(버니/늑대/쿠거). 그 외 외부 길드명은 그대로 노출. */
+function guildLabel(g){ const f=Object.values(FACTIONS).find(x=>x.key===g); return f?f.label:(g||''); }
+/* 문자열 속 길드키도 표시명으로 (예: "뚠카롱 길드창고" → "버니 길드창고") — 필터/DB값엔 영향 없음, 화면 표시 전용 */
+function dispGuildStr(s){ return String(s==null?'':s).replace(/뚠카롱/g,'버니').replace(/뚱카롱/g,'늑대').replace(/밤카롱/g,'쿠거'); }
+window.guildLabel = guildLabel; window.dispGuildStr = dispGuildStr;
 let GUILD = fac().key;          // DB 내부키 (뚠/뚱/밤카롱)
 let NEXON_GUILD = fac().nexon;  // 인게임 길드명 (버니/늑대/쿠거)
 function applyTheme(){
@@ -491,7 +496,7 @@ async function buildBail(){
     <p style="font-size:30px;font-weight:900;margin:6px 0 0">${val}</p></div>`;
   const rows=mine.slice(0,60).map(h=>`<tr style="border-bottom:1px solid var(--line)">
     <td class="dim" style="padding:10px 8px;font-weight:700">${(h.date||'').slice(0,10)}</td>
-    <td style="font-weight:700">${h.payer||'-'} <i class="fa-solid fa-arrow-right dim" style="font-size:10px;margin:0 4px"></i> ${h.receiver||'-'}</td>
+    <td style="font-weight:700">${dispGuildStr(h.payer)||'-'} <i class="fa-solid fa-arrow-right dim" style="font-size:10px;margin:0 4px"></i> ${dispGuildStr(h.receiver)||'-'}</td>
     <td style="font-weight:900;color:${h.receiver===WH?'var(--ok-tx)':'var(--bad-tx)'}">${h.receiver===WH?'+':'-'}${num(h.amount)}</td>
     <td class="dim" style="font-weight:600;font-size:13px">${h.memo||''}</td></tr>`).join('');
   return headerHTML('보석금 관리', `${fac().label} 창고 잔액 ${num(inAmt-outAmt)}`) +
@@ -543,7 +548,7 @@ function _joinRankFor(v,c){
   if(!c) return {rank:'로딩 중',msg:'최근 점수 가져오는 중',color:'var(--dim)'};
   const joinCut=c.cut_last+5000;
   if(v<10000) return {rank:'❌ 가입 불가',msg:'1만점 미만은 신청 거절',color:'#C03A3A'};
-  if(v<joinCut) return {rank:'🥖 뚱카롱 (2기)',msg:`1기 컷 ${_fmtMan(joinCut)} 미달 — 꼴등 ${_fmtMan(c.cut_last)}+5천 필요`,color:'#2a87a6'};
+  if(v<joinCut) return {rank:'🥖 늑대 (2기)',msg:`1기 컷 ${_fmtMan(joinCut)} 미달 — 꼴등 ${_fmtMan(c.cut_last)}+5천 필요`,color:'#2a87a6'};
   if(v<c.cut180) return {rank:'🥞 팬케이크 (1기 강등권)',msg:'하위 20명 범위 — 매주 강등 위협',color:'#B07A10'};
   if(v<c.cut90)  return {rank:'⚡ 변동성 위험',msg:'90~180등 — 작은 변동에도 강등 가능',color:'#9a8200'};
   if(v<c.top51)  return {rank:'🍰 롤케이크 (안정권)',msg:'TOP 90 이내 — 강등 거의 없음',color:'#1A8A4A'};
@@ -578,7 +583,7 @@ async function buildJoinForm(){
             <div style="text-align:right;flex-shrink:0"><div class="dim" style="font-size:10px;font-weight:700">수로 점수</div><div style="font-size:24px;font-weight:900;color:var(--bunny-deep)"><span id="jf_scoreVal">${initV.toLocaleString()}</span></div></div>
           </div>
           <input id="jf_score" type="range" min="0" max="300000" step="1000" value="${initV}" oninput="_joinScoreUpdate()" style="width:100%;height:16px;border-radius:8px;-webkit-appearance:none;appearance:none;cursor:pointer;background:${gaugeBg}">
-          <div class="dim" style="font-size:10px;font-weight:700;margin-top:8px;text-align:center">${c?'기준: '+escHtml(c.label.slice(0,17))+' · 뚠카롱 '+c.total+'명 · 매주 변동':'최근 점수 로딩 실패 — 점수만 참고'}</div>
+          <div class="dim" style="font-size:10px;font-weight:700;margin-top:8px;text-align:center">${c?'기준: '+escHtml(c.label.slice(0,17))+' · 버니 '+c.total+'명 · 매주 변동':'최근 점수 로딩 실패 — 점수만 참고'}</div>
         </div>
       </div>
       ${fld('직업 *', `<input id="jf_job" style="${inp}" placeholder="예: 나이트로드">`)}
@@ -1100,9 +1105,9 @@ async function buildBailForm(){
       <div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px">
         <h3 class="dim" style="font-size:11px;font-weight:800;letter-spacing:.04em;margin:0 0 12px;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-circle-info" style="color:var(--bunny-main)"></i>보석금 안내</h3>
         <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">뚠카롱 (버니)</span><span style="font-weight:900;color:var(--bunny-deep)">조각 80개</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">뚱카롱 (늑대)</span><span style="font-weight:900;color:var(--bunny-deep)">조각 40개</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">밤 / 별 / 달 / 꿀 / 솜카롱</span><span style="font-weight:900;color:var(--bunny-deep)">조각 20개</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">🐰 버니 <span class="dim" style="font-size:11px;font-weight:700">(메인)</span></span><span style="font-weight:900;color:var(--bunny-deep)">조각 80개</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">🐺 늑대 <span class="dim" style="font-size:11px;font-weight:700">(부길드)</span></span><span style="font-weight:900;color:var(--bunny-deep)">조각 40개</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">🐆 쿠거 <span class="dim" style="font-size:11px;font-weight:700">· 그 외 길드</span></span><span style="font-weight:900;color:var(--bunny-deep)">조각 20개</span></div>
         </div>
         <div style="background:var(--warn-bg);color:var(--warn-tx);border-radius:12px;padding:10px 13px;font-size:11px;font-weight:700;line-height:1.6"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i><b>누진세</b> · 동일 캐릭이 같은 반기에 또 보석금 시 <b>×2 → ×3 → ×4</b> 가산. 반기(<b>${escHtml(half)}</b>) 기준 자동 초기화.</div>
       </div>
@@ -1156,7 +1161,7 @@ window._bailSearch = async ()=>{
 function _bailRenderCharSelect(){
   const rows=_bailState.allChars.map((c,i)=>{ const guild=c.guild||'?'; const base=_bailBaseFor(guild); const sel=_bailState.payers.some(p=>p.idx===i);
     const gBg=guild==='뚠카롱'?'var(--bunny-light)':guild==='뚱카롱'?'#fecdd3':'var(--panel-3)';
-    return `<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--panel-2);border:${sel?'2px solid var(--bunny-main)':'1px solid var(--line)'};border-radius:14px;cursor:pointer"><input type="checkbox" ${sel?'checked':''} onchange="_bailToggle(${i})" style="width:16px;height:16px;accent-color:var(--bunny-main)"><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(c.name)}${c.is_main?' <span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep)">본캐</span>':''}</div><div class="dim" style="font-size:11px;font-weight:700">${escHtml(c.class||'직업?')} · ${escHtml(c.role||'직위?')}</div></div><span style="background:${gBg};color:var(--bunny-deep);font-size:10px;font-weight:900;padding:4px 8px;border-radius:8px">${escHtml(guild)}</span><span class="dim" style="background:var(--line);color:var(--text);font-size:10px;font-weight:900;padding:4px 8px;border-radius:8px">${base}개</span></label>`; }).join('');
+    return `<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--panel-2);border:${sel?'2px solid var(--bunny-main)':'1px solid var(--line)'};border-radius:14px;cursor:pointer"><input type="checkbox" ${sel?'checked':''} onchange="_bailToggle(${i})" style="width:16px;height:16px;accent-color:var(--bunny-main)"><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(c.name)}${c.is_main?' <span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep)">본캐</span>':''}</div><div class="dim" style="font-size:11px;font-weight:700">${escHtml(c.class||'직업?')} · ${escHtml(c.role||'직위?')}</div></div><span style="background:${gBg};color:var(--bunny-deep);font-size:10px;font-weight:900;padding:4px 8px;border-radius:8px">${escHtml(guildLabel(guild))}</span><span class="dim" style="background:var(--line);color:var(--text);font-size:10px;font-weight:900;padding:4px 8px;border-radius:8px">${base}개</span></label>`; }).join('');
   const res=document.getElementById('bf_result'); if(res)res.innerHTML=`<div style="background:var(--ok-bg);color:var(--ok-tx);border-radius:14px;padding:11px 13px;margin-bottom:10px"><div style="font-size:12px;font-weight:900"><i class="fa-solid fa-circle-check" style="margin-right:5px"></i>본캐 매칭 — 보석금 낼 캐릭 선택 (여러 개 가능)</div></div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">${rows}</div>`;
 }
 window._bailToggle = async (idx)=>{
@@ -1174,7 +1179,7 @@ function _bailHideAmount(){ const el=document.getElementById('bf_amount'); if(el
 function _bailRenderAmount(){
   const rows=_bailState.payers.map(p=>{ const mClr=p.multi<=1?['var(--ok-bg)','var(--ok-tx)']:p.multi===2?['var(--warn-bg)','var(--warn-tx)']:['var(--bad-bg)','var(--bad-tx)'];
     const gBg=p.guild==='뚠카롱'?'var(--bunny-light)':p.guild==='뚱카롱'?'#fecdd3':'var(--panel-3)';
-    return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:6px"><div style="font-size:14px;font-weight:900">${escHtml(p.name)}</div><span style="background:${gBg};color:var(--bunny-deep);font-size:9px;font-weight:900;padding:2px 6px;border-radius:5px">${escHtml(p.guild)}</span></div><span style="font-size:9px;background:${p.offenseCnt===1?'var(--ok-bg)':'var(--warn-bg)'};color:${p.offenseCnt===1?'var(--ok-tx)':'var(--warn-tx)'};border-radius:5px;padding:2px 6px;font-weight:800">${p.offenseCnt===1?'반기 첫 신청':p.offenseCnt+'회차 누진'}</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div class="dim" style="font-size:9px;font-weight:800">기본</div><div style="font-size:14px;font-weight:900">${p.base}개</div></div><div><div class="dim" style="font-size:9px;font-weight:800">배수</div><div style="font-size:14px;font-weight:900;display:inline-block;padding:1px 8px;border-radius:6px;background:${mClr[0]};color:${mClr[1]}">×${p.multi}</div></div><div><div class="dim" style="font-size:9px;font-weight:800">납부</div><div style="font-size:14px;font-weight:900;color:var(--bunny-deep)">${p.calculating?'<i class="fa-solid fa-spinner fa-spin"></i>':p.total}개</div></div></div></div>`; }).join('');
+    return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:6px"><div style="font-size:14px;font-weight:900">${escHtml(p.name)}</div><span style="background:${gBg};color:var(--bunny-deep);font-size:9px;font-weight:900;padding:2px 6px;border-radius:5px">${escHtml(guildLabel(p.guild))}</span></div><span style="font-size:9px;background:${p.offenseCnt===1?'var(--ok-bg)':'var(--warn-bg)'};color:${p.offenseCnt===1?'var(--ok-tx)':'var(--warn-tx)'};border-radius:5px;padding:2px 6px;font-weight:800">${p.offenseCnt===1?'반기 첫 신청':p.offenseCnt+'회차 누진'}</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div class="dim" style="font-size:9px;font-weight:800">기본</div><div style="font-size:14px;font-weight:900">${p.base}개</div></div><div><div class="dim" style="font-size:9px;font-weight:800">배수</div><div style="font-size:14px;font-weight:900;display:inline-block;padding:1px 8px;border-radius:6px;background:${mClr[0]};color:${mClr[1]}">×${p.multi}</div></div><div><div class="dim" style="font-size:9px;font-weight:800">납부</div><div style="font-size:14px;font-weight:900;color:var(--bunny-deep)">${p.calculating?'<i class="fa-solid fa-spinner fa-spin"></i>':p.total}개</div></div></div></div>`; }).join('');
   const totalSum=_bailState.payers.reduce((s,p)=>s+(p.calculating?0:p.total),0);
   const el=document.getElementById('bf_amount'); if(el){ el.style.display=''; el.innerHTML=`<div class="panel tone-light" style="border-radius:18px;padding:16px;margin-bottom:16px"><div style="font-size:11px;font-weight:900;color:var(--bunny-deep);margin-bottom:12px"><i class="fa-solid fa-calculator" style="margin-right:5px"></i>자동 계산 (${_bailState.payers.length}캐)</div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">${rows}</div><div style="background:var(--panel);border:2px solid var(--bunny-main);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between"><div><div class="dim" style="font-size:10px;font-weight:800">총 납부 금액</div></div><div style="font-size:26px;font-weight:900;color:var(--bunny-deep)">${totalSum}<span class="dim" style="font-size:12px;margin-left:3px">개</span></div></div></div>`; }
   const lbl=document.getElementById('bf_submitLabel'); if(lbl)lbl.textContent=_bailState.payers.length>1?`${_bailState.payers.length}캐릭 일괄 신청`:'보석금 납부 신청';
@@ -1207,7 +1212,7 @@ window._bailSubmit = async ()=>{
 async function _bailNotifyDiscord(reqs){
   if(!reqs||reqs.length===0)return; const totalAmt=reqs.reduce((s,r)=>s+(Number(r.total_amount)||0),0); const maxMulti=Math.max(...reqs.map(r=>r.multiplier||1));
   const color=maxMulti===1?0x06b6d4:maxMulti===2?0xf59e0b:maxMulti===3?0xea580c:0xdc2626; const first=reqs[0];
-  const charLines=reqs.map(r=>`• **${r.payer_char}** (${r.payer_guild}) ${r.base_amount}×${r.multiplier} = **${r.total_amount}개**${r.offense_count>1?` _(${r.offense_count}회차)_`:''}`).join('\n');
+  const charLines=reqs.map(r=>`• **${r.payer_char}** (${guildLabel(r.payer_guild)}) ${r.base_amount}×${r.multiplier} = **${r.total_amount}개**${r.offense_count>1?` _(${r.offense_count}회차)_`:''}`).join('\n');
   const payload={ content:'<@&692099309172162570> <@&692091131646705716> 💎 새 보석금 신청', allowed_mentions:{roles:['692099309172162570','692091131646705716']}, embeds:[{ title:`💎 새 보석금 납부 신청 (${reqs.length}캐)`, description:`**${first.main_char}** 님이 ${reqs.length}캐릭의 보석금을 신청했습니다`, color, fields:[{name:'캐릭별 내역',value:charLines,inline:false},{name:'총 납부',value:`**${totalAmt}개**`,inline:true},{name:'반기',value:first.half_year,inline:true}], image:first.proof_image_url?{url:first.proof_image_url}:undefined, footer:{text:first.reason?`사유: ${first.reason}`:'입금 확인 후 노블 해제'}, timestamp:new Date().toISOString() }] };
   const res=await fetch(BAIL_NOTIFY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); if(!res.ok)throw new Error('Discord '+res.status);
 }
@@ -1220,7 +1225,7 @@ async function _bailLoadHistory(mainCharName){
 function _bailHistoryRow(r){
   const map={pending:['var(--warn-bg)','var(--warn-tx)','확인 대기','fa-clock'],hold:['var(--warn-bg)','var(--warn-tx)','보류 중','fa-pause'],approved:['var(--ok-bg)','var(--ok-tx)','입금 확인됨','fa-check'],noble_unlocked:['var(--ok-bg)','var(--ok-tx)','노블 해제됨','fa-unlock'],rejected:['var(--bad-bg)','var(--bad-tx)','거절됨','fa-circle-xmark']};
   const s=map[r.status]||map.pending; const dt=r.processed_at?new Date(r.processed_at).toLocaleDateString('ko-KR'):new Date(r.created_at).toLocaleDateString('ko-KR');
-  return `<div style="background:${s[0]};border-radius:14px;padding:11px 13px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:900;color:${s[1]}"><i class="fa-solid ${s[3]}" style="margin-right:4px"></i>${s[2]}</span><span class="dim" style="font-size:10px;font-weight:700">${escHtml(dt)}</span></div><div style="font-size:14px;font-weight:800">${escHtml(r.payer_char)} <span class="dim" style="font-size:10px;font-weight:600">(${escHtml(r.payer_guild)})</span></div><div class="dim" style="font-size:11px;font-weight:700;margin-top:3px">${r.total_amount}개 · ×${r.multiplier} · ${escHtml(r.half_year)}</div>${r.admin_note?`<div style="font-size:11px;color:${s[1]};margin-top:4px;font-weight:700">메모: ${escHtml(r.admin_note)}</div>`:''}</div>`;
+  return `<div style="background:${s[0]};border-radius:14px;padding:11px 13px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:900;color:${s[1]}"><i class="fa-solid ${s[3]}" style="margin-right:4px"></i>${s[2]}</span><span class="dim" style="font-size:10px;font-weight:700">${escHtml(dt)}</span></div><div style="font-size:14px;font-weight:800">${escHtml(r.payer_char)} <span class="dim" style="font-size:10px;font-weight:600">(${escHtml(guildLabel(r.payer_guild))})</span></div><div class="dim" style="font-size:11px;font-weight:700;margin-top:3px">${r.total_amount}개 · ×${r.multiplier} · ${escHtml(r.half_year)}</div>${r.admin_note?`<div style="font-size:11px;color:${s[1]};margin-top:4px;font-weight:700">메모: ${escHtml(r.admin_note)}</div>`:''}</div>`;
 }
 
 /* ===== 아이템 컨설팅 — 원본 뚠카롱 게시판 그대로 이식 =====
