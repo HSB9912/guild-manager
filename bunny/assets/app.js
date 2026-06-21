@@ -125,7 +125,7 @@ function sidebarHTML(active){
   return `<aside class="sidebar panel" style="border-top:0;border-bottom:0;border-left:0;">
     <div style="display:flex;align-items:center;gap:12px;padding:20px 20px 16px;">
       <div class="tone-rose" style="width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 14px rgba(255,143,171,.4)">🐰</div>
-      <div><h1 style="font-weight:900;font-size:18px;margin:0;line-height:1.1">버니 길드</h1><p class="dim" style="font-size:12px;margin:2px 0 0">뚠뚱카롱 연합</p></div>
+      <div><h1 style="font-weight:900;font-size:18px;margin:0;line-height:1.1">버니 길드</h1><p class="dim" style="font-size:12px;margin:2px 0 0">부길드 늑대 · 쿠거</p></div>
     </div>
     <nav class="scroll" style="display:flex;flex-direction:column;gap:2px;font-size:14px;font-weight:700;padding:0 12px 16px;overflow-y:auto;flex:1;">${nav}</nav>
     <div style="padding:12px;display:flex;flex-direction:column;gap:10px;">
@@ -273,9 +273,9 @@ async function buildHome(){
 /* ============================================================
  *  페이지별 실데이터 빌더 — PAGES[key] = async () => html
  *  키가 없으면 placeholderHTML(와꾸) 표시.
- *  관리 범위: GUILD = 버니(뚠카롱). 연합 전체로 바꾸려면 필터만 수정.
+ *  관리 범위: 메인길드 = 버니(뚠카롱), 부길드 = 늑대(뚱카롱)·쿠거(밤카롱). (연합 아님)
  * ============================================================ */
-/* ===== 팩션 (버니/늑대/쿠거) — DB키·넥슨명·색 ===== */
+/* ===== 길드 구분 (메인 버니 / 부길드 늑대·쿠거) — DB키·넥슨명·색 ===== */
 const FACTIONS = {
   bunny:  { key:'뚠카롱', nexon:'버니', label:'버니', emoji:'🐰', main:'#FF8FAB', light:'#FFC9DE', cream:'#FFE8D6', deep:'#B5446E', bg:'#FFF5F8', p2:'#FFF0F5', p3:'#FFF7EF' },
   wolf:   { key:'뚱카롱', nexon:'늑대', label:'늑대', emoji:'🐺', main:'#6C8EBF', light:'#8B9DC3', cream:'#DCE7F3', deep:'#2C3E57', bg:'#F2F6FB', p2:'#EAF1F9', p3:'#EEF3F8' },
@@ -334,7 +334,8 @@ async function buildMembers(){
     </select>
     <span class="dim" style="font-size:13px;font-weight:800;margin-left:auto"><b id="memCount" style="color:var(--bunny-deep)">${_mem.length}</b>명 · 본캐 ${mains}</span>
   </div>`;
-  const facTabs = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">${Object.entries(FACTIONS).map(([k,f])=>`<button onclick="_memTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;${k===_memFac?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}</button>`).join('')}</div>`;
+  const facBtn = (k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_memFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85;font-weight:700">메인</span>':''; return `<button onclick="_memTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
+  const facTabs = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">${facBtn('bunny')}<span class="dim" style="font-size:11px;font-weight:800;margin:0 2px">· 부길드</span>${facBtn('wolf')}${facBtn('cougar')}</div>`;
   return headerHTML('길드원', `${FK.label} · 총 ${_mem.length}명`) + facTabs + controls +
     `<div class="panel" style="border-radius:24px;padding:18px;"><div id="memTbl">${memberRows(_mem)}</div></div>`;
 }
