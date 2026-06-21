@@ -1222,54 +1222,2120 @@ function _bailHistoryRow(r){
   return `<div style="background:${s[0]};border-radius:14px;padding:11px 13px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:900;color:${s[1]}"><i class="fa-solid ${s[3]}" style="margin-right:4px"></i>${s[2]}</span><span class="dim" style="font-size:10px;font-weight:700">${escHtml(dt)}</span></div><div style="font-size:14px;font-weight:800">${escHtml(r.payer_char)} <span class="dim" style="font-size:10px;font-weight:600">(${escHtml(r.payer_guild)})</span></div><div class="dim" style="font-size:11px;font-weight:700;margin-top:3px">${r.total_amount}개 · ×${r.multiplier} · ${escHtml(r.half_year)}</div>${r.admin_note?`<div style="font-size:11px;color:${s[1]};margin-top:4px;font-weight:700">메모: ${escHtml(r.admin_note)}</div>`:''}</div>`;
 }
 
-/* ----- 아이템 컨설팅 (넥슨 장비 조회) ----- */
-function _consultGradeStyle(g){ if(!g)return{label:'',color:'var(--dim)'}; const k=String(g).toLowerCase(); if(k.includes('레전')||k.includes('legend'))return{label:'레전드리',color:'#1A8A4A'}; if(k.includes('유니')||k.includes('unique'))return{label:'유니크',color:'#E0A020'}; if(k.includes('에픽')||k.includes('epic'))return{label:'에픽',color:'#9B59B6'}; if(k.includes('레어')||k.includes('rare'))return{label:'레어',color:'#3BA9C7'}; return{label:String(g),color:'var(--dim)'}; }
-function _consultDetectSpecialRing(name){ return /(컨티뉴어스|리스트레인트|웨폰\s*퍼프|웨퍼)/i.test(name||''); }
-function _consultNormalizeEq(eq){
-  const slot=eq?.item_equipment_slot||eq?.item_equipment_part||''; const isSlotSpecial=slot.includes('특수'); const isNameSpecial=_consultDetectSpecialRing(eq?.item_name);
-  let srLv=parseInt(eq?.special_ring_level)||0; if(srLv===0&&(isSlotSpecial||isNameSpecial))srLv=1;
-  const ao=eq?.item_add_option||{}; const addOpts=[];
-  const aoMap=[['STR',ao.str],['DEX',ao.dex],['INT',ao.int],['LUK',ao.luk],['올스탯',ao.all_stat,'%'],['공격력',ao.attack_power],['마력',ao.magic_power],['보스',ao.boss_damage,'%'],['데미지',ao.damage,'%'],['HP',ao.max_hp]];
-  for(const [label,val,suffix] of aoMap){ const n=parseInt(val)||0; if(n>0)addOpts.push(`${label}+${n}${suffix||''}`); }
-  return { slot, name:eq?.item_name||'', icon:eq?.item_icon||'', stars:parseInt(eq?.starforce)||0, upgrade:parseInt(eq?.scroll_upgrade)||0, pot_grade:eq?.potential_option_grade||'', pots:[eq?.potential_option_1,eq?.potential_option_2,eq?.potential_option_3].filter(Boolean), add_grade:eq?.additional_potential_option_grade||'', adds:[eq?.additional_potential_option_1,eq?.additional_potential_option_2,eq?.additional_potential_option_3].filter(Boolean), soul_name:eq?.soul_name||'', soul_option:eq?.soul_option||'', special_ring_level:srLv, add_opts:addOpts };
-}
-function _consultPresetScore(items){ if(!Array.isArray(items))return 0; let s=0; for(const eq of items){ s+=parseInt(eq?.starforce)||0; s+=parseInt(eq?.scroll_upgrade)||0; const g=(eq?.potential_option_grade||'').toLowerCase(); if(g.includes('레전')||g.includes('legend'))s+=12; else if(g.includes('유니')||g.includes('unique'))s+=6; else if(g.includes('에픽')||g.includes('epic'))s+=2; const ag=(eq?.additional_potential_option_grade||'').toLowerCase(); if(ag.includes('레전')||ag.includes('legend'))s+=10; else if(ag.includes('유니')||ag.includes('unique'))s+=5; else if(ag.includes('에픽')||ag.includes('epic'))s+=1; } return s; }
-function _consultMergePreset(equipData,n){ const preset=equipData?.[`item_equipment_preset_${n}`]||[]; const legacy=equipData?.item_equipment||[]; const ps=new Set(preset.map(e=>e.item_equipment_slot||e.item_equipment_part)); const extras=legacy.filter(e=>!ps.has(e.item_equipment_slot||e.item_equipment_part)); return preset.length?[...preset,...extras]:legacy; }
-function _consultPickBestPreset(equipData){ const presets=[1,2,3].map(n=>({no:n,items:equipData?.[`item_equipment_preset_${n}`]||[],score:_consultPresetScore(equipData?.[`item_equipment_preset_${n}`]||[])})); const valid=presets.filter(p=>p.items.length>0); if(!valid.length)return Number(equipData?.preset_no)||1; valid.sort((a,b)=>b.score-a.score); return valid[0].no; }
-function _consultItemCardHtml(d){
-  const isSpecial=(d.special_ring_level||0)>0; const potG=isSpecial?{label:'특수',color:'#3BA9C7'}:_consultGradeStyle(d.pot_grade); const addG=_consultGradeStyle(d.add_grade); const stars=parseInt(d.stars)||0,upgrade=parseInt(d.upgrade)||0;
-  const topLine=isSpecial?`<span class="chip" style="background:#3BA9C71f;color:#3BA9C7;font-weight:800">Lv.${d.special_ring_level}/6</span>`:`${stars>0?`<span class="chip" style="background:rgba(224,160,32,.15);color:#E0A020;font-weight:800"><i class="fa-solid fa-star" style="font-size:9px;margin-right:3px"></i>${stars}</span>`:''}${upgrade>0?`<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx);font-weight:800">+${upgrade}</span>`:''}`;
-  const potLine=(!isSpecial&&d.pots.length)?`<div style="font-size:12px;font-weight:700;line-height:1.5;margin-top:4px"><span style="color:${potG.color};font-weight:900;margin-right:5px">${escHtml(potG.label||'잠재')}</span><span class="dim">${escHtml(d.pots.join(', '))}</span></div>`:'';
-  const addLine=(!isSpecial&&d.adds.length)?`<div style="font-size:12px;font-weight:700;line-height:1.5"><span style="color:${addG.color};font-weight:900;margin-right:5px">${escHtml(addG.label||'에디')}</span><span class="dim">${escHtml(d.adds.join(', '))}</span></div>`:'';
-  const addOptLine=(d.add_opts&&d.add_opts.length)?`<div style="font-size:12px;font-weight:700;line-height:1.5"><span style="color:var(--bunny-deep);font-weight:900;margin-right:5px">추옵</span><span class="dim">${escHtml(d.add_opts.join(' · '))}</span></div>`:'';
-  const soulLine=d.soul_name?`<div style="font-size:12px;font-weight:700;line-height:1.5"><span style="color:var(--bunny-main);font-weight:900;margin-right:5px">소울</span><span class="dim">${escHtml(d.soul_name)}${d.soul_option?', '+escHtml(d.soul_option):''}</span></div>`:'';
-  return `<div class="panel" style="border-radius:16px;padding:12px;display:flex;gap:10px;border-left:3px solid ${potG.color}"><div style="flex-shrink:0;width:44px;height:44px;background:var(--panel-2);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden">${d.icon?`<img src="${escAttr(d.icon)}" style="width:36px;height:36px;image-rendering:pixelated" onerror="this.style.display='none'">`:`<i class="fa-solid fa-shield-halved dim"></i>`}</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">${topLine}<span class="chip" style="background:var(--panel-2);color:var(--dim);font-weight:800">${escHtml(d.slot||'-')}</span></div><div style="font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(d.name||'-')}</div>${potLine}${addLine}${addOptLine}${soulLine}</div></div>`;
-}
-async function buildConsulting(){
-  const inp='border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;font-size:14px;font-weight:600;color:var(--text);outline:0;';
-  return headerHTML('아이템 컨설팅','캐릭터 장비 조회') +
-    `<div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input id="ct_char" onkeydown="if(event.key==='Enter')_consultFetch()" placeholder="캐릭터 닉네임" style="${inp};flex:1;min-width:200px">
-        <button id="ct_btn" onclick="_consultFetch()" style="border:0;border-radius:12px;padding:11px 22px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-magnifying-glass"></i> 불러오기</button>
-      </div>
-      <p class="dim" style="font-size:12px;font-weight:700;margin:10px 0 0">넥슨 Open API — 장비·스타포스·잠재등급·추가옵션 · 가장 강한 프리셋 자동선택</p>
-    </div>
-    <div id="consultResult"></div>`;
-}
-window._consultFetch = async ()=>{
-  const name=document.getElementById('ct_char')?.value.trim(); if(!name)return alert('캐릭터 닉네임을 입력해주세요.');
-  const box=document.getElementById('consultResult'), btn=document.getElementById('ct_btn'); if(btn){btn.disabled=true;btn.style.opacity='.6';}
-  box.innerHTML=`<div class="panel" style="border-radius:24px;padding:40px;text-align:center"><span class="dim" style="font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>${escHtml(name)} 조회 중…</span></div>`;
-  try{
-    const id=await nexonFetch('/maplestory/v1/id',{character_name:name});
-    const [basic,equipData]=await Promise.all([ nexonFetch('/maplestory/v1/character/basic',{ocid:id.ocid}), nexonFetch('/maplestory/v1/character/item-equipment',{ocid:id.ocid}) ]);
-    const bestNo=_consultPickBestPreset(equipData); const equips=_consultMergePreset(equipData,bestNo); const cards=equips.map(eq=>_consultItemCardHtml(_consultNormalizeEq(eq))).join('');
-    let charImg=basic?.character_image||''; if(charImg&&!/[?&]width=/.test(charImg))charImg+=(charImg.includes('?')?'&':'?')+'width=200&height=250';
-    box.innerHTML=`<div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">${charImg?`<img src="${escAttr(charImg)}" style="width:96px;height:120px;object-fit:contain;background:var(--panel-2);border-radius:16px" onerror="this.style.display='none'">`:''}<div style="flex:1;min-width:160px"><h3 style="font-weight:900;font-size:22px;margin:0">${escHtml(basic?.character_name||name)}</h3><p class="dim" style="font-weight:700;margin:6px 0 0;font-size:14px">Lv.${basic?.character_level||0} · ${escHtml(basic?.character_class||'')}${basic?.character_guild_name?' · '+escHtml(basic.character_guild_name):''}${basic?.world_name?' · '+escHtml(basic.world_name):''}</p></div><span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep);font-weight:800">장비 ${equips.length}개 · 프리셋 ${bestNo}</span></div><div class="bento" style="grid-template-columns:repeat(2,1fr)">${cards||'<div class="dim" style="grid-column:span 2;padding:30px;text-align:center;font-weight:700">장비 정보 없음</div>'}</div>`;
-  }catch(e){ box.innerHTML=`<div class="panel" style="border-radius:24px;padding:30px;text-align:center"><span style="font-weight:800;color:var(--bad-tx)">${escHtml(e.message||String(e))}</span><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">닉네임을 확인해주세요.</p></div>`; }
-  finally{ if(btn){btn.disabled=false;btn.style.opacity='1';} }
+/* ===== 아이템 컨설팅 — 원본 뚠카롱 게시판 그대로 이식 =====
+ * 원본 index.html(6660-8723) 충실 포팅. Tailwind 온디맨드 + 얇은 호환 셸.
+ * 컨테이너 id=contentArea · DB=item_consultings(라이브 공유) · 잠재옵션=site_config.potentialOptions */
+let supaDb = null;          // boot 후 db()로 채움 (BACKEND.db)
+let SITE_CONFIG = {};       // getConfig() 결과(_cfg 동일 참조) — 잠재옵션 메뉴 편집용
+
+/* esc: 텍스트/속성 양쪽 안전 (원본과 동일하게 따옴표까지 이스케이프) */
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+window.esc = esc;
+
+/* showMsg: 토스트 (원본 전역 알림 대체) */
+window.showMsg = function(msg, type){
+  let host = document.getElementById('_bunnyToast');
+  if(!host){ host=document.createElement('div'); host.id='_bunnyToast'; host.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:3000;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none'; document.body.appendChild(host); }
+  const c = type==='error'?['#fee2e2','#b91c1c']:type==='success'?['#dcfce7','#15803d']:['#e0f2fe','#0369a1'];
+  const t = document.createElement('div'); t.textContent=String(msg);
+  t.style.cssText='background:'+c[0]+';color:'+c[1]+';font-weight:800;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);max-width:80vw;text-align:center';
+  host.appendChild(t);
+  setTimeout(function(){ t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(function(){ t.remove(); },420); }, 2600);
 };
+
+/* R2 이미지 업로드 — 보석금과 동일 워커 · guide-images 버킷 */
+const R2_WORKER_URL = BAIL_R2.worker, R2_API_KEY = BAIL_R2.apiKey;
+window._r2Upload = async (bucket, filename, file)=>{
+  const res = await fetch(R2_WORKER_URL+'/upload/'+bucket+'/'+filename, { method:'POST', headers:{ 'Content-Type':file.type||'image/webp', 'X-API-Key':R2_API_KEY }, body:file });
+  if(!res.ok) throw new Error('R2 업로드 실패: '+res.status);
+  return (await res.json()).url;
+};
+window._r2Delete = async (bucket, filename)=>{
+  const res = await fetch(R2_WORKER_URL+'/delete/'+bucket+'/'+filename, { method:'DELETE', headers:{ 'X-API-Key':R2_API_KEY } });
+  if(!res.ok) throw new Error('R2 삭제 실패: '+res.status);
+};
+
+/* 넥슨 API 별칭 — 버니 nexonFetch/nexonKey 로 위임 */
+window._nexonFetch = (endpoint, params)=> nexonFetch(endpoint, params||{});
+window._getNexonApiKey = ()=> nexonKey();
+window._getCharOcid = async (name)=> (await nexonFetch('/maplestory/v1/id',{ character_name:name })).ocid;
+window._getCharBasic = (ocid)=> nexonFetch('/maplestory/v1/character/basic',{ ocid });
+
+/* 페이지 빌더 — Tailwind/설정 준비 후 컨테이너만 깔고 renderConsulting 킥오프 */
+async function buildConsulting(){
+  await loadTailwind();
+  try{ SITE_CONFIG = await getConfig(); }catch(e){ SITE_CONFIG = SITE_CONFIG || {}; }
+  supaDb = db();
+  if(window._consultingState){ window._consultingState.view='list'; window._consultingState.currentId=null; window._consultingState.draft=null; }
+  setTimeout(function(){ const el=document.getElementById('contentArea'); if(el && window.renderConsulting) window.renderConsulting(el); }, 0);
+  return headerHTML('아이템 컨설팅','길드원 아이템 컨설팅 게시판') +
+    '<div id="contentArea"><div style="text-align:center;padding:48px;color:var(--dim);font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>로딩 중…</div></div>';
+}
+
+  // ============ 아이템 컨설팅 (게시판 + 작성/뷰어) ============
+  // Supabase 테이블 'item_consultings' 필요. 아래 SQL을 한 번 실행:
+  /*
+    CREATE TABLE IF NOT EXISTS item_consultings (
+      id BIGSERIAL PRIMARY KEY,
+      member_name TEXT NOT NULL,
+      member_class TEXT,
+      member_server TEXT,
+      consultant_name TEXT,
+      diagnosis_date DATE DEFAULT CURRENT_DATE,
+      combat_power TEXT,
+      main_stat TEXT,
+      hexa_stat TEXT,
+      goal JSONB DEFAULT '{}'::jsonb,
+      diagnosis JSONB DEFAULT '[]'::jsonb,
+      tips JSONB DEFAULT '[]'::jsonb,
+      target_items JSONB DEFAULT '[]'::jsonb,
+      summary TEXT,
+      character_image TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  */
+  window._consultingState = { view: 'list', currentId: null, draft: null, list: null, loading: false, linkingSetIdx: null };
+
+  window.renderConsulting = async (container) => {
+    const cs = window._consultingState;
+    container.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</div>';
+
+    if (cs.view === 'list') return window._consultingRenderList(container);
+    if (cs.view === 'detail') return window._consultingRenderDetail(container);
+    if (cs.view === 'edit' || cs.view === 'new') return window._consultingRenderEdit(container);
+  };
+
+  // 컨설팅 합산 헥사 상승치 (효율 분석과 동일 로직 — 카드 뱃지/요약 공통)
+  window._consultingComputeTotalHexa = (c) => {
+    if (!c) return 0;
+    const items = Array.isArray(c.target_items) ? c.target_items : [];
+    const goal = c.goal || {};
+    const setListRaw = Array.isArray(goal.sets) ? goal.sets : [];
+    const targetSlots = new Set(items.map(t => t.slot));
+    const itemHexa = items.reduce((s, t) => s + (Number(t.hexa_contrib) || 0), 0);
+    const setHexa = setListRaw.reduce((sum, s) => {
+      const slots = Array.isArray(s.items) ? s.items
+        : (typeof s.items === 'string' ? s.items.split(/[,/·]/).map(x => x.trim()).filter(Boolean) : []);
+      const active = slots.length > 0 && slots.some(slot => targetSlots.has(slot));
+      return active ? sum + (Number(s.hexa_contrib) || 0) : sum;
+    }, 0);
+    const huHexa = Number(goal.hexaUpgrade?.hexa_gain) || 0;
+    return itemHexa + setHexa + huHexa;
+  };
+
+  window._consultingFetchList = async () => {
+    try {
+      const { data, error } = await supaDb.from('item_consultings')
+        .select('id, member_name, member_class, member_server, consultant_name, diagnosis_date, combat_power, main_stat, hexa_stat, goal, target_items, summary, character_image, updated_at')
+        .order('updated_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      window.showMsg('컨설팅 목록 로드 실패: ' + e.message, 'error');
+      return null;
+    }
+  };
+
+  window._consultingRenderList = async (container) => {
+    const list = await window._consultingFetchList();
+    if (list === null) {
+      container.innerHTML = `<div class="bg-white rounded-2xl border border-red-100 shadow-sm p-8 text-center">
+        <i class="fas fa-exclamation-circle text-3xl text-red-400 mb-3"></i>
+        <h3 class="text-base font-bold text-gray-800 mb-2">테이블이 없거나 권한이 부족합니다</h3>
+        <p class="text-xs text-gray-500 mb-4">Supabase에서 <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-500">item_consultings</code> 테이블을 만들어주세요.</p>
+        <pre class="text-[10px] text-left bg-gray-50 p-3 rounded overflow-x-auto text-gray-600">CREATE TABLE item_consultings (
+  id BIGSERIAL PRIMARY KEY,
+  member_name TEXT NOT NULL,
+  member_class TEXT, member_server TEXT, consultant_name TEXT,
+  diagnosis_date DATE DEFAULT CURRENT_DATE,
+  combat_power TEXT, main_stat TEXT, hexa_stat TEXT,
+  goal JSONB DEFAULT '{}'::jsonb,
+  diagnosis JSONB DEFAULT '[]'::jsonb,
+  tips JSONB DEFAULT '[]'::jsonb,
+  target_items JSONB DEFAULT '[]'::jsonb,
+  summary TEXT, character_image TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);</pre></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+    <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 flex-wrap">
+        <h3 class="text-sm font-bold text-gray-700"><i class="fas fa-stethoscope mr-1 text-pink-500"></i>아이템 컨설팅 게시판</h3>
+        <span class="text-[10px] text-gray-400">총 ${list.length}건 · 길드원 컨설팅 결과를 모아봅니다</span>
+        ${isAdmin() ? `
+          <label class="ml-auto px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold shadow-sm hover:bg-blue-100 transition-all cursor-pointer" title="다른 진단 도구의 JSON 파일 불러오기">
+            <i class="fas fa-file-import mr-1"></i>JSON 가져오기
+            <input type="file" accept="application/json,.json" class="hidden" onchange="window._consultingImportJsonFile(event)">
+          </label>
+          <button onclick="window._consultingNew()" class="px-3 py-1.5 bg-pink-500 text-white rounded-lg text-[11px] font-bold shadow hover:bg-pink-600 transition-all"><i class="fas fa-plus mr-1"></i>새 컨설팅 작성</button>
+        ` : ''}
+      </div>
+
+      ${list.length === 0 ? `
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <i class="fas fa-stethoscope text-5xl text-gray-200 mb-4"></i>
+          <p class="text-sm text-gray-400 font-bold">아직 등록된 컨설팅이 없습니다</p>
+          ${isAdmin() ? '<p class="text-[10px] text-gray-300 mt-2">상단 "새 컨설팅 작성" 버튼으로 시작하세요</p>' : ''}
+        </div>
+      ` : `
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${list.map(c => {
+            const date = c.diagnosis_date || (c.updated_at || '').slice(0, 10);
+            const goal = c.goal || {};
+            // 캐릭 이미지 URL — width 파라미터 없으면 큰 사이즈로 강제 (메이플 API 호환)
+            const charImgUrl = (() => {
+              if (!c.character_image) return '';
+              if (/[?&]width=/.test(c.character_image)) return c.character_image;
+              const sep = c.character_image.includes('?') ? '&' : '?';
+              return c.character_image + `${sep}width=400&height=500`;
+            })();
+            // 헥사 환산 숫자 파싱 (교체 후 예상값 계산용)
+            const parseHexaNum = (s) => {
+              if (s == null) return null;
+              const cleaned = String(s).replace(/[,\s]/g, '');
+              const manMatch = cleaned.match(/^([\d.]+)만/);
+              if (manMatch) return Math.round(parseFloat(manMatch[1]) * 10000);
+              const num = parseFloat(cleaned);
+              return isNaN(num) ? null : num;
+            };
+            const curHexaNum = parseHexaNum(c.hexa_stat);
+            // 합산 상승치 = 효율 분석의 총 헥사 상승 (단품 + 세트 발동 + 헥사 강화)
+            const totalGain = window._consultingComputeTotalHexa(c);
+            const projectedHexa = (curHexaNum != null && totalGain > 0) ? curHexaNum + totalGain : null;
+            const hasGoalText = goal.targetHexa && String(goal.targetHexa).trim();
+            return `
+              <div onclick="window._consultingOpen(${c.id})" class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-pink-300 hover:shadow-md transition-all cursor-pointer overflow-hidden group">
+                <div class="p-4">
+                  <div class="flex items-center gap-3 mb-3">
+                    <div class="w-20 h-24 rounded-xl bg-gradient-to-br from-pink-50 to-rose-50 flex items-center justify-center shrink-0 overflow-hidden border border-pink-100">
+                      ${c.character_image ? `<img src="${esc(charImgUrl)}" class="w-full h-full object-cover" style="transform:scale(1.6);transform-origin:center 60%;" onerror="this.style.display='none';this.parentElement.innerHTML='<i class=\\'fas fa-user text-pink-300 text-3xl\\'></i>'">` : '<i class="fas fa-user text-pink-300 text-3xl"></i>'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-black text-gray-800 text-sm truncate">${esc(c.member_name)}<span class="text-gray-400 font-normal text-[10px] ml-1">님의 컨설팅</span></div>
+                      <div class="text-[10px] text-gray-500 truncate">${esc(c.member_class || '')}${c.member_server ? ' · ' + esc(c.member_server) : ''}</div>
+                    </div>
+                  </div>
+
+                  <!-- 헥사 환산 (메인 지표) -->
+                  <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-3 mb-2 border border-orange-100">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="text-[9px] font-black text-orange-500 uppercase tracking-wider"><i class="fas fa-cube mr-0.5"></i>헥사 환산</span>
+                      ${totalGain > 0 ? `<span class="text-[9px] font-black text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">+${totalGain.toLocaleString()}</span>` : ''}
+                    </div>
+                    <div class="flex items-baseline gap-2 flex-wrap">
+                      <span class="text-base font-black text-gray-700">${esc(c.hexa_stat || '-')}</span>
+                      ${projectedHexa != null ? `
+                        <i class="fas fa-arrow-right text-[10px] text-gray-300"></i>
+                        <span class="text-xl font-black text-orange-600">${projectedHexa.toLocaleString()}</span>
+                      ` : ''}
+                    </div>
+                    ${hasGoalText ? `<div class="text-[9px] text-gray-500 mt-1.5"><i class="fas fa-bullseye text-orange-400 mr-0.5"></i>목표 ${esc(goal.targetHexa)}</div>` : ''}
+                  </div>
+
+                  ${(goal.budget || goal.period) ? `
+                    <div class="flex items-center justify-center gap-3 text-[9px] text-gray-500 bg-amber-50/50 border border-amber-100/60 rounded-md py-1.5 mb-3">
+                      ${goal.budget ? `<span><i class="fas fa-coins text-amber-500 mr-1"></i>예산 ${esc(goal.budget)}</span>` : ''}
+                      ${goal.budget && goal.period ? `<span class="text-gray-300">·</span>` : ''}
+                      ${goal.period ? `<span><i class="fas fa-clock text-gray-400 mr-1"></i>${esc(goal.period)}</span>` : ''}
+                    </div>
+                  ` : ''}
+
+                  ${c.summary ? `<p class="text-[10px] text-gray-500" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc((c.summary || '').substring(0, 120))}</p>` : ''}
+                  <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    <span class="text-[9px] text-gray-400"><i class="fas fa-calendar mr-1"></i>${esc(date)}</span>
+                    <span class="text-[9px] text-pink-400 font-bold group-hover:text-pink-600">자세히 →</span>
+                  </div>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      `}
+    </div>`;
+  };
+
+  window._consultingOpen = (id) => {
+    window._consultingState.view = 'detail';
+    window._consultingState.currentId = id;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingBack = () => {
+    window._consultingState.view = 'list';
+    window._consultingState.currentId = null;
+    window._consultingState.draft = null;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingNew = () => {
+    if (!isAdmin()) return window.showMsg('관리자만 작성 가능합니다.', 'error');
+    window._consultingState.view = 'new';
+    window._consultingState.draft = {
+      member_name: '', member_class: '', member_server: '루나', consultant_name: '',
+      diagnosis_date: new Date().toISOString().slice(0, 10),
+      combat_power: '', main_stat: '', hexa_stat: '',
+      goal: { targetHexa: '', budget: '', period: '', sets: [], hexaUpgrade: { hexa_gain: 0, sol_erda: 0, sol_erda_price: 0 } },
+      diagnosis: [], tips: [], target_items: [], summary: '', character_image: '', attachments: []
+    };
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  // 첨부 이미지 편집 영역 렌더 (URL 기반 — Cloudflare 등에 업로드 후 URL 붙여넣기)
+  window._consultingRenderAttachmentsEditor = (attachments) => {
+    const list = Array.isArray(attachments) ? attachments : [];
+    const kinds = [
+      { v: 'kakao', l: '카톡 대화' },
+      { v: 'final', l: '마침 사진' },
+      { v: 'other', l: '기타' }
+    ];
+    const empty = !list.length;
+    return `
+      <div class="mb-3 flex gap-1">
+        <input id="_consultingAttachUrlInput" type="text" placeholder="이미지 URL 붙여넣기 (Cloudflare Images / R2 / 외부 호스팅 OK)" class="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs" onkeydown="if(event.key==='Enter'){event.preventDefault();window._consultingAddAttachmentUrl();}">
+        <button onclick="window._consultingAddAttachmentUrl()" class="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold hover:bg-blue-600">추가</button>
+      </div>
+      ${empty ? '<p class="text-[11px] text-gray-300 italic text-center py-4">아직 첨부된 이미지가 없습니다</p>' : `
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">${list.map((a, i) => `
+        <div class="bg-gray-50 rounded-lg border border-gray-200 p-2.5 space-y-2">
+          <div class="relative aspect-video bg-white rounded overflow-hidden border border-gray-200">
+            ${a.url ? `<img src="${esc(a.url)}" class="w-full h-full object-contain" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="w-full h-full hidden items-center justify-center text-red-400 text-[10px] p-2 text-center">이미지 로드 실패<br>${esc(a.url.slice(0,40))}...</div>` : '<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fas fa-image text-2xl"></i></div>'}
+            <button type="button" onclick="window._consultingRemoveAttachment(${i})" class="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs shadow"><i class="fas fa-times"></i></button>
+          </div>
+          <select onchange="window._consultingUpdateAttachment(${i},'kind',this.value)" class="w-full text-[11px] font-bold border border-gray-200 rounded px-2 py-1">
+            ${kinds.map(k => `<option value="${k.v}" ${(a.kind||'kakao')===k.v?'selected':''}>${k.l}</option>`).join('')}
+          </select>
+          <input type="text" value="${esc(a.caption||'')}" oninput="window._consultingUpdateAttachment(${i},'caption',this.value)" placeholder="캡션 (선택)" class="w-full text-[11px] border border-gray-200 rounded px-2 py-1">
+        </div>`).join('')}</div>`}`;
+  };
+
+  window._consultingAddAttachmentUrl = () => {
+    const inp = document.getElementById('_consultingAttachUrlInput');
+    const url = inp?.value.trim();
+    if (!url) { window.showMsg('URL을 입력해주세요', 'error'); return; }
+    if (!/^https?:\/\//.test(url)) { window.showMsg('http(s):// 로 시작하는 URL이어야 합니다', 'error'); return; }
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.attachments)) d.attachments = [];
+    d.attachments.push({ kind: 'kakao', caption: '', url });
+    if (inp) inp.value = '';
+    window.showMsg('이미지 추가됨', 'success');
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  // 파일 → Cloudflare R2 자동 업로드 → URL을 attachments에 추가
+  window._consultingAddAttachments = async (ev) => {
+    const files = Array.from(ev.target?.files || []);
+    if (!files.length) return;
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.attachments)) d.attachments = [];
+    let added = 0, failed = 0;
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) { failed++; continue; }
+      try {
+        const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const safeName = `consulting-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        window.showMsg(`업로드 중... (${added + failed + 1}/${files.length})`, 'info');
+        const publicUrl = await window._r2Upload('guide-images', safeName, file);
+        d.attachments.push({ kind: 'kakao', caption: '', url: publicUrl, _r2name: safeName });
+        added++;
+      } catch (e) {
+        console.warn('R2 업로드 실패:', e);
+        failed++;
+      }
+    }
+    if (ev?.target) ev.target.value = '';
+    if (added) window.showMsg(`${added}장 업로드 완료${failed ? ` (${failed}장 실패)` : ''}`, 'success');
+    else window.showMsg('업로드 실패', 'error');
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingUpdateAttachment = (idx, field, value) => {
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.attachments) || !d.attachments[idx]) return;
+    d.attachments[idx][field] = value;
+  };
+
+  window._consultingRemoveAttachment = async (idx) => {
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.attachments)) return;
+    const removed = d.attachments[idx];
+    d.attachments.splice(idx, 1);
+    // R2에 올린 파일이면 같이 삭제 (best-effort, 실패해도 무시)
+    if (removed?._r2name) {
+      try { await window._r2Delete('guide-images', removed._r2name); } catch (e) {}
+    }
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  // 상세뷰: 첨부 이미지 갤러리
+  window._consultingRenderAttachmentsView = (attachments) => {
+    const list = Array.isArray(attachments) ? attachments.filter(a => a.url || a.data) : [];
+    if (!list.length) return '';
+    const kindMeta = {
+      kakao: { l: '카톡 대화', cls: 'text-amber-600 bg-amber-50 border-amber-100' },
+      final: { l: '마침 사진', cls: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+      other: { l: '기타', cls: 'text-gray-600 bg-gray-100 border-gray-200' }
+    };
+    const groups = list.reduce((acc, a) => { (acc[a.kind || 'other'] ||= []).push(a); return acc; }, {});
+    const order = ['kakao', 'final', 'other'];
+    return `<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+      <h3 class="text-base font-black text-pink-500 flex items-center gap-2"><i class="fas fa-images"></i>참고 이미지 (${list.length}장)</h3>
+      ${order.filter(k => groups[k]?.length).map(k => `
+        <div>
+          <div class="text-[10px] font-bold uppercase mb-2 ${kindMeta[k].cls.split(' ').slice(0,1)} px-2 py-1 inline-block rounded">${kindMeta[k].l} · ${groups[k].length}장</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            ${groups[k].map(a => { const src = a.url || a.data || ''; return `
+              <div class="bg-gray-50 rounded-lg border ${kindMeta[k].cls.split(' ').filter(c=>c.startsWith('border')).join(' ')} overflow-hidden cursor-pointer hover:scale-[1.02] transition" onclick="window._consultingShowImageModal(${JSON.stringify(src).replace(/"/g, '&quot;')})">
+                <img src="${esc(src)}" class="w-full max-h-80 object-contain bg-white" onerror="this.style.display='none'">
+                ${a.caption ? `<div class="text-[11px] text-gray-600 px-2 py-1.5 bg-white border-t border-gray-100">${esc(a.caption)}</div>` : ''}
+              </div>`; }).join('')}
+          </div>
+        </div>`).join('')}
+    </div>`;
+  };
+
+  window._consultingShowImageModal = (dataUrl) => {
+    const old = document.getElementById('_consultingImageModal');
+    if (old) old.remove();
+    const div = document.createElement('div');
+    div.id = '_consultingImageModal';
+    div.className = 'fixed inset-0 z-[1500] flex items-center justify-center p-4';
+    div.style.background = 'rgba(0,0,0,0.85)';
+    div.innerHTML = `<img src="${esc(dataUrl)}" class="max-w-full max-h-full object-contain" onclick="event.stopPropagation()"><button onclick="document.getElementById('_consultingImageModal').remove()" class="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 text-white rounded-full text-lg"><i class="fas fa-times"></i></button>`;
+    div.onclick = () => div.remove();
+    document.body.appendChild(div);
+  };
+
+  // 외부 진단 도구의 JSON 파일을 우리 컨설팅 draft로 변환
+  window._consultingImportJsonFile = (ev) => {
+    if (!isAdmin()) return window.showMsg('관리자만 가능합니다.', 'error');
+    const file = ev.target?.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const json = JSON.parse(reader.result);
+        const draft = window._consultingMapJsonToDraft(json);
+        window._consultingState.view = 'new';
+        window._consultingState.draft = draft;
+        window._consultingState.currentId = null;
+        window.showMsg(`${draft.member_name || '캐릭터'} 컨설팅 가져옴 (장비 ${draft.equipment_data.length}개, 목표 ${draft.target_items.length}개)`, 'success');
+        window.renderConsulting(document.getElementById('contentArea'));
+      } catch (e) {
+        window.showMsg('JSON 파싱 실패: ' + e.message, 'error');
+      } finally {
+        ev.target.value = ''; // 같은 파일 재선택 가능하게
+      }
+    };
+    reader.onerror = () => window.showMsg('파일 읽기 실패', 'error');
+    reader.readAsText(file, 'utf-8');
+  };
+
+  // JSON → draft 매핑 (외부 도구 포맷 호환)
+  window._consultingMapJsonToDraft = (json) => {
+    const u = json.user || {};
+    // 항상 가장 점수 높은 프리셋 사용 (재획 프리셋 회피, 보스 프리셋 우선)
+    const presets = json.presets || {};
+    const scored = Object.keys(presets).map(k => ({
+      no: k,
+      items: presets[k] || [],
+      score: window._consultingPresetScore((presets[k] || []).map(p => ({
+        starforce: p.stars, scroll_upgrade: p.scrollUpgrade,
+        potential_option_grade: p.potentialGrade,
+        additional_potential_option_grade: p.additionalGrade
+      })))
+    })).filter(x => x.items.length > 0);
+    scored.sort((a, b) => b.score - a.score);
+    const usedNo = scored[0]?.no || Object.keys(presets)[0] || '1';
+    const presetItems = presets[usedNo] || [];
+    const equipment_data = presetItems.map(p => ({
+      item_equipment_slot: p.slot,
+      item_equipment_part: p.slot,
+      item_name: p.name || '',
+      item_icon: p.icon || '',
+      starforce: String(p.stars || 0),
+      scroll_upgrade: String(p.scrollUpgrade || 0),
+      potential_option_grade: p.potentialGrade || '',
+      potential_option_1: p.potential1 || '',
+      potential_option_2: p.potential2 || '',
+      potential_option_3: p.potential3 || '',
+      additional_potential_option_grade: p.additionalGrade || '',
+      additional_potential_option_1: p.additional1 || '',
+      additional_potential_option_2: p.additional2 || '',
+      additional_potential_option_3: p.additional3 || '',
+      addStr: p.addStr, addDex: p.addDex, addInt: p.addInt, addLuk: p.addLuk,
+      addAllStat: p.addAllStat, addAtk: p.addAtk, addMatk: p.addMatk,
+      addBossDmg: p.addBossDmg, addDmg: p.addDmg, addHp: p.addHp, addDef: p.addDef
+    }));
+    // 타깃 아이템 — 슬롯으로 before 매칭
+    const target_items = (json.targetItems || []).map(t => {
+      const beforeEq = equipment_data.find(e => e.item_equipment_slot === t.slot) || {};
+      return {
+        slot: t.slot,
+        before_name: beforeEq.item_name || '',
+        before_icon: beforeEq.item_icon || '',
+        before_stars: parseInt(beforeEq.starforce) || 0,
+        after_name: t.name || '',
+        after_icon: t.icon || '',
+        after_stars: parseInt(t.stars) || 0,
+        after_pot_grade: t.potentialGrade || '',
+        after_pot_1: t.potential1 || '',
+        after_pot_2: t.potential2 || '',
+        after_pot_3: t.potential3 || '',
+        after_add_grade: t.additionalGrade || '',
+        after_add_1: t.additional1 || '',
+        after_add_2: t.additional2 || '',
+        after_add_3: t.additional3 || '',
+        after_add_tier: t.addTier || t.addOptionRank || '',
+        hexa_contrib: parseInt(t.hexaContrib) || 0,
+        cost: t.estimatedCost || '',
+        ref_from: t.refFrom || ''
+      };
+    });
+    return {
+      member_name: u.name || '',
+      member_class: u.class || '',
+      member_server: u.server || '루나',
+      consultant_name: json.consultant || '',
+      diagnosis_date: new Date().toISOString().slice(0, 10),
+      combat_power: u.combatPower || '',
+      main_stat: u.stat || '',
+      hexa_stat: u.hexaStat || '',
+      character_image: u.characterImage || '',
+      goal: json.goal || { targetHexa: '', budget: '', period: '' },
+      diagnosis: (json.diagnosis || []).map(d => ({
+        title: d.title || '',
+        content: d.content || '',
+        priority: d.priority || '중간'
+      })),
+      tips: Array.isArray(json.tips) ? json.tips : [],
+      target_items,
+      summary: json.summary || '',
+      equipment_data,
+      attachments: []
+    };
+  };
+
+  window._consultingEdit = async (id) => {
+    if (!isAdmin()) return window.showMsg('관리자만 수정 가능합니다.', 'error');
+    const { data, error } = await supaDb.from('item_consultings').select('*').eq('id', id).maybeSingle();
+    if (error || !data) return window.showMsg('데이터 로드 실패', 'error');
+    window._consultingState.view = 'edit';
+    window._consultingState.currentId = id;
+    window._consultingState.draft = data;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingDelete = async (id) => {
+    if (!isAdmin()) return;
+    if (!confirm('이 컨설팅을 삭제하시겠습니까?')) return;
+    const { error } = await supaDb.from('item_consultings').delete().eq('id', id);
+    if (error) return window.showMsg('삭제 실패: ' + error.message, 'error');
+    window.showMsg('삭제 완료', 'success');
+    window._consultingBack();
+  };
+
+  window._consultingRenderDetail = async (container) => {
+    const id = window._consultingState.currentId;
+    const { data, error } = await supaDb.from('item_consultings').select('*').eq('id', id).maybeSingle();
+    if (error || !data) {
+      container.innerHTML = '<div class="text-center py-12 text-red-400">컨설팅을 불러올 수 없습니다.</div>';
+      return;
+    }
+
+    const c = data;
+    const tips = Array.isArray(c.tips) ? c.tips : [];
+    const diagnosis = Array.isArray(c.diagnosis) ? c.diagnosis : [];
+    const goal = c.goal || {};
+
+    container.innerHTML = `
+    <div class="flex flex-col gap-4 fade-in pb-20 lg:pb-0">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex items-center gap-2 flex-wrap">
+        <button onclick="window._consultingBack()" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-200"><i class="fas fa-arrow-left mr-1"></i>목록</button>
+        <h3 class="text-sm font-bold text-gray-800 ml-1"><i class="fas fa-stethoscope mr-1 text-pink-500"></i>${esc(c.member_name)}님의 아이템 컨설팅</h3>
+        ${isAdmin() ? `
+          <button onclick="window._consultingEdit(${c.id})" class="ml-auto px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[11px] font-bold hover:bg-blue-600"><i class="fas fa-edit mr-1"></i>수정</button>
+          <button onclick="window._consultingDelete(${c.id})" class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-[11px] font-bold hover:bg-red-600"><i class="fas fa-trash mr-1"></i>삭제</button>
+        ` : ''}
+      </div>
+
+      <div class="bg-gradient-to-br from-pink-50 via-white to-blue-50 rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div class="flex items-start gap-5 flex-wrap">
+          <div class="w-60 h-60 rounded-2xl bg-white shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
+            ${c.character_image ? `<img src="${esc(c.character_image)}" class="w-full h-full object-contain p-2" onerror="this.style.display='none'">` : '<i class="fas fa-user text-pink-300 text-7xl"></i>'}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[10px] text-pink-500 font-bold uppercase tracking-widest mb-1">CHARACTER</div>
+            <h2 class="text-2xl font-black text-gray-800">${esc(c.member_name)}</h2>
+            <div class="flex gap-3 mt-1 text-xs flex-wrap">
+              <span class="text-gray-600">${esc(c.member_class || '-')}</span>
+              <span class="text-gray-300">·</span>
+              <span class="text-blue-500 font-bold">${esc(c.member_server || '-')}</span>
+              ${c.diagnosis_date ? `<span class="text-gray-300">·</span><span class="text-gray-500"><i class="fas fa-calendar mr-1"></i>${esc(c.diagnosis_date)}</span>` : ''}
+              ${c.consultant_name ? `<span class="text-gray-300">·</span><span class="text-purple-500"><i class="fas fa-user-tie mr-1"></i>${esc(c.consultant_name)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
+          <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">전투력</div>
+            <div class="text-base font-black text-blue-600 mt-1">${esc(c.combat_power || '-')}</div>
+          </div>
+          <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">환산 주스탯</div>
+            <div class="text-base font-black text-gray-800 mt-1">${esc(c.main_stat || '-')}</div>
+          </div>
+          <div class="bg-white rounded-xl p-3 border border-gray-100 text-center">
+            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">헥사 환산</div>
+            <div class="text-base font-black text-orange-500 mt-1">${esc(c.hexa_stat || '-')}</div>
+          </div>
+        </div>
+
+        ${(goal.targetHexa || goal.budget || goal.period) ? `
+        <div class="mt-4 bg-white/60 rounded-xl p-3 border border-pink-100">
+          <div class="text-[10px] text-pink-500 font-bold uppercase tracking-wider mb-2"><i class="fas fa-target mr-1"></i>목표</div>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            ${goal.targetHexa ? `<div><div class="text-[9px] text-gray-400 font-bold mb-0.5">목표 헥사</div><div class="font-bold text-gray-800">${esc(goal.targetHexa)}</div></div>` : ''}
+            ${goal.budget ? `<div><div class="text-[9px] text-gray-400 font-bold mb-0.5">예산</div><div class="font-bold text-gray-800">${esc(goal.budget)}</div></div>` : ''}
+            ${goal.period ? `<div><div class="text-[9px] text-gray-400 font-bold mb-0.5">기간</div><div class="font-bold text-gray-800">${esc(goal.period)}</div></div>` : ''}
+          </div>
+        </div>` : ''}
+
+        ${(Array.isArray(goal.sets) && goal.sets.length) ? `
+        <div class="mt-4 bg-violet-50/40 rounded-xl p-3 border border-violet-100">
+          <div class="flex items-center justify-between mb-2">
+            <div class="text-[10px] text-violet-600 font-bold uppercase tracking-wider"><i class="fas fa-layer-group mr-1"></i>세트 효과 (${goal.sets.length}개 발동)</div>
+            <div class="text-[11px] font-black text-violet-700">+${goal.sets.reduce((s, x) => s + (Number(x.hexa_contrib)||0), 0).toLocaleString()}</div>
+          </div>
+          <div class="space-y-1.5">
+            ${goal.sets.map(s => {
+              const slots = Array.isArray(s.items) ? s.items.join(' / ') : (typeof s.items === 'string' ? s.items : '');
+              return `
+                <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs font-black text-gray-800 truncate">${esc(s.name || '(이름 없음)')}</div>
+                    ${slots ? `<div class="text-[10px] text-gray-400 truncate">${esc(slots)}</div>` : ''}
+                  </div>
+                  <div class="text-right shrink-0 ml-2">
+                    <div class="text-sm font-black text-violet-600">+${(Number(s.hexa_contrib)||0).toLocaleString()}</div>
+                    <div class="text-[9px] text-gray-400">헥사 환산</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>` : ''}
+
+        ${tips.length ? `
+        <div class="mt-4 bg-amber-50/60 rounded-xl p-3 border border-amber-100">
+          <div class="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-2"><i class="fas fa-info-circle mr-1"></i>주의사항</div>
+          <ul class="space-y-1">
+            ${tips.map(t => `<li class="text-xs text-amber-800 flex gap-1.5"><span class="text-amber-400">•</span><span>${esc(t)}</span></li>`).join('')}
+          </ul>
+        </div>` : ''}
+      </div>
+
+      ${(Array.isArray(c.equipment_data) && c.equipment_data.length) ? `
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 class="text-base font-black mb-4 flex items-center gap-2 text-blue-500"><i class="fas fa-shield-alt"></i>현재 장비 (${c.equipment_data.length}개)</h3>
+        ${window._consultingRenderEquipPreview(c.equipment_data, false, c.target_items)}
+      </div>` : ''}
+
+      ${(Array.isArray(c.target_items) && c.target_items.length) ? `
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 class="text-base font-black mb-4 flex items-center gap-2 text-indigo-500"><i class="fas fa-exchange-alt"></i>장비 교체 목표 (${c.target_items.length}개)</h3>
+        ${window._consultingRenderCompareCards(c.target_items, c.equipment_data)}
+      </div>
+
+      <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-100 shadow-sm p-6">
+        <h3 class="text-base font-black mb-4 flex items-center gap-2 text-amber-600"><i class="fas fa-calculator"></i>교체 효율 분석</h3>
+        ${window._consultingRenderEfficiency(c.target_items, c.goal?.sets, c.goal?.hexaUpgrade)}
+      </div>` : ''}
+
+      ${diagnosis.length ? `
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 class="text-base font-black mb-4 flex items-center gap-2 text-emerald-500"><i class="fas fa-route"></i>스펙업 로드맵</h3>
+        <div class="space-y-3">
+          ${diagnosis.map((d, i) => {
+            const pColor = d.priority === '매우 높음' ? 'bg-red-50 text-red-500 border-red-200' :
+                          d.priority === '높음' ? 'bg-orange-50 text-orange-500 border-orange-200' :
+                          'bg-blue-50 text-blue-500 border-blue-200';
+            return `
+              <div class="flex gap-3 p-3 rounded-xl bg-gray-50/50 hover:bg-pink-50/30 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-white border-2 border-pink-200 flex items-center justify-center font-black text-pink-500 text-sm flex-shrink-0">${i + 1}</div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <h4 class="font-bold text-gray-800">${esc(d.title || '')}</h4>
+                    ${d.priority ? `<span class="text-[9px] font-bold px-2 py-0.5 rounded border ${pColor}">${esc(d.priority)}</span>` : ''}
+                  </div>
+                  <p class="text-xs text-gray-600 leading-relaxed whitespace-pre-line">${esc(d.content || '')}</p>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
+
+      ${c.summary ? `
+      <div class="bg-gradient-to-r from-blue-50 to-pink-50 border border-blue-100 rounded-2xl p-6">
+        <div class="text-[10px] text-blue-500 font-bold uppercase tracking-widest mb-3"><i class="fas fa-comment-dots mr-1"></i>종합 코멘트</div>
+        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">${esc(c.summary)}</p>
+      </div>` : ''}
+
+      ${window._consultingRenderAttachmentsView(c.attachments)}
+    </div>`;
+  };
+
+  window._consultingRenderEdit = (container) => {
+    const d = window._consultingState.draft || {};
+    const tips = Array.isArray(d.tips) ? d.tips : [];
+    const diagnosis = Array.isArray(d.diagnosis) ? d.diagnosis : [];
+    if (!d.goal) d.goal = {};
+    if (!Array.isArray(d.goal.sets)) d.goal.sets = [];
+    // sets[*].items 마이그레이션: 문자열("모자, 상의") → 배열
+    d.goal.sets.forEach(s => {
+      if (typeof s.items === 'string') s.items = s.items.split(/[,/·]/).map(x => x.trim()).filter(Boolean);
+      else if (!Array.isArray(s.items)) s.items = [];
+    });
+    if (!d.goal.hexaUpgrade) d.goal.hexaUpgrade = { hexa_gain: 0, sol_erda: 0, sol_erda_price: 0 };
+    const goal = d.goal;
+    const isNew = window._consultingState.view === 'new';
+    // 세트 슬롯 풀: target_items에 있는 슬롯들만 (없으면 빈 풀 안내)
+    const availableSlots = [...new Set((d.target_items || []).map(t => t.slot).filter(Boolean))];
+
+    const equipCount = Array.isArray(d.equipment_data) ? d.equipment_data.length : 0;
+    container.innerHTML = `
+    <div class="flex flex-col gap-4 fade-in pb-20 lg:pb-0">
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex items-center gap-2 flex-wrap sticky top-0 z-10">
+        <button onclick="if(confirm('변경사항이 사라집니다. 계속하시겠습니까?')) window._consultingBack()" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-[11px] font-bold hover:bg-gray-200"><i class="fas fa-times mr-1"></i>취소</button>
+        <h3 class="text-sm font-bold text-gray-800 ml-1"><i class="fas fa-edit mr-1 text-pink-500"></i>${isNew ? '새 컨설팅 작성' : '컨설팅 수정'}</h3>
+        <button onclick="window._consultingSave()" class="ml-auto px-4 py-1.5 bg-pink-500 text-white rounded-lg text-[11px] font-bold shadow hover:bg-pink-600"><i class="fas fa-save mr-1"></i>저장</button>
+      </div>
+
+      <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-100 shadow-sm p-5">
+        <h4 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3"><i class="fas fa-bolt mr-1"></i>넥슨 API 자동 가져오기</h4>
+        <div class="flex gap-2 items-end flex-wrap">
+          <div class="flex-1 min-w-[200px]">
+            <label class="text-[10px] text-gray-500 font-bold uppercase">캐릭명</label>
+            <input id="_consultingApiCharName" type="text" value="${esc(d.member_name || '')}" placeholder="캐릭터 닉네임" class="w-full mt-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-blue-300">
+          </div>
+          <button onclick="window._consultingFetchFromNexon()" id="_consultingFetchBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-xs font-bold shadow hover:bg-blue-600 transition-all whitespace-nowrap"><i class="fas fa-cloud-download-alt mr-1"></i>API로 불러오기</button>
+        </div>
+        <p class="text-[10px] text-gray-500 mt-2"><i class="fas fa-info-circle mr-1"></i>캐릭 기본정보·이미지·장비를 자동으로 채웁니다. 동기화 탭에서 API Key 먼저 등록 필요. ${equipCount > 0 ? `<span class="text-emerald-500 font-bold ml-2"><i class="fas fa-check-circle mr-1"></i>장비 ${equipCount}개 로드됨</span>` : ''}</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-id-card mr-1 text-pink-400"></i>기본 정보</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">캐릭명 *</label><input type="text" value="${esc(d.member_name || '')}" oninput="window._consultingState.draft.member_name=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">직업</label><input type="text" value="${esc(d.member_class || '')}" oninput="window._consultingState.draft.member_class=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">서버</label><input type="text" value="${esc(d.member_server || '')}" oninput="window._consultingState.draft.member_server=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">컨설턴트</label><input type="text" value="${esc(d.consultant_name || '')}" oninput="window._consultingState.draft.consultant_name=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">진단일</label><input type="date" value="${esc(d.diagnosis_date || '')}" oninput="window._consultingState.draft.diagnosis_date=this.value" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">캐릭 이미지 URL (선택)</label><input type="text" value="${esc(d.character_image || '')}" oninput="window._consultingState.draft.character_image=this.value" placeholder="https://..." class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-pink-300"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-chart-bar mr-1 text-pink-400"></i>스펙</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">전투력</label><input type="text" value="${esc(d.combat_power || '')}" oninput="window._consultingState.draft.combat_power=this.value" placeholder="예: 8억 2955만" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">환산 주스탯</label><input type="text" value="${esc(d.main_stat || '')}" oninput="window._consultingState.draft.main_stat=this.value" placeholder="예: 116,141" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">헥사 환산</label><input type="text" value="${esc(d.hexa_stat || '')}" oninput="window._consultingState.draft.hexa_stat=this.value" placeholder="예: 116,141" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+        </div>
+        <p class="text-[10px] text-gray-400"><i class="fas fa-info-circle mr-1"></i>환산값은 <a href="https://maplescouter.com/ko/info?name=${encodeURIComponent(d.member_name || '')}" target="_blank" class="text-blue-500 hover:underline">환산주스탯 사이트</a>에서 확인 후 입력</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-target mr-1 text-pink-400"></i>목표</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">목표 헥사</label><input type="text" value="${esc(goal.targetHexa || '')}" oninput="window._consultingState.draft.goal.targetHexa=this.value" placeholder="예: 12만+" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">예산</label><input type="text" value="${esc(goal.budget || '')}" oninput="window._consultingState.draft.goal.budget=this.value" placeholder="예: 주식 100억" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+          <div><label class="text-[10px] text-gray-400 font-bold uppercase">기간</label><input type="text" value="${esc(goal.period || '')}" oninput="window._consultingState.draft.goal.period=this.value" placeholder="예: 2개월" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-layer-group mr-1 text-violet-500"></i>세트 효과 <span class="text-gray-400 normal-case font-normal text-[10px] ml-1">(아이템 여러 개로 발동되는 큰 환산 상승)</span></h4>
+          <button onclick="window._consultingAddSet()" class="text-[10px] bg-violet-50 text-violet-600 px-2 py-1 rounded-lg font-bold hover:bg-violet-100"><i class="fas fa-plus mr-1"></i>세트 추가</button>
+        </div>
+        <p class="text-[10px] text-gray-400">단품 옵션 효과는 "장비 교체 목표"에서 입력. 여기는 <strong>세트 발동 보너스</strong>만. <strong class="text-violet-600">교체 안 하는 아이템도 세트에 포함 가능</strong> — "📌 장비에서 클릭해서 묶기"로 현재 장비/교체 카드 모두 골라요.</p>
+        <div class="space-y-2">
+          ${(goal.sets || []).length === 0 ? `<div class="text-[10px] text-gray-300 text-center py-3">아직 등록된 세트가 없습니다 — 우측 "세트 추가" 클릭</div>` : (goal.sets || []).map((s, i) => {
+            const setItems = Array.isArray(s.items) ? s.items : [];
+            const targetSlotSet = new Set((d.target_items || []).map(t => t.slot));
+            const itemsInTarget = setItems.filter(slot => targetSlotSet.has(slot));
+            const itemsKeep = setItems.filter(slot => !targetSlotSet.has(slot));
+            const sharePerSlot = itemsInTarget.length > 0 ? Math.round((Number(s.hexa_contrib)||0) / itemsInTarget.length) : 0;
+            const isLinking = window._consultingState?.linkingSetIdx === i;
+            return `
+              <div class="bg-violet-50/40 border ${isLinking ? 'border-2 border-violet-400' : 'border-violet-100'} rounded-xl p-3 space-y-2">
+                <div class="grid grid-cols-1 sm:grid-cols-[1fr_130px_28px] gap-2 items-center">
+                  <input type="text" value="${esc(s.name || '')}" oninput="window._consultingState.draft.goal.sets[${i}].name=this.value" placeholder="세트 이름 (예: 아케인셰이드 5세트)" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
+                  <input type="number" value="${s.hexa_contrib != null ? s.hexa_contrib : ''}" oninput="window._consultingState.draft.goal.sets[${i}].hexa_contrib=Number(this.value)||0" placeholder="헥사 보너스" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-right font-bold text-violet-600">
+                  <button onclick="window._consultingRemoveSet(${i})" class="text-red-400 hover:text-red-600 text-sm" title="삭제"><i class="fas fa-times"></i></button>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                    <span class="text-[9px] font-bold text-gray-500 uppercase">묶인 슬롯 (${setItems.length}개)</span>
+                    ${isLinking
+                      ? `<button onclick="window._consultingEndLinkSet()" class="text-[10px] bg-emerald-500 text-white px-2 py-1 rounded-lg font-bold hover:bg-emerald-600 ml-auto"><i class="fas fa-check mr-1"></i>묶기 완료</button>`
+                      : `<button onclick="window._consultingStartLinkSet(${i})" class="text-[10px] bg-violet-500 text-white px-2 py-1 rounded-lg font-bold hover:bg-violet-600 ml-auto"><i class="fas fa-thumbtack mr-1"></i>장비에서 클릭해서 묶기</button>`}
+                  </div>
+                  ${setItems.length === 0
+                    ? `<div class="text-[10px] text-gray-400 bg-white rounded px-2 py-1.5 border border-dashed border-gray-200">묶기 버튼을 누르고 아래 장비 카드들을 클릭하세요</div>`
+                    : `<div class="flex flex-wrap gap-1">
+                        ${setItems.map(slot => `<span class="text-[10px] ${targetSlotSet.has(slot) ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-700'} border ${targetSlotSet.has(slot) ? 'border-violet-200' : 'border-amber-200'} rounded px-2 py-0.5 font-bold inline-flex items-center gap-1">${esc(slot)}${targetSlotSet.has(slot) ? '' : ' <span class="text-[9px] font-normal opacity-70">유지</span>'}<button onclick="window._consultingToggleSetSlot(${i}, '${esc(slot)}', false)" class="text-red-400 hover:text-red-600 ml-0.5" title="제거">×</button></span>`).join('')}
+                      </div>`}
+                  ${setItems.length > 0
+                    ? `<p class="text-[10px] text-gray-500 mt-1.5">분배 대상: <strong>${itemsInTarget.length}개</strong> (교체) ${itemsKeep.length > 0 ? `<span class="text-amber-600">+ ${itemsKeep.length}개 (유지·분배 X)</span>` : ''} · 슬롯당 약 +${sharePerSlot.toLocaleString()} (${(Number(s.hexa_contrib)||0).toLocaleString()} ÷ ${itemsInTarget.length || '0'})</p>`
+                    : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        ${(goal.sets || []).length > 0 ? `<div class="text-right text-[11px] text-gray-500 pt-1">세트 합계: <strong class="text-violet-600">+${(goal.sets || []).reduce((s, x) => s + (Number(x.hexa_contrib)||0), 0).toLocaleString()}</strong></div>` : ''}
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-cubes-stacked mr-1 text-amber-500"></i>헥사 강화 (솔에르다 조각) <span class="text-gray-400 normal-case font-normal text-[10px] ml-1">(선택)</span></h4>
+        <p class="text-[10px] text-gray-400">솔에르다 강화로 얻을 헥사 환산 상승치 + 필요 조각 수 + 1조각 시세를 입력하면 효율 분석에 자동 포함됩니다.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">예상 헥사 상승</label>
+            <input type="number" value="${goal.hexaUpgrade.hexa_gain || ''}" oninput="window._consultingState.draft.goal.hexaUpgrade.hexa_gain=Number(this.value)||0" placeholder="예: 5000" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 outline-none focus:border-amber-300">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">필요 솔에르다 조각</label>
+            <input type="number" value="${goal.hexaUpgrade.sol_erda || ''}" oninput="window._consultingState.draft.goal.hexaUpgrade.sol_erda=Number(this.value)||0" placeholder="예: 50" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 outline-none focus:border-amber-300">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 font-bold uppercase">조각 시세 (1개 / 억)</label>
+            <input type="number" step="0.1" value="${goal.hexaUpgrade.sol_erda_price || ''}" oninput="window._consultingState.draft.goal.hexaUpgrade.sol_erda_price=Number(this.value)||0" placeholder="예: 0.6" class="w-full mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-amber-700 outline-none focus:border-amber-300">
+          </div>
+        </div>
+        ${(() => {
+          const hu = goal.hexaUpgrade;
+          const cost = (Number(hu.sol_erda) || 0) * (Number(hu.sol_erda_price) || 0);
+          const eff = cost > 0 ? (Number(hu.hexa_gain) || 0) / cost : 0;
+          if (Number(hu.hexa_gain) <= 0 && Number(hu.sol_erda) <= 0) return '';
+          return `<div class="bg-amber-50/60 border border-amber-100 rounded-lg px-3 py-2 text-[11px] text-amber-800 flex items-center justify-between flex-wrap gap-2">
+            <span>총 비용: <strong>${cost.toFixed(1)}억</strong> (${hu.sol_erda || 0} × ${hu.sol_erda_price || 0}억)</span>
+            ${eff > 0 ? `<span>효율: <strong class="text-emerald-600">${eff.toFixed(1)}</strong> (${(hu.hexa_gain||0).toLocaleString()} ÷ ${cost.toFixed(1)})</span>` : ''}
+          </div>`;
+        })()}
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-route mr-1 text-pink-400"></i>스펙업 로드맵</h4>
+          <button onclick="window._consultingAddDiagnosis()" class="text-[10px] bg-pink-50 text-pink-500 px-2 py-1 rounded-lg font-bold hover:bg-pink-100"><i class="fas fa-plus mr-1"></i>단계 추가</button>
+        </div>
+        <div id="consultingDiagnosisList" class="space-y-2">
+          ${diagnosis.map((step, i) => `
+            <div class="bg-gray-50/50 rounded-xl p-3 space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-pink-400 font-black text-sm">${i + 1}.</span>
+                <input type="text" value="${esc(step.title || '')}" oninput="window._consultingState.draft.diagnosis[${i}].title=this.value" placeholder="단계 제목" class="flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-bold outline-none focus:border-pink-300">
+                <select onchange="window._consultingState.draft.diagnosis[${i}].priority=this.value" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-[10px] font-bold w-24">
+                  <option value="매우 높음" ${step.priority==='매우 높음'?'selected':''}>매우 높음</option>
+                  <option value="높음" ${step.priority==='높음'?'selected':''}>높음</option>
+                  <option value="중간" ${step.priority==='중간'?'selected':''}>중간</option>
+                </select>
+                <button onclick="window._consultingRemoveDiagnosis(${i})" class="text-red-400 hover:text-red-600 text-xs"><i class="fas fa-times"></i></button>
+              </div>
+              <textarea oninput="window._consultingState.draft.diagnosis[${i}].content=this.value" placeholder="설명" class="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-pink-300 h-20 resize-none">${esc(step.content || '')}</textarea>
+            </div>
+          `).join('')}
+          ${!diagnosis.length ? '<p class="text-xs text-gray-400 italic text-center py-3">단계를 추가해주세요.</p>' : ''}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-info-circle mr-1 text-pink-400"></i>주의사항</h4>
+          <button onclick="window._consultingAddTip()" class="text-[10px] bg-pink-50 text-pink-500 px-2 py-1 rounded-lg font-bold hover:bg-pink-100"><i class="fas fa-plus mr-1"></i>항목 추가</button>
+        </div>
+        <div class="space-y-2">
+          ${tips.map((t, i) => `
+            <div class="flex items-center gap-2">
+              <i class="fas fa-circle text-amber-300 text-[6px]"></i>
+              <input type="text" value="${esc(t)}" oninput="window._consultingState.draft.tips[${i}]=this.value" class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-pink-300">
+              <button onclick="window._consultingRemoveTip(${i})" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+            </div>
+          `).join('')}
+          ${!tips.length ? '<p class="text-xs text-gray-400 italic text-center py-2">항목을 추가해주세요.</p>' : ''}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3"><i class="fas fa-comment-dots mr-1 text-pink-400"></i>종합 코멘트</h4>
+        <textarea oninput="window._consultingState.draft.summary=this.value" placeholder="컨설팅 종합 의견을 자유롭게 작성하세요..." class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-300 h-40 resize-none">${esc(d.summary || '')}</textarea>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider"><i class="fas fa-images mr-1 text-pink-400"></i>참고 이미지 (오픈카톡 캡쳐 / 진행 사진)</h4>
+          <label class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold cursor-pointer hover:bg-blue-100">
+            <i class="fas fa-plus mr-1"></i>이미지 추가
+            <input type="file" accept="image/*" multiple class="hidden" onchange="window._consultingAddAttachments(event)">
+          </label>
+        </div>
+        <p class="text-[10px] text-gray-400 mb-3"><i class="fas fa-info-circle mr-1"></i>파일 선택 시 Cloudflare R2에 자동 업로드 · URL 붙여넣기도 가능 · 종류(카톡/마침/기타) + 캡션 입력</p>
+        ${window._consultingRenderAttachmentsEditor(d.attachments)}
+      </div>
+
+      ${equipCount > 0 ? (() => {
+        const linkingIdx = window._consultingState?.linkingSetIdx;
+        const linkingSet = (linkingIdx != null) ? d.goal.sets[linkingIdx] : null;
+        return `
+      <div id="consultingEquipArea" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        ${linkingSet ? `
+          <div class="sticky top-0 z-20 -m-5 mb-4 px-5 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white flex items-center gap-3 flex-wrap shadow-lg">
+            <i class="fas fa-link text-lg"></i>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-black"><strong>"${esc(linkingSet.name || '(이름 없음)')}"</strong> 슬롯 묶는 중</div>
+              <div class="text-[10px] opacity-90">아래 장비 카드를 클릭하여 추가/제거 · 현재 ${(linkingSet.items || []).length}개 묶임</div>
+            </div>
+            <button onclick="window._consultingEndLinkSet()" class="px-3 py-1.5 bg-white text-violet-700 rounded-lg text-xs font-black hover:bg-violet-50 shadow"><i class="fas fa-check mr-1"></i>완료</button>
+          </div>
+        ` : ''}
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2"><i class="fas fa-shield-alt mr-1 text-pink-400"></i>현재 장비 (${equipCount}개)</h4>
+        <p class="text-[10px] text-gray-400 mb-3">${linkingSet
+          ? `<span class="text-violet-600 font-bold"><i class="fas fa-link mr-1"></i>묶기 모드 — 카드 클릭으로 슬롯 토글</span>`
+          : `<i class="fas fa-mouse-pointer mr-1"></i>장비를 클릭하면 교체 목표를 설정할 수 있습니다 ${(d.target_items || []).length > 0 ? `<span class="text-emerald-500 font-bold ml-2">· 현재 ${d.target_items.length}개 교체 목표 설정됨</span>` : ''}`}</p>
+        ${window._consultingRenderEquipPreview(d.equipment_data, true, d.target_items)}
+      </div>`;
+      })() : ''}
+    </div>`;
+  };
+
+  // 장비 그리드 (메이플 인게임 스타일 간소화 버전)
+  // editable=true면 클릭 시 교체 목표 설정 모달
+  // 잠재 등급별 색상/축약/테두리 (maplescouter 스타일)
+  window._consultingGradeStyle = (g) => {
+    if (!g) return { short: '', color: 'text-slate-500', border: 'border-slate-700/50', glow: '' };
+    const k = String(g).toLowerCase();
+    if (k.includes('레전') || k.includes('legend')) return { short: '레전', color: 'text-lime-400', border: 'border-lime-400/40', glow: 'shadow-[0_0_12px_rgba(163,230,53,0.18)]' };
+    if (k.includes('유니') || k.includes('unique')) return { short: '유닠', color: 'text-amber-300', border: 'border-amber-300/40', glow: 'shadow-[0_0_12px_rgba(252,211,77,0.18)]' };
+    if (k.includes('에픽') || k.includes('epic')) return { short: '에픽', color: 'text-violet-400', border: 'border-violet-400/40', glow: 'shadow-[0_0_12px_rgba(167,139,250,0.18)]' };
+    if (k.includes('레어') || k.includes('rare')) return { short: '레어', color: 'text-sky-400', border: 'border-sky-400/40', glow: '' };
+    return { short: g.substring(0, 2), color: 'text-slate-400', border: 'border-slate-700/50', glow: '' };
+  };
+
+  // 단일 장비 카드 HTML (재사용)
+  window._consultingItemCardHtml = (data, opts = {}) => {
+    const isSpecialRing = (data.special_ring_level || 0) > 0;
+    const potG = isSpecialRing
+      ? { short: '특수', color: 'text-cyan-300', border: 'border-cyan-400/40', glow: 'shadow-[0_0_12px_rgba(103,232,249,0.18)]' }
+      : window._consultingGradeStyle(data.pot_grade);
+    const addG = window._consultingGradeStyle(data.add_grade);
+    const pots = [data.pot_1, data.pot_2, data.pot_3].filter(Boolean);
+    const adds = [data.add_1, data.add_2, data.add_3].filter(Boolean);
+    const stars = parseInt(data.stars) || 0;
+    const upgrade = parseInt(data.upgrade) || 0;
+    const slotBadge = opts.slot ? `<span class="text-slate-400 text-[10px] font-bold bg-slate-800/70 px-1.5 py-0.5 rounded">${esc(opts.slot)}</span>` : '';
+    const stateBadge = opts.stateBadge || '';
+    const onClick = opts.onClick || '';
+    const extraCls = opts.extraCls || '';
+    const interactive = opts.interactive ? `cursor-pointer hover:bg-slate-900 hover:scale-[1.005] active:scale-100` : '';
+    return `<div class="bg-slate-950/60 rounded-lg border ${potG.border} ${potG.glow} p-2 flex gap-2 transition ${interactive} ${extraCls}" ${onClick} title="${esc(opts.title || data.name || '')}">
+      <div class="flex-shrink-0 w-11 h-11 bg-slate-900/80 rounded-md border border-slate-700/40 flex items-center justify-center relative">
+        ${data.icon ? `<img src="${esc(data.icon)}" class="w-9 h-9" style="image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges" onerror="this.style.display='none'">` : `<i class="fas fa-image text-slate-600 text-base"></i>`}
+        ${stateBadge}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-1 text-[10px] mb-0.5 flex-wrap leading-none">
+          ${isSpecialRing
+            ? `<span class="text-cyan-300 font-black whitespace-nowrap bg-cyan-500/15 px-1 py-0.5 rounded">Lv.${data.special_ring_level}<span class="text-cyan-500/60 text-[9px] ml-0.5">/6</span></span>`
+            : `${stars > 0 ? `<span class="text-amber-400 font-black whitespace-nowrap"><i class="fas fa-star text-[8px] mr-0.5"></i>${stars}</span>` : ''}${upgrade > 0 ? `<span class="text-emerald-400 font-black whitespace-nowrap">+${upgrade}</span>` : ''}`}
+          ${slotBadge}
+        </div>
+        <div class="text-white font-bold text-xs truncate leading-tight">${esc(data.name || '-')}</div>
+        ${isSpecialRing
+          ? `<div class="text-[9px] text-cyan-200/70 leading-tight mt-0.5">특수 반지 · 게임 내 레벨업</div>`
+          : `${pots.length ? `<div class="text-[9px] leading-tight mt-0.5"><span class="${potG.color} font-black mr-0.5">${potG.short}</span><span class="text-slate-300">${esc(pots.join(', '))}</span></div>` : ''}
+             ${adds.length ? `<div class="text-[9px] leading-tight"><span class="${addG.color} font-black mr-0.5">${addG.short}</span><span class="text-slate-300">${esc(adds.join(', '))}</span></div>` : ''}
+             ${(data.add_opts || []).length ? `<div class="text-[9px] leading-tight"><span class="text-cyan-400 font-black mr-0.5">추옵</span><span class="text-slate-400">${esc(data.add_opts.join(' · '))}</span></div>` : ''}
+             ${data.soul_name ? `<div class="text-[9px] text-slate-400 mt-0.5 truncate"><span class="text-pink-400 font-black mr-0.5">소울</span>${esc(data.soul_name)}${data.soul_option ? ', ' + esc(data.soul_option) : ''}</div>` : ''}`}
+      </div>
+    </div>`;
+  };
+
+  // 아이템명으로 특수반지 검출 (Nexon API 필드가 없는 외부 데이터에서도 작동)
+  window._consultingDetectSpecialRing = (name) => /(컨티뉴어스|리스트레인트|웨폰\s*퍼프|웨퍼)/i.test(name || '');
+
+  // Nexon API 응답 → 카드 데이터 정규화
+  window._consultingNormalizeEq = (eq) => {
+    const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
+    const isSlotSpecial = slot.includes('특수');
+    const isNameSpecial = window._consultingDetectSpecialRing(eq.item_name);
+    let srLv = parseInt(eq.special_ring_level) || 0;
+    // 외부 데이터 (special_ring_level 없음) 보정: 슬롯/이름으로 특수반지 인식되면 최소 1
+    if (srLv === 0 && (isSlotSpecial || isNameSpecial)) srLv = 1;
+    // 추옵(추가옵션) 수치 정리: JSON의 addStr/addInt 등 또는 Nexon API의 item_add_option 구조
+    const ao = eq.item_add_option || {};
+    const addOpts = [];
+    const aoMap = [
+      ['STR', eq.addStr ?? ao.str],
+      ['DEX', eq.addDex ?? ao.dex],
+      ['INT', eq.addInt ?? ao.int],
+      ['LUK', eq.addLuk ?? ao.luk],
+      ['올스탯', eq.addAllStat ?? ao.all_stat],
+      ['공격력', eq.addAtk ?? ao.attack_power],
+      ['마력', eq.addMatk ?? ao.magic_power],
+      ['보스', eq.addBossDmg ?? ao.boss_damage, '%'],
+      ['데미지', eq.addDmg ?? ao.damage, '%'],
+      ['HP', eq.addHp ?? ao.max_hp],
+      ['방어', eq.addDef ?? ao.max_hp_rate]
+    ];
+    for (const [label, val, suffix] of aoMap) {
+      const n = parseInt(val) || 0;
+      if (n > 0) addOpts.push(`${label}+${n}${suffix || ''}`);
+    }
+    return {
+      name: eq.item_name || '',
+      icon: eq.item_icon || '',
+      stars: parseInt(eq.starforce) || 0,
+      upgrade: parseInt(eq.scroll_upgrade) || 0,
+      pot_grade: eq.potential_option_grade || '',
+      pot_1: eq.potential_option_1, pot_2: eq.potential_option_2, pot_3: eq.potential_option_3,
+      add_grade: eq.additional_potential_option_grade || '',
+      add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
+      soul_name: eq.soul_name, soul_option: eq.soul_option,
+      special_ring_level: srLv,
+      add_opts: addOpts
+    };
+  };
+
+  window._consultingRenderEquipPreview = (equips, editable, targets) => {
+    if (!equips || !equips.length) return '<p class="text-xs text-gray-400 italic">장비 정보 없음</p>';
+    const tgtMap = {};
+    if (Array.isArray(targets)) targets.forEach(t => { if (t.slot) tgtMap[t.slot] = t; });
+    const targetCount = Object.keys(tgtMap).length;
+    // 세트 묶기 모드
+    const linkingIdx = editable ? window._consultingState?.linkingSetIdx : null;
+    const linkingSet = (linkingIdx != null) ? window._consultingState.draft?.goal?.sets?.[linkingIdx] : null;
+    const linkedSlots = linkingSet ? new Set(linkingSet.items || []) : new Set();
+    const isLinkMode = !!linkingSet;
+    return `<div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-3 border border-slate-700/50">
+      ${editable && targetCount > 0 && !isLinkMode ? `<div class="flex items-center gap-2 mb-3 px-3 py-2 bg-emerald-500/15 border border-emerald-400/30 rounded-lg"><i class="fas fa-bullseye text-emerald-300"></i><span class="text-xs font-bold text-emerald-200">${targetCount}개 교체 목표 설정됨</span><span class="text-[10px] text-emerald-300/70 ml-auto">목표 설정 카드는 초록 테두리 + 🎯 라벨</span></div>` : ''}
+      <div class="grid gap-1.5" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+      ${equips.map((eq, idx) => {
+        const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
+        const hasTarget = !!tgtMap[slot];
+        const isLinked = isLinkMode && linkedSlots.has(slot);
+        const data = window._consultingNormalizeEq(eq);
+        let stateBadge = '';
+        let onClick = '';
+        let extraCls = '';
+        let title = data.name || slot;
+        if (isLinkMode) {
+          stateBadge = isLinked
+            ? '<span class="absolute -top-2 -right-2 px-1.5 py-0.5 bg-violet-500 text-white rounded-md text-[9px] flex items-center gap-0.5 font-black shadow-lg whitespace-nowrap"><i class="fas fa-link text-[8px]"></i>묶임</span>'
+            : '<span class="absolute -top-2 -right-2 w-5 h-5 bg-slate-600/80 text-white rounded-full text-[10px] flex items-center justify-center font-black shadow-lg">+</span>';
+          onClick = `onclick="window._consultingLinkToggle('${esc(slot).replace(/'/g, "\\'")}')"`;
+          extraCls = isLinked ? 'ring-2 ring-violet-400 bg-violet-500/15' : 'hover:ring-2 hover:ring-violet-300/60';
+          title = `${slot}${isLinked ? ' · 세트에 묶임 (클릭하여 제거)' : ' (클릭하여 세트에 묶기)'}`;
+        } else {
+          stateBadge = hasTarget
+            ? '<span class="absolute -top-2 -right-2 px-1.5 py-0.5 bg-emerald-500 text-white rounded-md text-[9px] flex items-center gap-0.5 font-black shadow-lg whitespace-nowrap"><i class="fas fa-bullseye text-[8px]"></i>교체</span>'
+            : '';
+          onClick = editable ? `onclick="window._consultingOpenTarget(${idx})"` : '';
+          extraCls = hasTarget && editable ? 'ring-2 ring-emerald-400 bg-emerald-500/10' : '';
+          title = `${data.name || slot}${hasTarget ? ' · 교체 목표 설정됨 (다시 클릭하여 수정)' : (editable ? ' (클릭하여 교체 목표 설정)' : '')}`;
+        }
+        return window._consultingItemCardHtml(data, {
+          slot, stateBadge,
+          interactive: editable,
+          onClick, title, extraCls
+        });
+      }).join('')}
+      </div>
+    </div>`;
+  };
+
+  // ===== 잠재옵션 드롭다운 시스템 =====
+  // 부위 → 등급 → 일반/에디 별 추천 옵션 목록
+  // SITE_CONFIG.potentialOptions에 저장. 관리자가 편집 가능.
+  window._consultingDefaultPotentials = {
+    weapon: {
+      legendary: { regular: ['보스 데미지 +40%','보스 데미지 +35%','보스 데미지 +30%','데미지 +12%','공격력 +12%','마력 +12%','크리티컬 데미지 +8%','몬스터 방어율 무시 +40%','STR +13%','DEX +13%','INT +13%','LUK +13%','올스탯 +9%'],
+                  additional: ['보스 데미지 +20%','데미지 +12%','공격력 +12%','마력 +12%','STR +9%','DEX +9%','INT +9%','LUK +9%','올스탯 +6%','크리티컬 확률 +1%'] },
+      unique: { regular: ['보스 데미지 +30%','보스 데미지 +25%','데미지 +9%','공격력 +9%','마력 +9%','몬스터 방어율 무시 +30%','STR +10%','DEX +10%','INT +10%','LUK +10%','올스탯 +6%'],
+                additional: ['보스 데미지 +12%','데미지 +9%','공격력 +9%','마력 +9%','STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +4%'] },
+      epic: { regular: ['보스 데미지 +20%','데미지 +6%','공격력 +6%','마력 +6%','STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +3%'],
+              additional: ['공격력 +6%','마력 +6%','STR +4%','DEX +4%','INT +4%','LUK +4%'] }
+    },
+    glove: {
+      legendary: { regular: ['크리티컬 데미지 +8%','크리티컬 데미지 +6%','크리티컬 데미지 +5%','STR +13%','DEX +13%','INT +13%','LUK +13%','올스탯 +9%'],
+                  additional: ['크리티컬 데미지 +1%','STR +9%','DEX +9%','INT +9%','LUK +9%','올스탯 +6%'] },
+      unique: { regular: ['크리티컬 데미지 +5%','크리티컬 데미지 +4%','STR +10%','DEX +10%','INT +10%','LUK +10%','올스탯 +6%'],
+                additional: ['STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +4%'] },
+      epic: { regular: ['STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +3%'],
+              additional: ['STR +4%','DEX +4%','INT +4%','LUK +4%'] }
+    },
+    armor: {
+      legendary: { regular: ['STR +13%','DEX +13%','INT +13%','LUK +13%','올스탯 +9%','최대 HP +13%','모든 스킬의 재사용 대기시간 -2초','모든 스킬의 재사용 대기시간 -1초'],
+                  additional: ['STR +9%','DEX +9%','INT +9%','LUK +9%','올스탯 +6%','최대 HP +9%','모든 스킬의 재사용 대기시간 -1초','크리티컬 데미지 +1%'] },
+      unique: { regular: ['STR +10%','DEX +10%','INT +10%','LUK +10%','올스탯 +6%','최대 HP +10%'],
+                additional: ['STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +4%','최대 HP +7%'] },
+      epic: { regular: ['STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +3%','최대 HP +7%'],
+              additional: ['STR +4%','DEX +4%','INT +4%','LUK +4%'] }
+    },
+    accessory: {
+      legendary: { regular: ['STR +13%','DEX +13%','INT +13%','LUK +13%','올스탯 +9%','공격력 +12%','마력 +12%'],
+                  additional: ['STR +9%','DEX +9%','INT +9%','LUK +9%','올스탯 +6%','크리티컬 데미지 +1%'] },
+      unique: { regular: ['STR +10%','DEX +10%','INT +10%','LUK +10%','올스탯 +6%','공격력 +9%','마력 +9%'],
+                additional: ['STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +4%'] },
+      epic: { regular: ['STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +3%'],
+              additional: ['STR +4%','DEX +4%','INT +4%','LUK +4%'] }
+    },
+    etc: {
+      legendary: { regular: ['STR +13%','DEX +13%','INT +13%','LUK +13%','올스탯 +9%'], additional: ['STR +9%','DEX +9%','INT +9%','LUK +9%','올스탯 +6%'] },
+      unique: { regular: ['STR +10%','DEX +10%','INT +10%','LUK +10%','올스탯 +6%'], additional: ['STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +4%'] },
+      epic: { regular: ['STR +7%','DEX +7%','INT +7%','LUK +7%','올스탯 +3%'], additional: ['STR +4%','DEX +4%','INT +4%','LUK +4%'] }
+    }
+  };
+
+  window._consultingGetSlotCategory = (slot) => {
+    if (!slot) return 'armor';
+    const s = String(slot).replace(/\s/g, '');
+    if (['무기','보조무기','엠블렘'].some(k => s.includes(k))) return 'weapon';
+    if (s.includes('장갑')) return 'glove';
+    if (['모자','상의','하의','신발','망토','어깨장식','어깨'].some(k => s.includes(k))) return 'armor';
+    if (['반지','펜던트','벨트','귀고리','눈장식','얼굴장식'].some(k => s.includes(k))) return 'accessory';
+    return 'etc';
+  };
+
+  window._consultingGradeKey = (grade) => {
+    if (!grade) return 'legendary';
+    const g = String(grade).toLowerCase();
+    if (g.includes('레전') || g.includes('legend')) return 'legendary';
+    if (g.includes('유니크') || g.includes('unique')) return 'unique';
+    if (g.includes('에픽') || g.includes('epic')) return 'epic';
+    return 'rare';
+  };
+
+  // 옵션 목록 가져오기 (SITE_CONFIG 우선, 없으면 default)
+  window._consultingGetPotOptions = (slot, grade, isAdditional) => {
+    const cfg = SITE_CONFIG?.potentialOptions || window._consultingDefaultPotentials;
+    const cat = window._consultingGetSlotCategory(slot);
+    const gKey = window._consultingGradeKey(grade);
+    const type = isAdditional ? 'additional' : 'regular';
+    const opts = cfg?.[cat]?.[gKey]?.[type];
+    if (Array.isArray(opts) && opts.length) return opts;
+    // 폴백
+    return window._consultingDefaultPotentials[cat]?.[gKey]?.[type] || [];
+  };
+
+  // 잠재 드롭다운 렌더 (직접 입력 토글 포함)
+  window._consultingPotDropdown = (field, val, slot, grade, isAdditional) => {
+    const opts = window._consultingGetPotOptions(slot, grade, isAdditional);
+    const isCustom = val === '__custom' || (val && !opts.includes(val) && val !== '');
+    const inputVal = val === '__custom' ? '' : (val || '');
+    return `<div class="flex gap-1">
+      <select onchange="window._consultingUpdateTarget('${field}',this.value);window._consultingShowTargetModal();window._consultingFocusCustom('${field}')" class="text-xs bg-white border border-gray-200 rounded px-1.5 py-1 ${isCustom ? 'w-24 shrink-0' : 'flex-1 min-w-0'}">
+        <option value="">선택...</option>
+        ${opts.map(o => `<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join('')}
+        <option value="__custom" ${isCustom?'selected':''}>✏ 직접 입력</option>
+      </select>
+      ${isCustom ? `<input type="text" value="${esc(inputVal)}" oninput="window._consultingUpdateTarget('${field}',this.value)" placeholder="직접 입력" class="text-xs flex-1 min-w-0 bg-white border border-gray-200 rounded px-2 py-1" data-pot-custom="${field}">` : ''}
+    </div>`;
+  };
+
+  window._consultingFocusCustom = (field) => {
+    requestAnimationFrame(() => {
+      const inp = document.querySelector(`#_consultingTargetModal [data-pot-custom="${field}"]`);
+      if (inp) inp.focus();
+    });
+  };
+
+  // ===== 잠재 옵션 관리 모달 (관리자 전용) =====
+  window._consultingOpenPotEditor = () => {
+    if (!isAdmin()) return;
+    if (!window._consultingPotEditState) window._consultingPotEditState = { cat: 'weapon', grade: 'legendary' };
+    window._consultingShowPotEditor();
+  };
+
+  window._consultingShowPotEditor = () => {
+    const cfg = SITE_CONFIG || {};
+    if (!cfg.potentialOptions) cfg.potentialOptions = JSON.parse(JSON.stringify(window._consultingDefaultPotentials));
+
+    const st = window._consultingPotEditState;
+    const cats = [
+      { key: 'weapon', label: '무기/보조/엠블' },
+      { key: 'glove', label: '장갑' },
+      { key: 'armor', label: '방어구' },
+      { key: 'accessory', label: '악세서리' },
+      { key: 'etc', label: '기타' }
+    ];
+    const grades = [
+      { key: 'legendary', label: '레전드리', color: '#7ec850' },
+      { key: 'unique', label: '유니크', color: '#f0c040' },
+      { key: 'epic', label: '에픽', color: '#b070e0' }
+    ];
+
+    const curList = cfg.potentialOptions[st.cat]?.[st.grade] || { regular: [], additional: [] };
+
+    const old = document.getElementById('_consultingPotEditorModal');
+    if (old) old.remove();
+
+    const div = document.createElement('div');
+    div.id = '_consultingPotEditorModal';
+    div.className = 'fixed inset-0 z-50 flex items-start justify-center p-4 pt-8';
+    div.style.background = 'rgba(0,0,0,0.5)';
+    div.style.backdropFilter = 'blur(4px)';
+    div.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+          <h3 class="text-base font-black text-purple-500"><i class="fas fa-cog mr-2"></i>잠재 옵션 메뉴 편집</h3>
+          <button onclick="window._consultingClosePotEditor()" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-5 space-y-4">
+          <p class="text-[11px] text-gray-500"><i class="fas fa-info-circle mr-1"></i>각 부위/등급별 잠재 옵션 드롭다운에 표시될 항목을 관리합니다. 저장 후 즉시 반영됩니다.</p>
+
+          <div>
+            <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">부위 카테고리</div>
+            <div class="flex gap-1.5 flex-wrap">
+              ${cats.map(c => `<button onclick="window._consultingPotEditState.cat='${c.key}';window._consultingShowPotEditor()" class="px-3 py-1.5 rounded-lg text-[11px] font-bold ${st.cat===c.key?'bg-purple-500 text-white shadow':'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${c.label}</button>`).join('')}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">등급</div>
+            <div class="flex gap-1.5 flex-wrap">
+              ${grades.map(g => `<button onclick="window._consultingPotEditState.grade='${g.key}';window._consultingShowPotEditor()" class="px-3 py-1.5 rounded-lg text-[11px] font-bold ${st.grade===g.key?'text-white shadow':'bg-gray-100 text-gray-500 hover:bg-gray-200'}" ${st.grade===g.key?'style="background:'+g.color+'"':''}>${g.label}</button>`).join('')}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+            ${[{key:'regular',label:'일반 잠재',color:'pink'},{key:'additional',label:'에디셔널 잠재',color:'cyan'}].map(typ => {
+              const list = curList[typ.key] || [];
+              return `
+                <div class="bg-${typ.color}-50 rounded-xl p-3 border border-${typ.color}-100">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-black text-${typ.color}-500 uppercase">${typ.label}</span>
+                    <span class="text-[10px] text-gray-400">${list.length}개</span>
+                  </div>
+                  <div class="space-y-1.5 max-h-80 overflow-y-auto">
+                    ${list.map((opt, i) => `
+                      <div class="flex items-center gap-1.5 bg-white rounded px-2 py-1 border border-gray-100">
+                        <input type="text" value="${esc(opt)}" oninput="window._consultingPotEditUpdate('${typ.key}',${i},this.value)" class="flex-1 text-[11px] outline-none">
+                        <button onclick="window._consultingPotEditRemove('${typ.key}',${i})" class="text-red-400 hover:text-red-600 text-[11px]"><i class="fas fa-times"></i></button>
+                      </div>
+                    `).join('')}
+                    <button onclick="window._consultingPotEditAdd('${typ.key}')" class="w-full mt-2 px-2 py-1.5 bg-white border border-dashed border-gray-300 rounded text-[10px] font-bold text-gray-400 hover:border-${typ.color}-300 hover:text-${typ.color}-500"><i class="fas fa-plus mr-1"></i>옵션 추가</button>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+
+          <div class="bg-amber-50 border border-amber-100 rounded-lg p-3">
+            <p class="text-[10px] text-amber-700 font-bold"><i class="fas fa-exclamation-triangle mr-1"></i>⚠ 변경사항은 "저장" 버튼을 눌러야 적용됩니다.</p>
+          </div>
+        </div>
+        <div class="p-5 border-t border-gray-100 flex gap-2 sticky bottom-0 bg-white">
+          <button onclick="window._consultingPotEditReset()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-undo mr-1"></i>기본값 복원</button>
+          <button onclick="window._consultingClosePotEditor()" class="ml-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300">취소</button>
+          <button onclick="window._consultingSavePotEditor()" class="px-6 py-2 bg-pink-500 text-white rounded-lg text-xs font-bold shadow hover:bg-pink-600"><i class="fas fa-save mr-1"></i>저장</button>
+        </div>
+      </div>`;
+    div.onclick = () => window._consultingClosePotEditor();
+    document.body.appendChild(div);
+  };
+
+  window._consultingPotEditUpdate = (type, idx, val) => {
+    const cfg = SITE_CONFIG;
+    const st = window._consultingPotEditState;
+    if (!cfg?.potentialOptions?.[st.cat]?.[st.grade]?.[type]) return;
+    cfg.potentialOptions[st.cat][st.grade][type][idx] = val;
+  };
+  window._consultingPotEditAdd = (type) => {
+    const cfg = SITE_CONFIG;
+    const st = window._consultingPotEditState;
+    if (!cfg.potentialOptions[st.cat]) cfg.potentialOptions[st.cat] = {};
+    if (!cfg.potentialOptions[st.cat][st.grade]) cfg.potentialOptions[st.cat][st.grade] = {};
+    if (!Array.isArray(cfg.potentialOptions[st.cat][st.grade][type])) cfg.potentialOptions[st.cat][st.grade][type] = [];
+    cfg.potentialOptions[st.cat][st.grade][type].push('');
+    window._consultingShowPotEditor();
+  };
+  window._consultingPotEditRemove = (type, idx) => {
+    const cfg = SITE_CONFIG;
+    const st = window._consultingPotEditState;
+    cfg.potentialOptions[st.cat][st.grade][type].splice(idx, 1);
+    window._consultingShowPotEditor();
+  };
+  window._consultingPotEditReset = () => {
+    if (!confirm('이 부위/등급의 옵션을 기본값으로 되돌리시겠습니까?')) return;
+    const cfg = SITE_CONFIG;
+    const st = window._consultingPotEditState;
+    cfg.potentialOptions[st.cat][st.grade] = JSON.parse(JSON.stringify(window._consultingDefaultPotentials[st.cat][st.grade]));
+    window._consultingShowPotEditor();
+  };
+  window._consultingSavePotEditor = async () => {
+    try {
+      // 빈 옵션 제거
+      const cfg = SITE_CONFIG;
+      Object.keys(cfg.potentialOptions || {}).forEach(cat => {
+        Object.keys(cfg.potentialOptions[cat] || {}).forEach(grade => {
+          ['regular','additional'].forEach(type => {
+            if (Array.isArray(cfg.potentialOptions[cat][grade]?.[type])) {
+              cfg.potentialOptions[cat][grade][type] = cfg.potentialOptions[cat][grade][type].filter(o => o && o.trim());
+            }
+          });
+        });
+      });
+      await supaDb.from('site_config').update({ config: cfg, updated_at: new Date().toISOString() }).eq('id', _cfgId);
+      window.showMsg('저장 완료!', 'success');
+      window._consultingClosePotEditor();
+      // 작성 모달이 열려있으면 다시 렌더 (옵션 반영)
+      if (document.getElementById('_consultingTargetModal')) window._consultingShowTargetModal();
+    } catch (e) {
+      window.showMsg('저장 실패: ' + e.message, 'error');
+    }
+  };
+  window._consultingClosePotEditor = () => {
+    const m = document.getElementById('_consultingPotEditorModal');
+    if (m) m.remove();
+  };
+
+  // 교체 목표 설정 모달 (관리자가 작성 폼에서 장비 클릭 시)
+  window._consultingOpenTarget = (equipIdx) => {
+    const d = window._consultingState.draft;
+    if (!d || !Array.isArray(d.equipment_data)) return;
+    const eq = d.equipment_data[equipIdx];
+    if (!eq) return;
+    const slot = eq.item_equipment_slot || eq.item_equipment_part || '';
+
+    // 기존 target 찾기
+    if (!Array.isArray(d.target_items)) d.target_items = [];
+    let existing = d.target_items.find(t => t.slot === slot);
+    if (!existing) {
+      const srLv = parseInt(eq.special_ring_level) || 0;
+      existing = {
+        slot,
+        before_name: eq.item_name || '',
+        before_icon: eq.item_icon || '',
+        before_stars: parseInt(eq.starforce) || 0,
+        before_special_ring_level: srLv,
+        after_name: eq.item_name || '',
+        after_icon: eq.item_icon || '',
+        after_stars: parseInt(eq.starforce) || 0,
+        after_special_ring_level: srLv > 0 ? Math.min(6, srLv + 1) : 0,
+        after_pot_grade: '',
+        after_pot_1: '', after_pot_2: '', after_pot_3: '',
+        after_add_grade: '',
+        after_add_1: '', after_add_2: '', after_add_3: '',
+        hexa_contrib: 0,
+        cost: ''
+      };
+      d.target_items.push(existing);
+    }
+    window._consultingTargetEditingSlot = slot;
+    window._consultingShowTargetModal();
+  };
+
+  window._consultingShowTargetModal = () => {
+    const d = window._consultingState.draft;
+    const slot = window._consultingTargetEditingSlot;
+    const t = d.target_items.find(x => x.slot === slot);
+    if (!t) return;
+
+    const old = document.getElementById('_consultingTargetModal');
+    if (old) old.remove();
+
+    const grades = ['','레전드리','유니크','에픽','레어'];
+    const gradeOpts = (cur) => grades.map(g => `<option value="${g}" ${(cur||'')===g?'selected':''}>${g||'없음'}</option>`).join('');
+
+    // 특수 반지 여부 판정: special_ring_level 필드 + 슬롯명("예비 특수 반지") + 아이템명(컨티뉴어스/리스트레인트/웨폰퍼프)
+    const eqLookup = (d.equipment_data || []).find(e => (e.item_equipment_slot || e.item_equipment_part) === slot);
+    const eqLv = parseInt(eqLookup?.special_ring_level) || 0;
+    const tLv = parseInt(t.before_special_ring_level) || 0;
+    const isSlotSpecial = (slot || '').includes('특수');
+    const isNameSpecial = window._consultingDetectSpecialRing(eqLookup?.item_name) || window._consultingDetectSpecialRing(t.before_name) || window._consultingDetectSpecialRing(t.after_name);
+    const isSpecialRing = eqLv > 0 || tLv > 0 || isSlotSpecial || isNameSpecial;
+    const beforeSrLv = eqLv || tLv || (isSpecialRing ? 1 : 0);
+    const lvOpts = (cur) => Array.from({length: 7}, (_, i) => `<option value="${i}" ${Number(cur||0)===i?'selected':''}>${i === 0 ? '미장착' : 'Lv.' + i}</option>`).join('');
+
+    const div = document.createElement('div');
+    div.id = '_consultingTargetModal';
+    div.className = 'fixed inset-0 z-50 flex items-start justify-center p-4 pt-8';
+    div.style.background = 'rgba(0,0,0,0.5)';
+    div.style.backdropFilter = 'blur(4px)';
+    div.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+          <h3 class="text-base font-black text-pink-500"><i class="fas fa-bullseye mr-2"></i>${esc(slot)} 교체 목표</h3>
+          <div class="flex gap-2">
+            <button onclick="window._consultingOpenPotEditor()" class="text-[10px] bg-purple-50 text-purple-600 px-2 py-1 rounded-lg font-bold hover:bg-purple-100" title="옵션 메뉴판 편집"><i class="fas fa-cog mr-1"></i>옵션 메뉴 편집</button>
+            <button onclick="window._consultingCloseTargetModal()" class="text-gray-400 hover:text-gray-700"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="bg-red-50 p-3 rounded-xl">
+            <div class="text-[10px] text-red-500 font-black uppercase mb-2">BEFORE (현재)${isSpecialRing ? ' · 특수 반지' : ''}</div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0 w-14 h-14 bg-white rounded border-2 border-red-200 flex items-center justify-center">
+                ${t.before_icon ? `<img src="${esc(t.before_icon)}" class="w-12 h-12" style="image-rendering:pixelated">` : '<i class="fas fa-image text-gray-300 text-lg"></i>'}
+              </div>
+              <div class="flex-1 grid grid-cols-2 gap-2">
+                <div><label class="text-[10px] text-gray-500 font-bold">아이템</label><input type="text" value="${esc(t.before_name)}" oninput="window._consultingUpdateTarget('before_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+                ${isSpecialRing
+                  ? `<div><label class="text-[10px] text-cyan-500 font-bold">현재 레벨</label><select onchange="window._consultingUpdateTarget('before_special_ring_level',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs">${lvOpts(beforeSrLv)}</select></div>`
+                  : `<div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.before_stars||0}" oninput="window._consultingUpdateTarget('before_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>`}
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-emerald-50 p-3 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="text-[10px] text-emerald-500 font-black uppercase">AFTER (목표)${isSpecialRing ? ' · 특수 반지' : ''}</div>
+              <button type="button" onclick="window._consultingOpenImportFromUser()" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-bold hover:bg-blue-100 transition" title="다른 유저의 같은 슬롯 장비를 통째로 복사"><i class="fas fa-user-plus mr-1"></i>다른 캐릭터에서 가져오기</button>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0">
+                <button type="button" onclick="window._consultingChangeAfterIcon()" class="w-14 h-14 bg-white rounded border-2 border-emerald-300 hover:border-emerald-500 flex items-center justify-center cursor-pointer transition group" title="클릭하여 아이콘 변경">
+                  ${t.after_icon ? `<img src="${esc(t.after_icon)}" class="w-12 h-12 group-hover:opacity-70" style="image-rendering:pixelated">` : '<i class="fas fa-image text-emerald-300 text-lg group-hover:text-emerald-500"></i>'}
+                </button>
+                <div class="text-[8px] text-center text-emerald-600 font-bold mt-1">아이콘 변경</div>
+              </div>
+              <div class="flex-1 grid grid-cols-2 gap-2">
+                <div><label class="text-[10px] text-gray-500 font-bold">아이템명</label><input type="text" value="${esc(t.after_name)}" oninput="window._consultingUpdateTarget('after_name',this.value)" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+                ${isSpecialRing
+                  ? `<div><label class="text-[10px] text-cyan-500 font-bold">목표 레벨</label><select onchange="window._consultingUpdateTarget('after_special_ring_level',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs">${lvOpts(t.after_special_ring_level||0)}</select></div>`
+                  : `<div><label class="text-[10px] text-gray-500 font-bold">스타포스</label><input type="number" value="${t.after_stars||0}" oninput="window._consultingUpdateTarget('after_stars',Number(this.value))" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>`}
+              </div>
+            </div>
+
+            ${isSpecialRing ? `
+            <div class="bg-cyan-50 border border-cyan-100 rounded p-2.5 text-[10px] text-cyan-700 leading-relaxed">
+              <i class="fas fa-info-circle mr-1 text-cyan-500"></i>특수 반지(컨티뉴어스/리스트레인트/웨폰퍼프)는 레벨 1~6 게임 내 강화입니다. 잠재 옵션 없음.
+            </div>
+            ` : `
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] text-purple-500 font-black uppercase">잠재능력</span>
+                <select onchange="window._consultingUpdateTarget('after_pot_grade',this.value);window._consultingShowTargetModal()" class="bg-white border border-gray-200 rounded px-2 py-0.5 text-[10px]">${gradeOpts(t.after_pot_grade)}</select>
+              </div>
+              <div class="space-y-1">
+                ${window._consultingPotDropdown('after_pot_1', t.after_pot_1, slot, t.after_pot_grade, false)}
+                ${window._consultingPotDropdown('after_pot_2', t.after_pot_2, slot, t.after_pot_grade, false)}
+                ${window._consultingPotDropdown('after_pot_3', t.after_pot_3, slot, t.after_pot_grade, false)}
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] text-cyan-500 font-black uppercase">에디셔널</span>
+                <select onchange="window._consultingUpdateTarget('after_add_grade',this.value);window._consultingShowTargetModal()" class="bg-white border border-gray-200 rounded px-2 py-0.5 text-[10px]">${gradeOpts(t.after_add_grade)}</select>
+              </div>
+              <div class="space-y-1">
+                ${window._consultingPotDropdown('after_add_1', t.after_add_1, slot, t.after_add_grade, true)}
+                ${window._consultingPotDropdown('after_add_2', t.after_add_2, slot, t.after_add_grade, true)}
+                ${window._consultingPotDropdown('after_add_3', t.after_add_3, slot, t.after_add_grade, true)}
+              </div>
+            </div>`}
+
+            <div class="pt-2 border-t border-emerald-200">
+              <label class="text-[10px] text-cyan-600 font-bold">추옵 (추가옵션) 목표</label>
+              <input type="text" value="${esc(t.after_add_tier || '')}" oninput="window._consultingUpdateTarget('after_add_tier',this.value)" placeholder="예: 85급, 100급, INT 80~100, 풀추옵 등" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="text-[10px] text-amber-500 font-bold">헥사 환산 기여</label><input type="number" value="${t.hexa_contrib||0}" oninput="window._consultingUpdateTarget('hexa_contrib',Number(this.value))" placeholder="예: 1500" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+              <div><label class="text-[10px] text-amber-500 font-bold">예상 비용</label><input type="text" value="${esc(t.cost)}" oninput="window._consultingUpdateTarget('cost',this.value)" placeholder="예: 30억" class="w-full mt-1 bg-white border border-gray-200 rounded px-2 py-1 text-xs"></div>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 border-t border-gray-100 flex gap-2 sticky bottom-0 bg-white">
+          <button onclick="window._consultingRemoveTarget()" class="px-4 py-2 bg-red-100 text-red-500 rounded-lg text-xs font-bold hover:bg-red-200"><i class="fas fa-trash mr-1"></i>이 목표 제거</button>
+          <button onclick="window._consultingCloseTargetModal()" class="ml-auto px-6 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"><i class="fas fa-check mr-1"></i>완료</button>
+        </div>
+      </div>`;
+    div.onclick = () => window._consultingCloseTargetModal();
+    document.body.appendChild(div);
+  };
+
+  window._consultingUpdateTarget = (field, value) => {
+    const d = window._consultingState.draft;
+    const slot = window._consultingTargetEditingSlot;
+    const t = d.target_items.find(x => x.slot === slot);
+    if (t) t[field] = value;
+  };
+
+  window._consultingRemoveTarget = () => {
+    const d = window._consultingState.draft;
+    const slot = window._consultingTargetEditingSlot;
+    d.target_items = d.target_items.filter(x => x.slot !== slot);
+    window._consultingCloseTargetModal();
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingCloseTargetModal = () => {
+    const m = document.getElementById('_consultingTargetModal');
+    if (m) m.remove();
+    window._consultingTargetEditingSlot = null;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  // After 아이콘 변경 (URL / 파일 / 현재 장비 / 메이플 아이템 검색)
+  window._consultingChangeAfterIcon = () => {
+    const old = document.getElementById('_consultingIconModal');
+    if (old) old.remove();
+    const div = document.createElement('div');
+    div.id = '_consultingIconModal';
+    div.className = 'fixed inset-0 z-[60] flex items-center justify-center p-4';
+    div.style.background = 'rgba(0,0,0,0.6)';
+    div.style.backdropFilter = 'blur(4px)';
+    div.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5" onclick="event.stopPropagation()">
+        <h3 class="text-sm font-black text-emerald-600 mb-4"><i class="fas fa-image mr-2"></i>AFTER 아이콘 변경</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="text-[10px] text-gray-500 font-bold">이미지 URL 직접 입력</label>
+            <div class="flex gap-1 mt-1">
+              <input id="_consultingIconUrl" type="text" placeholder="https://open.api.nexon.com/static/..." class="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs">
+              <button onclick="window._consultingApplyIconUrl()" class="px-3 py-1.5 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600">적용</button>
+            </div>
+            <p class="text-[9px] text-gray-400 mt-1">메이플 아이템 위키/공홈에서 이미지 우클릭 → 주소 복사</p>
+          </div>
+          <div class="border-t border-gray-100"></div>
+          <label class="block">
+            <span class="block w-full px-3 py-2 bg-blue-50 text-blue-600 rounded text-xs font-bold text-center cursor-pointer hover:bg-blue-100"><i class="fas fa-upload mr-1"></i>파일 업로드 (PNG, 200KB 이하)</span>
+            <input type="file" accept="image/*" class="hidden" onchange="window._consultingUploadIcon(event)">
+          </label>
+          <div class="border-t border-gray-100"></div>
+          <button onclick="window._consultingResetIconToBefore()" class="w-full px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-xs font-bold hover:bg-slate-200"><i class="fas fa-undo mr-1"></i>현재 장비 아이콘으로 되돌리기</button>
+        </div>
+        <button onclick="document.getElementById('_consultingIconModal').remove()" class="w-full mt-4 px-3 py-1.5 bg-gray-100 text-gray-500 rounded text-xs font-bold hover:bg-gray-200">취소</button>
+      </div>`;
+    div.onclick = () => div.remove();
+    document.body.appendChild(div);
+    setTimeout(() => document.getElementById('_consultingIconUrl')?.focus(), 50);
+  };
+
+  window._consultingApplyIconUrl = () => {
+    const url = document.getElementById('_consultingIconUrl')?.value.trim();
+    if (!url) { window.showMsg('URL을 입력해주세요', 'error'); return; }
+    window._consultingUpdateTarget('after_icon', url);
+    document.getElementById('_consultingIconModal')?.remove();
+    window._consultingShowTargetModal();
+  };
+
+  window._consultingUploadIcon = (ev) => {
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    if (file.size > 200 * 1024) { window.showMsg('200KB 이하 이미지만 가능', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      window._consultingUpdateTarget('after_icon', reader.result);
+      document.getElementById('_consultingIconModal')?.remove();
+      window._consultingShowTargetModal();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window._consultingResetIconToBefore = () => {
+    const d = window._consultingState.draft;
+    const slot = window._consultingTargetEditingSlot;
+    const eq = (d.equipment_data || []).find(e => (e.item_equipment_slot || e.item_equipment_part) === slot);
+    const icon = eq?.item_icon || '';
+    if (!icon) { window.showMsg('현재 장비 아이콘이 없습니다', 'error'); return; }
+    window._consultingUpdateTarget('after_icon', icon);
+    document.getElementById('_consultingIconModal')?.remove();
+    window._consultingShowTargetModal();
+  };
+
+  // ===== 다른 캐릭터의 같은 슬롯 장비를 AFTER로 통째 복사 =====
+  window._consultingOpenImportFromUser = () => {
+    const slot = window._consultingTargetEditingSlot;
+    const old = document.getElementById('_consultingImportModal');
+    if (old) old.remove();
+    const div = document.createElement('div');
+    div.id = '_consultingImportModal';
+    div.className = 'fixed inset-0 z-[60] flex items-center justify-center p-4';
+    div.style.background = 'rgba(0,0,0,0.6)';
+    div.style.backdropFilter = 'blur(4px)';
+    div.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5" onclick="event.stopPropagation()">
+        <h3 class="text-sm font-black text-blue-600 mb-1"><i class="fas fa-user-plus mr-2"></i>다른 캐릭터에서 ${esc(slot)} 가져오기</h3>
+        <p class="text-[10px] text-gray-400 mb-4">목표로 삼을 풀템 유저의 캐릭명을 입력하면 같은 슬롯 장비를 통째로 복사합니다. 옵션은 가져온 후 손보세요.</p>
+        <div class="space-y-3">
+          <div class="flex gap-1">
+            <input id="_consultingImportName" type="text" placeholder="캐릭터명 입력" class="flex-1 border border-gray-200 rounded px-2 py-1.5 text-xs" onkeydown="if(event.key==='Enter')window._consultingImportSearch()">
+            <button onclick="window._consultingImportSearch()" id="_consultingImportSearchBtn" class="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold hover:bg-blue-600 disabled:opacity-50">검색</button>
+          </div>
+          <div id="_consultingImportResult" class="min-h-[40px]"></div>
+        </div>
+        <button onclick="document.getElementById('_consultingImportModal').remove()" class="w-full mt-4 px-3 py-1.5 bg-gray-100 text-gray-500 rounded text-xs font-bold hover:bg-gray-200">취소</button>
+      </div>`;
+    div.onclick = () => div.remove();
+    document.body.appendChild(div);
+    setTimeout(() => document.getElementById('_consultingImportName')?.focus(), 50);
+  };
+
+  // 슬롯 매칭 후보 (반지/펜던트는 카테고리 전체)
+  window._consultingSlotCandidates = (slot) => {
+    if (!slot) return [slot];
+    if (/^반지\d?$/.test(slot)) return ['반지1','반지2','반지3','반지4'];
+    if (/^펜던트\d?$/.test(slot)) return ['펜던트','펜던트2'];
+    return [slot];
+  };
+
+  // 프리셋 점수 계산 (별 + 강화 + 잠재 등급 가중치) — 보스 프리셋이 보통 점수 높음
+  window._consultingPresetScore = (items) => {
+    if (!Array.isArray(items)) return 0;
+    let score = 0;
+    for (const eq of items) {
+      score += parseInt(eq.starforce) || 0;
+      score += parseInt(eq.scroll_upgrade) || 0;
+      const g = (eq.potential_option_grade || '').toLowerCase();
+      if (g.includes('레전') || g.includes('legend')) score += 12;
+      else if (g.includes('유니') || g.includes('unique')) score += 6;
+      else if (g.includes('에픽') || g.includes('epic')) score += 2;
+      const ag = (eq.additional_potential_option_grade || '').toLowerCase();
+      if (ag.includes('레전') || ag.includes('legend')) score += 10;
+      else if (ag.includes('유니') || ag.includes('unique')) score += 5;
+      else if (ag.includes('에픽') || ag.includes('epic')) score += 1;
+    }
+    return score;
+  };
+
+  // preset_no~3 + legacy 합쳐서 슬롯 합치기 (preset 단위)
+  window._consultingMergePresetWithLegacy = (equipData, presetNo) => {
+    const preset = equipData[`item_equipment_preset_${presetNo}`] || [];
+    const legacy = equipData.item_equipment || [];
+    const presetSlots = new Set(preset.map(e => e.item_equipment_slot || e.item_equipment_part));
+    const extras = legacy.filter(e => !presetSlots.has(e.item_equipment_slot || e.item_equipment_part));
+    return preset.length ? [...preset, ...extras] : legacy;
+  };
+
+  // 가장 강한 프리셋 자동 선택 + 점수 같이 반환
+  window._consultingPickBestPreset = (equipData) => {
+    const presets = [1,2,3].map(n => {
+      const items = equipData[`item_equipment_preset_${n}`] || [];
+      return { no: n, items, score: window._consultingPresetScore(items) };
+    });
+    const valid = presets.filter(p => p.items.length > 0);
+    const fallbackNo = Number(equipData.preset_no) || 1;
+    if (!valid.length) return { bestNo: fallbackNo, scores: presets };
+    valid.sort((a,b) => b.score - a.score);
+    return { bestNo: valid[0].no, scores: presets };
+  };
+
+  window._consultingImportSearch = async () => {
+    const slot = window._consultingTargetEditingSlot;
+    const name = document.getElementById('_consultingImportName')?.value.trim();
+    if (!name) { window.showMsg('캐릭터명을 입력해주세요', 'error'); return; }
+    const btn = document.getElementById('_consultingImportSearchBtn');
+    const result = document.getElementById('_consultingImportResult');
+    if (btn) { btn.disabled = true; btn.textContent = '검색 중...'; }
+    if (result) result.innerHTML = '<div class="text-center py-3 text-gray-400 text-xs"><i class="fas fa-spinner fa-spin mr-1"></i>장비 정보 가져오는 중...</div>';
+    try {
+      const idRes = await window._nexonFetch('/maplestory/v1/id', { character_name: name });
+      const equipData = await window._nexonFetch('/maplestory/v1/character/item-equipment', { ocid: idRes.ocid });
+      const { bestNo, scores } = window._consultingPickBestPreset(equipData);
+      window._consultingImportEquipData = equipData;
+      window._consultingImportScores = scores;
+      window._consultingImportCurrentPreset = bestNo;
+      window._consultingImportRender(slot);
+    } catch (e) {
+      result.innerHTML = `<div class="text-center py-3 text-red-500 text-xs"><i class="fas fa-times-circle mr-1"></i>${esc(e.message || '검색 실패')}</div>`;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '검색'; }
+    }
+  };
+
+  // 선택된 프리셋의 후보 렌더 (프리셋 토글 시 재호출)
+  window._consultingImportRender = (slot) => {
+    const result = document.getElementById('_consultingImportResult');
+    if (!result) return;
+    const equipData = window._consultingImportEquipData;
+    const scores = window._consultingImportScores || [];
+    const presetNo = window._consultingImportCurrentPreset || 1;
+    const equips = window._consultingMergePresetWithLegacy(equipData, presetNo);
+    const candidates = window._consultingSlotCandidates(slot);
+    const matches = equips.filter(e => candidates.includes(e.item_equipment_slot || e.item_equipment_part));
+    window._consultingImportPool = matches;
+
+    // 프리셋 토글 (활성 프리셋만, 점수 표시)
+    const validPresets = scores.filter(p => p.items.length > 0);
+    const maxScore = Math.max(...validPresets.map(p => p.score), 0);
+    const presetTabs = validPresets.length > 1 ? `
+      <div class="flex gap-1 mb-3 bg-gray-100 p-1 rounded-lg">
+        ${validPresets.map(p => {
+          const isActive = p.no === presetNo;
+          const isBest = p.score === maxScore;
+          return `<button onclick="window._consultingImportSwitchPreset(${p.no})" class="flex-1 px-2 py-1.5 rounded text-[10px] font-bold transition ${isActive ? 'bg-white text-blue-600 shadow' : 'text-gray-500 hover:text-gray-700'}">프리셋 ${p.no}${isBest ? ' <i class=\"fas fa-crown text-amber-400 text-[8px]\"></i>' : ''}<div class="text-[8px] font-normal opacity-60">${p.score}점</div></button>`;
+        }).join('')}
+      </div>
+      <p class="text-[9px] text-gray-400 -mt-2 mb-2 text-center"><i class="fas fa-crown text-amber-400 mr-1"></i>가장 점수 높은 프리셋 자동 선택. 다른 프리셋을 보려면 탭 클릭</p>` : '';
+
+    if (!matches.length) {
+      result.innerHTML = `${presetTabs}<div class="text-center py-3 text-amber-600 text-xs"><i class="fas fa-exclamation-circle mr-1"></i>프리셋 ${presetNo}에 ${esc(candidates.join('/'))} 슬롯 장비가 없습니다</div>`;
+      return;
+    }
+    const isMulti = matches.length > 1;
+    result.innerHTML = `
+      ${presetTabs}
+      <div class="text-[10px] text-gray-500 font-bold mb-2">${isMulti ? `↓ ${matches.length}개 중 어느 장비를 복사할까요? 클릭하여 선택` : '↓ 이 장비를 AFTER로 복사할까요?'}</div>
+      <div class="space-y-2 max-h-[45vh] overflow-y-auto pr-1">
+      ${matches.map((eq, i) => {
+        const data = window._consultingNormalizeEq(eq);
+        const realSlot = eq.item_equipment_slot || eq.item_equipment_part;
+        return `<div class="cursor-pointer hover:scale-[1.01] transition" onclick="window._consultingImportPick(${i})">${window._consultingItemCardHtml(data, { slot: realSlot, extraCls: 'hover:ring-2 hover:ring-emerald-400' })}</div>`;
+      }).join('')}
+      </div>
+      ${isMulti ? '' : `<button onclick="window._consultingImportPick(0)" class="w-full mt-3 px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600"><i class="fas fa-check mr-1"></i>이 장비로 AFTER 채우기</button>`}`;
+  };
+
+  window._consultingImportSwitchPreset = (presetNo) => {
+    window._consultingImportCurrentPreset = presetNo;
+    window._consultingImportRender(window._consultingTargetEditingSlot);
+  };
+
+  window._consultingImportPick = (idx) => {
+    const pool = window._consultingImportPool || [];
+    const eq = pool[idx];
+    if (!eq) return;
+    window._consultingImportFound = eq;
+    window._consultingImportApply();
+  };
+
+  window._consultingImportApply = () => {
+    const eq = window._consultingImportFound;
+    if (!eq) return;
+    const slot = window._consultingTargetEditingSlot;
+    const d = window._consultingState.draft;
+    const t = d.target_items.find(x => x.slot === slot);
+    if (!t) return;
+    // 핵심 필드 통째 복사
+    t.after_name = eq.item_name || '';
+    t.after_icon = eq.item_icon || '';
+    t.after_stars = parseInt(eq.starforce) || 0;
+    t.after_special_ring_level = parseInt(eq.special_ring_level) || 0;
+    t.after_pot_grade = eq.potential_option_grade || '';
+    t.after_pot_1 = eq.potential_option_1 || '';
+    t.after_pot_2 = eq.potential_option_2 || '';
+    t.after_pot_3 = eq.potential_option_3 || '';
+    t.after_add_grade = eq.additional_potential_option_grade || '';
+    t.after_add_1 = eq.additional_potential_option_1 || '';
+    t.after_add_2 = eq.additional_potential_option_2 || '';
+    t.after_add_3 = eq.additional_potential_option_3 || '';
+    window._consultingImportFound = null;
+    document.getElementById('_consultingImportModal')?.remove();
+    window.showMsg('AFTER에 장비 복사 완료. 옵션을 손봐주세요.', 'success');
+    window._consultingShowTargetModal();
+  };
+
+  // Before/After 비교 카드 (상세 뷰)
+  window._consultingRenderCompareCards = (targets, equipsBefore) => {
+    if (!Array.isArray(targets) || !targets.length) return '';
+    const eqMap = {};
+    if (Array.isArray(equipsBefore)) {
+      equipsBefore.forEach(e => {
+        const slot = e.item_equipment_slot || e.item_equipment_part || '';
+        if (slot) eqMap[slot] = e;
+      });
+    }
+    return `<div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-3 border border-slate-700/50 space-y-3">
+      ${targets.map(t => {
+        const eq = eqMap[t.slot] || {};
+        const beforeData = {
+          name: t.before_name || eq.item_name || '',
+          icon: eq.item_icon || t.before_icon || '',
+          stars: t.before_stars || parseInt(eq.starforce) || 0,
+          upgrade: parseInt(eq.scroll_upgrade) || 0,
+          pot_grade: eq.potential_option_grade || '',
+          pot_1: eq.potential_option_1, pot_2: eq.potential_option_2, pot_3: eq.potential_option_3,
+          add_grade: eq.additional_potential_option_grade || '',
+          add_1: eq.additional_potential_option_1, add_2: eq.additional_potential_option_2, add_3: eq.additional_potential_option_3,
+          soul_name: eq.soul_name, soul_option: eq.soul_option,
+          special_ring_level: parseInt(eq.special_ring_level) || parseInt(t.before_special_ring_level) || 0
+        };
+        const afterData = {
+          name: t.after_name || '',
+          icon: t.after_icon || '',
+          stars: t.after_stars || 0,
+          upgrade: 0,
+          pot_grade: t.after_pot_grade || '',
+          pot_1: t.after_pot_1, pot_2: t.after_pot_2, pot_3: t.after_pot_3,
+          add_grade: t.after_add_grade || '',
+          add_1: t.after_add_1, add_2: t.after_add_2, add_3: t.after_add_3,
+          special_ring_level: parseInt(t.after_special_ring_level) || 0
+        };
+        return `
+          <div class="bg-slate-800/40 rounded-lg border border-slate-700/40 p-2.5">
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_24px_1fr] gap-2 mb-2 items-center">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black text-pink-300 bg-pink-500/15 px-2 py-0.5 rounded">${esc(t.slot)}</span>
+              </div>
+              <div></div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${t.hexa_contrib > 0 ? `<span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded">+${Number(t.hexa_contrib).toLocaleString()} 헥사</span>` : ''}
+                ${t.cost ? `<span class="text-[10px] font-bold text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded"><i class="fas fa-coins mr-0.5"></i>${esc(t.cost)}</span>` : ''}
+                ${t.after_add_tier ? `<span class="text-[10px] font-bold text-cyan-300 bg-cyan-500/15 px-1.5 py-0.5 rounded">추옵 ${esc(t.after_add_tier)}</span>` : ''}
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_24px_1fr] gap-2 items-stretch">
+              <div class="relative">
+                <div class="absolute -top-1.5 left-2 z-10 text-[9px] font-black text-red-300 bg-slate-900 px-1.5 py-0.5 rounded uppercase tracking-wider">현재</div>
+                ${window._consultingItemCardHtml(beforeData, { extraCls: 'pt-3' })}
+              </div>
+              <div class="hidden md:flex items-center justify-center text-pink-400"><i class="fas fa-arrow-right"></i></div>
+              <div class="relative">
+                <div class="absolute -top-1.5 left-2 z-10 text-[9px] font-black text-emerald-300 bg-slate-900 px-1.5 py-0.5 rounded uppercase tracking-wider">목표</div>
+                ${window._consultingItemCardHtml(afterData, { extraCls: 'pt-3 ring-1 ring-emerald-400/30' })}
+              </div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+  };
+
+  // 효율 분석 표 (상세 뷰)
+  window._consultingRenderEfficiency = (targets, sets, hexaUpgrade) => {
+    const items = Array.isArray(targets) ? targets : [];
+    const setListRaw = Array.isArray(sets) ? sets : [];
+    // sets[*].items 호환: string → array
+    const setList = setListRaw.map(s => ({
+      ...s,
+      items: Array.isArray(s.items) ? s.items
+        : (typeof s.items === 'string' ? s.items.split(/[,/·]/).map(x => x.trim()).filter(Boolean) : [])
+    }));
+    const hu = hexaUpgrade || {};
+    const huHexa = Number(hu.hexa_gain) || 0;
+    const huSol = Number(hu.sol_erda) || 0;
+    const huPrice = Number(hu.sol_erda_price) || 0;
+    const huCost = huSol * huPrice;
+    const huEff = huCost > 0 ? huHexa / huCost : 0;
+    if (items.length === 0 && setList.length === 0 && huHexa === 0) return '';
+
+    const parseCost = (s) => {
+      if (!s) return 0;
+      const m = String(s).replace(/,/g,'').match(/([\d.]+)\s*억?/);
+      return m ? parseFloat(m[1]) : 0;
+    };
+
+    const targetSlots = new Set(items.map(t => t.slot));
+    // 세트 발동 판정 — 묶은 슬롯이 (target_items + 현재 장비) 합집합에 모두 있어야 발동.
+    // 단, 분배는 target_items에 있는 슬롯 수로만 나눔 (교체 안 하는 '유지' 슬롯엔 분배 X — 효율 표에 행이 없으니까)
+    const setStatus = setList.map(s => {
+      const slots = s.items || [];
+      const slotsInTarget = slots.filter(slot => targetSlots.has(slot));
+      // 발동: 묶은 슬롯 중 하나라도 target_items에 있어야 (= 유효한 교체로 발동) — 모두 유지면 효율 분석에 의미 없음
+      const active = slots.length > 0 && slotsInTarget.length > 0;
+      return { ...s, active, slotCount: slots.length, distSlots: slotsInTarget, distCount: slotsInTarget.length };
+    });
+
+    // slot → 첫 매칭 active set 인덱스 (분배 대상 슬롯만)
+    const slotToSetIdx = new Map();
+    setStatus.forEach((s, idx) => {
+      if (!s.active) return;
+      (s.distSlots || []).forEach(slot => {
+        if (!slotToSetIdx.has(slot)) slotToSetIdx.set(slot, idx);
+      });
+    });
+
+    // 각 단품 행 계산
+    const itemRows = items.map(t => {
+      const sIdx = slotToSetIdx.get(t.slot);
+      const setShare = (sIdx != null && setStatus[sIdx].distCount > 0)
+        ? Math.round(Number(setStatus[sIdx].hexa_contrib || 0) / setStatus[sIdx].distCount)
+        : 0;
+      const itemHexa = Number(t.hexa_contrib) || 0;
+      const total = itemHexa + setShare;
+      const cost = parseCost(t.cost);
+      const eff = cost > 0 ? total / cost : 0;
+      return { slot: t.slot, name: t.after_name, itemHexa, setShare, total, cost, eff, setIdx: sIdx ?? null };
+    });
+
+    const standalone = itemRows.filter(r => r.setIdx == null).sort((a, b) => b.eff - a.eff);
+    const groups = setStatus.map((s, idx) => ({
+      set: s, setIdx: idx,
+      members: itemRows.filter(r => r.setIdx === idx).sort((a, b) => b.eff - a.eff)
+    })).filter(g => g.members.length > 0 || g.set.slotCount > 0 || Number(g.set.hexa_contrib) > 0);
+
+    // 합계
+    const itemHexaSum = itemRows.reduce((s, r) => s + r.itemHexa, 0);
+    const setHexaSum = setStatus.filter(s => s.active).reduce((acc, s) => acc + (Number(s.hexa_contrib) || 0), 0);
+    const totalHexa = itemHexaSum + setHexaSum + huHexa;
+    const itemCostSum = itemRows.reduce((s, r) => s + r.cost, 0);
+    const totalCost = itemCostSum + huCost;
+    const activeSetCount = setStatus.filter(s => s.active).length;
+
+    const effColorClass = (e) => e >= 100 ? 'text-emerald-500' : e >= 30 ? 'text-blue-500' : e > 0 ? 'text-amber-500' : 'text-gray-300';
+    let rowSeq = 0;
+    const renderItemRow = (r, opts = {}) => {
+      const num = ++rowSeq;
+      const medal = !opts.inGroup && num === 1 ? '🥇' : !opts.inGroup && num === 2 ? '🥈' : !opts.inGroup && num === 3 ? '🥉' : num;
+      const bg = opts.inGroup ? 'bg-violet-50/30' : (num === 1 ? 'bg-amber-50/40' : '');
+      const stripe = opts.inGroup ? ' border-l-4 border-l-violet-300' : '';
+      return `
+        <div class="px-2 py-2.5 border-t border-gray-100 text-center font-bold ${bg}${stripe}">${medal}</div>
+        <div class="px-3 py-2.5 border-t border-gray-100 ${bg}">
+          <span class="text-gray-700 font-bold">${esc(r.slot)}</span>${r.name ? `<span class="text-gray-400 ml-1">${esc(r.name)}</span>` : ''}
+        </div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right font-bold text-gray-700 ${bg}">+${r.itemHexa.toLocaleString()}</div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right font-bold ${r.setShare > 0 ? 'text-violet-600' : 'text-gray-300'} ${bg}">${r.setShare > 0 ? '+' + r.setShare.toLocaleString() : '-'}</div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right font-bold text-emerald-500 ${bg}">+${r.total.toLocaleString()}</div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right text-gray-700 ${bg}">${r.cost > 0 ? r.cost + '억' : '-'}</div>
+        <div class="px-2 py-2.5 border-t border-gray-100 text-right font-black ${effColorClass(r.eff)} ${bg}">${r.eff > 0 ? r.eff.toFixed(1) : '-'}</div>`;
+    };
+
+    return `<div class="space-y-3">
+      <div class="grid grid-cols-3 gap-2">
+        <div class="bg-emerald-50 rounded-lg p-3 text-center border border-emerald-100">
+          <div class="text-[10px] text-emerald-500 font-bold uppercase">총 헥사 상승</div>
+          <div class="text-base font-black text-emerald-600 mt-1">+${totalHexa.toLocaleString()}</div>
+          ${(setHexaSum > 0 || huHexa > 0) ? `<div class="text-[9px] text-gray-500 mt-1 font-bold">
+            단품 +${itemHexaSum.toLocaleString()}
+            ${setHexaSum > 0 ? `<span class="text-gray-300"> · </span><span class="text-violet-600">세트 +${setHexaSum.toLocaleString()}</span>` : ''}
+            ${huHexa > 0 ? `<span class="text-gray-300"> · </span><span class="text-amber-600">강화 +${huHexa.toLocaleString()}</span>` : ''}
+          </div>` : ''}
+        </div>
+        <div class="bg-amber-50 rounded-lg p-3 text-center border border-amber-100">
+          <div class="text-[10px] text-amber-500 font-bold uppercase">총 비용</div>
+          <div class="text-base font-black text-amber-600 mt-1">${totalCost.toFixed(1)}억</div>
+          ${huCost > 0 ? `<div class="text-[9px] text-gray-500 mt-1 font-bold">장비 ${itemCostSum.toFixed(0)}억 <span class="text-gray-300">·</span> <span class="text-amber-600">솔에르다 ${huCost.toFixed(1)}억</span></div>` : ''}
+        </div>
+        <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-100">
+          <div class="text-[10px] text-blue-500 font-bold uppercase">교체 부위</div>
+          <div class="text-base font-black text-blue-600 mt-1">${itemRows.length}개${activeSetCount > 0 ? ` <span class="text-[10px] text-violet-500 font-bold">+ 세트 ${activeSetCount}</span>` : ''}</div>
+        </div>
+      </div>
+      <div class="bg-white border border-gray-100 rounded-xl overflow-hidden">
+        <div class="grid grid-cols-[40px_1fr_70px_80px_70px_80px_70px] gap-0 text-[11px]">
+          <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-center">#</div>
+          <div class="bg-gray-50 px-3 py-2 font-bold text-gray-500">부위</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-right">단품</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-violet-500 text-right">세트분배</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-emerald-500 text-right">합계</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-gray-500 text-right">비용</div>
+          <div class="bg-gray-50 px-2 py-2 font-bold text-amber-500 text-right">효율 ↓</div>
+          ${standalone.map(r => renderItemRow(r)).join('')}
+          ${groups.map(g => {
+            const memberHexaSum = g.members.reduce((s, r) => s + r.itemHexa, 0);
+            const setBonus = Number(g.set.hexa_contrib) || 0;
+            const groupTotal = memberHexaSum + (g.set.active ? setBonus : 0);
+            const slotsLabel = (g.set.items || []).map(slot =>
+              targetSlots.has(slot)
+                ? `<span>${esc(slot)}</span>`
+                : `<span class="text-amber-600">${esc(slot)}<span class="text-[9px] opacity-70 ml-0.5">(유지)</span></span>`
+            ).join('<span class="text-gray-300 mx-0.5">/</span>');
+            const keepCount = (g.set.items || []).length - g.set.distCount;
+            return `
+              <div class="col-span-7 px-3 py-2 border-t-2 border-violet-300 bg-violet-50/60 flex items-center justify-between text-[11px] flex-wrap gap-2">
+                <div class="flex items-center gap-2 min-w-0 flex-wrap">
+                  <i class="fas fa-layer-group text-violet-500"></i>
+                  <span class="font-black text-violet-700">${esc(g.set.name || '(이름 없음)')}</span>
+                  ${slotsLabel ? `<span class="text-gray-500 text-[10px]">${slotsLabel}</span>` : ''}
+                  ${g.set.active
+                    ? `<span class="bg-emerald-100 text-emerald-700 text-[9px] font-black px-1.5 py-0.5 rounded">발동</span>`
+                    : `<span class="bg-gray-100 text-gray-500 text-[9px] font-black px-1.5 py-0.5 rounded" title="묶은 슬롯 중 교체할 게 1개 이상이어야 효율 분석에 반영">미발동</span>`}
+                  ${keepCount > 0 ? `<span class="text-[9px] text-amber-600 font-bold">유지 ${keepCount}개</span>` : ''}
+                </div>
+                <div class="text-[10px] text-gray-600">단품 +${memberHexaSum.toLocaleString()}${g.set.active ? ` + 세트 +${setBonus.toLocaleString()} = <strong class="text-violet-700">+${groupTotal.toLocaleString()}</strong>` : ` <span class="text-gray-400">(세트 +${setBonus.toLocaleString()} 미발동)</span>`}</div>
+              </div>
+              ${g.members.map(r => renderItemRow(r, { inGroup: true })).join('')}
+            `;
+          }).join('')}
+          ${huHexa > 0 ? `
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-center font-bold bg-amber-50/60 text-amber-500"><i class="fas fa-cubes-stacked"></i></div>
+              <div class="px-3 py-2.5 border-t-2 border-amber-200 bg-amber-50/60">
+                <span class="text-amber-700 font-bold">헥사 강화</span>
+                <span class="text-gray-700 ml-1">솔에르다 ${huSol}개${huPrice > 0 ? ` × ${huPrice}억` : ''}</span>
+              </div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right text-gray-300 bg-amber-50/60">-</div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right text-gray-300 bg-amber-50/60">-</div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right font-bold text-amber-600 bg-amber-50/60">+${huHexa.toLocaleString()}</div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right text-gray-700 bg-amber-50/60">${huCost > 0 ? huCost.toFixed(1) + '억' : huSol + '조각'}</div>
+              <div class="px-2 py-2.5 border-t-2 border-amber-200 text-right font-black ${effColorClass(huEff)} bg-amber-50/60">${huEff > 0 ? huEff.toFixed(1) : '-'}</div>
+          ` : ''}
+        </div>
+      </div>
+      <p class="text-[10px] text-gray-400 text-right">💡 효율 = 합계 헥사 상승 ÷ 비용(억) · 세트 분배 = 보너스 ÷ 묶인 슬롯 수 · 헥사 강화 비용 = 조각수 × 시세</p>
+    </div>`;
+  };
+
+  // 넥슨 API에서 캐릭 정보 + 장비 가져오기
+  window._consultingFetchFromNexon = async () => {
+    const apiKey = window._getNexonApiKey();
+    if (!apiKey) return window.showMsg('동기화 탭에서 Nexon API Key 먼저 등록해주세요.', 'error');
+
+    const charName = document.getElementById('_consultingApiCharName')?.value?.trim();
+    if (!charName) return window.showMsg('캐릭명을 입력해주세요.', 'error');
+
+    const btn = document.getElementById('_consultingFetchBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>불러오는 중...'; }
+
+    try {
+      const ocid = await window._getCharOcid(charName);
+      const basic = await window._getCharBasic(ocid);
+
+      // 캐릭 이미지 - 큰 사이즈
+      let charImg = basic.character_image || '';
+      if (charImg && !charImg.includes('width=')) {
+        const sep = charImg.includes('?') ? '&' : '?';
+        charImg += `${sep}width=400&height=500`;
+      }
+
+      // 전투력 (stat에서 가져옴)
+      let combatPower = '';
+      try {
+        const stat = await window._nexonFetch('/maplestory/v1/character/stat', { ocid });
+        if (stat?.final_stat) {
+          const cp = stat.final_stat.find(s => s.stat_name === '전투력');
+          if (cp) {
+            const n = Number(cp.stat_value);
+            // 한국식 표기
+            if (n >= 1e8) combatPower = (n / 1e8).toFixed(2).replace(/\.?0+$/, '') + '억';
+            else if (n >= 1e4) combatPower = (n / 1e4).toFixed(0) + '만';
+            else combatPower = n.toLocaleString();
+          }
+        }
+      } catch(e) {}
+
+      // 장비 (가장 점수 높은 프리셋 + legacy 전용 슬롯 합치기)
+      let equips = [];
+      try {
+        const equipData = await window._nexonFetch('/maplestory/v1/character/item-equipment', { ocid });
+        const { bestNo } = window._consultingPickBestPreset(equipData);
+        equips = window._consultingMergePresetWithLegacy(equipData, bestNo);
+      } catch(e) { console.warn('장비 로드 실패:', e); }
+
+      const d = window._consultingState.draft;
+      d.member_name = basic.character_name || charName;
+      d.member_class = basic.character_class || d.member_class;
+      d.member_server = basic.world_name || d.member_server;
+      d.character_image = charImg;
+      if (combatPower) d.combat_power = combatPower;
+      d.equipment_data = equips;
+
+      window.showMsg(`${d.member_name} 정보 로드 완료! 장비 ${equips.length}개`, 'success');
+      window.renderConsulting(document.getElementById('contentArea'));
+    } catch (e) {
+      window.showMsg('가져오기 실패: ' + e.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-download-alt mr-1"></i>API로 불러오기'; }
+    }
+  };
+
+  window._consultingAddDiagnosis = () => {
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.diagnosis)) d.diagnosis = [];
+    d.diagnosis.push({ title: '새 단계', content: '', priority: '중간' });
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingRemoveDiagnosis = (i) => {
+    window._consultingState.draft.diagnosis.splice(i, 1);
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingAddTip = () => {
+    const d = window._consultingState.draft;
+    if (!Array.isArray(d.tips)) d.tips = [];
+    d.tips.push('');
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingRemoveTip = (i) => {
+    window._consultingState.draft.tips.splice(i, 1);
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingAddSet = () => {
+    const d = window._consultingState.draft;
+    if (!d.goal) d.goal = {};
+    if (!Array.isArray(d.goal.sets)) d.goal.sets = [];
+    d.goal.sets.push({ name: '', items: '', hexa_contrib: 0 });
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingRemoveSet = (i) => {
+    const d = window._consultingState.draft;
+    if (!d?.goal?.sets) return;
+    d.goal.sets.splice(i, 1);
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingToggleSetSlot = (setIdx, slot, checked) => {
+    const d = window._consultingState.draft;
+    const set = d?.goal?.sets?.[setIdx];
+    if (!set) return;
+    if (!Array.isArray(set.items)) set.items = [];
+    if (checked) {
+      if (!set.items.includes(slot)) set.items.push(slot);
+    } else {
+      set.items = set.items.filter(x => x !== slot);
+    }
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  // 세트 묶기 모드 (장비 카드 클릭으로 슬롯 추가/제거)
+  window._consultingStartLinkSet = (i) => {
+    window._consultingState.linkingSetIdx = i;
+    window.renderConsulting(document.getElementById('contentArea'));
+    setTimeout(() => {
+      const el = document.getElementById('consultingEquipArea');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+  window._consultingEndLinkSet = () => {
+    window._consultingState.linkingSetIdx = null;
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+  window._consultingLinkToggle = (slot) => {
+    const i = window._consultingState.linkingSetIdx;
+    if (i == null) return;
+    const set = window._consultingState.draft?.goal?.sets?.[i];
+    if (!set) return;
+    if (!Array.isArray(set.items)) set.items = [];
+    if (set.items.includes(slot)) set.items = set.items.filter(x => x !== slot);
+    else set.items.push(slot);
+    window.renderConsulting(document.getElementById('contentArea'));
+  };
+
+  window._consultingSave = async () => {
+    const d = window._consultingState.draft;
+    if (!d.member_name?.trim()) return window.showMsg('캐릭명을 입력해주세요.', 'error');
+
+    const payload = {
+      member_name: d.member_name.trim(),
+      member_class: d.member_class || null,
+      member_server: d.member_server || null,
+      consultant_name: d.consultant_name || null,
+      diagnosis_date: d.diagnosis_date || null,
+      combat_power: d.combat_power || null,
+      main_stat: d.main_stat || null,
+      hexa_stat: d.hexa_stat || null,
+      goal: d.goal || {},
+      diagnosis: d.diagnosis || [],
+      tips: d.tips || [],
+      target_items: d.target_items || [],
+      equipment_data: d.equipment_data || [],
+      attachments: Array.isArray(d.attachments) ? d.attachments : [],
+      summary: d.summary || null,
+      character_image: d.character_image || null,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      let res;
+      if (window._consultingState.view === 'new') {
+        res = await supaDb.from('item_consultings').insert(payload).select().single();
+      } else {
+        res = await supaDb.from('item_consultings').update(payload).eq('id', window._consultingState.currentId).select().single();
+      }
+      if (res.error) throw res.error;
+      window.showMsg('저장 완료!', 'success');
+      window._consultingState.view = 'detail';
+      window._consultingState.currentId = res.data.id;
+      window._consultingState.draft = null;
+      window.renderConsulting(document.getElementById('contentArea'));
+    } catch (e) {
+      window.showMsg('저장 실패: ' + e.message, 'error');
+    }
+  };
 
 /* ----- 버니버디 (멘토-멘티 버디팀 · 옛 뚠뚠버디 포팅) ----- */
 const BUDDY_ST={active:['var(--ok-bg)','var(--ok-tx)','진행 중'],completed:['rgba(59,169,199,.15)','#3BA9C7','완료'],failed:['var(--bad-bg)','var(--bad-tx)','실패'],cancelled:['var(--panel-2)','var(--dim)','취소']};
