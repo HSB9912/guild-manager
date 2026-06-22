@@ -422,6 +422,28 @@ window._grpMoveByName = (id, repName)=>{ if(!_grpEdit) return; repName=(repName|
   if(m.is_main!==false){ const hasAlts=_mem.some(x=>x.is_main===false && x.main_char_name===m.name); if(hasAlts){ alert(m.name+'은(는) 부캐가 있는 대표예요. 부캐를 먼저 옮기거나 다른 캐릭에 👑를 주세요.'); _memApply(); return; } }
   m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpReopen(repName);
 };
+/* 유니온으로 기존 멤버 전체 자동 묶기 — 같은 계정(유니온 슬롯1=대표) 끼리 한 대표 밑으로 병합 */
+window._grpAutoUnion = async ()=>{
+  if(!isAdmin()) return alert('운영진만 사용할 수 있어요.');
+  if(!_mem.length) return;
+  if(!confirm(`${fac().label} 길드원 ${_mem.length}명을 유니온으로 같은 계정끼리 자동 묶을까요?\n각 캐릭의 유니온 대표(슬롯1)를 조회해 한 대표 밑으로 모읍니다.\n시간이 좀 걸려요 — 끝나면 검토 후 [저장] 누르세요.`)) return;
+  const tbl=document.getElementById('memTbl'); const names=_mem.map(m=>m.name); const repOf={};
+  let done=0; const prog=()=>{ if(tbl) tbl.innerHTML=`<div style="padding:44px;text-align:center"><div class="dim" style="font-weight:800"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>유니온 조회 ${done}/${names.length}…</div><div class="dim" style="font-size:11px;margin-top:6px;font-weight:700">같은 계정은 캐시돼서 점점 빨라져요</div></div>`; };
+  prog();
+  const CONC=10; let next=0;
+  const worker=async ()=>{ while(next<names.length){ const i=next++; const n=names[i]; try{ const r=await guessMainChar(n); repOf[n]=r.name||n; }catch(e){ repOf[n]=n; } done++; if(done%4===0||done===names.length) prog(); } };
+  await Promise.all(Array.from({length:Math.min(CONC,names.length)},worker));
+  const clusters={}; _mem.forEach(m=>{ const rep=repOf[m.name]||m.name; (clusters[rep]||(clusters[rep]=[])).push(m); });
+  let changed=0;
+  Object.keys(clusters).forEach(repName=>{ const members=clusters[repName];
+    // 대표 = 클러스터 내 최고 레벨(보통 실제 메인캐). 유니온 슬롯1이 저레벨 알트인 경우 대비
+    const rep=members.slice().sort((a,b)=>(b.level||0)-(a.level||0))[0];
+    members.forEach(m=>{ const wantMain=(m===rep), wantMC=wantMain?null:rep.name;
+      if((m.is_main!==false)!==wantMain || (m.main_char_name||null)!==(wantMC||null)){ m.is_main=wantMain; m.main_char_name=wantMC; _grpDirty.add(m.id); changed++; } });
+  });
+  _grpEdit=true; _memApply();
+  alert(`유니온 자동 묶기 완료! 변경 ${changed}건 — 검토 후 [저장] 눌러주세요.\n잘못 묶인 건 '대표 변경'/👑/드래그로 수정.`);
+};
 window._grpSave = async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
   if(!_grpDirty.size) return alert('변경된 내용이 없어요.');
@@ -489,6 +511,7 @@ function memberGroups(q){
         <div class="dim" style="align-self:center;font-size:11px;font-weight:700">기준 회차: ${escHtml(_memSuroLabel||'-')}</div>
       </div>` : '';
   const editBar = isAdmin() ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <button onclick="_grpAutoUnion()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>유니온 자동 묶기</button>
       <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
       ${ed?`<button onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
       <span class="dim" style="font-size:11px;font-weight:700">펼쳐서 — <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 그룹 헤더에 떨구기 · <b>독립</b>=본캐 분리</span>`:''}
