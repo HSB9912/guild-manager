@@ -831,53 +831,74 @@ window._absSubmit = async ()=>{
 function todoPrio(p){ const m={urgent:['긴급','var(--bad-tx)','var(--bad-bg)'],high:['높음','var(--warn-tx)','var(--warn-bg)'],normal:['보통','var(--ice)','var(--panel-2)'],low:['낮음','var(--dim)','var(--panel-2)']}; const x=m[p]||m.normal; return `<span class="chip" style="background:${x[2]};color:${x[1]}">${x[0]}</span>`; }
 /* note = 평문(레거시) 또는 JSON {text, images:[url]} */
 function _todoParseNote(note){ if(!note) return {text:'',images:[]}; try{ const o=JSON.parse(note); if(o&&typeof o==='object'&&!Array.isArray(o)&&('text'in o||'images'in o)) return {text:o.text||'', images:Array.isArray(o.images)?o.images:[]}; }catch(e){} return {text:String(note), images:[]}; }
-let _todoData=[]; let _todoFold=true; let _todoEdit=null;
+let _todoData=[]; let _todoFold=true; let _todoEdit=null; let _todoComposeImgs=[];
 async function buildTodos(){
   let data=[];
   try{ const r=await db().from('admin_todos').select('id,title,note,priority,category,status,due_date,done_by').order('created_at',{ascending:false}).limit(300); if(r.error) throw r.error; data=r.data||[]; }catch(e){ data=[]; }
-  _todoData=data;
+  _todoData=data; _todoComposeImgs=[];
   const rank={urgent:0,high:1,normal:2,low:3};
   const todo=data.filter(t=>t.status!=='done').sort((a,b)=>(rank[a.priority]??2)-(rank[b.priority]??2));
   const done=data.filter(t=>t.status==='done');
-  const inp='border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--text);outline:0;';
-  const card=(t,isDone)=>{ const {text,images}=_todoParseNote(t.note); const hasDetail=!!(text||images.length); const first=(text||'').split('\n')[0];
-    return `<div class="panel tone-light" style="border-radius:14px;padding:0;margin-bottom:8px;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:11px;padding:12px 14px">
-        <input type="checkbox" ${isDone?'checked':''} onchange="_todoToggle(${t.id},this.checked)" style="width:20px;height:20px;cursor:pointer;accent-color:var(--bunny-main);flex-shrink:0">
-        <div style="flex:1;min-width:0;${hasDetail?'cursor:pointer':''}" ${hasDetail?`onclick="_todoExpand(${t.id})"`:''}>
-          <div style="font-weight:800;${isDone?'text-decoration:line-through;opacity:.55':''};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(t.title||'')}
-            ${images.length?`<span class="chip" style="background:var(--panel-3);color:var(--dim);margin-left:4px"><i class="fa-solid fa-paperclip" style="font-size:9px;margin-right:3px"></i>${images.length}</span>`:''}
-            ${hasDetail?`<i class="fa-solid fa-chevron-down dim" id="tdchev_${t.id}" style="font-size:10px;margin-left:6px;transition:.15s"></i>`:''}</div>
-          ${first?`<div class="dim" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(first.slice(0,90))}</div>`:''}
-        </div>
-        ${t.category?`<span class="chip" style="background:var(--panel-3);color:var(--bunny-deep);flex-shrink:0">${escHtml(t.category)}</span>`:''}
-        ${todoPrio(t.priority)}
-        ${t.due_date?`<span class="dim" style="font-size:12px;font-weight:700;flex-shrink:0">~${t.due_date}</span>`:''}
-        <button onclick="_todoEditOpen(${t.id})" title="상세 편집" style="border:0;background:transparent;color:var(--bunny-deep);cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen"></i></button>
-        <button onclick="_todoDel(${t.id})" title="삭제" style="border:0;background:transparent;color:var(--dim);cursor:pointer;flex-shrink:0"><i class="fa-solid fa-trash"></i></button>
+  const post=(t,isDone)=>{ const {text,images}=_todoParseNote(t.note);
+    return `<div class="panel" style="border-radius:16px;padding:0;margin-bottom:12px;overflow:hidden;${isDone?'opacity:.62':''}">
+      <div style="display:flex;align-items:center;gap:10px;padding:13px 15px 0">
+        <div style="width:34px;height:34px;border-radius:999px;background:linear-gradient(135deg,var(--bunny-light),var(--bunny-main));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;flex-shrink:0">운</div>
+        <div style="min-width:0"><div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">운영진${t.category?` <span class="chip" style="background:var(--panel-3);color:var(--bunny-deep)">${escHtml(t.category)}</span>`:''} ${todoPrio(t.priority)}</div>${t.due_date?`<div class="dim" style="font-size:11px;font-weight:700">~${t.due_date} 마감</div>`:''}</div>
+        <button onclick="_todoToggle(${t.id},${isDone?'false':'true'})" style="margin-left:auto;border:1px solid var(--line);border-radius:9px;padding:7px 13px;font-weight:800;font-size:12.5px;cursor:pointer;${isDone?'background:var(--ok-bg);color:var(--ok-tx)':'background:var(--panel-2);color:var(--text)'};flex-shrink:0">${isDone?'<i class="fa-solid fa-rotate-left"></i> 완료됨':'<i class="fa-solid fa-check"></i> 완료'}</button>
       </div>
-      ${hasDetail?`<div id="tddet_${t.id}" style="display:none;padding:2px 14px 14px 47px;border-top:1px solid var(--line)">
-        ${text?`<div style="font-size:13px;font-weight:600;line-height:1.65;white-space:pre-wrap;margin:10px 0 ${images.length?'12px':'0'}">${escHtml(text)}</div>`:'<div style="height:6px"></div>'}
-        ${images.length?`<div style="display:flex;gap:8px;flex-wrap:wrap">${images.map(u=>`<img src="${escAttr(u)}" data-full="${escAttr(u)}" onclick="_todoZoom(this)" style="width:130px;height:98px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in" loading="lazy">`).join('')}</div>`:''}
-      </div>`:''}
-    </div>`; };
+      <div style="padding:9px 15px 13px">
+        <div style="font-weight:900;font-size:15px;${isDone?'text-decoration:line-through':''}">${escHtml(t.title||'')}</div>
+        ${text?`<div style="font-size:13.5px;font-weight:600;line-height:1.62;margin-top:6px;white-space:pre-wrap">${escHtml(text)}</div>`:''}
+        ${images.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${images.map(u=>`<img src="${escAttr(u)}" data-full="${escAttr(u)}" onclick="_todoZoom(this)" style="width:calc(50% - 3px);max-width:260px;height:150px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in" loading="lazy">`).join('')}</div>`:''}
+        <div style="display:flex;gap:6px;margin-top:11px">
+          <button onclick="_todoEditOpen(${t.id})" style="border:0;border-radius:8px;background:var(--panel-2);color:var(--text);font-weight:800;font-size:12px;padding:6px 11px;cursor:pointer"><i class="fa-solid fa-pen" style="margin-right:4px"></i>편집</button>
+          <button onclick="_todoDel(${t.id})" style="border:0;border-radius:8px;background:var(--panel-2);color:var(--dim);font-weight:800;font-size:12px;padding:6px 11px;cursor:pointer"><i class="fa-solid fa-trash" style="margin-right:4px"></i>삭제</button>
+        </div>
+      </div></div>`; };
+  const composer=`<div class="panel" style="border-radius:18px;padding:14px 16px;margin-bottom:18px;display:flex;gap:11px">
+      <div style="width:38px;height:38px;border-radius:999px;background:linear-gradient(135deg,var(--bunny-light),var(--bunny-main));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900">운</div>
+      <div style="flex:1;min-width:0">
+        <input id="tdc_t" placeholder="무엇을 QA할까요? (제목)" style="width:100%;border:0;background:transparent;outline:0;font-weight:800;font-size:15px;color:var(--text);padding:8px 4px">
+        <textarea id="tdc_c" placeholder="내용 · QA 할 부분, 재현 절차 등" style="width:100%;border:0;background:transparent;outline:0;font-size:14px;font-weight:600;color:var(--text);padding:4px;height:74px;resize:vertical;line-height:1.55"></textarea>
+        <div id="tdc_imgs" style="display:flex;gap:7px;flex-wrap:wrap;margin:4px 0"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <label style="border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:800;font-size:12.5px;cursor:pointer;background:var(--panel-2)"><i class="fa-solid fa-image" style="margin-right:5px"></i>사진<input type="file" accept="image/*" multiple onchange="_todoComposeAttach(event)" style="display:none"></label>
+          <input id="tdc_cat" value="QA" placeholder="분류" style="border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-weight:700;font-size:13px;color:var(--text);background:var(--panel-2);outline:0;width:84px">
+          <select id="tdc_prio" style="border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-weight:700;font-size:13px;color:var(--text);background:var(--panel-2);outline:0"><option value="normal">보통</option><option value="high">높음</option><option value="urgent">긴급</option></select>
+          <button onclick="_todoComposePost()" style="margin-left:auto;border:0;border-radius:10px;padding:9px 20px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer"><i class="fa-solid fa-paper-plane" style="margin-right:6px"></i>게시</button>
+        </div>
+      </div></div>`;
   return headerHTML('운영진 할 일', `할 일 ${todo.length} · 완료 ${done.length}`) +
-    `<div class="panel" style="border-radius:20px;padding:16px;margin-bottom:18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input id="td_title" placeholder="할 일 / QA 항목 제목" onkeydown="if(event.key==='Enter')_todoAdd()" style="${inp};flex:1;min-width:200px">
-      <input id="td_cat" placeholder="분류(예: QA)" style="${inp};width:130px">
-      <select id="td_prio" style="${inp}"><option value="normal">보통</option><option value="high">높음</option><option value="urgent">긴급</option><option value="low">낮음</option></select>
-      <input id="td_due" type="date" style="${inp}">
-      <button onclick="_todoAdd()" style="border:0;border-radius:10px;padding:10px 18px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer">추가</button>
-    </div>
-    <p class="dim" style="font-size:12px;font-weight:700;margin:0 0 12px"><i class="fa-solid fa-circle-info" style="margin-right:5px"></i>추가 후 <b style="color:var(--bunny-deep)">✏️</b>로 상세 내용·스크린샷 첨부 · 제목 클릭하면 펼쳐서 봄${data.length?'':' · 운영진 로그인 시 저장(RLS)'}</p>
-    <div id="todoList">${todo.map(t=>card(t,false)).join('')||'<div class="panel" style="border-radius:14px;padding:24px;text-align:center"><span class="dim" style="font-weight:700">할 일이 없어요</span></div>'}</div>
-    ${done.length?`<div style="margin-top:22px">
+    composer +
+    `${data.length?'':'<p class="dim" style="font-size:12px;font-weight:700;margin:0 0 12px"><i class="fa-solid fa-circle-info" style="margin-right:5px"></i>운영진 로그인 시 저장됩니다 (RLS)</p>'}
+    <div id="todoList">${todo.map(t=>post(t,false)).join('')||'<div class="panel" style="border-radius:14px;padding:24px;text-align:center"><span class="dim" style="font-weight:700">아직 할 일이 없어요 — 위에 적어서 게시</span></div>'}</div>
+    ${done.length?`<div style="margin-top:18px">
       <div onclick="_todoFoldToggle()" style="cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;color:var(--dim);user-select:none">
         <i class="fa-solid fa-chevron-${_todoFold?'right':'down'}" id="todoFoldChev" style="font-size:11px;transition:.15s"></i><i class="fa-solid fa-box-archive" style="color:var(--ok-tx)"></i> 완료 보관 (${done.length}) <span style="font-size:11px;font-weight:700">${_todoFold?'· 열기':'· 접기'}</span>
       </div>
-      <div id="todoDoneBox" style="display:${_todoFold?'none':'block'};margin-top:10px">${done.map(t=>card(t,true)).join('')}</div>
+      <div id="todoDoneBox" style="display:${_todoFold?'none':'block'};margin-top:12px">${done.map(t=>post(t,true)).join('')}</div>
     </div>`:''}`;
 }
+function _todoComposeImgsHtml(){ return _todoComposeImgs.map((u,i)=>`<div style="position:relative;width:74px;height:56px;border-radius:8px;overflow:hidden;border:1px solid var(--line)"><img src="${escAttr(u)}" style="width:100%;height:100%;object-fit:cover"><button onclick="_todoComposeRmImg(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:999px;border:0;background:var(--bad-tx);color:#fff;cursor:pointer;font-size:10px"><i class="fa-solid fa-xmark"></i></button></div>`).join(''); }
+window._todoComposeRmImg = (i)=>{ _todoComposeImgs.splice(i,1); const el=document.getElementById('tdc_imgs'); if(el)el.innerHTML=_todoComposeImgsHtml(); };
+window._todoComposeAttach = async (ev)=>{
+  const files=Array.from(ev.target.files||[]); ev.target.value=''; const box=document.getElementById('tdc_imgs');
+  for(const f of files){ if(!f.type.startsWith('image/')) continue; if(box) box.insertAdjacentHTML('beforeend','<div id="tdc_up" style="width:74px;height:56px;border-radius:8px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-spinner fa-spin dim"></i></div>');
+    try{ const ext=(f.name.split('.').pop()||'png').toLowerCase().replace(/[^a-z0-9]/g,''); const fn=`todo-${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`; const url=await window._r2Upload('guide-images', fn, f); _todoComposeImgs.push(url); }catch(e){ alert('업로드 실패: '+(e.message||e)); }
+    const up=document.getElementById('tdc_up'); if(up)up.remove(); if(box) box.innerHTML=_todoComposeImgsHtml();
+  }
+};
+window._todoComposePost = async ()=>{
+  if(!isAdmin()) return alert('운영진만 작성할 수 있어요.');
+  const title=(document.getElementById('tdc_t').value||'').trim(); if(!title) return alert('제목을 입력해주세요.');
+  const text=(document.getElementById('tdc_c').value||'').trim();
+  const cat=(document.getElementById('tdc_cat').value||'').trim()||null;
+  const prio=document.getElementById('tdc_prio').value;
+  const note=(text||_todoComposeImgs.length)?JSON.stringify({ text, images:_todoComposeImgs }):null;
+  const { error } = await db().from('admin_todos').insert({ title, note, category:cat, priority:prio, created_by:CURRENT.name||CURRENT.email });
+  if(error) return alert('등록 실패: '+error.message);
+  _todoComposeImgs=[]; render();
+};
 window._todoAdd = async ()=>{
   if(!isAdmin()) return alert('운영진만 추가할 수 있어요.');
   const t=document.getElementById('td_title').value.trim(); if(!t) return alert('할 일을 입력해주세요.');
