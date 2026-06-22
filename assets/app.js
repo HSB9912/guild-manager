@@ -1191,6 +1191,40 @@ async function buildSync(){
     </div>`;
 }
 window._syncSaveKey=()=>{ const v=document.getElementById('nx_key').value.trim(); if(!v) return alert('키를 입력해주세요.'); localStorage.setItem('nexon_api_key',v); alert('API 키가 저장됐어요 ✓'); render(); };
+/* ----- 본캐 추론 (메애기 → 유니온 랭킹) · 원본 뚠카롱 sync에서 믹스 ----- */
+function _kstDate(daysBack){ const t=Date.now()+9*3600*1000-(daysBack||0)*86400000; return new Date(t).toISOString().slice(0,10); }
+async function guessMainChar(name){
+  // 1차: 메애기 프록시 (/alt → main)
+  try{ const r=await fetch(BAIL_MEAEGI_URL+encodeURIComponent(name)+'/alt'); if(r.ok){ const d=await r.json(); const mn=(d&&d.main&&(d.main.nickname||d.main.name||d.main.character_name))||(d&&d.mainCharacterName); if(mn) return { name:mn, method:'meaegi' }; } }catch(e){}
+  // 2차: 넥슨 유니온 랭킹 (KST 여러 날짜 시도) — ranking[0]=계정 대표(본캐)
+  try{ const { ocid }=await nexonFetch('/maplestory/v1/id',{ character_name:name });
+    for(const dz of [1,2,3,7]){ try{ const rk=await nexonFetch('/maplestory/v1/ranking/union',{ ocid, date:_kstDate(dz) }); if(rk&&rk.ranking&&rk.ranking.length) return { name:rk.ranking[0].character_name, method:'union' }; }catch(e){} }
+  }catch(e){}
+  return { name:null, method:'fail' };
+}
+function _syncRenderNewRows(){
+  const added=window._syncAdded||[], gm=window._syncGuessMap||{};
+  if(!added.length) return '<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>';
+  return `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${added.map((n,i)=>{
+    const g=gm[n]; let right;
+    if(g===undefined) right='<span class="dim" style="font-size:11px;font-weight:700">추론 전</span>';
+    else if(g===null) right='<span style="font-size:11px;color:var(--warn-tx);font-weight:800">미확인 → 미지정(부캐, 그룹서 나중에)</span>';
+    else if(g===n) right='<span style="font-size:11px;color:var(--amber);font-weight:800"><i class="fa-solid fa-crown" style="font-size:9px;margin-right:3px"></i>본캐(자기자신)</span>';
+    else right=`<span style="font-size:11px;font-weight:800;color:var(--bunny-deep)"><i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size:9px;margin-right:3px"></i>본캐: ${escHtml(g)}</span>`;
+    return `<div style="display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:10px;padding:6px 11px"><span style="font-weight:800;font-size:13px">${escHtml(n)}</span><span id="sg_${i}" style="margin-left:auto;text-align:right">${right}</span></div>`;
+  }).join('')}</div>`;
+}
+window._syncGuessAll=async ()=>{
+  const added=window._syncAdded||[]; if(!added.length) return;
+  const btn=document.getElementById('syncGuessBtn'); if(btn){ btn.disabled=true; }
+  window._syncGuessMap=window._syncGuessMap||{};
+  for(let i=0;i<added.length;i++){ const n=added[i]; const el=document.getElementById('sg_'+i); if(el)el.innerHTML='<i class="fa-solid fa-spinner fa-spin dim" style="font-size:10px"></i>';
+    try{ const r=await guessMainChar(n); window._syncGuessMap[n]=r.name; }catch(e){ window._syncGuessMap[n]=null; }
+    if(btn) btn.innerHTML=`<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>${i+1}/${added.length}`;
+  }
+  const box=document.getElementById('syncNewBox'); if(box) box.innerHTML=_syncRenderNewRows();
+  if(btn){ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>본캐 추론 (다시)'; }
+};
 window._syncRun=async ()=>{
   if(!nexonKey()) return alert('먼저 Nexon API Key를 등록해주세요.');
   const world=document.getElementById('nx_world').value;
@@ -1209,7 +1243,7 @@ window._syncRun=async ()=>{
     const dbNames = new Set((dbm||[]).map(m=>m.name));
     const added = roster.filter(n=>!dbNames.has(n));
     const left = (dbm||[]).filter(m=>m.is_main!==false && !rosterSet.has(m.name)).map(m=>m.name);
-    window._syncAdded=added; window._syncLeft=left;
+    window._syncAdded=added; window._syncLeft=left; window._syncGuessMap={};
     const list=(arr,color)=>arr.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${arr.map(n=>`<span class="chip" style="background:var(--panel-2);color:${color}">${n}</span>`).join('')}</div>`:'<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>';
     box.innerHTML=`
       <div class="bento" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
@@ -1217,18 +1251,32 @@ window._syncRun=async ()=>{
         <div class="panel tone-light" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:13px;font-weight:700">신규</div><div style="font-size:26px;font-weight:900;color:var(--ok-tx)">${added.length}</div></div>
         <div class="panel tone-cream" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:13px;font-weight:700">탈퇴 의심</div><div style="font-size:26px;font-weight:900;color:var(--bad-tx)">${left.length}</div></div>
       </div>
-      <div style="font-weight:900;font-size:14px;margin:10px 0 0">신규 길드원 ${added.length} ${added.length?`<button onclick="_syncAdd()" style="border:0;border-radius:8px;padding:6px 14px;font-weight:800;color:#fff;background:#1A8A4A;cursor:pointer;margin-left:8px">부캐로 추가</button>`:''}</div>${list(added,'var(--ok-tx)')}
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 0">
+        <span style="font-weight:900;font-size:14px">신규 길드원 ${added.length}</span>
+        ${added.length?`<button id="syncGuessBtn" onclick="_syncGuessAll()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>본캐 추론</button>
+        <button onclick="_syncAdd()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:#1A8A4A;cursor:pointer">DB에 추가</button>`:''}
+      </div>
+      <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">본캐 추론: 메애기→유니온으로 계정 대표 추정 · 자기자신=본캐(is_main) / 다른캐=그 본캐의 부캐 / 미확인=미지정(is_main 안 함, 계정그룹서 나중에)</p>
+      <div id="syncNewBox">${_syncRenderNewRows()}</div>
       <div style="font-weight:900;font-size:14px;margin:16px 0 0">탈퇴 의심 ${left.length}</div>${list(left,'var(--bad-tx)')}`;
   }catch(e){ box.innerHTML=`<div class="panel" style="border-radius:16px;padding:20px;text-align:center"><span style="font-weight:800;color:var(--bad-tx)">${e.message||e}</span><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">키·월드·길드명을 확인해주세요.</p></div>`; }
 };
 window._syncAdd=async ()=>{
   if(!isAdmin()) return alert('운영진만 추가할 수 있어요.');
   const added=window._syncAdded||[]; if(!added.length) return;
-  if(!confirm(`${added.length}명을 길드원(부캐)으로 추가할까요?\n※ 라이브 공유 DB에 반영됩니다.`)) return;
-  const rows=added.map(name=>({ name, guild:GUILD, is_main:false, join_date:new Date().toISOString().slice(0,10) }));
+  const gm=window._syncGuessMap||{};
+  const subCnt=added.filter(n=>gm[n]&&gm[n]!==n).length;       // 부캐(추론됨)
+  const selfCnt=added.filter(n=>gm[n]&&gm[n]===n).length;      // 본캐(자기자신)
+  const unkCnt=added.length-subCnt-selfCnt;                    // 미확인 → is_main:false
+  if(!confirm(`${added.length}명을 DB에 추가할까요?\n· 본캐(자기자신): ${selfCnt}명\n· 부캐(본캐 추론됨): ${subCnt}명\n· 미확인(미지정): ${unkCnt}명\n※ 라이브 공유 DB에 반영됩니다.`)) return;
+  const today=new Date().toISOString().slice(0,10);
+  const rows=added.map(name=>{ const g=gm[name];
+    if(g && g!==name) return { name, guild:GUILD, is_main:false, main_char_name:g, join_date:today };  // 부캐
+    return { name, guild:GUILD, is_main:(g===name), join_date:today };                                  // 자기자신=본캐 / 미확인=is_main:false
+  });
   const { error } = await db().from('members').insert(rows);
   if(error) return alert('추가 실패: '+error.message);
-  alert(`${rows.length}명 추가됐어요 ✓`); _syncRun();
+  alert(`${rows.length}명 추가됐어요 ✓ (본캐 ${selfCnt} · 부캐 ${subCnt} · 미지정 ${unkCnt})`); _syncRun();
 };
 
 const PAGES = {
