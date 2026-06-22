@@ -318,6 +318,8 @@ let _mem = [];
 let _memFac = 'bunny';
 let _memSuro = {};        // {member_id: 최신회차 점수} — 대표 수로 여부용
 let _memSuroLabel = '';
+let _memRanks = [];       // 직위 위계순 (설정 cfg.ranks) — 직위별 정렬용
+function _memRoleRank(role){ if(!role) return 998; const i=_memRanks.indexOf(role); return i>=0?i:998; }
 const _memState = { mode:'group' };   // 기본 = 계정그룹(대표만, 부캐 묶임)
 async function buildMembers(){
   const FK = FACTIONS[_memFac] || FACTIONS.bunny;
@@ -334,6 +336,7 @@ async function buildMembers(){
       (sc||[]).forEach(s=>{ _memSuro[s.member_id] = Number(s.score)||0; });
     }
   }catch(e){}
+  try{ const cfg=await getConfig(); _memRanks=(cfg.ranks&&(cfg.ranks[FK.key]||cfg.ranks[GUILD]))||[]; }catch(e){ _memRanks=[]; }
   const mains = _mem.filter(m=>m.is_main).length;
   const BTN='padding:8px 14px;border:0;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;';
   const modeBtns = [['group','계정그룹'],['all','전체'],['main','본캐'],['sub','부캐']].map(([v,l])=>
@@ -345,7 +348,7 @@ async function buildMembers(){
     </div>
     <div style="display:flex;gap:6px;">${modeBtns}</div>
     <select id="memSort" onchange="_memApply()" style="${BTN}background:var(--panel-2);color:var(--text)">
-      <option value="level">레벨순</option><option value="name">이름순</option><option value="join">가입일순</option>
+      <option value="level">레벨순</option><option value="name">닉네임순</option><option value="class">직업순</option><option value="role">직위순</option><option value="join">가입일순</option>
     </select>
     <span class="dim" style="font-size:13px;font-weight:800;margin-left:auto"><b id="memCount" style="color:var(--bunny-deep)">${_mem.length}</b>명 · 본캐 ${mains}</span>
   </div>`;
@@ -386,7 +389,9 @@ window._memApply = ()=>{
   if(_memState.mode==='main') list=list.filter(m=>m.is_main);
   else if(_memState.mode==='sub') list=list.filter(m=>!m.is_main);
   if(q) list=list.filter(m=>(m.name||'').includes(q));
-  if(sort==='name') list.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
+  if(sort==='name') list.sort((a,b)=>{ const x=a.name||'',y=b.name||''; return x<y?-1:x>y?1:0; });   // 유니코드(코드포인트) 순
+  else if(sort==='class') list.sort((a,b)=>{ const ca=a.class||'',cb=b.class||''; if(!ca&&!cb) return (b.level||0)-(a.level||0); if(!ca) return 1; if(!cb) return -1; return ca.localeCompare(cb,'ko')||((b.level||0)-(a.level||0)); });
+  else if(sort==='role') list.sort((a,b)=>(_memRoleRank(a.role)-_memRoleRank(b.role))||((b.level||0)-(a.level||0)));
   else if(sort==='join') list.sort((a,b)=>(b.join_date||'').localeCompare(a.join_date||''));
   else list.sort((a,b)=>(b.level||0)-(a.level||0));
   document.getElementById('memTbl').innerHTML = memberRows(list);
