@@ -1065,7 +1065,8 @@ let _srData = null;
 async function buildSuroReward(){
   await loadTailwind();
   const cfg = await getConfig();
-  const piecePrice = (cfg.suroReward||{}).piecePrice || 0;
+  const rawPiece = (cfg.suroReward||{}).piecePrice || cfg.piecePrice || 0;
+  const piecePrice = rawPiece > 100000 ? rawPiece : rawPiece*10000;   // 원 단위로 정규화(예전 만원 데이터(예:730) 호환)
   const [{data:periods,error:ep},{data:mem,error:em}] = await Promise.all([
     db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:true}).limit(400),
     db().from('members').select('id,name,role,is_main,main_char_name').eq('guild',GUILD).limit(5000),
@@ -1100,7 +1101,7 @@ function _srRender(){
         '<select id="rewardQuarter" onchange="window._rewardChangeQ()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[11px] font-bold outline-none">'+
           (quarters.map(q=>'<option value="'+q+'" '+(q===selQ?'selected':'')+'>'+q+'</option>').join('')||'<option>분기 없음</option>')+
         '</select>'+
-        (pp>0?'<span class="text-[10px] text-gray-400 font-bold ml-auto">솔 에르다 조각 시세: '+pp.toLocaleString()+'만원</span>':'<span class="text-[10px] text-red-400 font-bold ml-auto">⚠ 솔 에르다 조각 시세 미설정 (설정 → 관리자)</span>')+
+        (pp>0?'<span class="text-[10px] text-gray-400 font-bold ml-auto">솔 에르다 조각 시세: '+Math.round(pp/10000).toLocaleString()+'만원 (개당)</span>':'<span class="text-[10px] text-red-400 font-bold ml-auto">⚠ 솔 에르다 조각 시세 미설정 (설정 → 관리자)</span>')+
       '</div>'+
       '<div id="rewardContent"></div>'+
     '</div>';
@@ -1130,7 +1131,7 @@ function _rewardRenderBody(selQ, qm, piecePrice){
   const results=ranked.map((m,i)=>{
     const rank=i+1; let grade='',reward='',benefit='',rewardNote=''; const ratio=m.isNewbie?m.activeWeeks/m.weeks:1;
     if(rank<=20){ const tier=REWARD_TIERS[i]; grade=tier.grade;
-      if(piecePrice>0){ const poolBil=tier.pool*100000000; let pieces=Math.round((poolBil*tier.ratio)/(piecePrice*10000)); if(m.isNewbie){ const original=pieces; pieces=Math.round(pieces*ratio); rewardNote='('+original+'→'+pieces+', '+Math.round(ratio*100)+'%)'; } reward='솔 에르다 조각 '+pieces.toLocaleString()+'개'; }
+      if(piecePrice>0){ const poolWon=tier.pool*100000000; let pieces=Math.round((poolWon*tier.ratio)/piecePrice); if(m.isNewbie){ const original=pieces; pieces=Math.round(pieces*ratio); rewardNote='('+original+'→'+pieces+', '+Math.round(ratio*100)+'%)'; } reward='솔 에르다 조각 '+pieces.toLocaleString()+'개'; }
       else { reward='비율 '+(tier.ratio*100).toFixed(0)+'%'; }
       benefit=tier.benefit||(REWARD_TIERS.find(t=>t.grade===grade&&t.benefit)||{}).benefit||'';
     } else if(rank<=51){ grade='티라미슈'; if(m.isNewbie){ const adj=Math.round(24*ratio); reward='숫돌 '+adj+'개'; rewardNote='(24→'+adj+', '+Math.round(ratio*100)+'%)'; } else { reward='숫돌 24개'; } benefit='전체면제 + 숫돌24개 + 부캐길드면제'; }
