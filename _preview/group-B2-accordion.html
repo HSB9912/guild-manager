@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>그룹 묶기 B2 · 아코디언 (대표캐릭 중심)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../assets/bunny.css">
+<style>
+  body{padding:28px;max-width:920px;margin:0 auto}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+  h1{font-size:24px;font-weight:900;margin:0}
+  .sub{color:var(--dim);font-weight:700;font-size:13px;margin:4px 0 0}
+  .btn{border:0;border-radius:11px;padding:9px 15px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text)}
+  .btn.on{background:var(--bunny-deep);color:#fff}
+  .btn.primary{background:var(--bunny-main);color:#fff}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .kpi{border-radius:18px;padding:15px}
+  .kpi .v{font-size:26px;font-weight:900;margin:3px 0 0}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .search{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:12px;padding:10px 14px}
+  .search input{border:0;background:transparent;outline:0;color:var(--text);font-size:14px;font-weight:700;width:100%}
+  .hint{background:var(--warn-bg);color:var(--warn-tx);border-radius:12px;padding:10px 14px;font-size:12px;font-weight:800;margin-bottom:14px;display:none}
+  body.edit .hint{display:block}
+
+  .acc{display:flex;flex-direction:column;gap:9px}
+  .grp{border-radius:16px;overflow:hidden}
+  .gh{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;user-select:none}
+  .gh:hover{background:var(--panel-2)}
+  .chev{color:var(--dim);transition:transform .2s;font-size:13px;width:14px;text-align:center}
+  .grp.open .chev{transform:rotate(90deg)}
+  .av{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:17px;flex-shrink:0}
+  .nm{font-weight:900;font-size:16px}
+  .repchip{font-size:10px;padding:1px 7px;border-radius:999px;font-weight:800;background:var(--bunny-light);color:var(--bunny-deep);margin-left:5px}
+  .meta{color:var(--dim);font-size:12px;font-weight:700;margin-top:2px}
+  .right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .suro{display:inline-flex;align-items:center;gap:6px;border-radius:11px;padding:7px 12px;font-weight:900;font-size:13px}
+  .ok{background:var(--ok-bg);color:var(--ok-tx)} .bad{background:var(--bad-bg);color:var(--bad-tx)}
+  .cnt{font-size:11px;font-weight:800;color:var(--dim);background:var(--panel-3);border-radius:999px;padding:3px 9px}
+
+  .body{display:none;border-top:1px solid var(--line);padding:8px 15px 13px 41px;background:var(--panel-2)}
+  .grp.open .body{display:block}
+  .altr{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px dashed var(--line)}
+  .altr:last-child{border-bottom:0}
+  .altr .an{font-weight:800}
+  .altr .am{color:var(--dim);font-size:12px;font-weight:700}
+  .na{color:var(--dim);font-weight:700;font-size:11px;margin-left:auto}
+  .mv{margin-left:auto;display:none;gap:6px;align-items:center}
+  body.edit .mv{display:inline-flex}
+  body.edit .na{display:none}
+  .sel{border:0;border-radius:8px;background:var(--panel);color:var(--text);font-weight:700;padding:6px 9px;font-size:12px;cursor:pointer;border:1px solid var(--line)}
+  .empty{color:var(--dim);font-weight:700;font-size:12px;padding:8px 4px}
+  .addalt{display:none;margin-top:8px}
+  body.edit .addalt{display:inline-flex}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div>
+      <h1>🐰 길드원 · 계정 그룹</h1>
+      <p class="sub">B2안 — 아코디언 · <b>대표캐릭만</b> 한 줄로 관리, 클릭하면 부캐 펼침 (이번 주 24주차)</p>
+    </div>
+    <button class="btn" onclick="document.body.classList.toggle('dark')"><i class="fa-solid fa-circle-half-stroke"></i> 다크</button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi panel"><span class="dim" style="font-size:12px;font-weight:700">대표캐릭</span><div class="v">8<span style="font-size:14px;color:var(--dim)"> · 부캐 14</span></div></div>
+    <div class="kpi tone-light"><span class="dim" style="font-size:12px;font-weight:700">대표 수로 완료</span><div class="v" style="color:var(--ok-tx)">5<span style="font-size:14px;color:var(--dim)"> / 8</span></div></div>
+    <div class="kpi" style="background:var(--bad-bg)"><span style="font-size:12px;font-weight:700;color:var(--bad-tx)">대표 미참</span><div class="v" style="color:var(--bad-tx)">3</div></div>
+  </div>
+
+  <div class="bar">
+    <div class="search"><i class="fa-solid fa-magnifying-glass dim"></i><input placeholder="대표캐릭 검색" oninput="search(this.value)"></div>
+    <button class="btn" onclick="sortMiss(this)">정렬: 수로 미참순 ▾</button>
+    <button class="btn" onclick="expandAll(this)">전체 펼치기</button>
+    <button class="btn" id="editBtn" onclick="toggleEdit(this)"><i class="fa-solid fa-link"></i> 묶기 편집</button>
+  </div>
+
+  <div class="hint"><i class="fa-solid fa-circle-info"></i> 묶기 편집 — 부캐의 <b>대표 변경</b>으로 다른 그룹에 옮기거나 <b>대표로 승격</b>. 대표캐릭 단위로만 관리해요. (저장 전까지 반영 안 됨)</div>
+
+  <div class="acc" id="acc"></div>
+
+<script>
+const allReps=['달토끼','별사탕','밤하늘','민트우유','감자전','초코롱','구름빵','노른자'];
+const GROUPS=[
+  {rep:'초코롱',role:'멤버',fac:'🐰',col:'#B5446E',suro:0,alts:[['초코칩','나이트로드',265],['초코우유','신궁',258]]},
+  {rep:'구름빵',role:'멤버',fac:'🐺',col:'#6C8EBF',suro:0,alts:[['구름솜','아델',255],['뭉게구름','카인',240]]},
+  {rep:'노른자',role:'멤버',fac:'🐆',col:'#C98A42',suro:0,alts:[['흰자','패스파인더',245]]},
+  {rep:'별사탕',role:'운영',fac:'🐰',col:'#FF8FAB',suro:96,alts:[['별빛','루미너스',275],['사탕별','섀도어',268],['은하수','호영',260]]},
+  {rep:'달토끼',role:'부길드장',fac:'🐰',col:'#B5446E',suro:92,alts:[['당근파워','팔라딘',281],['달토끼부','비숍',270],['흰털뭉치','메르세데스',262]]},
+  {rep:'민트우유',role:'신입',fac:'🐰',col:'#3BA9C7',suro:88,alts:[]},
+  {rep:'감자전',role:'멤버',fac:'🐰',col:'#E0A020',suro:81,alts:[['감자튀김','듀얼블레이드',252]]},
+  {rep:'밤하늘',role:'멤버',fac:'🐰',col:'#3BA9C7',suro:74,alts:[['밤톨','히어로',249]]},
+];
+function grpHtml(g,gi){
+  const miss=g.suro<=0;
+  const alts=g.alts.map(a=>{
+    const opts=allReps.map(r=>`<option ${r===g.rep?'selected':''}>${r}</option>`).join('');
+    return `<div class="altr"><i class="fa-solid fa-angle-right dim" style="font-size:11px"></i>
+      <span class="an">${a[0]}</span><span class="am">${a[1]} · Lv.${a[2]}</span>
+      <span class="na">부캐 (수로 미집계)</span>
+      <span class="mv"><span class="dim" style="font-size:11px;font-weight:700">대표</span><select class="sel">${opts}</select>
+        <button class="sel" title="이 부캐를 대표로 승격"><i class="fa-solid fa-arrow-up"></i> 대표로</button></span></div>`;
+  }).join('')||'<div class="empty">부캐 없음 — 단일 캐릭</div>';
+  return `<div class="grp panel" data-rep="${g.rep}" data-miss="${miss?1:0}">
+    <div class="gh" onclick="this.parentElement.classList.toggle('open')">
+      <i class="fa-solid fa-chevron-right chev"></i>
+      <div class="av" style="background:${g.col}">${g.rep.slice(0,1)}</div>
+      <div style="min-width:0">
+        <div class="nm">${g.fac} ${g.rep}<span class="repchip">대표</span></div>
+        <div class="meta">${g.role} · 부캐 ${g.alts.length}</div>
+      </div>
+      <div class="right">
+        <span class="suro ${miss?'bad':'ok'}">${miss?'<i class="fa-solid fa-xmark"></i> 미참':'<i class="fa-solid fa-check"></i> '+g.suro+'점'}</span>
+        <span class="cnt">부캐 ${g.alts.length}</span>
+      </div>
+    </div>
+    <div class="body">${alts}
+      <button class="btn sel addalt" style="margin-top:8px"><i class="fa-solid fa-plus"></i> 이 대표에 부캐 추가</button>
+    </div>
+  </div>`;
+}
+let view=[...GROUPS];
+function render(){document.getElementById('acc').innerHTML=view.map(grpHtml).join('')}
+render();
+function search(q){q=q.trim();view=GROUPS.filter(g=>!q||g.rep.includes(q));render()}
+function sortMiss(b){view=[...view].sort((a,c)=>(a.suro>0?1:0)-(c.suro>0?1:0)||c.suro-a.suro);render()}
+function expandAll(b){const open=b.textContent.includes('펼');document.querySelectorAll('.grp').forEach(g=>g.classList.toggle('open',open));b.textContent=open?'전체 접기':'전체 펼치기'}
+function toggleEdit(b){document.body.classList.toggle('edit');b.classList.toggle('on');b.innerHTML=document.body.classList.contains('edit')?'<i class="fa-solid fa-check"></i> 편집 종료':'<i class="fa-solid fa-link"></i> 묶기 편집'}
+</script>
+</body>
+</html>
