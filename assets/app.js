@@ -80,7 +80,6 @@ const GROUPS = [
     { k:'home',        t:'홈',            i:'fa-house' },
     { k:'members',     t:'길드원',        i:'fa-users' },
     { k:'analysis',    t:'수로 분석',     i:'fa-chart-line', star:true },
-    { k:'suro_watch',  t:'수로 감시',     i:'fa-eye', star:true },
     { k:'promotion',   t:'승강제·현황',   i:'fa-ranking-star' },
     { k:'suro_reward', t:'수로 보상',     i:'fa-gift' },
     { k:'buddy',       t:'버니버디',      i:'fa-heart' },
@@ -319,7 +318,7 @@ let _mem = [];
 let _memFac = 'bunny';
 let _memSuro = {};        // {member_id: 최신회차 점수} — 대표 수로 여부용
 let _memSuroLabel = '';
-const _memState = { mode:'all' };
+const _memState = { mode:'group' };   // 기본 = 계정그룹(대표만, 부캐 묶임)
 async function buildMembers(){
   const FK = FACTIONS[_memFac] || FACTIONS.bunny;
   const { data, error } = await db().from('members')
@@ -337,8 +336,8 @@ async function buildMembers(){
   }catch(e){}
   const mains = _mem.filter(m=>m.is_main).length;
   const BTN='padding:8px 14px;border:0;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;';
-  const modeBtns = [['all','전체'],['main','본캐'],['sub','부캐'],['group','계정그룹']].map(([v,l])=>
-    `<button class="memMode" data-mode="${v}" onclick="_memMode('${v}')" style="${BTN}${v==='all'?'background:var(--bunny-main);color:#fff;':'background:var(--panel-2);color:var(--text);'}">${l}</button>`).join('');
+  const modeBtns = [['group','계정그룹'],['all','전체'],['main','본캐'],['sub','부캐']].map(([v,l])=>
+    `<button class="memMode" data-mode="${v}" onclick="_memMode('${v}')" style="${BTN}${v===_memState.mode?'background:var(--bunny-main);color:#fff;':'background:var(--panel-2);color:var(--text);'}">${l}</button>`).join('');
   const controls = `<div class="panel" style="border-radius:20px;padding:14px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
     <div style="flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:12px;padding:10px 14px;">
       <i class="fa-solid fa-magnifying-glass dim"></i>
@@ -352,8 +351,9 @@ async function buildMembers(){
   </div>`;
   const facBtn = (k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_memFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85;font-weight:700">메인</span>':''; return `<button onclick="_memTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
   const facTabs = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">${facBtn('bunny')}<span class="dim" style="font-size:11px;font-weight:800;margin:0 2px">· 부길드</span>${facBtn('wolf')}${facBtn('cougar')}</div>`;
+  const initBody = _memState.mode==='group' ? memberGroups('').body : memberRows(_mem);
   return headerHTML('길드원', `${FK.label} · 총 ${_mem.length}명`) + facTabs + controls +
-    `<div class="panel" style="border-radius:24px;padding:18px;"><div id="memTbl">${memberRows(_mem)}</div></div>`;
+    `<div class="panel" style="border-radius:24px;padding:18px;"><div id="memTbl">${initBody}</div></div>`;
 }
 window._memTab = async (k)=>{
   if(!FACTIONS[k]) return;
@@ -414,6 +414,14 @@ window._grpDropOn = (e,repName)=>{ e.preventDefault(); e.currentTarget.classList
   if(m.is_main!==false){ alert('대표는 드래그로 옮길 수 없어요. 다른 캐릭에 👑를 눌러 대표를 바꾼 뒤 옮겨주세요.'); return; }
   m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpReopen(repName);
 };
+/* 대표 이름 타이핑(datalist)으로 묶기 — 부캐는 그 대표 밑으로, 부캐없는 본캐는 데모트 */
+window._grpMoveByName = (id, repName)=>{ if(!_grpEdit) return; repName=(repName||'').trim(); if(!repName) return;
+  const m=_grpMemById(id); if(!m) return; if(m.name===repName){ _memApply(); return; }
+  const target=_mem.find(x=>x.name===repName && x.is_main!==false);
+  if(!target){ alert('"'+repName+'" — 대표(본캐)를 찾을 수 없어요. 목록에서 골라주세요.'); return; }
+  if(m.is_main!==false){ const hasAlts=_mem.some(x=>x.is_main===false && x.main_char_name===m.name); if(hasAlts){ alert(m.name+'은(는) 부캐가 있는 대표예요. 부캐를 먼저 옮기거나 다른 캐릭에 👑를 주세요.'); _memApply(); return; } }
+  m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpReopen(repName);
+};
 window._grpSave = async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
   if(!_grpDirty.size) return alert('변경된 내용이 없어요.');
@@ -443,16 +451,16 @@ function memberGroups(q){
     : `<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx);font-weight:900"><i class="fa-solid fa-xmark" style="font-size:9px;margin-right:3px"></i>미참</span>`; };
   const av=(n,sz)=>`<span style="width:${sz}px;height:${sz}px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:${sz<26?10:12}px;font-weight:900;flex-shrink:0;background:${avatarColor(n)}">${(n||'?').slice(0,1)}</span>`;
   const crown=(m,isRep)=>ed?`<button onclick="event.stopPropagation();_grpSetRep(${m.id})" title="${isRep?'대표':'이 캐릭을 대표로'}" style="width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:${isRep?'linear-gradient(135deg,var(--bunny-main),var(--bunny-deep))':'var(--panel)'};color:${isRep?'#fff':'var(--dim)'};cursor:pointer;flex-shrink:0;font-size:11px"><i class="fa-solid fa-crown"></i></button>`:'';
-  const memRow=(m,isRep)=>`<div ${ed&&!isRep?`draggable="true" ondragstart="_grpDragStart(event,${m.id})"`:''} style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line)">
+  const memRow=(m,isRep,reassign)=>`<div ${ed&&!isRep?`draggable="true" ondragstart="_grpDragStart(event,${m.id})"`:''} style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line);flex-wrap:wrap">
       ${crown(m,isRep)}${av(m.name,22)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span>
       <span class="dim" style="font-size:11px;font-weight:700">${escHtml(m.class||'')}${m.level?' · Lv.'+m.level:''}</span>
       <span class="${isRep?'chip':'dim'}" style="${isRep?'background:var(--bunny-deep);color:#fff;':'color:var(--dim);'}font-size:10px;font-weight:800;margin-left:auto">${isRep?'대표':'부캐'}</span>
-      ${ed&&!isRep?'<i class="fa-solid fa-grip-vertical dim" title="끌어서 다른 그룹으로" style="font-size:11px;cursor:grab"></i>':''}</div>`;
+      ${ed&&reassign?`<input list="grpRepList" placeholder="${isRep?'다른 대표 밑으로':'대표 변경'}…" onchange="_grpMoveByName(${m.id},this.value)" style="border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text);outline:0;width:128px">${!isRep?`<button onclick="_grpPromote(${m.id})" title="독립(본캐로)" style="border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer">독립</button><i class="fa-solid fa-grip-vertical dim" title="끌어서 이동" style="font-size:11px;cursor:grab"></i>`:''}`:''}</div>`;
   const grpHtml = (g)=>{
     const miss=hasSuro&&(sv(g.rep)||0)<=0;
     const bodyRows = ed
-      ? memRow(g.rep,true) + g.alts.map(a=>memRow(a,false)).join('')
-      : (g.alts.length ? g.alts.map(a=>memRow(a,false)).join('') : `<div class="dim" style="font-size:11px;font-weight:700;padding:5px 4px">부캐 없음 · 단일 캐릭</div>`);
+      ? memRow(g.rep,true,g.alts.length===0) + g.alts.map(a=>memRow(a,false,true)).join('')
+      : (g.alts.length ? g.alts.map(a=>memRow(a,false,false)).join('') : `<div class="dim" style="font-size:11px;font-weight:700;padding:5px 4px">부캐 없음 · 단일 캐릭</div>`);
     const drop = ed?`ondragover="event.preventDefault();this.classList.add('gover')" ondragleave="this.classList.remove('gover')" ondrop="_grpDropOn(event,'${escAttr(g.rep.name).replace(/'/g,"\\'")}')"`:'';
     return `<div class="acc-grp" data-rep="${escAttr(g.rep.name)}" style="border-bottom:1px solid var(--line)">
       <div class="acc-head" onclick="_grpToggle(this)" ${drop} style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;${miss?'box-shadow:inset 3px 0 0 var(--bad-tx)':''}">
@@ -483,10 +491,11 @@ function memberGroups(q){
   const editBar = isAdmin() ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
       ${ed?`<button onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
-      <span class="dim" style="font-size:11px;font-weight:700">펼친 그룹에서 <b>👑</b>로 대표 변경 · 부캐 <b>끌어서</b> 다른 그룹 헤더에 떨구면 이동</span>`:''}
+      <span class="dim" style="font-size:11px;font-weight:700">펼쳐서 — <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 그룹 헤더에 떨구기 · <b>독립</b>=본캐 분리</span>`:''}
     </div>` : '';
   const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
-  const body = css + editBar + summary + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${groups.map(grpHtml).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
+  const repDatalist = ed ? `<datalist id="grpRepList">${reps.map(r=>`<option value="${escAttr(r.name)}"></option>`).join('')}</datalist>` : '';
+  const body = css + repDatalist + editBar + summary + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${groups.map(grpHtml).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
   return { body, count: groups.length };
 }
 
@@ -769,50 +778,6 @@ window._anLoad = async (pid)=>{
   try{ el.innerHTML=await analysisBody(pid); }catch(e){ el.innerHTML=`<div class="panel" style="border-radius:24px;padding:30px;text-align:center"><span class="dim" style="font-weight:700">${e.message||e}</span></div>`; }
 };
 
-/* ----- 수로 감시 (대표캐릭 수로 여부 모니터링 · 길드별) ----- */
-let _swFac='bunny', _swPeriodId=null, _swMissOnly=true, _swPeriods=[];
-async function buildSuroWatch(){
-  const FK=FACTIONS[_swFac]||FACTIONS.bunny;
-  if(!_swPeriods.length){ try{ const {data}=await db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(40); _swPeriods=data||[]; }catch(e){ _swPeriods=[]; } }
-  const pid=_swPeriodId||(_swPeriods[0]&&_swPeriods[0].id)||null; _swPeriodId=pid;
-  const [{data:mem},scRes]=await Promise.all([
-    db().from('members').select('id,name,role,level,is_main,main_char_name').eq('guild',FK.key).limit(3000),
-    pid?db().from('suro_scores').select('member_id,score').eq('guild',FK.key).eq('period_id',pid).limit(4000):Promise.resolve({data:[]})
-  ]);
-  const scoreMap={}; (scRes.data||[]).forEach(s=>scoreMap[s.member_id]=Number(s.score)||0);
-  const reps=(mem||[]).filter(m=>m.is_main!==false);
-  const byMain={}; (mem||[]).filter(m=>m.is_main===false).forEach(m=>{ const k=m.main_char_name||''; (byMain[k]||(byMain[k]=[])).push(m); });
-  let groups=reps.map(r=>({ rep:r, alts:(byMain[r.name]||[]), score:scoreMap[r.id]||0 }));
-  groups.sort((a,b)=>{ const am=a.score>0?1:0,bm=b.score>0?1:0; if(am!==bm)return am-bm; return b.score-a.score; });
-  const missN=groups.filter(g=>g.score<=0).length, doneN=groups.length-missN;
-  const view=_swMissOnly?groups.filter(g=>g.score<=0):groups;
-  const facBtn=(k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_swFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85">메인</span>':''; return `<button onclick="_swTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
-  const row=(g)=>{ const miss=g.score<=0; return `<div style="display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:1px solid var(--line);${miss?'box-shadow:inset 3px 0 0 var(--bad-tx)':''}">
-    <span style="width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;flex-shrink:0;background:${avatarColor(g.rep.name)}">${(g.rep.name||'?').slice(0,1)}</span>
-    <span style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(g.rep.name)}</span>${memRoleChip(g.rep.role)}
-    ${g.alts.length?`<span class="chip" style="background:var(--panel-3);color:var(--dim)">부캐 ${g.alts.length}</span>`:''}
-    <span style="flex:1"></span>
-    ${miss?'<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx);font-weight:900"><i class="fa-solid fa-xmark" style="font-size:9px;margin-right:3px"></i>미참</span>':`<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx);font-weight:900"><i class="fa-solid fa-check" style="font-size:9px;margin-right:3px"></i>${g.score.toLocaleString()}</span>`}
-  </div>`; };
-  const periodSel=`<select onchange="_swPeriod(this.value)" style="border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:9px 13px;font-weight:800;font-size:14px;color:var(--text);outline:0">${_swPeriods.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${escHtml(p.period_label)}</option>`).join('')||'<option>회차 없음</option>'}</select>`;
-  return headerHTML('수로 감시',`${FK.label} · 대표캐릭 수로 점검`) +
-    `<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">${facBtn('bunny')}<span class="dim" style="font-size:11px;font-weight:800;margin:0 2px">· 부길드</span>${facBtn('wolf')}${facBtn('cougar')}<span style="flex:1"></span>${periodSel}</div>
-    <div class="bento" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
-      <div class="panel tone-rose" style="border-radius:20px;padding:18px;color:#fff"><div style="font-size:13px;font-weight:700;opacity:.9">대표 그룹</div><div style="font-size:28px;font-weight:900">${groups.length}</div></div>
-      <div class="panel tone-light" style="border-radius:20px;padding:18px"><div class="dim" style="font-size:13px;font-weight:700">수로 완료</div><div style="font-size:28px;font-weight:900;color:var(--ok-tx)">${doneN}</div></div>
-      <div class="panel" style="border-radius:20px;padding:18px;background:var(--bad-bg)"><div style="font-size:13px;font-weight:700;color:var(--bad-tx)">수로 미참 ⚠</div><div style="font-size:28px;font-weight:900;color:var(--bad-tx)">${missN}</div></div>
-    </div>
-    <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-      <button onclick="_swFilter(true)" style="cursor:pointer;border:0;border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:800;background:${_swMissOnly?'var(--bad-tx)':'var(--panel-2)'};color:${_swMissOnly?'#fff':'var(--text)'}">🔴 미참만 (${missN})</button>
-      <button onclick="_swFilter(false)" style="cursor:pointer;border:0;border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:800;background:${!_swMissOnly?'var(--bunny-main)':'var(--panel-2)'};color:${!_swMissOnly?'#fff':'var(--text)'}">전체 (${groups.length})</button>
-      <span class="dim" style="font-size:11px;font-weight:700;margin-left:auto">묶기·대표 변경은 길드원 → 계정그룹에서</span>
-    </div>
-    <div class="panel" style="border-radius:18px;overflow:hidden">${view.map(row).join('')||`<div class="dim" style="padding:34px;text-align:center;font-weight:800">${_swMissOnly?'<i class="fa-solid fa-circle-check" style="color:var(--ok-tx);margin-right:6px"></i>미참 대표 없음 — 전원 수로 완료! 🎉':'대표 없음'}</div>`}</div>`;
-}
-window._swTab=(k)=>{ if(!FACTIONS[k])return; _swFac=k; _swRerender(); };
-window._swPeriod=(id)=>{ _swPeriodId=Number(id)||null; _swRerender(); };
-window._swFilter=(m)=>{ _swMissOnly=!!m; _swRerender(); };
-async function _swRerender(){ const el=document.getElementById('pageBody'); if(!el)return; el.innerHTML=loadingHTML('suro_watch'); try{ el.innerHTML=await buildSuroWatch(); }catch(e){ el.innerHTML=errorHTML('suro_watch',e); } }
 
 /* ----- 장기부재 면제 (관리자: 승인/거절) ----- */
 function absStatusChip(s){ return s==='approved'?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">승인</span>':s==='rejected'?'<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx)">거절</span>':'<span class="chip" style="background:var(--warn-bg);color:var(--warn-tx)">대기</span>'; }
@@ -1521,7 +1486,6 @@ const PAGES = {
   penalty:   buildPenalty,
   join_form: buildJoinForm,
   analysis:  buildAnalysis,
-  suro_watch: buildSuroWatch,
   absence:     buildAbsence,
   absence_reg: buildAbsenceReg,
   admin_todos: buildTodos,
