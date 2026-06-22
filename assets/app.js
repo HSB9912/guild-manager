@@ -1219,16 +1219,37 @@ window._geSave=async ()=>{
 let _setRanks=[];   // [{name, exempt}] — 직위 구조화 편집 상태
 async function buildSettings(){
   const cfg=await getConfig();
+  const FK=fac();
   const g=(cfg.guilds||[]).find(x=>x.name===GUILD)||{};
   const ranks=(cfg.ranks&&cfg.ranks[GUILD])||[];
   const exempt=cfg.suroExempt||[];
   _setRanks = ranks.map(n=>({ name:n, exempt:exempt.includes(n) }));
-  const card=(l,v)=>`<div class="panel" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:12px;font-weight:700">${l}</div><div style="font-size:18px;font-weight:900;margin-top:4px">${v}</div></div>`;
-  return headerHTML('설정',`${fac().label} 길드 설정`) +
-    `<div class="bento" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
-      ${card('길드', (g.icon||'')+' '+(g.name||GUILD))}
-      ${card('분류 · 정원', (g.type||'-')+' · '+(g.max||'-')+'명')}
-      ${card('창립일', cfg.guildStartDate||'-')}
+  const F='width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px;color:var(--text);outline:0;box-sizing:border-box';
+  const field=(label,inner,hint)=>`<div style="margin-bottom:13px">
+    <label style="display:block;font-size:12.5px;font-weight:800;color:var(--dim);margin-bottom:5px">${label}</label>${inner}
+    ${hint?`<div class="dim" style="font-size:11px;font-weight:700;margin-top:4px">${hint}</div>`:''}</div>`;
+  const piece=Number(cfg.piecePrice||(cfg.suroReward&&cfg.suroReward.piecePrice)||0);
+  return headerHTML('설정',`${FK.label} 길드 설정`) +
+    `<div class="panel" style="border-radius:20px;padding:22px;margin-bottom:16px">
+      <h3 style="font-weight:900;font-size:15px;margin:0 0 16px"><i class="fa-solid fa-shield-cat" style="margin-right:6px;color:var(--bunny-main)"></i>길드 기본 정보</h3>
+      <div style="display:flex;align-items:center;gap:12px;background:var(--panel-2);border-radius:14px;padding:12px 14px;margin-bottom:16px">
+        <span style="font-size:26px">${FK.emoji}</span>
+        <div><div style="font-weight:900;font-size:17px">${FK.label}</div><div class="dim" style="font-size:11px;font-weight:700">내부 식별키 <code style="background:var(--panel-3);padding:1px 5px;border-radius:4px">${GUILD}</code> — 데이터 연결용이라 바꾸지 않아요</div></div>
+      </div>
+      <div class="bento" style="grid-template-columns:repeat(2,1fr);gap:0 16px">
+        ${field('아이콘 (이모지)',`<input id="set_icon" value="${escAttr(g.icon||FK.emoji)}" style="${F}">`)}
+        ${field('분류',`<input id="set_type" value="${escAttr(g.type||'')}" placeholder="예: 메인 1기" style="${F}">`)}
+        ${field('정원 (명)',`<input id="set_max" type="number" value="${escAttr(g.max||'')}" style="${F}">`)}
+        ${field('창립일',`<input id="set_start" type="date" value="${escAttr(cfg.guildStartDate||'')}" style="${F}">`)}
+      </div>
+      ${field('길드 로고 URL',`<input id="set_logo" value="${escAttr(cfg.guildLogo||'')}" style="${F}">`, cfg.guildLogo?`<img src="${escAttr(cfg.guildLogo)}" style="height:40px;border-radius:8px;margin-top:7px;background:var(--panel-2);padding:3px">`:'비워두면 기본 토끼 아이콘')}
+      <div class="bento" style="grid-template-columns:repeat(2,1fr);gap:0 16px">
+        ${field('조각 1개 가격 (메소)',`<input id="set_piece" type="number" value="${piece||''}" style="${F}">`, piece?`보석금·보상 환산에 사용 · 현재 약 ${(piece/100000000).toFixed(2)}억`:'')}
+        ${field('수로 면제 안내문',`<input id="set_exnote" value="${escAttr(cfg.suroExemptNote||'')}" placeholder="예: 크로칸슈 이상 — 부캐 전부 수로 면제" style="${F}">`)}
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:4px">
+        <button onclick="_setSaveBasic()" style="border:0;border-radius:10px;padding:10px 22px;font-weight:800;font-size:13px;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>기본 정보 저장</button>
+      </div>
     </div>
     <div class="panel" style="border-radius:20px;padding:20px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
@@ -1279,6 +1300,22 @@ window._settingsSaveRanks=async ()=>{
   const { error } = await db().from('site_config').update({ config:cfg, updated_at:new Date().toISOString() }).eq('id',_cfgId);
   if(error) return alert('저장 실패: '+error.message);
   _cfg=cfg; alert(`직위 ${names.length}개 저장됐어요 ✓ (수로면제 ${exemptList.length}개)`);
+};
+window._setSaveBasic=async ()=>{
+  if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
+  const v=id=>{ const el=document.getElementById(id); return el?el.value.trim():''; };
+  const cfg=_cfg||await getConfig();
+  const guilds=cfg.guilds||(cfg.guilds=[]);
+  let gg=guilds.find(x=>x.name===GUILD); if(!gg){ gg={ name:GUILD }; guilds.push(gg); }
+  gg.icon=v('set_icon'); gg.type=v('set_type');
+  const mx=Number(v('set_max')); if(mx) gg.max=mx;
+  if(v('set_start')) cfg.guildStartDate=v('set_start');
+  cfg.guildLogo=v('set_logo');
+  const pc=Number(String(v('set_piece')).replace(/[^\d]/g,'')); if(pc){ cfg.piecePrice=pc; if(cfg.suroReward) cfg.suroReward.piecePrice=pc; }
+  cfg.suroExemptNote=v('set_exnote');
+  const { error } = await db().from('site_config').update({ config:cfg, updated_at:new Date().toISOString() }).eq('id',_cfgId);
+  if(error) return alert('저장 실패: '+error.message);
+  _cfg=cfg; alert('기본 정보가 저장됐어요 ✓');
 };
 window._settingsSave=async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
