@@ -1198,33 +1198,70 @@ window._geSave=async ()=>{
 };
 
 /* ----- 설정 (site_config) ----- */
+let _setRanks=[];   // [{name, exempt}] — 직위 구조화 편집 상태
 async function buildSettings(){
   const cfg=await getConfig();
   const g=(cfg.guilds||[]).find(x=>x.name===GUILD)||{};
   const ranks=(cfg.ranks&&cfg.ranks[GUILD])||[];
   const exempt=cfg.suroExempt||[];
+  _setRanks = ranks.map(n=>({ name:n, exempt:exempt.includes(n) }));
   const card=(l,v)=>`<div class="panel" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:12px;font-weight:700">${l}</div><div style="font-size:18px;font-weight:900;margin-top:4px">${v}</div></div>`;
-  const chips=(arr,active)=>arr.map((r,i)=>`<span class="chip" style="background:${active&&active.includes(r)?'var(--bunny-deep)':'var(--panel-2)'};color:${active&&active.includes(r)?'#fff':'var(--text)'}">${i+1}. ${r}</span>`).join(' ');
-  return headerHTML('설정',`${fac().label} 길드 설정 (site_config)`) +
+  return headerHTML('설정',`${fac().label} 길드 설정`) +
     `<div class="bento" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
       ${card('길드', (g.icon||'')+' '+(g.name||GUILD))}
       ${card('분류 · 정원', (g.type||'-')+' · '+(g.max||'-')+'명')}
       ${card('창립일', cfg.guildStartDate||'-')}
     </div>
     <div class="panel" style="border-radius:20px;padding:20px;margin-bottom:16px">
-      <h3 style="font-weight:900;font-size:15px;margin:0 0 12px">직위 위계 (높은 순)</h3>
-      <div style="display:flex;flex-wrap:wrap;gap:7px">${chips(ranks,exempt)||'<span class="dim">없음</span>'}</div>
-      <p class="dim" style="font-size:12px;font-weight:700;margin:12px 0 0">진한 칩 = 수로 면제 직위 · ${cfg.suroExemptNote||''}</p>
-    </div>
-    <div class="panel" style="border-radius:20px;padding:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap">
-        <h3 style="font-weight:900;font-size:15px;margin:0"><i class="fa-solid fa-code" style="margin-right:6px;color:var(--bunny-main)"></i>고급 — 전체 설정 JSON</h3>
-        <button onclick="_settingsSave()" style="border:0;border-radius:10px;padding:10px 20px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <h3 style="font-weight:900;font-size:15px;margin:0"><i class="fa-solid fa-ranking-star" style="margin-right:6px;color:var(--bunny-main)"></i>직위 (높은 순)</h3>
+        <div style="display:flex;gap:7px">
+          <button onclick="_setRankAdd()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:9px;padding:8px 13px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-plus" style="margin-right:4px"></i>직위 추가</button>
+          <button onclick="_settingsSaveRanks()" style="border:0;border-radius:9px;padding:8px 16px;font-weight:800;font-size:13px;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장</button>
+        </div>
       </div>
-      <textarea id="set_json" rows="18" style="width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:12px;font-family:ui-monospace,monospace;font-size:12px;line-height:1.5;color:var(--text);outline:0;resize:vertical">${escHtml(JSON.stringify(cfg,null,2))}</textarea>
-      <p class="dim" style="font-size:12px;font-weight:700;margin:12px 0 0"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i>직위·승강기준·보상 전부 여기서 관리 — JSON 형식 깨지면 저장 안 됨. 운영진만 가능.</p>
-    </div>`;
+      <p class="dim" style="font-size:11.5px;font-weight:700;margin:0 0 12px">↑↓ 순서 · 이름 칸에 직접 수정 · <b style="color:var(--bunny-deep)">수로면제</b> 토글 · 휴지통 삭제. 저장하면 즉시 반영(승강제·직위반영·길드원 정렬에 사용).</p>
+      <div id="setRankEditor">${_setRankRowsHtml()}</div>
+    </div>
+    <details class="panel" style="border-radius:20px;padding:20px">
+      <summary style="cursor:pointer;font-weight:900;font-size:15px;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-code" style="color:var(--dim)"></i>고급 — 전체 설정 JSON (승강기준·보상 등)</summary>
+      <div style="display:flex;justify-content:flex-end;margin:12px 0">
+        <button onclick="_settingsSave()" style="border:0;border-radius:10px;padding:9px 18px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>JSON 저장</button>
+      </div>
+      <textarea id="set_json" rows="16" style="width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:12px;font-family:ui-monospace,monospace;font-size:12px;line-height:1.5;color:var(--text);outline:0;resize:vertical">${escHtml(JSON.stringify(cfg,null,2))}</textarea>
+      <p class="dim" style="font-size:12px;font-weight:700;margin:10px 0 0"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i>직위는 위 편집기로. 여긴 그 외 설정(보상·승강기준 등) — JSON 깨지면 저장 안 됨.</p>
+    </details>`;
 }
+function _setRankRowsHtml(){
+  if(!_setRanks.length) return '<div class="dim" style="font-size:13px;font-weight:700;padding:8px 2px">직위가 없어요 — "직위 추가"로 시작</div>';
+  return _setRanks.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)">
+    <span class="dim" style="font-size:12px;font-weight:900;width:22px;text-align:right">${i+1}</span>
+    <div style="display:flex;flex-direction:column;gap:1px">
+      <button onclick="_setRankMove(${i},-1)" ${i===0?'disabled':''} style="border:0;background:transparent;color:${i===0?'var(--line)':'var(--dim)'};cursor:${i===0?'default':'pointer'};font-size:10px;line-height:1"><i class="fa-solid fa-caret-up"></i></button>
+      <button onclick="_setRankMove(${i},1)" ${i===_setRanks.length-1?'disabled':''} style="border:0;background:transparent;color:${i===_setRanks.length-1?'var(--line)':'var(--dim)'};cursor:${i===_setRanks.length-1?'default':'pointer'};font-size:10px;line-height:1"><i class="fa-solid fa-caret-down"></i></button>
+    </div>
+    <input value="${escAttr(r.name)}" oninput="_setRankRename(${i},this.value)" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--panel-2);border-radius:9px;padding:8px 11px;font-weight:800;font-size:14px;color:var(--text);outline:0">
+    <button onclick="_setRankExempt(${i})" style="border:0;border-radius:8px;padding:7px 12px;font-weight:800;font-size:12px;cursor:pointer;background:${r.exempt?'var(--bunny-deep)':'var(--panel-2)'};color:${r.exempt?'#fff':'var(--dim)'}"><i class="fa-solid fa-shield-halved" style="margin-right:4px"></i>수로면제 ${r.exempt?'ON':'OFF'}</button>
+    <button onclick="_setRankDel(${i})" title="삭제" style="border:0;background:transparent;color:var(--dim);cursor:pointer;padding:7px"><i class="fa-solid fa-trash"></i></button>
+  </div>`).join('');
+}
+function _setRankRender(){ const el=document.getElementById('setRankEditor'); if(el) el.innerHTML=_setRankRowsHtml(); }
+window._setRankMove=(i,d)=>{ const j=i+d; if(j<0||j>=_setRanks.length) return; const t=_setRanks[i]; _setRanks[i]=_setRanks[j]; _setRanks[j]=t; _setRankRender(); };
+window._setRankRename=(i,v)=>{ if(_setRanks[i]) _setRanks[i].name=v; };
+window._setRankExempt=(i)=>{ if(_setRanks[i]) _setRanks[i].exempt=!_setRanks[i].exempt; _setRankRender(); };
+window._setRankDel=(i)=>{ _setRanks.splice(i,1); _setRankRender(); };
+window._setRankAdd=()=>{ _setRanks.push({ name:'새 직위', exempt:false }); _setRankRender(); setTimeout(()=>{ const inps=document.querySelectorAll('#setRankEditor input'); const last=inps[inps.length-1]; if(last){ last.focus(); last.select(); } },0); };
+window._settingsSaveRanks=async ()=>{
+  if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
+  const names=_setRanks.map(r=>(r.name||'').trim()).filter(Boolean);
+  if(new Set(names).size!==names.length) return alert('같은 이름의 직위가 있어요. 중복을 없애주세요.');
+  const exemptList=_setRanks.filter(r=>r.exempt&&(r.name||'').trim()).map(r=>r.name.trim());
+  const cfg=_cfg||await getConfig();
+  if(!cfg.ranks) cfg.ranks={}; cfg.ranks[GUILD]=names; cfg.suroExempt=exemptList;
+  const { error } = await db().from('site_config').update({ config:cfg, updated_at:new Date().toISOString() }).eq('id',_cfgId);
+  if(error) return alert('저장 실패: '+error.message);
+  _cfg=cfg; alert(`직위 ${names.length}개 저장됐어요 ✓ (수로면제 ${exemptList.length}개)`);
+};
 window._settingsSave=async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
   let obj; try{ obj=JSON.parse(document.getElementById('set_json').value); }catch(e){ return alert('JSON 형식 오류: '+e.message); }
