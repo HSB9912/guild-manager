@@ -80,6 +80,7 @@ const GROUPS = [
     { k:'home',        t:'홈',            i:'fa-house' },
     { k:'members',     t:'길드원',        i:'fa-users' },
     { k:'analysis',    t:'수로 분석',     i:'fa-chart-line', star:true },
+    { k:'suro_watch',  t:'수로 감시',     i:'fa-eye', star:true },
     { k:'promotion',   t:'승강제·현황',   i:'fa-ranking-star' },
     { k:'suro_reward', t:'수로 보상',     i:'fa-gift' },
     { k:'buddy',       t:'버니버디',      i:'fa-heart' },
@@ -767,6 +768,51 @@ window._anLoad = async (pid)=>{
   el.innerHTML=`<div class="panel" style="border-radius:24px;padding:50px;text-align:center"><span class="dim" style="font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>불러오는 중…</span></div>`;
   try{ el.innerHTML=await analysisBody(pid); }catch(e){ el.innerHTML=`<div class="panel" style="border-radius:24px;padding:30px;text-align:center"><span class="dim" style="font-weight:700">${e.message||e}</span></div>`; }
 };
+
+/* ----- 수로 감시 (대표캐릭 수로 여부 모니터링 · 길드별) ----- */
+let _swFac='bunny', _swPeriodId=null, _swMissOnly=true, _swPeriods=[];
+async function buildSuroWatch(){
+  const FK=FACTIONS[_swFac]||FACTIONS.bunny;
+  if(!_swPeriods.length){ try{ const {data}=await db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(40); _swPeriods=data||[]; }catch(e){ _swPeriods=[]; } }
+  const pid=_swPeriodId||(_swPeriods[0]&&_swPeriods[0].id)||null; _swPeriodId=pid;
+  const [{data:mem},scRes]=await Promise.all([
+    db().from('members').select('id,name,role,level,is_main,main_char_name').eq('guild',FK.key).limit(3000),
+    pid?db().from('suro_scores').select('member_id,score').eq('guild',FK.key).eq('period_id',pid).limit(4000):Promise.resolve({data:[]})
+  ]);
+  const scoreMap={}; (scRes.data||[]).forEach(s=>scoreMap[s.member_id]=Number(s.score)||0);
+  const reps=(mem||[]).filter(m=>m.is_main!==false);
+  const byMain={}; (mem||[]).filter(m=>m.is_main===false).forEach(m=>{ const k=m.main_char_name||''; (byMain[k]||(byMain[k]=[])).push(m); });
+  let groups=reps.map(r=>({ rep:r, alts:(byMain[r.name]||[]), score:scoreMap[r.id]||0 }));
+  groups.sort((a,b)=>{ const am=a.score>0?1:0,bm=b.score>0?1:0; if(am!==bm)return am-bm; return b.score-a.score; });
+  const missN=groups.filter(g=>g.score<=0).length, doneN=groups.length-missN;
+  const view=_swMissOnly?groups.filter(g=>g.score<=0):groups;
+  const facBtn=(k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_swFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85">메인</span>':''; return `<button onclick="_swTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
+  const row=(g)=>{ const miss=g.score<=0; return `<div style="display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:1px solid var(--line);${miss?'box-shadow:inset 3px 0 0 var(--bad-tx)':''}">
+    <span style="width:26px;height:26px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;flex-shrink:0;background:${avatarColor(g.rep.name)}">${(g.rep.name||'?').slice(0,1)}</span>
+    <span style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(g.rep.name)}</span>${memRoleChip(g.rep.role)}
+    ${g.alts.length?`<span class="chip" style="background:var(--panel-3);color:var(--dim)">부캐 ${g.alts.length}</span>`:''}
+    <span style="flex:1"></span>
+    ${miss?'<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx);font-weight:900"><i class="fa-solid fa-xmark" style="font-size:9px;margin-right:3px"></i>미참</span>':`<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx);font-weight:900"><i class="fa-solid fa-check" style="font-size:9px;margin-right:3px"></i>${g.score.toLocaleString()}</span>`}
+  </div>`; };
+  const periodSel=`<select onchange="_swPeriod(this.value)" style="border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:9px 13px;font-weight:800;font-size:14px;color:var(--text);outline:0">${_swPeriods.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${escHtml(p.period_label)}</option>`).join('')||'<option>회차 없음</option>'}</select>`;
+  return headerHTML('수로 감시',`${FK.label} · 대표캐릭 수로 점검`) +
+    `<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">${facBtn('bunny')}<span class="dim" style="font-size:11px;font-weight:800;margin:0 2px">· 부길드</span>${facBtn('wolf')}${facBtn('cougar')}<span style="flex:1"></span>${periodSel}</div>
+    <div class="bento" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+      <div class="panel tone-rose" style="border-radius:20px;padding:18px;color:#fff"><div style="font-size:13px;font-weight:700;opacity:.9">대표 그룹</div><div style="font-size:28px;font-weight:900">${groups.length}</div></div>
+      <div class="panel tone-light" style="border-radius:20px;padding:18px"><div class="dim" style="font-size:13px;font-weight:700">수로 완료</div><div style="font-size:28px;font-weight:900;color:var(--ok-tx)">${doneN}</div></div>
+      <div class="panel" style="border-radius:20px;padding:18px;background:var(--bad-bg)"><div style="font-size:13px;font-weight:700;color:var(--bad-tx)">수로 미참 ⚠</div><div style="font-size:28px;font-weight:900;color:var(--bad-tx)">${missN}</div></div>
+    </div>
+    <div style="display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+      <button onclick="_swFilter(true)" style="cursor:pointer;border:0;border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:800;background:${_swMissOnly?'var(--bad-tx)':'var(--panel-2)'};color:${_swMissOnly?'#fff':'var(--text)'}">🔴 미참만 (${missN})</button>
+      <button onclick="_swFilter(false)" style="cursor:pointer;border:0;border-radius:999px;padding:7px 15px;font-size:12.5px;font-weight:800;background:${!_swMissOnly?'var(--bunny-main)':'var(--panel-2)'};color:${!_swMissOnly?'#fff':'var(--text)'}">전체 (${groups.length})</button>
+      <span class="dim" style="font-size:11px;font-weight:700;margin-left:auto">묶기·대표 변경은 길드원 → 계정그룹에서</span>
+    </div>
+    <div class="panel" style="border-radius:18px;overflow:hidden">${view.map(row).join('')||`<div class="dim" style="padding:34px;text-align:center;font-weight:800">${_swMissOnly?'<i class="fa-solid fa-circle-check" style="color:var(--ok-tx);margin-right:6px"></i>미참 대표 없음 — 전원 수로 완료! 🎉':'대표 없음'}</div>`}</div>`;
+}
+window._swTab=(k)=>{ if(!FACTIONS[k])return; _swFac=k; _swRerender(); };
+window._swPeriod=(id)=>{ _swPeriodId=Number(id)||null; _swRerender(); };
+window._swFilter=(m)=>{ _swMissOnly=!!m; _swRerender(); };
+async function _swRerender(){ const el=document.getElementById('pageBody'); if(!el)return; el.innerHTML=loadingHTML('suro_watch'); try{ el.innerHTML=await buildSuroWatch(); }catch(e){ el.innerHTML=errorHTML('suro_watch',e); } }
 
 /* ----- 장기부재 면제 (관리자: 승인/거절) ----- */
 function absStatusChip(s){ return s==='approved'?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">승인</span>':s==='rejected'?'<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx)">거절</span>':'<span class="chip" style="background:var(--warn-bg);color:var(--warn-tx)">대기</span>'; }
@@ -1475,6 +1521,7 @@ const PAGES = {
   penalty:   buildPenalty,
   join_form: buildJoinForm,
   analysis:  buildAnalysis,
+  suro_watch: buildSuroWatch,
   absence:     buildAbsence,
   absence_reg: buildAbsenceReg,
   admin_todos: buildTodos,
