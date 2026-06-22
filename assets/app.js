@@ -1217,11 +1217,13 @@ window._geSave=async ()=>{
 
 /* ----- 설정 (site_config) ----- */
 let _setRanks=[];   // [{name, exempt}] — 직위 구조화 편집 상태
+let _setFac='bunny';   // 설정 편집 대상 길드(버니/늑대/쿠거)
 async function buildSettings(){
   const cfg=await getConfig();
-  const FK=fac();
-  const g=(cfg.guilds||[]).find(x=>x.name===GUILD)||{};
-  const ranks=(cfg.ranks&&cfg.ranks[GUILD])||[];
+  const FK=FACTIONS[_setFac]||FACTIONS.bunny;
+  const facKey=FK.key;
+  const g=(cfg.guilds||[]).find(x=>x.name===facKey)||{};
+  const ranks=(cfg.ranks&&cfg.ranks[facKey])||[];
   const exempt=cfg.suroExempt||[];
   _setRanks = ranks.map(n=>({ name:n, exempt:exempt.includes(n) }));
   const F='width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px;color:var(--text);outline:0;box-sizing:border-box';
@@ -1229,31 +1231,35 @@ async function buildSettings(){
     <label style="display:block;font-size:12.5px;font-weight:800;color:var(--dim);margin-bottom:5px">${label}</label>${inner}
     ${hint?`<div class="dim" style="font-size:11px;font-weight:700;margin-top:4px">${hint}</div>`:''}</div>`;
   const piece=Number(cfg.piecePrice||(cfg.suroReward&&cfg.suroReward.piecePrice)||0);
-  return headerHTML('설정',`${FK.label} 길드 설정`) +
+  const facBtn=(k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_setFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85;font-weight:700">메인</span>':''; return `<button onclick="_setFacTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
+  const facTabs=`<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">${facBtn('bunny')}<span class="dim" style="font-size:11px;font-weight:800;margin:0 2px">· 부길드</span>${facBtn('wolf')}${facBtn('cougar')}</div>`;
+  return headerHTML('설정',`${FK.label} 길드 설정`) + facTabs +
     `<div class="panel" style="border-radius:20px;padding:22px;margin-bottom:16px">
-      <h3 style="font-weight:900;font-size:15px;margin:0 0 16px"><i class="fa-solid fa-shield-cat" style="margin-right:6px;color:var(--bunny-main)"></i>길드 기본 정보</h3>
+      <h3 style="font-weight:900;font-size:15px;margin:0 0 16px"><i class="fa-solid fa-shield-cat" style="margin-right:6px;color:var(--bunny-main)"></i>${FK.label} 기본 정보</h3>
       <div style="display:flex;align-items:center;gap:12px;background:var(--panel-2);border-radius:14px;padding:12px 14px;margin-bottom:16px">
         <span style="font-size:26px">${FK.emoji}</span>
-        <div><div style="font-weight:900;font-size:17px">${FK.label}</div><div class="dim" style="font-size:11px;font-weight:700">내부 식별키 <code style="background:var(--panel-3);padding:1px 5px;border-radius:4px">${GUILD}</code> — 데이터 연결용이라 바꾸지 않아요</div></div>
+        <div><div style="font-weight:900;font-size:17px">${FK.label}</div><div class="dim" style="font-size:11px;font-weight:700">내부 식별키 <code style="background:var(--panel-3);padding:1px 5px;border-radius:4px">${facKey}</code> — 데이터 연결용이라 바꾸지 않아요</div></div>
       </div>
-      <div class="bento" style="grid-template-columns:repeat(2,1fr);gap:0 16px">
+      <div class="bento" style="grid-template-columns:repeat(3,1fr);gap:0 16px">
         ${field('아이콘 (이모지)',`<input id="set_icon" value="${escAttr(g.icon||FK.emoji)}" style="${F}">`)}
         ${field('분류',`<input id="set_type" value="${escAttr(g.type||'')}" placeholder="예: 메인 1기" style="${F}">`)}
         ${field('정원 (명)',`<input id="set_max" type="number" value="${escAttr(g.max||'')}" style="${F}">`)}
+      </div>
+      <div style="border-top:1px dashed var(--line);margin:6px 0 12px"></div>
+      <div style="font-size:11.5px;font-weight:800;color:var(--dim);margin-bottom:10px"><i class="fa-solid fa-globe" style="margin-right:5px"></i>공통 설정 — 전체 길드 공용 (어느 탭에서 바꿔도 같이 적용돼요)</div>
+      <div class="bento" style="grid-template-columns:repeat(2,1fr);gap:0 16px">
         ${field('창립일',`<input id="set_start" type="date" value="${escAttr(cfg.guildStartDate||'')}" style="${F}">`)}
+        ${field('조각 1개 가격 (메소)',`<input id="set_piece" type="number" value="${piece||''}" style="${F}">`, piece?`보석금·보상 환산 · 약 ${(piece/100000000).toFixed(2)}억`:'')}
       </div>
       ${field('길드 로고 URL',`<input id="set_logo" value="${escAttr(cfg.guildLogo||'')}" style="${F}">`, cfg.guildLogo?`<img src="${escAttr(cfg.guildLogo)}" style="height:40px;border-radius:8px;margin-top:7px;background:var(--panel-2);padding:3px">`:'비워두면 기본 토끼 아이콘')}
-      <div class="bento" style="grid-template-columns:repeat(2,1fr);gap:0 16px">
-        ${field('조각 1개 가격 (메소)',`<input id="set_piece" type="number" value="${piece||''}" style="${F}">`, piece?`보석금·보상 환산에 사용 · 현재 약 ${(piece/100000000).toFixed(2)}억`:'')}
-        ${field('수로 면제 안내문',`<input id="set_exnote" value="${escAttr(cfg.suroExemptNote||'')}" placeholder="예: 크로칸슈 이상 — 부캐 전부 수로 면제" style="${F}">`)}
-      </div>
+      ${field('수로 면제 안내문',`<input id="set_exnote" value="${escAttr(cfg.suroExemptNote||'')}" placeholder="예: 크로칸슈 이상 — 부캐 전부 수로 면제" style="${F}">`)}
       <div style="display:flex;justify-content:flex-end;margin-top:4px">
-        <button onclick="_setSaveBasic()" style="border:0;border-radius:10px;padding:10px 22px;font-weight:800;font-size:13px;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>기본 정보 저장</button>
+        <button onclick="_setSaveBasic()" style="border:0;border-radius:10px;padding:10px 22px;font-weight:800;font-size:13px;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>${FK.label} 기본 + 공통 저장</button>
       </div>
     </div>
     <div class="panel" style="border-radius:20px;padding:20px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
-        <h3 style="font-weight:900;font-size:15px;margin:0"><i class="fa-solid fa-ranking-star" style="margin-right:6px;color:var(--bunny-main)"></i>직위 (높은 순)</h3>
+        <h3 style="font-weight:900;font-size:15px;margin:0"><i class="fa-solid fa-ranking-star" style="margin-right:6px;color:var(--bunny-main)"></i>${FK.label} 직위 (높은 순)</h3>
         <div style="display:flex;gap:7px">
           <button onclick="_setRankAdd()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:9px;padding:8px 13px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-plus" style="margin-right:4px"></i>직위 추가</button>
           <button onclick="_settingsSaveRanks()" style="border:0;border-radius:9px;padding:8px 16px;font-weight:800;font-size:13px;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장</button>
@@ -1290,23 +1296,33 @@ window._setRankRename=(i,v)=>{ if(_setRanks[i]) _setRanks[i].name=v; };
 window._setRankExempt=(i)=>{ if(_setRanks[i]) _setRanks[i].exempt=!_setRanks[i].exempt; _setRankRender(); };
 window._setRankDel=(i)=>{ _setRanks.splice(i,1); _setRankRender(); };
 window._setRankAdd=()=>{ _setRanks.push({ name:'새 직위', exempt:false }); _setRankRender(); setTimeout(()=>{ const inps=document.querySelectorAll('#setRankEditor input'); const last=inps[inps.length-1]; if(last){ last.focus(); last.select(); } },0); };
+window._setFacTab=async (k)=>{
+  if(!FACTIONS[k]) return; _setFac=k;
+  const el=document.getElementById('pageBody'); if(!el) return;
+  el.innerHTML=loadingHTML('settings');
+  try{ el.innerHTML=await buildSettings(); }catch(e){ el.innerHTML=errorHTML('settings',e); }
+};
 window._settingsSaveRanks=async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
+  const FK=FACTIONS[_setFac]||FACTIONS.bunny, facKey=FK.key;
   const names=_setRanks.map(r=>(r.name||'').trim()).filter(Boolean);
   if(new Set(names).size!==names.length) return alert('같은 이름의 직위가 있어요. 중복을 없애주세요.');
   const exemptList=_setRanks.filter(r=>r.exempt&&(r.name||'').trim()).map(r=>r.name.trim());
   const cfg=_cfg||await getConfig();
-  if(!cfg.ranks) cfg.ranks={}; cfg.ranks[GUILD]=names; cfg.suroExempt=exemptList;
+  if(!cfg.ranks) cfg.ranks={}; cfg.ranks[facKey]=names;
+  const curNames=new Set(names);
+  cfg.suroExempt=[...((cfg.suroExempt||[]).filter(n=>!curNames.has(n))), ...exemptList];   // 다른 길드 면제는 보존
   const { error } = await db().from('site_config').update({ config:cfg, updated_at:new Date().toISOString() }).eq('id',_cfgId);
   if(error) return alert('저장 실패: '+error.message);
-  _cfg=cfg; alert(`직위 ${names.length}개 저장됐어요 ✓ (수로면제 ${exemptList.length}개)`);
+  _cfg=cfg; alert(`${FK.label} 직위 ${names.length}개 저장됐어요 ✓ (수로면제 ${exemptList.length}개)`);
 };
 window._setSaveBasic=async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
   const v=id=>{ const el=document.getElementById(id); return el?el.value.trim():''; };
   const cfg=_cfg||await getConfig();
+  const facKey=(FACTIONS[_setFac]||FACTIONS.bunny).key;
   const guilds=cfg.guilds||(cfg.guilds=[]);
-  let gg=guilds.find(x=>x.name===GUILD); if(!gg){ gg={ name:GUILD }; guilds.push(gg); }
+  let gg=guilds.find(x=>x.name===facKey); if(!gg){ gg={ name:facKey }; guilds.push(gg); }
   gg.icon=v('set_icon'); gg.type=v('set_type');
   const mx=Number(v('set_max')); if(mx) gg.max=mx;
   if(v('set_start')) cfg.guildStartDate=v('set_start');
