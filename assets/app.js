@@ -474,7 +474,7 @@ function memberGroups(q, sort){
   const orphans=[]; Object.keys(byMain).forEach(k=>{ if(!repNames.has(k)) orphans.push(...byMain[k]); });
   if(q) groups = groups.filter(g=> g.rep.name.includes(q) || g.alts.some(a=>(a.name||'').includes(q)));
   const sv=(m)=>_memSuro[m.id]||0;
-  const maxS=Math.max(100000,...reps.map(r=>sv(r)));
+  const maxS=Math.max(1,...reps.map(r=>sv(r)));   // 1등 점수 = 게이지 만땅(100%), 나머지는 그 비율
   const repCmp={
     suro:(a,b)=>(sv(b.rep)-sv(a.rep))||((b.rep.level||0)-(a.rep.level||0)),
     name:(a,b)=>{ const x=a.rep.name||'',y=b.rep.name||''; return x<y?-1:x>y?1:0; },   // 유니코드순
