@@ -1191,38 +1191,47 @@ async function buildSync(){
     </div>`;
 }
 window._syncSaveKey=()=>{ const v=document.getElementById('nx_key').value.trim(); if(!v) return alert('키를 입력해주세요.'); localStorage.setItem('nexon_api_key',v); alert('API 키가 저장됐어요 ✓'); render(); };
-/* ----- 본캐 추론 (메애기 → 유니온 랭킹) · 원본 뚠카롱 sync에서 믹스 ----- */
+/* ----- 본캐 추론 (메애기 → 유니온 랭킹) · 원본 뚠카롱 sync에서 믹스 ·----- */
 function _kstDate(daysBack){ const t=Date.now()+9*3600*1000-(daysBack||0)*86400000; return new Date(t).toISOString().slice(0,10); }
+function _fetchT(url, ms){ const c=new AbortController(); const t=setTimeout(()=>c.abort(), ms||2500); return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t)); }
+let _guessCache = {};   // {캐릭명: 본캐명|null} — 세션 캐시 (재추론 시 재호출 방지)
 async function guessMainChar(name){
-  // 1차: 메애기 프록시 (/alt → main)
-  try{ const r=await fetch(BAIL_MEAEGI_URL+encodeURIComponent(name)+'/alt'); if(r.ok){ const d=await r.json(); const mn=(d&&d.main&&(d.main.nickname||d.main.name||d.main.character_name))||(d&&d.mainCharacterName); if(mn) return { name:mn, method:'meaegi' }; } }catch(e){}
-  // 2차: 넥슨 유니온 랭킹 (KST 여러 날짜 시도) — ranking[0]=계정 대표(본캐)
-  try{ const { ocid }=await nexonFetch('/maplestory/v1/id',{ character_name:name });
-    for(const dz of [1,2,3,7]){ try{ const rk=await nexonFetch('/maplestory/v1/ranking/union',{ ocid, date:_kstDate(dz) }); if(rk&&rk.ranking&&rk.ranking.length) return { name:rk.ranking[0].character_name, method:'union' }; }catch(e){} }
-  }catch(e){}
-  return { name:null, method:'fail' };
+  if(name in _guessCache) return { name:_guessCache[name], method:'cache' };
+  let result=null;
+  // 1차: 메애기 프록시 (타임아웃 2.5s — 느린 프록시에 안 매달림)
+  try{ const r=await _fetchT(BAIL_MEAEGI_URL+encodeURIComponent(name)+'/alt', 1800); if(r.ok){ const d=await r.json(); const mn=(d&&d.main&&(d.main.nickname||d.main.name||d.main.character_name))||(d&&d.mainCharacterName); if(mn) result=mn; } }catch(e){}
+  // 2차: 넥슨 유니온 랭킹 (최근 2날짜만) — ranking[0]=계정 대표(본캐)
+  if(!result){ try{ const { ocid }=await nexonFetch('/maplestory/v1/id',{ character_name:name });
+    for(const dz of [2,1,3]){ try{ const rk=await nexonFetch('/maplestory/v1/ranking/union',{ ocid, date:_kstDate(dz) }); if(rk&&rk.ranking&&rk.ranking.length){ result=rk.ranking[0].character_name; break; } }catch(e){} }
+  }catch(e){} }
+  _guessCache[name]=result;
+  return { name:result, method: result?'ok':'fail' };
+}
+function _syncGuessLabel(n,g){
+  if(g===undefined) return '<span class="dim" style="font-size:11px;font-weight:700">추론 전</span>';
+  if(g===null) return '<span style="font-size:11px;color:var(--warn-tx);font-weight:800">미확인 → 미지정(부캐, 그룹서 나중에)</span>';
+  if(g===n) return '<span style="font-size:11px;color:var(--amber);font-weight:800"><i class="fa-solid fa-crown" style="font-size:9px;margin-right:3px"></i>본캐(자기자신)</span>';
+  return `<span style="font-size:11px;font-weight:800;color:var(--bunny-deep)"><i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size:9px;margin-right:3px"></i>본캐: ${escHtml(g)}</span>`;
 }
 function _syncRenderNewRows(){
   const added=window._syncAdded||[], gm=window._syncGuessMap||{};
   if(!added.length) return '<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>';
-  return `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${added.map((n,i)=>{
-    const g=gm[n]; let right;
-    if(g===undefined) right='<span class="dim" style="font-size:11px;font-weight:700">추론 전</span>';
-    else if(g===null) right='<span style="font-size:11px;color:var(--warn-tx);font-weight:800">미확인 → 미지정(부캐, 그룹서 나중에)</span>';
-    else if(g===n) right='<span style="font-size:11px;color:var(--amber);font-weight:800"><i class="fa-solid fa-crown" style="font-size:9px;margin-right:3px"></i>본캐(자기자신)</span>';
-    else right=`<span style="font-size:11px;font-weight:800;color:var(--bunny-deep)"><i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size:9px;margin-right:3px"></i>본캐: ${escHtml(g)}</span>`;
-    return `<div style="display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:10px;padding:6px 11px"><span style="font-weight:800;font-size:13px">${escHtml(n)}</span><span id="sg_${i}" style="margin-left:auto;text-align:right">${right}</span></div>`;
-  }).join('')}</div>`;
+  return `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${added.map((n,i)=>
+    `<div style="display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:10px;padding:6px 11px"><span style="font-weight:800;font-size:13px">${escHtml(n)}</span><span id="sg_${i}" style="margin-left:auto;text-align:right">${_syncGuessLabel(n,gm[n])}</span></div>`
+  ).join('')}</div>`;
 }
 window._syncGuessAll=async ()=>{
   const added=window._syncAdded||[]; if(!added.length) return;
-  const btn=document.getElementById('syncGuessBtn'); if(btn){ btn.disabled=true; }
-  window._syncGuessMap=window._syncGuessMap||{};
-  for(let i=0;i<added.length;i++){ const n=added[i]; const el=document.getElementById('sg_'+i); if(el)el.innerHTML='<i class="fa-solid fa-spinner fa-spin dim" style="font-size:10px"></i>';
-    try{ const r=await guessMainChar(n); window._syncGuessMap[n]=r.name; }catch(e){ window._syncGuessMap[n]=null; }
-    if(btn) btn.innerHTML=`<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>${i+1}/${added.length}`;
-  }
-  const box=document.getElementById('syncNewBox'); if(box) box.innerHTML=_syncRenderNewRows();
+  const btn=document.getElementById('syncGuessBtn'); if(btn) btn.disabled=true;
+  const gm=window._syncGuessMap=window._syncGuessMap||{};
+  added.forEach((n,i)=>{ const el=document.getElementById('sg_'+i); if(el)el.innerHTML='<i class="fa-solid fa-spinner fa-spin dim" style="font-size:10px"></i>'; });
+  const CONC=10; let next=0, done=0;
+  const worker=async ()=>{ while(next<added.length){ const i=next++; const n=added[i];
+    try{ const r=await guessMainChar(n); gm[n]=r.name; }catch(e){ gm[n]=null; }
+    const el=document.getElementById('sg_'+i); if(el) el.innerHTML=_syncGuessLabel(n,gm[n]);
+    done++; if(btn) btn.innerHTML=`<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>${done}/${added.length}`;
+  } };
+  await Promise.all(Array.from({length:Math.min(CONC,added.length)}, worker));
   if(btn){ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>본캐 추론 (다시)'; }
 };
 window._syncRun=async ()=>{
@@ -1238,11 +1247,11 @@ window._syncRun=async ()=>{
     const roster = basic.guild_member || [];
     const rosterSet = new Set(roster);
     step('DB와 비교 중');
-    const { data:dbm, error } = await db().from('members').select('name,is_main').eq('guild',GUILD).limit(3000);
+    const { data:dbm, error } = await db().from('members').select('id,name,is_main').eq('guild',GUILD).limit(3000);
     if(error) throw error;
     const dbNames = new Set((dbm||[]).map(m=>m.name));
     const added = roster.filter(n=>!dbNames.has(n));
-    const left = (dbm||[]).filter(m=>m.is_main!==false && !rosterSet.has(m.name)).map(m=>m.name);
+    const left = (dbm||[]).filter(m=>m.is_main!==false && !rosterSet.has(m.name)).map(m=>({ id:m.id, name:m.name }));
     window._syncAdded=added; window._syncLeft=left; window._syncGuessMap={};
     const list=(arr,color)=>arr.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${arr.map(n=>`<span class="chip" style="background:var(--panel-2);color:${color}">${n}</span>`).join('')}</div>`:'<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>';
     box.innerHTML=`
@@ -1258,7 +1267,13 @@ window._syncRun=async ()=>{
       </div>
       <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">본캐 추론: 메애기→유니온으로 계정 대표 추정 · 자기자신=본캐(is_main) / 다른캐=그 본캐의 부캐 / 미확인=미지정(is_main 안 함, 계정그룹서 나중에)</p>
       <div id="syncNewBox">${_syncRenderNewRows()}</div>
-      <div style="font-weight:900;font-size:14px;margin:16px 0 0">탈퇴 의심 ${left.length}</div>${list(left,'var(--bad-tx)')}`;
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 0">
+        <span style="font-weight:900;font-size:14px">탈퇴 의심 ${left.length}</span>
+        ${left.length?`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;cursor:pointer"><input type="checkbox" onclick="document.querySelectorAll('.sync-gone-cb').forEach(c=>c.checked=this.checked)" style="accent-color:var(--bad-tx)">전체</label>
+        <button id="syncGoneDelBtn" onclick="_syncRemoveGone()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:var(--bad-tx);cursor:pointer"><i class="fa-solid fa-user-minus" style="margin-right:5px"></i>선택 삭제</button>`:''}
+      </div>
+      <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">넥슨 길드엔 없는데 DB엔 본캐로 남은 캐릭. 체크 후 삭제 (잘못 잡힐 수 있으니 확인 후) · 추가와 별개 작업</p>
+      ${left.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${left.map(m=>`<label style="display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border-radius:999px;padding:5px 12px;cursor:pointer;font-weight:800;font-size:13px"><input type="checkbox" class="sync-gone-cb" data-id="${m.id}" data-name="${escAttr(m.name)}" style="accent-color:var(--bad-tx)">${escHtml(m.name)}</label>`).join('')}</div>`:'<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>'}`;
   }catch(e){ box.innerHTML=`<div class="panel" style="border-radius:16px;padding:20px;text-align:center"><span style="font-weight:800;color:var(--bad-tx)">${e.message||e}</span><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">키·월드·길드명을 확인해주세요.</p></div>`; }
 };
 window._syncAdd=async ()=>{
@@ -1277,6 +1292,18 @@ window._syncAdd=async ()=>{
   const { error } = await db().from('members').insert(rows);
   if(error) return alert('추가 실패: '+error.message);
   alert(`${rows.length}명 추가됐어요 ✓ (본캐 ${selfCnt} · 부캐 ${subCnt} · 미지정 ${unkCnt})`); _syncRun();
+};
+window._syncRemoveGone=async ()=>{
+  if(!isAdmin()) return alert('운영진만 삭제할 수 있어요.');
+  const checks=[...document.querySelectorAll('.sync-gone-cb:checked')];
+  if(!checks.length) return alert('삭제할 멤버를 선택해주세요.');
+  const ids=checks.map(c=>Number(c.dataset.id)).filter(Boolean);
+  const names=checks.map(c=>c.dataset.name);
+  if(!confirm(`${ids.length}명을 DB에서 삭제할까요?\n${names.slice(0,15).join(', ')}${names.length>15?` 외 ${names.length-15}명`:''}\n\n※ 라이브 공유 DB · 되돌릴 수 없음 (수로/직위 기록도 끊길 수 있어요)`)) return;
+  const btn=document.getElementById('syncGoneDelBtn'); if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>삭제 중…'; }
+  const { error } = await db().from('members').delete().in('id', ids);
+  if(error){ if(btn){ btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-user-minus" style="margin-right:5px"></i>선택 삭제'; } return alert('삭제 실패: '+error.message); }
+  alert(`${ids.length}명 삭제됐어요 ✓`); _syncRun();
 };
 
 const PAGES = {
