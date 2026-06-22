@@ -827,34 +827,56 @@ window._absSubmit = async ()=>{
     `<div class="panel" style="border-radius:24px;padding:50px;text-align:center;max-width:620px"><div style="font-size:46px;margin-bottom:12px">🛏️✅</div><h3 style="font-weight:900;font-size:20px;margin:0 0 8px">장기부재가 등록됐어요!</h3><p class="dim" style="font-weight:700;margin:0">운영진 승인 후 적용돼요.</p></div>`;
 };
 
-/* ----- 운영진 할 일 (admin_todos · RLS 운영진 전용) ----- */
+/* ----- 운영진 할 일 (admin_todos · QA 상세+이미지, 완료 접기) ----- */
 function todoPrio(p){ const m={urgent:['긴급','var(--bad-tx)','var(--bad-bg)'],high:['높음','var(--warn-tx)','var(--warn-bg)'],normal:['보통','var(--ice)','var(--panel-2)'],low:['낮음','var(--dim)','var(--panel-2)']}; const x=m[p]||m.normal; return `<span class="chip" style="background:${x[2]};color:${x[1]}">${x[0]}</span>`; }
+/* note = 평문(레거시) 또는 JSON {text, images:[url]} */
+function _todoParseNote(note){ if(!note) return {text:'',images:[]}; try{ const o=JSON.parse(note); if(o&&typeof o==='object'&&!Array.isArray(o)&&('text'in o||'images'in o)) return {text:o.text||'', images:Array.isArray(o.images)?o.images:[]}; }catch(e){} return {text:String(note), images:[]}; }
+let _todoData=[]; let _todoFold=true; let _todoEdit=null;
 async function buildTodos(){
   let data=[];
-  try{ const r=await db().from('admin_todos').select('id,title,note,priority,category,status,due_date').order('created_at',{ascending:false}).limit(300); if(r.error) throw r.error; data=r.data||[]; }catch(e){ data=[]; }
+  try{ const r=await db().from('admin_todos').select('id,title,note,priority,category,status,due_date,done_by').order('created_at',{ascending:false}).limit(300); if(r.error) throw r.error; data=r.data||[]; }catch(e){ data=[]; }
+  _todoData=data;
   const rank={urgent:0,high:1,normal:2,low:3};
   const todo=data.filter(t=>t.status!=='done').sort((a,b)=>(rank[a.priority]??2)-(rank[b.priority]??2));
   const done=data.filter(t=>t.status==='done');
   const inp='border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--text);outline:0;';
-  const item=(t)=>`<div class="panel tone-light" style="border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">
-    <input type="checkbox" ${t.status==='done'?'checked':''} onchange="_todoToggle(${t.id},this.checked)" style="width:20px;height:20px;cursor:pointer;accent-color:var(--bunny-main)">
-    <div style="flex:1"><div style="font-weight:800;${t.status==='done'?'text-decoration:line-through;opacity:.5':''}">${t.title||''}</div>${t.note?`<div class="dim" style="font-size:12px;font-weight:600">${t.note}</div>`:''}</div>
-    ${t.category?`<span class="chip" style="background:var(--panel-3);color:var(--bunny-deep)">${t.category}</span>`:''}
-    ${todoPrio(t.priority)}
-    ${t.due_date?`<span class="dim" style="font-size:12px;font-weight:700">~${t.due_date}</span>`:''}
-    <button onclick="_todoDel(${t.id})" style="border:0;background:transparent;color:var(--dim);cursor:pointer"><i class="fa-solid fa-trash"></i></button>
-  </div>`;
+  const card=(t,isDone)=>{ const {text,images}=_todoParseNote(t.note); const hasDetail=!!(text||images.length); const first=(text||'').split('\n')[0];
+    return `<div class="panel tone-light" style="border-radius:14px;padding:0;margin-bottom:8px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:11px;padding:12px 14px">
+        <input type="checkbox" ${isDone?'checked':''} onchange="_todoToggle(${t.id},this.checked)" style="width:20px;height:20px;cursor:pointer;accent-color:var(--bunny-main);flex-shrink:0">
+        <div style="flex:1;min-width:0;${hasDetail?'cursor:pointer':''}" ${hasDetail?`onclick="_todoExpand(${t.id})"`:''}>
+          <div style="font-weight:800;${isDone?'text-decoration:line-through;opacity:.55':''};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(t.title||'')}
+            ${images.length?`<span class="chip" style="background:var(--panel-3);color:var(--dim);margin-left:4px"><i class="fa-solid fa-paperclip" style="font-size:9px;margin-right:3px"></i>${images.length}</span>`:''}
+            ${hasDetail?`<i class="fa-solid fa-chevron-down dim" id="tdchev_${t.id}" style="font-size:10px;margin-left:6px;transition:.15s"></i>`:''}</div>
+          ${first?`<div class="dim" style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(first.slice(0,90))}</div>`:''}
+        </div>
+        ${t.category?`<span class="chip" style="background:var(--panel-3);color:var(--bunny-deep);flex-shrink:0">${escHtml(t.category)}</span>`:''}
+        ${todoPrio(t.priority)}
+        ${t.due_date?`<span class="dim" style="font-size:12px;font-weight:700;flex-shrink:0">~${t.due_date}</span>`:''}
+        <button onclick="_todoEditOpen(${t.id})" title="상세 편집" style="border:0;background:transparent;color:var(--bunny-deep);cursor:pointer;flex-shrink:0"><i class="fa-solid fa-pen"></i></button>
+        <button onclick="_todoDel(${t.id})" title="삭제" style="border:0;background:transparent;color:var(--dim);cursor:pointer;flex-shrink:0"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      ${hasDetail?`<div id="tddet_${t.id}" style="display:none;padding:2px 14px 14px 47px;border-top:1px solid var(--line)">
+        ${text?`<div style="font-size:13px;font-weight:600;line-height:1.65;white-space:pre-wrap;margin:10px 0 ${images.length?'12px':'0'}">${escHtml(text)}</div>`:'<div style="height:6px"></div>'}
+        ${images.length?`<div style="display:flex;gap:8px;flex-wrap:wrap">${images.map(u=>`<img src="${escAttr(u)}" data-full="${escAttr(u)}" onclick="_todoZoom(this)" style="width:130px;height:98px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in" loading="lazy">`).join('')}</div>`:''}
+      </div>`:''}
+    </div>`; };
   return headerHTML('운영진 할 일', `할 일 ${todo.length} · 완료 ${done.length}`) +
     `<div class="panel" style="border-radius:20px;padding:16px;margin-bottom:18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <input id="td_title" placeholder="할 일 입력" style="${inp};flex:1;min-width:200px">
-      <input id="td_cat" placeholder="분류(선택)" style="${inp};width:120px">
+      <input id="td_title" placeholder="할 일 / QA 항목 제목" onkeydown="if(event.key==='Enter')_todoAdd()" style="${inp};flex:1;min-width:200px">
+      <input id="td_cat" placeholder="분류(예: QA)" style="${inp};width:130px">
       <select id="td_prio" style="${inp}"><option value="normal">보통</option><option value="high">높음</option><option value="urgent">긴급</option><option value="low">낮음</option></select>
       <input id="td_due" type="date" style="${inp}">
       <button onclick="_todoAdd()" style="border:0;border-radius:10px;padding:10px 18px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer">추가</button>
     </div>
-    ${data.length?'':'<p class="dim" style="font-size:13px;font-weight:700;margin:0 0 14px"><i class="fa-solid fa-circle-info" style="margin-right:5px"></i>운영진 로그인 시 목록이 표시·저장됩니다 (RLS 보호)</p>'}
-    <div>${todo.map(item).join('')||'<div class="panel" style="border-radius:14px;padding:24px;text-align:center"><span class="dim" style="font-weight:700">할 일이 없어요</span></div>'}</div>
-    ${done.length?`<h3 style="font-weight:900;font-size:14px;margin:20px 0 10px" class="dim">완료 (${done.length})</h3>${done.map(item).join('')}`:''}`;
+    <p class="dim" style="font-size:12px;font-weight:700;margin:0 0 12px"><i class="fa-solid fa-circle-info" style="margin-right:5px"></i>추가 후 <b style="color:var(--bunny-deep)">✏️</b>로 상세 내용·스크린샷 첨부 · 제목 클릭하면 펼쳐서 봄${data.length?'':' · 운영진 로그인 시 저장(RLS)'}</p>
+    <div id="todoList">${todo.map(t=>card(t,false)).join('')||'<div class="panel" style="border-radius:14px;padding:24px;text-align:center"><span class="dim" style="font-weight:700">할 일이 없어요</span></div>'}</div>
+    ${done.length?`<div style="margin-top:22px">
+      <div onclick="_todoFoldToggle()" style="cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;color:var(--dim);user-select:none">
+        <i class="fa-solid fa-chevron-${_todoFold?'right':'down'}" id="todoFoldChev" style="font-size:11px;transition:.15s"></i><i class="fa-solid fa-box-archive" style="color:var(--ok-tx)"></i> 완료 보관 (${done.length}) <span style="font-size:11px;font-weight:700">${_todoFold?'· 열기':'· 접기'}</span>
+      </div>
+      <div id="todoDoneBox" style="display:${_todoFold?'none':'block'};margin-top:10px">${done.map(t=>card(t,true)).join('')}</div>
+    </div>`:''}`;
 }
 window._todoAdd = async ()=>{
   if(!isAdmin()) return alert('운영진만 추가할 수 있어요.');
@@ -862,8 +884,48 @@ window._todoAdd = async ()=>{
   const { error } = await db().from('admin_todos').insert({ title:t, category:document.getElementById('td_cat').value.trim()||null, priority:document.getElementById('td_prio').value, due_date:document.getElementById('td_due').value||null, created_by:CURRENT.name||CURRENT.email });
   if(error) return alert('추가 실패: '+error.message); render();
 };
-window._todoToggle = async (id,done)=>{ const { error } = await db().from('admin_todos').update({ status:done?'done':'todo', done_at:done?new Date().toISOString():null, done_by:done?(CURRENT.name||CURRENT.email):null }).eq('id',id); if(error){ alert('변경 실패: '+error.message); render(); } };
+window._todoToggle = async (id,done)=>{ const { error } = await db().from('admin_todos').update({ status:done?'done':'todo', done_at:done?new Date().toISOString():null, done_by:done?(CURRENT.name||CURRENT.email):null }).eq('id',id); if(error){ alert('변경 실패: '+error.message); } render(); };
 window._todoDel = async (id)=>{ if(!confirm('삭제할까요?')) return; const { error } = await db().from('admin_todos').delete().eq('id',id); if(error) return alert('삭제 실패: '+error.message); render(); };
+window._todoExpand = (id)=>{ const d=document.getElementById('tddet_'+id), ch=document.getElementById('tdchev_'+id); if(!d) return; const open=d.style.display==='none'; d.style.display=open?'block':'none'; if(ch)ch.style.transform=open?'rotate(180deg)':''; };
+window._todoFoldToggle = ()=>{ _todoFold=!_todoFold; const box=document.getElementById('todoDoneBox'), ch=document.getElementById('todoFoldChev'); if(box)box.style.display=_todoFold?'none':'block'; if(ch)ch.className='fa-solid fa-chevron-'+(_todoFold?'right':'down'); };
+window._todoZoom = (el)=>{ const u=el.dataset.full; const old=document.getElementById('_todoImgModal'); if(old)old.remove(); const div=document.createElement('div'); div.id='_todoImgModal'; div.style.cssText='position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out'; div.innerHTML=`<img src="${escAttr(u)}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px">`; div.onclick=()=>div.remove(); document.body.appendChild(div); };
+/* ----- 상세 편집 모달 (제목·상세 텍스트·이미지 첨부) ----- */
+window._todoEditOpen = (id)=>{ if(!isAdmin()) return alert('운영진만 편집할 수 있어요.'); const t=_todoData.find(x=>x.id===id); if(!t) return; const {text,images}=_todoParseNote(t.note); _todoEdit={ id, title:t.title||'', text, images:images.slice() }; _todoEditRender(); };
+window._todoEditClose = ()=>{ _todoEdit=null; const m=document.getElementById('_todoEditModal'); if(m)m.remove(); };
+function _todoEditRender(){
+  let m=document.getElementById('_todoEditModal'); if(!m){ m=document.createElement('div'); m.id='_todoEditModal'; m.style.cssText='position:fixed;inset:0;z-index:2500;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto'; m.onclick=(e)=>{ if(e.target===m)_todoEditClose(); }; document.body.appendChild(m); }
+  const e=_todoEdit; const inp='width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:11px 13px;font-size:14px;font-weight:600;color:var(--text);outline:0;';
+  m.innerHTML=`<div class="panel" style="border-radius:20px;padding:20px;max-width:680px;width:100%;background:var(--panel)" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h3 style="font-weight:900;font-size:17px;margin:0"><i class="fa-solid fa-clipboard-check" style="color:var(--bunny-main);margin-right:8px"></i>상세 / QA 내용</h3><button onclick="_todoEditClose()" style="border:0;background:transparent;color:var(--dim);cursor:pointer;font-size:18px"><i class="fa-solid fa-xmark"></i></button></div>
+    <label style="display:block;font-weight:800;font-size:12px;margin:0 0 5px">제목</label>
+    <input id="te_title" value="${escAttr(e.title)}" oninput="_todoEdit.title=this.value" style="${inp};margin-bottom:14px">
+    <label style="display:block;font-weight:800;font-size:12px;margin:0 0 5px">상세 설명 (QA 할 부분·재현 절차 등)</label>
+    <textarea id="te_text" oninput="_todoEdit.text=this.value" placeholder="예) 동기화 페이지에서 본캐 추론 누르면 ... / 재현: 1) ... 2) ..." style="${inp};height:170px;resize:vertical;line-height:1.6;margin-bottom:14px">${escHtml(e.text)}</textarea>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:800;font-size:12px">스크린샷 (${e.images.length})</label>
+      <label style="background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:7px 13px;font-weight:800;font-size:12.5px;cursor:pointer"><i class="fa-solid fa-image" style="margin-right:5px"></i>이미지 첨부<input type="file" accept="image/*" multiple onchange="_todoEditAddImg(event)" style="display:none"></label></div>
+    <div id="te_imgs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${_todoEditImgsHtml()}</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button onclick="_todoEditClose()" style="border:0;border-radius:10px;padding:10px 18px;font-weight:800;background:var(--panel-2);color:var(--text);cursor:pointer">취소</button><button onclick="_todoEditSave()" style="border:0;border-radius:10px;padding:10px 20px;font-weight:800;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:6px"></i>저장</button></div>
+  </div>`;
+}
+function _todoEditImgsHtml(){ const e=_todoEdit; if(!e.images.length) return '<span class="dim" style="font-size:12px;font-weight:700">첨부된 이미지 없음</span>'; return e.images.map((u,i)=>`<div style="position:relative"><img src="${escAttr(u)}" style="width:110px;height:84px;object-fit:cover;border-radius:9px;border:1px solid var(--line)"><button onclick="_todoEditRemoveImg(${i})" style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:999px;border:0;background:var(--bad-tx);color:#fff;cursor:pointer;font-size:11px"><i class="fa-solid fa-xmark"></i></button></div>`).join(''); }
+window._todoEditRemoveImg = (i)=>{ _todoEdit.images.splice(i,1); document.getElementById('te_imgs').innerHTML=_todoEditImgsHtml(); };
+window._todoEditAddImg = async (ev)=>{
+  const files=Array.from(ev.target.files||[]); if(!files.length) return; const box=document.getElementById('te_imgs');
+  for(const f of files){ if(!f.type.startsWith('image/')) continue; if(box) box.insertAdjacentHTML('beforeend','<div id="te_up" style="width:110px;height:84px;border-radius:9px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-spinner fa-spin dim"></i></div>');
+    try{ const ext=(f.name.split('.').pop()||'png').toLowerCase().replace(/[^a-z0-9]/g,''); const fn=`todo-${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`; const url=await window._r2Upload('guide-images', fn, f); _todoEdit.images.push(url); }catch(err){ alert('업로드 실패: '+(err.message||err)); }
+    const up=document.getElementById('te_up'); if(up)up.remove();
+    if(box) box.innerHTML=_todoEditImgsHtml();
+  }
+  ev.target.value='';
+};
+window._todoEditSave = async ()=>{
+  if(!isAdmin()) return alert('운영진만 저장할 수 있어요.'); const e=_todoEdit; if(!e) return;
+  const title=(e.title||'').trim()||'(제목 없음)';
+  const note=(e.text||e.images.length)?JSON.stringify({ text:e.text||'', images:e.images }):null;
+  const { error } = await db().from('admin_todos').update({ title, note }).eq('id', e.id);
+  if(error) return alert('저장 실패: '+error.message);
+  _todoEditClose(); render();
+};
 
 /* ----- 공통: 설정(site_config) 캐시 + Tailwind 온디맨드 ----- */
 let _cfg=null, _cfgId=null;
