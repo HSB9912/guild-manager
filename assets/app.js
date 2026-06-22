@@ -391,8 +391,40 @@ window._memApply = ()=>{
   document.getElementById('memTbl').innerHTML = memberRows(list);
   document.getElementById('memCount').textContent = list.length;
 };
-/* 계정그룹 아코디언 — 대표(본캐) + 부캐(main_char_name), 대표 수로 여부 표시 */
+/* 계정그룹 아코디언 — 대표(본캐)+부캐 · 대표 수로 여부 · 편집(👑 대표변경/드래그 이동/저장) */
+let _grpEdit=false; let _grpDirty=new Set();
 window._grpToggle = (el)=>{ const g=el.closest('.acc-grp'); if(g) g.classList.toggle('open'); };
+window._grpToggleEdit = ()=>{ if(!isAdmin()) return alert('운영진만 편집할 수 있어요.'); _grpEdit=!_grpEdit; _memApply(); };
+function _grpMemById(id){ return _mem.find(m=>m.id===id); }
+function _grpRepNameOf(m){ return m.is_main!==false ? m.name : (m.main_char_name||''); }
+function _grpReopen(repName){ setTimeout(()=>{ document.querySelectorAll('.acc-grp').forEach(g=>{ if(g.dataset.rep===repName) g.classList.add('open'); }); },0); }
+window._grpSetRep = (id)=>{ if(!_grpEdit) return; const m=_grpMemById(id); if(!m) return;
+  if(m.is_main!==false) return;                              // 이미 대표
+  const oldRep=_grpRepNameOf(m);
+  _mem.forEach(x=>{ if(x.id===m.id) return;
+    if(x.name===oldRep && x.is_main!==false){ x.is_main=false; x.main_char_name=m.name; _grpDirty.add(x.id); }
+    else if(x.main_char_name===oldRep && x.is_main===false){ x.main_char_name=m.name; _grpDirty.add(x.id); } });
+  m.is_main=true; m.main_char_name=null; _grpDirty.add(m.id);
+  _memApply(); _grpReopen(m.name);
+};
+window._grpPromote = (id)=>{ if(!_grpEdit) return; const m=_grpMemById(id); if(!m) return; m.is_main=true; m.main_char_name=null; _grpDirty.add(m.id); _memApply(); _grpReopen(m.name); };
+window._grpDragStart = (e,id)=>{ if(!_grpEdit){ e.preventDefault(); return; } e.dataTransfer.setData('mid',String(id)); e.dataTransfer.effectAllowed='move'; };
+window._grpDropOn = (e,repName)=>{ e.preventDefault(); e.currentTarget.classList.remove('gover'); const id=Number(e.dataTransfer.getData('mid')); const m=_grpMemById(id); if(!m||!repName||m.name===repName) return;
+  if(m.is_main!==false){ alert('대표는 드래그로 옮길 수 없어요. 다른 캐릭에 👑를 눌러 대표를 바꾼 뒤 옮겨주세요.'); return; }
+  m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpReopen(repName);
+};
+window._grpSave = async ()=>{
+  if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
+  if(!_grpDirty.size) return alert('변경된 내용이 없어요.');
+  const ids=[..._grpDirty]; if(!confirm(`${ids.length}명의 대표/그룹 변경을 저장할까요?\n※ 라이브 공유 DB(members.is_main·main_char_name)에 반영됩니다.`)) return;
+  let ok=0, fail=0;
+  for(const id of ids){ const m=_grpMemById(id); if(!m) continue;
+    const isMain=m.is_main!==false;
+    const { error } = await db().from('members').update({ is_main:isMain, main_char_name:(isMain?null:(m.main_char_name||null)) }).eq('id',id);
+    if(error) fail++; else ok++; }
+  alert(`저장 완료 ✓ (${ok}명${fail?` · 실패 ${fail}`:''})`); _grpDirty=new Set(); _grpEdit=false;
+  const el=document.getElementById('pageBody'); if(el){ el.innerHTML=loadingHTML('members'); try{ el.innerHTML=await buildMembers(); }catch(e){ el.innerHTML=errorHTML('members',e); } }
+};
 function memberGroups(q){
   const hasSuro = Object.keys(_memSuro).length>0;
   const reps = _mem.filter(m=>m.is_main!==false);
@@ -404,19 +436,25 @@ function memberGroups(q){
   const sv=(m)=>_memSuro[m.id];
   groups.sort((a,b)=>{ if(hasSuro){ const am=(sv(a.rep)||0)>0?1:0, bm=(sv(b.rep)||0)>0?1:0; if(am!==bm) return am-bm; } return (b.rep.level||0)-(a.rep.level||0); });
   const miss = hasSuro ? groups.filter(g=>(sv(g.rep)||0)<=0).length : 0;
+  const ed=_grpEdit;
   const suroChip=(m)=>{ if(!hasSuro) return ''; const v=sv(m); return v>0
     ? `<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx);font-weight:900"><i class="fa-solid fa-check" style="font-size:9px;margin-right:3px"></i>${v.toLocaleString()}</span>`
     : `<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx);font-weight:900"><i class="fa-solid fa-xmark" style="font-size:9px;margin-right:3px"></i>미참</span>`; };
   const av=(n,sz)=>`<span style="width:${sz}px;height:${sz}px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:${sz<26?10:12}px;font-weight:900;flex-shrink:0;background:${avatarColor(n)}">${(n||'?').slice(0,1)}</span>`;
+  const crown=(m,isRep)=>ed?`<button onclick="event.stopPropagation();_grpSetRep(${m.id})" title="${isRep?'대표':'이 캐릭을 대표로'}" style="width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:${isRep?'linear-gradient(135deg,var(--bunny-main),var(--bunny-deep))':'var(--panel)'};color:${isRep?'#fff':'var(--dim)'};cursor:pointer;flex-shrink:0;font-size:11px"><i class="fa-solid fa-crown"></i></button>`:'';
+  const memRow=(m,isRep)=>`<div ${ed&&!isRep?`draggable="true" ondragstart="_grpDragStart(event,${m.id})"`:''} style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line)">
+      ${crown(m,isRep)}${av(m.name,22)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span>
+      <span class="dim" style="font-size:11px;font-weight:700">${escHtml(m.class||'')}${m.level?' · Lv.'+m.level:''}</span>
+      <span class="${isRep?'chip':'dim'}" style="${isRep?'background:var(--bunny-deep);color:#fff;':'color:var(--dim);'}font-size:10px;font-weight:800;margin-left:auto">${isRep?'대표':'부캐'}</span>
+      ${ed&&!isRep?'<i class="fa-solid fa-grip-vertical dim" title="끌어서 다른 그룹으로" style="font-size:11px;cursor:grab"></i>':''}</div>`;
   const grpHtml = (g)=>{
     const miss=hasSuro&&(sv(g.rep)||0)<=0;
-    const altRows = g.alts.length ? g.alts.map(a=>`<div style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line)">
-        ${av(a.name,22)}<span style="font-weight:700;font-size:13px">${escHtml(a.name)}</span>
-        <span class="dim" style="font-size:11px;font-weight:700">${escHtml(a.class||'')}${a.level?' · Lv.'+a.level:''}</span>
-        <span class="dim" style="font-size:10px;font-weight:700;margin-left:auto">부캐</span></div>`).join('')
-      : `<div class="dim" style="font-size:11px;font-weight:700;padding:5px 4px">부캐 없음 · 단일 캐릭</div>`;
-    return `<div class="acc-grp" style="border-bottom:1px solid var(--line)">
-      <div onclick="_grpToggle(this)" style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;${miss?'box-shadow:inset 3px 0 0 var(--bad-tx)':''}">
+    const bodyRows = ed
+      ? memRow(g.rep,true) + g.alts.map(a=>memRow(a,false)).join('')
+      : (g.alts.length ? g.alts.map(a=>memRow(a,false)).join('') : `<div class="dim" style="font-size:11px;font-weight:700;padding:5px 4px">부캐 없음 · 단일 캐릭</div>`);
+    const drop = ed?`ondragover="event.preventDefault();this.classList.add('gover')" ondragleave="this.classList.remove('gover')" ondrop="_grpDropOn(event,'${escAttr(g.rep.name).replace(/'/g,"\\'")}')"`:'';
+    return `<div class="acc-grp" data-rep="${escAttr(g.rep.name)}" style="border-bottom:1px solid var(--line)">
+      <div class="acc-head" onclick="_grpToggle(this)" ${drop} style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;${miss?'box-shadow:inset 3px 0 0 var(--bad-tx)':''}">
         <i class="fa-solid fa-chevron-right acc-chev dim" style="font-size:10px;width:10px;transition:.15s"></i>
         ${av(g.rep.name,26)}
         <span style="font-weight:900;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(g.rep.name)}</span>
@@ -425,7 +463,7 @@ function memberGroups(q){
         <span style="flex:1"></span>
         ${suroChip(g.rep)}
       </div>
-      <div class="acc-body" style="display:none;background:var(--panel-2);padding:4px 12px 9px 34px">${altRows}</div>
+      <div class="acc-body" style="display:none;background:var(--panel-2);padding:4px 12px 9px 34px">${bodyRows}</div>
     </div>`;
   };
   const orphanBlock = orphans.length ? `<div class="acc-grp" style="border-top:2px solid var(--line)">
@@ -433,7 +471,7 @@ function memberGroups(q){
         <i class="fa-solid fa-chevron-right acc-chev dim" style="font-size:10px;width:10px;transition:.15s"></i>
         <i class="fa-solid fa-link-slash dim"></i><span style="font-weight:900;font-size:14px;color:var(--warn-tx)">대표 미상 (부캐인데 본캐 못 찾음)</span>
         <span class="chip" style="background:var(--warn-bg);color:var(--warn-tx);font-weight:800;margin-left:auto">${orphans.length}</span></div>
-      <div class="acc-body" style="display:none;background:var(--panel-2);padding:4px 12px 9px 34px">${orphans.map(a=>`<div style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line)">${av(a.name,22)}<span style="font-weight:700;font-size:13px">${escHtml(a.name)}</span><span class="dim" style="font-size:11px;font-weight:700">${escHtml(a.class||'')}${a.level?' · Lv.'+a.level:''}${a.main_char_name?' · 지정: '+escHtml(a.main_char_name):''}</span></div>`).join('')}</div></div>` : '';
+      <div class="acc-body" style="display:none;background:var(--panel-2);padding:4px 12px 9px 34px">${orphans.map(a=>`<div ${ed?`draggable="true" ondragstart="_grpDragStart(event,${a.id})"`:''} style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line)">${av(a.name,22)}<span style="font-weight:700;font-size:13px">${escHtml(a.name)}</span><span class="dim" style="font-size:11px;font-weight:700">${escHtml(a.class||'')}${a.level?' · Lv.'+a.level:''}${a.main_char_name?' · 지정(없음): '+escHtml(a.main_char_name):''}</span>${ed?`<button onclick="_grpPromote(${a.id})" style="margin-left:auto;border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:4px 9px;cursor:pointer">본캐로</button><i class="fa-solid fa-grip-vertical dim" style="font-size:11px;cursor:grab;margin-left:6px"></i>`:''}</div>`).join('')}</div></div>` : '';
   const summary = hasSuro
     ? `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
         <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">대표 그룹<b style="display:block;font-size:18px;color:var(--text)">${groups.length}</b></div>
@@ -441,8 +479,13 @@ function memberGroups(q){
         <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">대표 수로 미참<b style="display:block;font-size:18px;color:var(--bad-tx)">${miss}</b></div>
         <div class="dim" style="align-self:center;font-size:11px;font-weight:700">기준 회차: ${escHtml(_memSuroLabel||'-')}</div>
       </div>` : '';
-  const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}</style>`;
-  const body = css + summary + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${groups.map(grpHtml).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
+  const editBar = isAdmin() ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
+      ${ed?`<button onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
+      <span class="dim" style="font-size:11px;font-weight:700">펼친 그룹에서 <b>👑</b>로 대표 변경 · 부캐 <b>끌어서</b> 다른 그룹 헤더에 떨구면 이동</span>`:''}
+    </div>` : '';
+  const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
+  const body = css + editBar + summary + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${groups.map(grpHtml).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
   return { body, count: groups.length };
 }
 
