@@ -764,31 +764,134 @@ function loadTailwind(){ return new Promise((res)=>{ if(window.tailwind||documen
 function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s){ return escHtml(s).replace(/"/g,'&quot;'); }
 
-/* ----- 수로 보상 (룰렛 경품 · config) ----- */
+/* ----- 수로 보상 (분기별 등급·보상 산정 — 원본 뚠카롱 renderSuroReward 충실 이식) ----- */
+const REWARD_TIERS = [
+  { grade:'크라운', rank:'1등', ratio:0.28, pool:100, benefit:'부캐길드 전체면제' },
+  { grade:'크라운', rank:'2등', ratio:0.24, pool:100, benefit:'' },
+  { grade:'크라운', rank:'3등', ratio:0.20, pool:100, benefit:'' },
+  { grade:'크라운', rank:'4등', ratio:0.16, pool:100, benefit:'' },
+  { grade:'크라운', rank:'5등', ratio:0.12, pool:100, benefit:'' },
+  { grade:'파르페', rank:'6등', ratio:0.11, pool:100, benefit:'부캐길드 전체면제' },
+  { grade:'파르페', rank:'7등', ratio:0.10, pool:100, benefit:'' },
+  { grade:'파르페', rank:'8등', ratio:0.09, pool:100, benefit:'' },
+  { grade:'파르페', rank:'9등', ratio:0.08, pool:100, benefit:'' },
+  { grade:'파르페', rank:'10등', ratio:0.08, pool:100, benefit:'' },
+  { grade:'파르페', rank:'11등', ratio:0.07, pool:100, benefit:'' },
+  { grade:'파르페', rank:'12등', ratio:0.07, pool:100, benefit:'' },
+  { grade:'파르페', rank:'13등', ratio:0.07, pool:100, benefit:'' },
+  { grade:'파르페', rank:'14등', ratio:0.06, pool:100, benefit:'' },
+  { grade:'파르페', rank:'15등', ratio:0.06, pool:100, benefit:'' },
+  { grade:'파르페', rank:'16등', ratio:0.05, pool:100, benefit:'' },
+  { grade:'파르페', rank:'17등', ratio:0.04, pool:100, benefit:'' },
+  { grade:'파르페', rank:'18등', ratio:0.04, pool:100, benefit:'' },
+  { grade:'파르페', rank:'19등', ratio:0.04, pool:100, benefit:'' },
+  { grade:'파르페', rank:'20등', ratio:0.04, pool:100, benefit:'' },
+];
+let _srData = null;
 async function buildSuroReward(){
-  const cfg=await getConfig();
-  const items=(cfg.rouletteItems||[]).slice().sort((a,b)=>(b.prob||0)-(a.prob||0));
-  const maxP=Math.max(1,...items.map(i=>i.prob||0));
-  const pp=cfg.piecePrice, srp=(cfg.suroReward||{}).piecePrice;
-  const rows=items.map(it=>`<tr style="border-bottom:1px solid var(--line)">
-    <td style="padding:10px 8px;font-weight:800"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:3px;background:${it.color||'var(--bunny-main)'};display:inline-block"></span>${it.name||'-'}</span></td>
-    <td style="font-weight:900;width:80px">${it.prob!=null?it.prob+'%':'-'}</td>
-    <td style="width:38%"><div style="height:8px;border-radius:99px;background:var(--panel-2);overflow:hidden"><i style="display:block;height:100%;width:${(it.prob||0)/maxP*100}%;background:${it.color||'var(--bunny-main)'};border-radius:99px"></i></div></td>
-    <td class="dim" style="font-weight:800;text-align:right">${it.value||''}</td></tr>`).join('');
-  const kpi=(l,v,tone)=>`<div class="panel ${tone}" style="border-radius:22px;padding:18px"><span class="dim" style="font-size:13px;font-weight:700">${l}</span><p style="font-size:24px;font-weight:900;margin:6px 0 0">${v}</p></div>`;
-  return headerHTML('수로 보상','수로 점수 보상 안내') +
-    `<div class="bento" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px">
-      ${kpi('조각 시세', pp?(Number(pp).toLocaleString()+' 메소'):'-','tone-rose')}
-      ${kpi('수로 1점당', srp!=null?(srp+' 메소'):'-','tone-light')}
-      ${kpi('룰렛 경품', items.length+'종','tone-cream')}
-    </div>
-    <div class="panel" style="border-radius:24px;padding:20px">
-      <h3 style="font-weight:900;font-size:16px;margin:0 0 14px"><i class="fa-solid fa-dice" style="color:var(--bunny-main);margin-right:8px"></i>룰렛 경품 & 확률</h3>
-      <div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:480px">
-        <thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:10px 8px">경품</th><th style="text-align:left;padding:10px 0">확률</th><th style="padding:10px 0">분포</th><th style="text-align:right;padding:10px 0">가치</th></tr></thead>
-        <tbody style="font-weight:500">${rows||'<tr><td colspan="4" class="dim" style="padding:24px;text-align:center;font-weight:700">보상 데이터 없음</td></tr>'}</tbody></table></div>
-      <p class="dim" style="font-size:12px;font-weight:700;margin:14px 0 0"><i class="fa-solid fa-circle-info" style="margin-right:5px"></i>설정(site_config)을 따름 — 보상 조정 시 자동 반영</p>
-    </div>`;
+  await loadTailwind();
+  const cfg = await getConfig();
+  const piecePrice = (cfg.suroReward||{}).piecePrice || 0;
+  const [{data:periods,error:ep},{data:mem,error:em}] = await Promise.all([
+    db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:true}).limit(400),
+    db().from('members').select('id,name,role,is_main,main_char_name').eq('guild',GUILD).limit(5000),
+  ]);
+  if(ep) throw ep; if(em) throw em;
+  const scoreMap={};
+  try{
+    const {data:scores}=await db().from('suro_scores').select('member_id,period_id,score').eq('guild',GUILD).limit(40000);
+    (scores||[]).forEach(s=>{ (scoreMap[s.member_id]||(scoreMap[s.member_id]={}))[s.period_id]=Math.round(Number(s.score))||0; });
+  }catch(e){}
+  _srData = { periods:periods||[], members:mem||[], scoreMap, piecePrice, cfg };
+  setTimeout(()=>{ try{ _srRender(); }catch(e){ const el=document.getElementById('contentArea'); if(el) el.innerHTML='<div style="padding:40px;text-align:center;color:var(--bad-tx);font-weight:700">'+(e.message||e)+'</div>'; } },0);
+  return headerHTML('수로 보상','분기별 등급·보상 산정') +
+    '<div id="contentArea"><div style="text-align:center;padding:48px;color:var(--dim);font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>불러오는 중…</div></div>';
+}
+function _srQuarters(){
+  const qm={};
+  _srData.periods.forEach(p=>{ const m=String(p.start_date||'').match(/(\d{4})-(\d{2})-(\d{2})/); if(!m) return; const q=Math.ceil((+m[2])/3); const key=m[1]+'년 '+q+'분기'; (qm[key]||(qm[key]=[])).push(p); });
+  return qm;
+}
+window._rewardChangeQ = ()=>{ const q=document.getElementById('rewardQuarter')?.value; if(!_srData.cfg.suroReward)_srData.cfg.suroReward={}; _srData.cfg.suroReward._selectedQ=q; _srRender(); };
+function _srRender(){
+  const container=document.getElementById('contentArea'); if(!container) return;
+  const qm=_srQuarters(); const quarters=Object.keys(qm).sort().reverse();
+  const sel0=_srData.cfg.suroReward&&_srData.cfg.suroReward._selectedQ;
+  const selQ=(sel0&&quarters.includes(sel0))?sel0:(quarters[0]||'');
+  const pp=_srData.piecePrice;
+  container.innerHTML=
+    '<div style="display:flex;flex-direction:column;gap:12px">'+
+      '<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+        '<h3 class="text-sm font-bold text-gray-800"><i class="fas fa-gift mr-2 text-amber-400"></i>수로 보상체계</h3>'+
+        '<select id="rewardQuarter" onchange="window._rewardChangeQ()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[11px] font-bold outline-none">'+
+          (quarters.map(q=>'<option value="'+q+'" '+(q===selQ?'selected':'')+'>'+q+'</option>').join('')||'<option>분기 없음</option>')+
+        '</select>'+
+        (pp>0?'<span class="text-[10px] text-gray-400 font-bold ml-auto">솔 에르다 조각 시세: '+pp.toLocaleString()+'만원</span>':'<span class="text-[10px] text-red-400 font-bold ml-auto">⚠ 솔 에르다 조각 시세 미설정 (설정 → 관리자)</span>')+
+      '</div>'+
+      '<div id="rewardContent"></div>'+
+    '</div>';
+  _rewardRenderBody(selQ, qm, pp);
+}
+function _rewardRenderBody(selQ, qm, piecePrice){
+  const wrap=document.getElementById('rewardContent'); if(!wrap) return;
+  const qHeaders=qm[selQ]||[];
+  if(!qHeaders.length){ wrap.innerHTML='<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-gray-400 text-xs font-bold">해당 분기 데이터가 없습니다.</div>'; return; }
+  const ranked=_srData.members.map(m=>{
+    const scores=qHeaders.map(p=> (_srData.scoreMap[m.id]&&_srData.scoreMap[m.id][p.id])||0 );
+    let startIdx=0; while(startIdx<scores.length&&scores[startIdx]===0) startIdx++;
+    const activeWeeks=scores.length-startIdx; const activeScores=scores.slice(startIdx);
+    const total=activeScores.reduce((a,b)=>a+b,0); const participated=activeScores.filter(s=>s>0).length;
+    const avg=activeWeeks>0?Math.round(total/activeWeeks):0; const isNewbie=startIdx>0&&startIdx<scores.length;
+    return { name:m.name, avg, total, weeks:scores.length, activeWeeks, participated, role:m.role, isNewbie, isMain:m.is_main!==false, mainCharName:m.main_char_name||'' };
+  }).sort((a,b)=>b.avg-a.avg);
+  const gradeColors={
+    '크라운':{bg:'bg-amber-50',border:'border-amber-200',text:'text-amber-700',badge:'bg-amber-400'},
+    '파르페':{bg:'bg-blue-50',border:'border-blue-200',text:'text-blue-700',badge:'bg-blue-400'},
+    '티라미슈':{bg:'bg-purple-50',border:'border-purple-200',text:'text-purple-700',badge:'bg-purple-400'},
+    '크로칸슈':{bg:'bg-green-50',border:'border-green-200',text:'text-green-700',badge:'bg-green-400'},
+    '롤케이크':{bg:'bg-rose-50',border:'border-rose-200',text:'text-rose-700',badge:'bg-rose-400'},
+    '팬케이크':{bg:'bg-gray-50',border:'border-gray-200',text:'text-gray-600',badge:'bg-gray-400'},
+  };
+  const bottom20=ranked.slice(-20).map(m=>m.name);
+  const results=ranked.map((m,i)=>{
+    const rank=i+1; let grade='',reward='',benefit='',rewardNote=''; const ratio=m.isNewbie?m.activeWeeks/m.weeks:1;
+    if(rank<=20){ const tier=REWARD_TIERS[i]; grade=tier.grade;
+      if(piecePrice>0){ const poolBil=tier.pool*100000000; let pieces=Math.round((poolBil*tier.ratio)/(piecePrice*10000)); if(m.isNewbie){ const original=pieces; pieces=Math.round(pieces*ratio); rewardNote='('+original+'→'+pieces+', '+Math.round(ratio*100)+'%)'; } reward='솔 에르다 조각 '+pieces.toLocaleString()+'개'; }
+      else { reward='비율 '+(tier.ratio*100).toFixed(0)+'%'; }
+      benefit=tier.benefit||(REWARD_TIERS.find(t=>t.grade===grade&&t.benefit)||{}).benefit||'';
+    } else if(rank<=51){ grade='티라미슈'; if(m.isNewbie){ const adj=Math.round(24*ratio); reward='숫돌 '+adj+'개'; rewardNote='(24→'+adj+', '+Math.round(ratio*100)+'%)'; } else { reward='숫돌 24개'; } benefit='전체면제 + 숫돌24개 + 부캐길드면제'; }
+    else if(bottom20.includes(m.name)){ grade='팬케이크'; reward='-'; benefit='부캐면제 X (하위 20)'; }
+    else if(m.avg>=90000){ grade='크로칸슈'; reward='-'; benefit='전체면제 + 부캐길드면제'; }
+    else if(m.avg>=55000){ grade='롤케이크'; reward='-'; benefit='절반면제'; }
+    else { grade='롤케이크'; reward='-'; benefit='절반면제'; }
+    return Object.assign({}, m, { rank, grade, reward, benefit, rewardNote });
+  });
+  const gc=(grade)=>gradeColors[grade]||gradeColors['팬케이크'];
+  let html='';
+  html+='<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5 mb-3">'+
+    '<h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fas fa-info-circle mr-1 text-blue-400"></i>보상 체계 요약</h4>'+
+    '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">'+
+      ['크라운','파르페','티라미슈','크로칸슈','롤케이크','팬케이크'].map(g=>{ const c=gc(g); const cnt=results.filter(r=>r.grade===g).length; const info=g==='크라운'?'TOP 5':g==='파르페'?'6~20등':g==='티라미슈'?'21~51등':g==='크로칸슈'?'90,000+':g==='롤케이크'?'55,000+':'하위 20명';
+        return '<div class="'+c.bg+' '+c.border+' border rounded-xl p-2 text-center"><div class="text-[10px] font-black '+c.text+'">'+g+'</div><div class="text-lg font-black '+c.text+'">'+cnt+'</div><div class="text-[8px] text-gray-400">'+info+'</div></div>'; }).join('')+
+    '</div></div>';
+  html+='<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"><div class="overflow-auto" style="max-height:65vh">'+
+    '<table class="w-full text-left text-[10px] lg:text-xs whitespace-nowrap">'+
+      '<thead class="bg-gray-50 text-[9px] lg:text-[10px] font-bold text-gray-500 border-b border-gray-100" style="position:sticky;top:0">'+
+        '<tr><th class="py-2 px-2 text-center w-10">#</th><th class="py-2 px-2">등급</th><th class="py-2 px-2">닉네임</th><th class="py-2 px-2 text-right">분기평균</th><th class="py-2 px-2 text-right hidden sm:table-cell">참여</th><th class="py-2 px-2 text-right">보상</th><th class="py-2 px-2 hidden lg:table-cell">혜택</th></tr>'+
+      '</thead><tbody class="divide-y divide-gray-50 text-gray-600 font-bold">';
+  let prevGrade='';
+  results.forEach(r=>{ const c=gc(r.grade); const isNew=r.grade!==prevGrade; prevGrade=r.grade; const medal=r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':r.rank;
+    html+='<tr class="hover:bg-gray-50/50 '+(isNew?'border-t-2 border-gray-200':'')+'">'+
+      '<td class="py-2 px-2 text-center font-black">'+medal+'</td>'+
+      '<td class="py-2 px-2"><span class="inline-block px-2 py-0.5 rounded text-[9px] font-bold text-white '+c.badge+'">'+r.grade+'</span></td>'+
+      '<td class="py-2 px-2 font-bold text-gray-800">'+escHtml(r.name)+(!r.isMain?'<span class="text-[8px] text-gray-400 ml-1">(부캐: '+escHtml(r.mainCharName||'?')+')</span>':'')+'</td>'+
+      '<td class="py-2 px-2 text-right font-mono">'+r.avg.toLocaleString()+'</td>'+
+      '<td class="py-2 px-2 text-right text-gray-400 hidden sm:table-cell">'+r.participated+'/'+r.activeWeeks+'주'+(r.isNewbie?' <span class="text-[8px] text-blue-500 bg-blue-50 px-1 rounded">신규</span>':'')+'</td>'+
+      '<td class="py-2 px-2 text-right font-bold '+(r.reward!=='-'?'text-amber-600':'text-gray-400')+'">'+r.reward+(r.rewardNote?'<br><span class="text-[8px] text-gray-400 font-normal">'+r.rewardNote+'</span>':'')+'</td>'+
+      '<td class="py-2 px-2 text-[9px] text-gray-400 hidden lg:table-cell">'+r.benefit+'</td></tr>'; });
+  html+='</tbody></table></div></div>';
+  html+='<div class="bg-gray-50 rounded-2xl border border-gray-100 p-4 mt-3"><p class="text-[10px] text-gray-500 font-bold"><span class="block">⚠ 점수 기준은 분기 평균 점수로 산정합니다.</span><span class="block">⚠ 신규 가입자는 첫 참여 이후 주차 기준 평균</span><span class="block">⚠ 수로 미참여 시 해당 주차 0점 반영 → 등급 하락 가능</span></p></div>';
+  wrap.innerHTML=html;
 }
 
 /* ----- 사용 안내 (guide_pages 표시) ----- */
