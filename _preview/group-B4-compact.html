@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>그룹 묶기 B4 · 초조밀 (길드별 200 대표)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../assets/bunny.css">
+<style>
+  body{padding:18px 20px;max-width:1180px;margin:0 auto}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+  h1{font-size:21px;font-weight:900;margin:0}
+  .sub{color:var(--dim);font-weight:700;font-size:12.5px;margin:3px 0 0}
+  .btn{border:0;border-radius:9px;padding:7px 12px;font-weight:800;font-size:12px;cursor:pointer;background:var(--panel-2);color:var(--text)}
+  .btn.on{background:var(--bunny-deep);color:#fff}
+
+  .toolbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:6px 0 9px}
+  .gtabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}
+  .gtab{border:0;border-radius:11px;padding:8px 16px;font-weight:800;font-size:13.5px;cursor:pointer;background:var(--panel-2);color:var(--text)}
+  .gtab .gc{font-size:10.5px;font-weight:800;opacity:.7;margin-left:5px}
+  .row1{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .search{flex:1;min-width:140px;display:flex;align-items:center;gap:7px;background:var(--panel-2);border-radius:10px;padding:7px 12px}
+  .search input{border:0;background:transparent;outline:0;color:var(--text);font-size:13px;font-weight:700;width:100%}
+  .chip2{border:0;border-radius:999px;padding:6px 12px;font-weight:800;font-size:11.5px;cursor:pointer;background:var(--panel-2);color:var(--text)}
+  .chip2.on{background:var(--bunny-main);color:#fff}
+  .chip2.miss.on{background:var(--bad-tx);color:#fff}
+  .seg{display:inline-flex;background:var(--panel-2);border-radius:9px;overflow:hidden}
+  .seg button{border:0;background:transparent;color:var(--text);font-weight:800;font-size:12px;padding:7px 11px;cursor:pointer}
+  .seg button.on{background:var(--bunny-main);color:#fff}
+  .count{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--dim)}
+  .count b{color:var(--bunny-deep)}
+  .hint{background:var(--warn-bg);color:var(--warn-tx);border-radius:9px;padding:7px 11px;font-size:11px;font-weight:800;margin-bottom:7px;display:none}
+  body.edit .hint{display:block}
+
+  .list{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+  .list.c1{display:block}
+  .list.c2{display:grid;grid-template-columns:repeat(2,1fr);grid-auto-flow:row dense}
+  .list.c3{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-flow:row dense}
+  .grp{border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+  /* 초조밀 행 ~24px */
+  .gh{display:flex;align-items:center;gap:6px;padding:3px 9px;cursor:pointer;user-select:none;min-height:24px}
+  .gh:hover{background:var(--panel-2)}
+  .grp.miss .gh{box-shadow:inset 3px 0 0 var(--bad-tx)}
+  .chev{color:var(--dim);transition:transform .15s;font-size:9px;width:9px;text-align:center;flex-shrink:0}
+  .grp.open .chev{transform:rotate(90deg)}
+  .rk{font-size:10px;font-weight:700;color:var(--dim);min-width:24px;text-align:right;flex-shrink:0}
+  .nm{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .role{color:var(--dim);font-size:10px;font-weight:700;flex-shrink:0}
+  .acnt{font-size:9px;font-weight:800;color:var(--dim);flex-shrink:0}
+  .spacer{flex:1;min-width:6px}
+  .sv{font-weight:900;font-size:11.5px;flex-shrink:0;display:inline-flex;align-items:center;gap:3px}
+  .sv.ok{color:var(--ok-tx)} .sv.bad{color:var(--bad-tx)}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .dot.ok{background:var(--ok-tx)} .dot.bad{background:var(--bad-tx)}
+
+  .body{display:none;background:var(--panel-2);padding:3px 10px 7px 26px;font-size:12px}
+  .grp.open .body{display:block}
+  .grp.open{grid-column:1/-1}
+  .altr{display:flex;align-items:center;gap:7px;padding:3px 2px}
+  .altr .an{font-weight:800}
+  .altr .am{color:var(--dim);font-size:10.5px;font-weight:700}
+  .na{color:var(--dim);font-weight:700;font-size:9.5px;margin-left:auto}
+  .mv{margin-left:auto;display:none;gap:5px;align-items:center}
+  body.edit .mv{display:inline-flex} body.edit .na{display:none}
+  .sel{border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text);font-weight:700;padding:3px 6px;font-size:10.5px;cursor:pointer}
+  .empty{color:var(--dim);font-weight:700;font-size:10.5px;padding:3px 2px}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div>
+      <h1>🐰 길드원 · 계정 그룹</h1>
+      <p class="sub">B4안 — 초조밀 · 행 ~24px + 1/2/3열 전환 · 미참 빨간줄 · 길드별 200 대표</p>
+    </div>
+    <button class="btn" onclick="document.body.classList.toggle('dark')"><i class="fa-solid fa-circle-half-stroke"></i> 다크</button>
+  </div>
+
+  <div class="toolbar">
+    <div class="gtabs" id="gtabs"></div>
+    <div class="row1">
+      <div class="search"><i class="fa-solid fa-magnifying-glass dim"></i><input id="q" placeholder="대표캐릭 검색" oninput="render()"></div>
+      <button class="chip2 on" id="fAll" onclick="setMiss(false,this)">전체</button>
+      <button class="chip2 miss" id="fMiss" onclick="setMiss(true,this)">🔴 미참만 <b id="missN">0</b></button>
+      <div class="seg"><button data-c="1" onclick="setCols(1,this)">1열</button><button data-c="2" class="on" onclick="setCols(2,this)">2열</button><button data-c="3" onclick="setCols(3,this)">3열</button></div>
+      <button class="btn" id="editBtn" onclick="toggleEdit(this)"><i class="fa-solid fa-link"></i> 묶기</button>
+      <span class="count"><b id="shown">0</b>/<span id="gtot">0</span> · 완료 <b id="doneN">0</b></span>
+    </div>
+  </div>
+
+  <div class="hint"><i class="fa-solid fa-circle-info"></i> 묶기 편집 — 펼친 부캐의 <b>대표 변경</b>/<b>승격</b>으로 재배치. 대표캐릭 단위.</div>
+
+  <div class="list c2" id="list"></div>
+
+<script>
+const PRE=['달','별','초코','민트','감자','구름','노른','밤','솜','당근','딸기','바나나','요거트','크림','버터','단팥','녹차','우유','꿀','떡','말차','복숭아','수박','자몽','레몬','포도','체리','블루','홍차','코코','구미','젤','단호박','참외','앵두','살구','무화과','오디','곶감','약과'];
+const SUF=['토끼','사탕','롱','우유','전','빵','자','하늘','뭉치','파워','별','콩','이','냥','핑','둥이','송이','꽃','별이','칩','마카롱','크런치','젤리','라떼','무스','쿠키','파이','샌드','버블','타르트'];
+const ROLES=['길드장','부길드장','운영','정회원','정회원','정회원','정회원','신입'];
+const JOBS=['나이트로드','신궁','비숍','팔라딘','메르세데스','히어로','아델','카인','루미너스','섀도어','호영','패스파인더','듀얼블레이드'];
+const GUILDS=[{key:'bunny',emoji:'🐰',label:'버니',col:'#B5446E',n:200},{key:'wolf',emoji:'🐺',label:'늑대',col:'#6C8EBF',n:200},{key:'cougar',emoji:'🐆',label:'쿠거',col:'#C98A42',n:200}];
+const DATA={};
+GUILDS.forEach((G,gi)=>{ const arr=[]; for(let i=0;i<G.n;i++){ const s=gi*200+i;
+  const uniq=PRE[(s*7)%PRE.length]+SUF[(s*13)%SUF.length]+(i<PRE.length?'':String((s*7)%97));
+  const isMiss=(s*37%100)<22; const suro=isMiss?0:60+(s*29%40); const nAlt=(s*3%4); const alts=[];
+  for(let k=0;k<nAlt;k++) alts.push([PRE[(s*5+k*3)%PRE.length]+SUF[(s*11+k*7)%SUF.length], JOBS[(s+k)%JOBS.length], 250+((s*7+k*13)%50)]);
+  arr.push({rep:uniq, role:ROLES[i%ROLES.length], col:G.col, suro, alts}); } DATA[G.key]=arr; });
+
+let curGuild='bunny', missOnly=false, cols=2;
+document.getElementById('gtabs').innerHTML=GUILDS.map(G=>{ const miss=DATA[G.key].filter(g=>g.suro<=0).length;
+  return `<button class="gtab" data-g="${G.key}" onclick="setGuild('${G.key}')" style="${G.key===curGuild?`background:${G.col};color:#fff`:''}">${G.emoji} ${G.label} <span class="gc">${G.n} · 미참 ${miss}</span></button>`; }).join('');
+
+function curList(){ const all=DATA[curGuild]||[]; const q=document.getElementById('q').value.trim();
+  let list=all.filter(g=>{ if(missOnly&&g.suro>0)return false; if(q&&!g.rep.includes(q))return false; return true; });
+  list=[...list].sort((a,b)=>(a.suro>0?1:0)-(b.suro>0?1:0)||b.suro-a.suro); return {all,list}; }
+function grpHtml(g,i){ const miss=g.suro<=0;
+  const repOpts=DATA[curGuild].slice(0,40).map(r=>`<option ${r.rep===g.rep?'selected':''}>${r.rep}</option>`).join('');
+  const alts=g.alts.map(a=>`<div class="altr"><i class="fa-solid fa-angle-right dim" style="font-size:9px"></i><span class="an">${a[0]}</span><span class="am">${a[1]} · Lv.${a[2]}</span><span class="na">부캐</span><span class="mv"><select class="sel">${repOpts}</select><button class="sel" title="대표 승격"><i class="fa-solid fa-arrow-up"></i></button></span></div>`).join('')||'<div class="empty">부캐 없음</div>';
+  return `<div class="grp ${miss?'miss':''}" data-rep="${g.rep}">
+    <div class="gh" onclick="this.parentElement.classList.toggle('open')">
+      <i class="fa-solid fa-chevron-right chev"></i><span class="rk">${i+1}</span>
+      <span class="dot ${miss?'bad':'ok'}"></span>
+      <span class="nm">${g.rep}</span><span class="role">${g.role}</span>${g.alts.length?`<span class="acnt">+${g.alts.length}</span>`:''}
+      <span class="spacer"></span>
+      <span class="sv ${miss?'bad':'ok'}">${miss?'✕':g.suro}</span>
+    </div>
+    <div class="body">${alts}</div></div>`;
+}
+function render(){ const {all,list}=curList();
+  document.getElementById('list').innerHTML=list.map(grpHtml).join('')||'<div class="empty" style="padding:20px;text-align:center;grid-column:1/-1">결과 없음</div>';
+  const miss=all.filter(g=>g.suro<=0).length;
+  document.getElementById('shown').textContent=list.length; document.getElementById('gtot').textContent=all.length;
+  document.getElementById('doneN').textContent=all.length-miss; document.getElementById('missN').textContent=miss; }
+function setGuild(k){ curGuild=k; document.querySelectorAll('.gtab').forEach(b=>{ const G=GUILDS.find(x=>x.key===b.dataset.g); b.style.cssText=(b.dataset.g===k?`background:${G.col};color:#fff`:''); }); render(); }
+function setMiss(v,btn){ missOnly=v; document.getElementById('fAll').classList.toggle('on',!v); document.getElementById('fMiss').classList.toggle('on',v); render(); }
+function setCols(n,btn){ cols=n; document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',+b.dataset.c===n)); const l=document.getElementById('list'); l.className='list c'+n; }
+function toggleEdit(b){ document.body.classList.toggle('edit'); b.classList.toggle('on'); b.innerHTML=document.body.classList.contains('edit')?'<i class="fa-solid fa-check"></i> 종료':'<i class="fa-solid fa-link"></i> 묶기'; }
+render();
+</script>
+</body>
+</html>
