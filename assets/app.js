@@ -560,45 +560,70 @@ async function buildPromotion(){
 }
 
 /* ----- 신청 처리 (가입 큐) ----- */
+let _reqTab='pending'; let _reqBg={};
 async function buildRequests(){
   const { data, error } = await db().from('join_requests')
-    .select('id,nickname,suro_score,job,prev_guild,status,join_category,admin_note,created_at,processed_at')
-    .order('created_at',{ascending:false}).limit(200);
+    .select('id,nickname,suro_score,job,prev_guild,answers,hands_image_url,status,admin_note,processed_by,processed_at,created_at,join_source,join_category')
+    .order('created_at',{ascending:false}).limit(300);
   if(error) throw error;
   const all=data||[];
-  const pending=all.filter(r=>!r.status||r.status==='pending');
-  const done=all.filter(r=>r.status==='approved'||r.status==='rejected');
-  const dt=(s)=> s? s.slice(0,10):'-';
-  const card=(r)=>`<div class="panel tone-light" style="border-radius:18px;padding:16px;margin-bottom:10px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-      <div>
-        <div style="font-weight:900;font-size:16px">${r.nickname||'-'} <span class="dim" style="font-size:12px;font-weight:700">· ${r.job||'직업?'}</span></div>
-        <div class="dim" style="font-size:13px;font-weight:700;margin-top:4px">수로 ${r.suro_score||'-'} · 이전길드 ${r.prev_guild||'-'} · ${r.join_category||'-'}</div>
-        <div class="dim" style="font-size:12px;margin-top:3px">${dt(r.created_at)} 신청</div>
-      </div>
-      <div style="display:flex;gap:6px">
-        <button onclick="_joinAct(${r.id},'approved')" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-check"></i> 승인</button>
-        <button onclick="_joinAct(${r.id},'rejected')" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;color:#fff;background:#C03A3A;cursor:pointer"><i class="fa-solid fa-xmark"></i> 거절</button>
-      </div>
-    </div></div>`;
-  const doneRow=(r)=>`<tr style="border-bottom:1px solid var(--line)">
-    <td style="padding:10px 8px;font-weight:800">${r.nickname||'-'}</td>
-    <td class="dim" style="font-weight:700">${r.job||'-'}</td>
-    <td class="dim" style="font-weight:700">${r.suro_score||'-'}</td>
-    <td>${r.status==='approved'?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">승인</span>':'<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx)">거절</span>'}</td>
-    <td class="dim" style="font-weight:700">${dt(r.processed_at||r.created_at)}</td></tr>`;
-  const pendingSec = pending.length
-    ? pending.map(card).join('')
-    : `<div class="panel" style="border-radius:18px;padding:30px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-check-circle" style="color:#1A8A4A;margin-right:6px"></i>대기 중인 가입 신청이 없어요</span></div>`;
-  return headerHTML('신청 처리', `가입 대기 ${pending.length}건`) +
-    `<h3 style="font-weight:900;font-size:16px;margin:0 0 12px"><i class="fa-solid fa-user-clock" style="color:var(--ice);margin-right:8px"></i>가입 대기 <span class="chip" style="background:var(--bunny-deep);color:#fff;margin-left:4px">${pending.length}</span></h3>
-     ${pendingSec}
-     <h3 style="font-weight:900;font-size:16px;margin:26px 0 12px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--bunny-main);margin-right:8px"></i>처리 완료 (${done.length})</h3>
-     <div class="panel" style="border-radius:24px;padding:18px"><div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:480px">
-       <thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:10px 8px">닉네임</th><th style="text-align:left;padding:10px 0">직업</th><th style="text-align:left;padding:10px 0">수로</th><th style="text-align:left;padding:10px 0">결과</th><th style="text-align:left;padding:10px 0">처리일</th></tr></thead>
-       <tbody style="font-weight:500">${done.map(doneRow).join('')}</tbody></table></div></div>
-     <p class="dim" style="font-size:12px;font-weight:700;margin:14px 0 0"><i class="fa-solid fa-circle-info" style="margin-right:5px"></i>면제·보석금 신청 통합은 추가 예정</p>`;
+  const counts={pending:0,approved:0,rejected:0}; all.forEach(r=>{ const s=r.status||'pending'; counts[s]=(counts[s]||0)+1; });
+  const filtered=all.filter(r=>(r.status||'pending')===_reqTab);
+  const tabBtn=(k,l,col)=>{ const on=_reqTab===k; return `<button onclick="_reqSetTab('${k}')" style="border:0;border-radius:11px;padding:8px 15px;font-weight:800;font-size:13px;cursor:pointer;${on?`background:${col};color:#fff`:'background:var(--panel-2);color:var(--text)'}">${l} <span class="chip" style="background:${on?'rgba(255,255,255,.25)':'var(--panel-3)'};color:${on?'#fff':'var(--dim)'}">${counts[k]||0}</span></button>`; };
+  return headerHTML('신청 처리', `가입 대기 ${counts.pending||0}건`) +
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+       ${tabBtn('pending','처리 대기','var(--warn-tx)')}${tabBtn('approved','승인됨','var(--ok-tx)')}${tabBtn('rejected','거절됨','var(--bad-tx)')}
+     </div>
+     <div>${filtered.length?filtered.map(reqCard).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-inbox" style="margin-right:6px"></i>해당 상태의 신청이 없어요</span></div>'}</div>`;
 }
+function reqCard(r){
+  const fmtScore=s=>{ if(s==null||s==='')return '-'; const n=String(s).replace(/[^\d]/g,''); return n?Number(n).toLocaleString():String(s); };
+  const suroFmt=fmtScore(r.suro_score), suroNum=Number(String(r.suro_score||'').replace(/[^\d]/g,''))||0, below=suroNum>0&&suroNum<10000;
+  const st=r.status||'pending'; const created=new Date(r.created_at); const elapsedH=(Date.now()-created.getTime())/3600000; const waitDone=elapsedH>=12;
+  const dateStr=created.toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const wait= st!=='pending'?'': waitDone?'<span style="font-size:10px;color:var(--ok-tx);font-weight:800"><i class="fa-solid fa-circle-check" style="margin-right:3px"></i>12시간 경과</span>':`<span style="font-size:10px;color:var(--warn-tx);font-weight:800"><i class="fa-solid fa-clock" style="margin-right:3px"></i>대기중 (${Math.floor(elapsedH)}h)</span>`;
+  const answers=(Array.isArray(r.answers)?r.answers:[]).filter(x=>x&&x.a).map(x=>`<div style="font-size:12px;margin-bottom:5px"><b style="font-weight:800">${escHtml(x.q||'')}</b><div class="dim" style="font-weight:600">${escHtml(x.a||'')}</div></div>`).join('');
+  const hands=r.hands_image_url?`<a href="${escAttr(r.hands_image_url)}" target="_blank"><img src="${escAttr(r.hands_image_url)}" style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)" loading="lazy"><div class="dim" style="font-size:9px;text-align:center;margin-top:3px">핸즈 캡처 크게 보기 ↗</div></a>`:'<div style="font-size:10px;color:var(--warn-tx);background:var(--warn-bg);border-radius:10px;padding:12px;text-align:center;font-weight:700">핸즈 캡처 없음</div>';
+  const notice=`[모집제]\n${NEXON_GUILD} 가입 희망자 공지\n\n닉네임 : ${r.nickname}\n수로점수 : ${suroFmt}점\n직업 : ${r.job||'-'}\n전길드 : ${r.prev_guild||'-'}\n\n이견·문의는 간부진에게 1:1 오픈채팅 주세요.`;
+  const bg=_reqBg[r.id]||{}, bgN=['meaegi','google','inven'].filter(s=>bg[s]).length;
+  const sbtn=(site,l)=>{ const ok=!!bg[site]; return `<button onclick="_reqSearch('${site}',${r.id},'${encodeURIComponent(r.nickname)}')" style="border:${ok?'0':'1px solid var(--line)'};border-radius:8px;padding:6px 11px;font-weight:800;font-size:12px;cursor:pointer;background:${ok?'var(--ok-tx)':'var(--panel)'};color:${ok?'#fff':'var(--text)'}"><i class="fa-solid fa-${ok?'check':'magnifying-glass'}" style="margin-right:4px"></i>${l}</button>`; };
+  const del=`<button onclick="_reqDelete(${r.id})" title="삭제" style="border:1px solid var(--line);background:var(--panel);color:var(--dim);border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer"><i class="fa-solid fa-trash"></i></button>`;
+  const actions= st==='pending'
+    ? `<button onclick="_joinAct(${r.id},'approved')" style="flex:1;min-width:120px;border:0;border-radius:10px;padding:9px;font-weight:900;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-check" style="margin-right:5px"></i>가입 승인</button><button onclick="_joinAct(${r.id},'rejected')" style="border:1px solid var(--bad-tx);background:var(--panel);color:var(--bad-tx);border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer">거절</button>${del}`
+    : `<button onclick="_reqRevert(${r.id})" style="border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer"><i class="fa-solid fa-rotate-left" style="margin-right:5px"></i>대기로 되돌리기</button>${del}`;
+  const proc=r.processed_at?`<div class="dim" style="font-size:10px;font-weight:700;margin-top:7px"><i class="fa-solid fa-user-shield" style="margin-right:4px"></i>${escHtml(r.processed_by||'?')} · ${new Date(r.processed_at).toLocaleString('ko-KR')}${r.admin_note?' · 사유: '+escHtml(r.admin_note):''}</div>`:'';
+  return `<div class="panel ${st==='pending'?'tone-light':''}" style="border-radius:18px;padding:16px;margin-bottom:12px;${st==='pending'?'border:2px solid var(--bunny-light)':''}">
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:11px">
+      <span style="font-weight:900;font-size:16px">${escHtml(r.nickname||'-')}</span>
+      <span class="chip" style="background:var(--panel-3);color:var(--text);font-weight:800">${escHtml(r.job||'직업?')}</span>
+      <span class="chip" style="background:${below?'var(--bad-tx)':'var(--warn-bg)'};color:${below?'#fff':'var(--warn-tx)'};font-weight:800">${below?'⚠ ':''}수로 ${escHtml(suroFmt)}${below?' (1만↓)':''}</span>
+      ${r.join_source?`<span class="chip" style="background:rgba(155,89,182,.15);color:#9B59B6;font-weight:800">경로 ${escHtml(r.join_source)}</span>`:''}
+      ${r.join_category?`<span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep);font-weight:800">${escHtml(r.join_category)}</span>`:''}
+      <span class="dim" style="font-size:11px;font-weight:700">전길드 ${escHtml(r.prev_guild||'-')} · ${dateStr}</span>
+      ${wait?`<span style="margin-left:auto">${wait}</span>`:''}
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;background:var(--bad-bg);border-radius:12px;padding:9px 11px;margin-bottom:12px">
+      <span style="font-size:11px;font-weight:900;color:var(--bad-tx)"><i class="fa-solid fa-user-shield" style="margin-right:4px"></i>비매너 확인 ${bgN}/3</span>${sbtn('meaegi','메애기')}${sbtn('google','구글')}${sbtn('inven','인벤')}
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        ${answers?`<div class="panel" style="border-radius:12px;padding:11px;margin-bottom:8px">${answers}</div>`:'<div class="dim" style="font-size:11px;font-weight:700;margin-bottom:8px">답변 없음</div>'}
+        <div style="background:#1e1e28;color:#e8e8ef;border-radius:12px;padding:12px;font-size:11px;line-height:1.6;white-space:pre-wrap;font-family:ui-monospace,monospace">${escHtml(notice)}</div>
+        <button onclick="_reqCopyNotice('${encodeURIComponent(notice)}')" style="width:100%;border:0;border-radius:10px;padding:8px;margin-top:6px;font-weight:800;color:#fff;background:#475569;cursor:pointer"><i class="fa-solid fa-copy" style="margin-right:5px"></i>모집공고 복사</button>
+        ${proc}
+      </div>
+      <div style="width:180px;flex-shrink:0">${hands}</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${actions}</div>
+  </div>`;
+}
+window._reqSetTab=(k)=>{ _reqTab=k; render(); };
+window._reqSearch=(site,id,nickEnc)=>{ const nick=decodeURIComponent(nickEnc), n=encodeURIComponent(nick);
+  const urls={ meaegi:'https://meaegi.com/s/'+n, google:'https://www.google.com/search?q='+encodeURIComponent('메이플 '+nick), inven:'https://www.inven.co.kr/search/maple/top/'+n+'/1' };
+  if(urls[site]) window.open(urls[site],'_blank'); (_reqBg[id]||(_reqBg[id]={}))[site]=true; render(); };
+window._reqCopyNotice=(enc)=>{ try{ navigator.clipboard.writeText(decodeURIComponent(enc)); alert('모집공고 복사됨 — 공지방에 붙여넣기'); }catch(e){ alert('복사 실패 — 길게 눌러 복사해주세요'); } };
+window._reqRevert=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 신청을 대기 상태로 되돌릴까요?')) return; const { error }=await db().from('join_requests').update({ status:'pending', processed_by:null, processed_at:null, admin_note:null }).eq('id',id); if(error) return alert('실패: '+error.message); render(); };
+window._reqDelete=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 신청을 삭제할까요? (되돌릴 수 없음)')) return; const { error }=await db().from('join_requests').delete().eq('id',id); if(error) return alert('삭제 실패: '+error.message); render(); };
 window._joinAct = async (id, status)=>{
   if(!isAdmin()) return alert('운영진만 처리할 수 있어요. 로그인 후 이용해주세요.');
   const me = CURRENT.name || CURRENT.email || '운영진';
@@ -745,7 +770,8 @@ window._joinSubmit = async ()=>{
   const nick=v('jf_nick'), job=v('jf_job'); const scoreNum=Number(document.getElementById('jf_score')?.value||0);
   if(!nick||!job) return alert('닉네임·직업은 필수예요.');
   if(scoreNum<10000 && !confirm('수로 점수 1만점 미만은 가입 거절될 수 있어요. 그래도 신청할까요?')) return;
-  const row={ nickname:nick, suro_score:scoreNum.toLocaleString(), job, prev_guild:v('jf_prev')||null, join_category:v('jf_cat'), answers:v('jf_ans')||null, status:'pending', join_source:'bunny-site' };
+  const ansText=v('jf_ans'); const answers=ansText?[{ q:'하고 싶은 말', a:ansText }]:[];
+  const row={ nickname:nick, suro_score:scoreNum.toLocaleString(), job, prev_guild:v('jf_prev')||null, join_category:v('jf_cat')||null, answers, status:'pending', join_source:'가입신청폼' };
   const { error } = await db().from('join_requests').insert(row);
   if(error) return alert('신청 실패: '+error.message);
   document.getElementById('pageBody').innerHTML = headerHTML('가입 신청','신청 완료') +
