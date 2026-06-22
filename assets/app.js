@@ -1217,7 +1217,10 @@ window._geSave=async ()=>{
 
 /* ----- 설정 (site_config) ----- */
 let _setRanks=[];   // [{name, exempt}] — 직위 구조화 편집 상태
+let _setRules=[];   // [{rank,type,value}] — 승강 기준(autoRankRules) 편집 상태
 let _setFac='bunny';   // 설정 편집 대상 길드(버니/늑대/쿠거)
+function _ruleType(r){ if(r.topN!=null) return 'topN'; if(r.bottomN!=null) return 'bottomN'; if(r.exactScore!=null) return 'exact'; return 'min'; }
+function _ruleVal(r){ const t=_ruleType(r); return t==='topN'?(r.topN||0): t==='bottomN'?(r.bottomN||0): t==='exact'?0:(r.min||0); }
 async function buildSettings(){
   const cfg=await getConfig();
   const FK=FACTIONS[_setFac]||FACTIONS.bunny;
@@ -1226,6 +1229,8 @@ async function buildSettings(){
   const ranks=(cfg.ranks&&cfg.ranks[facKey])||[];
   const exempt=cfg.suroExempt||[];
   _setRanks = ranks.map(n=>({ name:n, exempt:exempt.includes(n) }));
+  const rules=(cfg.autoRankRules&&cfg.autoRankRules[facKey])||[];
+  _setRules = rules.map(r=>({ rank:r.rank, type:_ruleType(r), value:_ruleVal(r) }));
   const F='width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px;color:var(--text);outline:0;box-sizing:border-box';
   const field=(label,inner,hint)=>`<div style="margin-bottom:13px">
     <label style="display:block;font-size:12.5px;font-weight:800;color:var(--dim);margin-bottom:5px">${label}</label>${inner}
@@ -1268,6 +1273,29 @@ async function buildSettings(){
       <p class="dim" style="font-size:11.5px;font-weight:700;margin:0 0 12px">↑↓ 순서 · 이름 칸에 직접 수정 · <b style="color:var(--bunny-deep)">수로면제</b> 토글 · 휴지통 삭제. 저장하면 즉시 반영(승강제·직위반영·길드원 정렬에 사용).</p>
       <div id="setRankEditor">${_setRankRowsHtml()}</div>
     </div>
+    <div class="panel" style="border-radius:20px;padding:20px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <h3 style="font-weight:900;font-size:15px;margin:0"><i class="fa-solid fa-arrow-trend-up" style="margin-right:6px;color:var(--bunny-main)"></i>${FK.label} 승강 기준 (수로 자동 직위)</h3>
+        <div style="display:flex;gap:7px">
+          <button onclick="_setRuleAdd()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:9px;padding:8px 13px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-plus" style="margin-right:4px"></i>기준 추가</button>
+          <button onclick="_setSaveRules()" style="border:0;border-radius:9px;padding:8px 16px;font-weight:800;font-size:13px;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장</button>
+        </div>
+      </div>
+      <p class="dim" style="font-size:11.5px;font-weight:700;margin:0 0 12px">위에서부터 순서대로 적용 · <b>누적 상위 N등</b>(예: 로얄버니 TOP5 → 문버니 TOP25면 6~25등) · <b>점수 이상</b>(메소) · <b>하위 N명</b> · <b>미참(0점)</b>. 직위명은 위 직위 목록과 같게.</p>
+      <div id="setRuleEditor">${_setRuleRowsHtml()}</div>
+    </div>
+    <div class="panel" style="border-radius:20px;padding:20px;margin-bottom:16px;border:2px solid var(--bunny-light)">
+      <h3 style="font-weight:900;font-size:15px;margin:0 0 8px"><i class="fa-solid fa-bullhorn" style="margin-right:6px;color:var(--bunny-deep)"></i>📢 길드 개편 적용 (직위명 일괄 변경)</h3>
+      <p class="dim" style="font-size:12px;font-weight:700;margin:0 0 6px;line-height:1.6">공지대로 <b>버니·늑대 직위명</b>을 한 번에 바꿔요(설정의 직위·승강기준·색상·면제 + <b>멤버들의 직위(DB)</b>까지 일괄).<br>
+        버니: 마카롱→버니버니 · 다쿠아즈→당근당근 · 크라운→로얄버니 · 파르페→문버니 · 티라미슈→스타버니 · 크로칸슈→코튼버니 · 롤케이크→토끼풀 · 팬케이크→새싹 · 스콘→돌멩이<br>
+        늑대: 마카롱→늑대 · 다쿠아즈→울프 · 뚠케이크→딩고 · 뚠바게트→허스키 · 뚠브레드→강아지 · 뚠스콘→발자국<br>
+        승강기준: 문버니 TOP25 · 스타버니 TOP60 · 코튼버니 13만 이상</p>
+      <p class="dim" style="font-size:11px;font-weight:700;margin:0 0 12px;color:var(--warn-tx)"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i>라이브 공유 DB에 반영 · 1회만 누르면 됨(이미 바뀐 이름은 건너뜀) · 운영진 로그인 필요</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="_setReformPreview()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:10px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-eye" style="margin-right:5px"></i>변경 미리보기</button>
+        <button onclick="_setReformApply()" style="border:0;border-radius:10px;padding:9px 18px;font-weight:800;font-size:13px;color:#fff;background:var(--bunny-deep);cursor:pointer"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>개편 적용</button>
+      </div>
+    </div>
     <details class="panel" style="border-radius:20px;padding:20px">
       <summary style="cursor:pointer;font-weight:900;font-size:15px;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-code" style="color:var(--dim)"></i>고급 — 전체 설정 JSON (승강기준·보상 등)</summary>
       <div style="display:flex;justify-content:flex-end;margin:12px 0">
@@ -1296,6 +1324,40 @@ window._setRankRename=(i,v)=>{ if(_setRanks[i]) _setRanks[i].name=v; };
 window._setRankExempt=(i)=>{ if(_setRanks[i]) _setRanks[i].exempt=!_setRanks[i].exempt; _setRankRender(); };
 window._setRankDel=(i)=>{ _setRanks.splice(i,1); _setRankRender(); };
 window._setRankAdd=()=>{ _setRanks.push({ name:'새 직위', exempt:false }); _setRankRender(); setTimeout(()=>{ const inps=document.querySelectorAll('#setRankEditor input'); const last=inps[inps.length-1]; if(last){ last.focus(); last.select(); } },0); };
+/* 승강 기준(autoRankRules) 편집 */
+const _RULE_TYPES=[['topN','누적 상위 N등'],['min','점수 이상'],['bottomN','하위 N명'],['exact','미참(0점)']];
+function _setRuleRowsHtml(){
+  if(!_setRules.length) return '<div class="dim" style="font-size:13px;font-weight:700;padding:8px 2px">승강 기준이 없어요 — "기준 추가"로 시작</div>';
+  const RF='border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 9px;font-weight:700;font-size:13px;color:var(--text);outline:0';
+  return _setRules.map((r,i)=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap">
+    <span class="dim" style="width:20px;text-align:right;font-weight:900;font-size:12px">${i+1}</span>
+    <div style="display:flex;flex-direction:column;gap:1px">
+      <button onclick="_setRuleMove(${i},-1)" ${i===0?'disabled':''} style="border:0;background:transparent;color:${i===0?'var(--line)':'var(--dim)'};cursor:${i===0?'default':'pointer'};font-size:10px;line-height:1"><i class="fa-solid fa-caret-up"></i></button>
+      <button onclick="_setRuleMove(${i},1)" ${i===_setRules.length-1?'disabled':''} style="border:0;background:transparent;color:${i===_setRules.length-1?'var(--line)':'var(--dim)'};cursor:${i===_setRules.length-1?'default':'pointer'};font-size:10px;line-height:1"><i class="fa-solid fa-caret-down"></i></button>
+    </div>
+    <input value="${escAttr(r.rank)}" oninput="_setRuleField(${i},'rank',this.value)" placeholder="직위명" style="flex:1;min-width:90px;${RF}">
+    <select onchange="_setRuleType(${i},this.value)" style="${RF}">${_RULE_TYPES.map(([v,l])=>`<option value="${v}" ${r.type===v?'selected':''}>${l}</option>`).join('')}</select>
+    ${r.type==='exact'?'<span class="dim" style="width:104px;font-size:11px;font-weight:700;text-align:center">0점 고정</span>':`<input type="number" value="${r.value}" oninput="_setRuleField(${i},'value',this.value)" style="width:104px;${RF}">`}
+    <button onclick="_setRuleDel(${i})" title="삭제" style="border:0;background:transparent;color:var(--dim);cursor:pointer;padding:6px"><i class="fa-solid fa-trash"></i></button>
+  </div>`).join('');
+}
+function _setRuleRender(){ const el=document.getElementById('setRuleEditor'); if(el) el.innerHTML=_setRuleRowsHtml(); }
+window._setRuleMove=(i,d)=>{ const j=i+d; if(j<0||j>=_setRules.length) return; const t=_setRules[i]; _setRules[i]=_setRules[j]; _setRules[j]=t; _setRuleRender(); };
+window._setRuleField=(i,f,v)=>{ if(_setRules[i]) _setRules[i][f]=v; };
+window._setRuleType=(i,v)=>{ if(_setRules[i]){ _setRules[i].type=v; } _setRuleRender(); };
+window._setRuleDel=(i)=>{ _setRules.splice(i,1); _setRuleRender(); };
+window._setRuleAdd=()=>{ _setRules.push({ rank:'', type:'topN', value:5 }); _setRuleRender(); };
+window._setSaveRules=async ()=>{
+  if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
+  const FK=FACTIONS[_setFac]||FACTIONS.bunny, facKey=FK.key;
+  const out=_setRules.filter(r=>(r.rank||'').trim()).map(r=>{ const o={ rank:r.rank.trim() }; const n=Number(r.value)||0;
+    if(r.type==='topN') o.topN=n; else if(r.type==='bottomN') o.bottomN=n; else if(r.type==='exact') o.exactScore=0; else o.min=n; return o; });
+  const cfg=_cfg||await getConfig();
+  if(!cfg.autoRankRules) cfg.autoRankRules={}; cfg.autoRankRules[facKey]=out;
+  const { error } = await db().from('site_config').update({ config:cfg, updated_at:new Date().toISOString() }).eq('id',_cfgId);
+  if(error) return alert('저장 실패: '+error.message);
+  _cfg=cfg; alert(`${FK.label} 승강 기준 ${out.length}개 저장됐어요 ✓`);
+};
 window._setFacTab=async (k)=>{
   if(!FACTIONS[k]) return; _setFac=k;
   const el=document.getElementById('pageBody'); if(!el) return;
@@ -1332,6 +1394,57 @@ window._setSaveBasic=async ()=>{
   const { error } = await db().from('site_config').update({ config:cfg, updated_at:new Date().toISOString() }).eq('id',_cfgId);
   if(error) return alert('저장 실패: '+error.message);
   _cfg=cfg; alert('기본 정보가 저장됐어요 ✓');
+};
+/* ===== 길드 대규모 개편(직위명 변경 + 승강기준) — 공지 기반 1회성 마이그레이션 ===== */
+const _REFORM = {
+  '뚠카롱': { label:'버니',
+    renames:{ '마카롱':'버니버니','다쿠아즈':'당근당근','크라운':'로얄버니','파르페':'문버니','티라미슈':'스타버니','크로칸슈':'코튼버니','롤케이크':'토끼풀','팬케이크':'새싹','스콘':'돌멩이' },
+    rules:{ '문버니':{topN:25}, '스타버니':{topN:60}, '코튼버니':{min:130000} } },  // 로얄버니 TOP5·새싹 하위20·돌멩이 미참은 기존과 동일
+  '뚱카롱': { label:'늑대',
+    renames:{ '마카롱':'늑대','다쿠아즈':'울프','뚠케이크':'딩고','뚠바게트':'허스키','뚠브레드':'강아지','뚠스콘':'발자국' },
+    rules:{} }
+};
+function _reformConfig(orig){
+  const cfg=JSON.parse(JSON.stringify(orig||{}));
+  const guildKeys=Object.keys(_REFORM);
+  for(const gk of guildKeys){
+    const ren=_REFORM[gk].renames, m=n=>ren[n]||n;
+    if(cfg.ranks&&cfg.ranks[gk]) cfg.ranks[gk]=cfg.ranks[gk].map(m);
+    if(cfg.autoRankRules&&cfg.autoRankRules[gk]) cfg.autoRankRules[gk]=cfg.autoRankRules[gk].map(r=>{ const nr={...r, rank:m(r.rank)}; const u=_REFORM[gk].rules[nr.rank]; if(u) Object.assign(nr,u); return nr; });
+    if(cfg.cutoffs&&cfg.cutoffs[gk]) cfg.cutoffs[gk]=cfg.cutoffs[gk].map(r=>({...r, rank:m(r.rank)}));
+    if(cfg.autoRankExemptRoles&&cfg.autoRankExemptRoles[gk]) cfg.autoRankExemptRoles[gk]=cfg.autoRankExemptRoles[gk].map(m);
+  }
+  // 전역 맵: 새 이름 키를 옛 값 복제로 추가(옛 키는 보존 — 충돌/누락 방지)
+  const clone=(obj,old,nw)=>{ if(obj&&obj[old]!==undefined&&obj[nw]===undefined) obj[nw]=JSON.parse(JSON.stringify(obj[old])); };
+  for(const gk of guildKeys) for(const [old,nw] of Object.entries(_REFORM[gk].renames)){ clone(cfg.rolePriority,old,nw); clone(cfg.roleDisplay,old,nw); clone(cfg.rowHighlightRoles,old,nw); }
+  if(Array.isArray(cfg.suroExempt)){ const all={}; for(const gk of guildKeys) Object.assign(all,_REFORM[gk].renames); cfg.suroExempt=cfg.suroExempt.map(n=>all[n]||n); }
+  return cfg;
+}
+async function _reformMigrateRoles(){
+  const res=[];
+  for(const gk of Object.keys(_REFORM)) for(const [old,nw] of Object.entries(_REFORM[gk].renames)){
+    const { data, error } = await db().from('members').update({ role:nw }).eq('guild',gk).eq('role',old).select('id');
+    res.push(`${_REFORM[gk].label} ${old}→${nw}: ${error?('실패 '+error.message):((data?data.length:0)+'명')}`);
+  }
+  return res;
+}
+window._setReformPreview=async ()=>{
+  const cfg=_cfg||await getConfig();
+  const ranksAfter={};
+  for(const gk of Object.keys(_REFORM)) ranksAfter[_REFORM[gk].label]=_reformConfig(cfg).ranks[gk];
+  alert('변경 후 직위 (미리보기):\n\n'+Object.entries(ranksAfter).map(([g,r])=>`[${g}] `+r.join(', ')).join('\n\n'));
+};
+window._setReformApply=async ()=>{
+  if(!isAdmin()) return alert('운영진만 적용할 수 있어요.');
+  if(!confirm('📢 길드 개편 적용\n\n· 버니·늑대 직위명을 새 이름으로 일괄 변경 (설정 + 멤버 직위 DB)\n· 승강 기준 갱신: 문버니 TOP25, 스타버니 TOP60, 코튼버니 13만 이상\n\n※ 라이브 공유 DB에 반영됩니다(되돌리기 어려움). 진행할까요?')) return;
+  const cfg=_cfg||await getConfig();
+  const nc=_reformConfig(cfg);
+  const { error } = await db().from('site_config').update({ config:nc, updated_at:new Date().toISOString() }).eq('id',_cfgId);
+  if(error) return alert('설정 저장 실패: '+error.message+'\n(운영진 구글 로그인 상태인지 확인해주세요)');
+  _cfg=nc;
+  const roleRes=await _reformMigrateRoles();
+  alert('개편 적용 완료 ✓\n\n[멤버 직위 변경]\n'+roleRes.join('\n')+'\n\n승강 기준은 위 "승강 기준 편집"에서 세부 조정 가능(토끼풀 등).');
+  const el=document.getElementById('pageBody'); if(el){ el.innerHTML=loadingHTML('settings'); try{ el.innerHTML=await buildSettings(); }catch(e){ el.innerHTML=errorHTML('settings',e); } }
 };
 window._settingsSave=async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
