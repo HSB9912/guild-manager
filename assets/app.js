@@ -1241,12 +1241,18 @@ let _guessCache = {};   // {캐릭명: 본캐명|null} — 세션 캐시 (재추
 async function guessMainChar(name){
   if(name in _guessCache) return { name:_guessCache[name], method:'cache' };
   let result=null;
-  // 1차: 메애기 프록시 (타임아웃 2.5s — 느린 프록시에 안 매달림)
-  try{ const r=await _fetchT(BAIL_MEAEGI_URL+encodeURIComponent(name)+'/alt', 1800); if(r.ok){ const d=await r.json(); const mn=(d&&d.main&&(d.main.nickname||d.main.name||d.main.character_name))||(d&&d.mainCharacterName); if(mn) result=mn; } }catch(e){}
-  // 2차: 넥슨 유니온 랭킹 (최근 2날짜만) — ranking[0]=계정 대표(본캐)
-  if(!result){ try{ const { ocid }=await nexonFetch('/maplestory/v1/id',{ character_name:name });
-    for(const dz of [2,1,3]){ try{ const rk=await nexonFetch('/maplestory/v1/ranking/union',{ ocid, date:_kstDate(dz) }); if(rk&&rk.ranking&&rk.ranking.length){ result=rk.ranking[0].character_name; break; } }catch(e){} }
-  }catch(e){} }
+  try{ const { ocid }=await nexonFetch('/maplestory/v1/id',{ character_name:name });
+    // 1차: 유니온 챔피언 (계정 공통 캐릭 목록 · 이름 포함) — 슬롯1 = 본캐(대표)
+    try{ const c=await nexonFetch('/maplestory/v1/user/union-champion',{ ocid });
+      const champs=(c&&c.union_champion)||[];
+      if(champs.length){ const rep=(champs.find(x=>x.champion_slot===1)||champs[0]).champion_name; result=rep;
+        // 같은 계정 챔피언 전부 같은 대표로 캐시 (대표=자기자신, 부캐=rep) → 호출 절약
+        champs.forEach(x=>{ if(x.champion_name) _guessCache[x.champion_name]=rep; });
+      }
+    }catch(e){}
+    // 2차 폴백: 유니온 랭킹 (챔피언 없는 계정 — 본캐 자기참조)
+    if(!result){ for(const dz of [2,1,3]){ try{ const rk=await nexonFetch('/maplestory/v1/ranking/union',{ ocid, date:_kstDate(dz) }); if(rk&&rk.ranking&&rk.ranking.length){ result=rk.ranking[0].character_name; break; } }catch(e){} } }
+  }catch(e){}
   _guessCache[name]=result;
   return { name:result, method: result?'ok':'fail' };
 }
@@ -1318,7 +1324,7 @@ window._syncRun=async ()=>{
         ${added.length?`<button id="syncGuessBtn" onclick="_syncGuessAll()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>본캐 추론</button>
         <button onclick="_syncAdd()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:#1A8A4A;cursor:pointer">DB에 추가</button>`:''}
       </div>
-      <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">본캐 추론: 메애기→유니온으로 계정 대표 추정 · 자기자신=본캐(is_main) / 다른캐=그 본캐의 부캐 / 미확인=미지정(is_main 안 함, 계정그룹서 나중에)</p>
+      <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">본캐 추론: 유니온 챔피언으로 같은 계정 묶고 대표(슬롯1) 추정 · 자기자신=본캐(is_main) / 다른캐=그 본캐의 부캐 / 미확인=미지정(챔피언 없는 저레벨 계정)</p>
       <div id="syncNewBox">${_syncRenderNewRows()}</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 0">
         <span style="font-weight:900;font-size:14px">길드 이동 ${moved.length}</span>
