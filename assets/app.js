@@ -1259,17 +1259,17 @@ function _syncGuessLabel(n,g){
 function _syncRenderNewRows(){
   const added=window._syncAdded||[], gm=window._syncGuessMap||{};
   if(!added.length) return '<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>';
-  return `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${added.map((n,i)=>
-    `<div style="display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:10px;padding:6px 11px"><span style="font-weight:800;font-size:13px">${escHtml(n)}</span><span id="sg_${i}" style="margin-left:auto;text-align:right">${_syncGuessLabel(n,gm[n])}</span></div>`
-  ).join('')}</div>`;
+  return `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${added.map((m,i)=>{ const n=m.name;
+    return `<div style="display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:10px;padding:6px 11px"><span style="font-weight:800;font-size:13px">${escHtml(n)}</span><span class="chip" style="background:var(--panel-3);color:var(--dim);font-weight:800">${escHtml(guildLabel(m.guild))}</span><span id="sg_${i}" style="margin-left:auto;text-align:right">${_syncGuessLabel(n,gm[n])}</span></div>`;
+  }).join('')}</div>`;
 }
 window._syncGuessAll=async ()=>{
   const added=window._syncAdded||[]; if(!added.length) return;
   const btn=document.getElementById('syncGuessBtn'); if(btn) btn.disabled=true;
   const gm=window._syncGuessMap=window._syncGuessMap||{};
-  added.forEach((n,i)=>{ const el=document.getElementById('sg_'+i); if(el)el.innerHTML='<i class="fa-solid fa-spinner fa-spin dim" style="font-size:10px"></i>'; });
+  added.forEach((m,i)=>{ const el=document.getElementById('sg_'+i); if(el)el.innerHTML='<i class="fa-solid fa-spinner fa-spin dim" style="font-size:10px"></i>'; });
   const CONC=10; let next=0, done=0;
-  const worker=async ()=>{ while(next<added.length){ const i=next++; const n=added[i];
+  const worker=async ()=>{ while(next<added.length){ const i=next++; const n=added[i].name;
     try{ const r=await guessMainChar(n); gm[n]=r.name; }catch(e){ gm[n]=null; }
     const el=document.getElementById('sg_'+i); if(el) el.innerHTML=_syncGuessLabel(n,gm[n]);
     done++; if(btn) btn.innerHTML=`<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>${done}/${added.length}`;
@@ -1283,26 +1283,36 @@ window._syncRun=async ()=>{
   const box=document.getElementById('syncResult');
   const step=(m)=>{ box.innerHTML=`<div class="dim" style="font-weight:700;padding:14px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>${m}</div>`; };
   try{
-    step(`${NEXON_GUILD} 길드 ID 조회 (${world})`);
-    const { oguild_id } = await nexonFetch('/maplestory/v1/guild/id',{ guild_name:NEXON_GUILD, world_name:world });
-    step(`${NEXON_GUILD} 길드원 목록 조회`);
-    const basic = await nexonFetch('/maplestory/v1/guild/basic',{ oguild_id });
-    const roster = basic.guild_member || [];
-    const rosterSet = new Set(roster);
-    step('DB와 비교 중');
-    const { data:dbm, error } = await db().from('members').select('id,name,is_main').eq('guild',GUILD).limit(3000);
+    const FACS=Object.values(FACTIONS);   // 버니/늑대/쿠거 (3길드 일괄)
+    const apiByKey={}, errs=[];
+    for(const f of FACS){ try{ step(`${f.label}(${f.nexon}) 길드 조회 (${world})`);
+      const { oguild_id } = await nexonFetch('/maplestory/v1/guild/id',{ guild_name:f.nexon, world_name:world });
+      const basic = await nexonFetch('/maplestory/v1/guild/basic',{ oguild_id });
+      apiByKey[f.key]=basic.guild_member||[];
+    }catch(e){ apiByKey[f.key]=null; errs.push(`${f.label}: ${e.message||e}`); } }
+    step('DB와 비교 중 (신규/탈퇴/이동)');
+    const keys=FACS.map(f=>f.key);
+    const { data:dbm, error } = await db().from('members').select('id,name,guild,is_main').in('guild',keys).limit(8000);
     if(error) throw error;
-    const dbNames = new Set((dbm||[]).map(m=>m.name));
-    const added = roster.filter(n=>!dbNames.has(n));
-    const left = (dbm||[]).filter(m=>m.is_main!==false && !rosterSet.has(m.name)).map(m=>({ id:m.id, name:m.name }));
-    window._syncAdded=added; window._syncLeft=left; window._syncGuessMap={};
-    const list=(arr,color)=>arr.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${arr.map(n=>`<span class="chip" style="background:var(--panel-2);color:${color}">${n}</span>`).join('')}</div>`:'<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>';
+    const dbNameSet=new Set((dbm||[]).map(m=>m.name));
+    const apiNameSet=new Set(); Object.values(apiByKey).forEach(a=>{ if(a) a.forEach(n=>apiNameSet.add(n)); });
+    const added=[]; for(const f of FACS){ const a=apiByKey[f.key]; if(!a) continue; a.forEach(n=>{ if(!dbNameSet.has(n)) added.push({ name:n, guild:f.key }); }); }
+    const left=(dbm||[]).filter(m=>m.is_main!==false && apiByKey[m.guild] && !apiByKey[m.guild].includes(m.name) && !apiNameSet.has(m.name)).map(m=>({ id:m.id, name:m.name, guild:m.guild }));
+    const moved=[]; (dbm||[]).forEach(m=>{ if(!apiByKey[m.guild]) return; for(const f of FACS){ if(f.key!==m.guild && apiByKey[f.key] && apiByKey[f.key].includes(m.name)){ moved.push({ id:m.id, name:m.name, from:m.guild, to:f.key }); break; } } });
+    window._syncAdded=added; window._syncLeft=left; window._syncMoved=moved; window._syncGuessMap={};
+    const apiTotal=Object.values(apiByKey).reduce((s,a)=>s+(a?a.length:0),0);
+    const dbCntByGuild={}; (dbm||[]).forEach(m=>{ dbCntByGuild[m.guild]=(dbCntByGuild[m.guild]||0)+1; });
+    const guildStatus=FACS.map(f=>{ const ac=apiByKey[f.key]?apiByKey[f.key].length+'':'<b style="color:var(--bad-tx)">실패</b>'; return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:10px;padding:8px 12px"><span style="font-weight:800;font-size:13px">${f.emoji} ${f.label}</span><span class="dim" style="font-size:11px;font-weight:800">API ${ac} / DB ${dbCntByGuild[f.key]||0}</span></div>`; }).join('');
+    const movedRows=moved.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${moved.map(m=>`<label style="display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border-radius:999px;padding:5px 12px;cursor:pointer;font-weight:800;font-size:13px"><input type="checkbox" class="sync-moved-cb" data-id="${m.id}" data-name="${escAttr(m.name)}" data-from="${m.from}" data-to="${m.to}" style="accent-color:#9B59B6">${escHtml(m.name)} <span class="dim" style="font-size:10px;font-weight:800">${escHtml(guildLabel(m.from))}→${escHtml(guildLabel(m.to))}</span></label>`).join('')}</div>`:'<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>';
     box.innerHTML=`
-      <div class="bento" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
-        <div class="panel tone-rose" style="border-radius:18px;padding:16px;color:#fff"><div style="font-size:13px;font-weight:700;opacity:.9">넥슨 길드원</div><div style="font-size:26px;font-weight:900">${roster.length}</div></div>
-        <div class="panel tone-light" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:13px;font-weight:700">신규</div><div style="font-size:26px;font-weight:900;color:var(--ok-tx)">${added.length}</div></div>
-        <div class="panel tone-cream" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:13px;font-weight:700">탈퇴 의심</div><div style="font-size:26px;font-weight:900;color:var(--bad-tx)">${left.length}</div></div>
+      ${errs.length?`<div class="panel" style="border-radius:14px;padding:12px 14px;margin-bottom:12px;background:var(--warn-bg)"><div style="font-size:12px;font-weight:800;color:var(--warn-tx)"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i>일부 길드 조회 실패</div>${errs.map(e=>`<div style="font-size:11px;font-weight:700;color:var(--warn-tx)">${escHtml(e)}</div>`).join('')}</div>`:''}
+      <div class="bento" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+        <div class="panel tone-rose" style="border-radius:18px;padding:16px;color:#fff"><div style="font-size:12px;font-weight:700;opacity:.9">넥슨 길드원(3길드)</div><div style="font-size:24px;font-weight:900">${apiTotal}</div></div>
+        <div class="panel tone-light" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:12px;font-weight:700">신규</div><div style="font-size:24px;font-weight:900;color:var(--ok-tx)">${added.length}</div></div>
+        <div class="panel tone-cream" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:12px;font-weight:700">길드 이동</div><div style="font-size:24px;font-weight:900;color:#9B59B6">${moved.length}</div></div>
+        <div class="panel tone-light" style="border-radius:18px;padding:16px"><div class="dim" style="font-size:12px;font-weight:700">탈퇴 의심</div><div style="font-size:24px;font-weight:900;color:var(--bad-tx)">${left.length}</div></div>
       </div>
+      <div class="panel" style="border-radius:16px;padding:14px;margin-bottom:14px"><div style="font-weight:900;font-size:13px;margin-bottom:8px"><i class="fa-solid fa-chart-pie" style="color:var(--bunny-main);margin-right:6px"></i>길드별 현황</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">${guildStatus}</div></div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 0">
         <span style="font-weight:900;font-size:14px">신규 길드원 ${added.length}</span>
         ${added.length?`<button id="syncGuessBtn" onclick="_syncGuessAll()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>본캐 추론</button>
@@ -1310,6 +1320,13 @@ window._syncRun=async ()=>{
       </div>
       <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">본캐 추론: 메애기→유니온으로 계정 대표 추정 · 자기자신=본캐(is_main) / 다른캐=그 본캐의 부캐 / 미확인=미지정(is_main 안 함, 계정그룹서 나중에)</p>
       <div id="syncNewBox">${_syncRenderNewRows()}</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 0">
+        <span style="font-weight:900;font-size:14px">길드 이동 ${moved.length}</span>
+        ${moved.length?`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;cursor:pointer"><input type="checkbox" onclick="document.querySelectorAll('.sync-moved-cb').forEach(c=>c.checked=this.checked)" style="accent-color:#9B59B6">전체</label>
+        <button id="syncMovedBtn" onclick="_syncMovedApply()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:#9B59B6;cursor:pointer"><i class="fa-solid fa-arrow-right-arrow-left" style="margin-right:5px"></i>선택 이동 적용</button>`:''}
+      </div>
+      <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">DB와 다른 길드 넥슨에 있는 캐릭. 적용하면 members.guild 변경(수로/직위 기록 유지) · 추가와 별개</p>
+      ${movedRows}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 0">
         <span style="font-weight:900;font-size:14px">탈퇴 의심 ${left.length}</span>
         ${left.length?`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;cursor:pointer"><input type="checkbox" onclick="document.querySelectorAll('.sync-gone-cb').forEach(c=>c.checked=this.checked)" style="accent-color:var(--bad-tx)">전체</label>
@@ -1323,18 +1340,29 @@ window._syncAdd=async ()=>{
   if(!isAdmin()) return alert('운영진만 추가할 수 있어요.');
   const added=window._syncAdded||[]; if(!added.length) return;
   const gm=window._syncGuessMap||{};
-  const subCnt=added.filter(n=>gm[n]&&gm[n]!==n).length;       // 부캐(추론됨)
-  const selfCnt=added.filter(n=>gm[n]&&gm[n]===n).length;      // 본캐(자기자신)
-  const unkCnt=added.length-subCnt-selfCnt;                    // 미확인 → is_main:false
-  if(!confirm(`${added.length}명을 DB에 추가할까요?\n· 본캐(자기자신): ${selfCnt}명\n· 부캐(본캐 추론됨): ${subCnt}명\n· 미확인(미지정): ${unkCnt}명\n※ 라이브 공유 DB에 반영됩니다.`)) return;
+  const subCnt=added.filter(m=>gm[m.name]&&gm[m.name]!==m.name).length;     // 부캐(추론됨)
+  const selfCnt=added.filter(m=>gm[m.name]&&gm[m.name]===m.name).length;    // 본캐(자기자신)
+  const unkCnt=added.length-subCnt-selfCnt;                                 // 미확인 → is_main:false
+  if(!confirm(`${added.length}명을 DB에 추가할까요? (각자 소속 길드로)\n· 본캐(자기자신): ${selfCnt}명\n· 부캐(본캐 추론됨): ${subCnt}명\n· 미확인(미지정): ${unkCnt}명\n※ 라이브 공유 DB에 반영됩니다.`)) return;
   const today=new Date().toISOString().slice(0,10);
-  const rows=added.map(name=>{ const g=gm[name];
-    if(g && g!==name) return { name, guild:GUILD, is_main:false, main_char_name:g, join_date:today };  // 부캐
-    return { name, guild:GUILD, is_main:(g===name), join_date:today };                                  // 자기자신=본캐 / 미확인=is_main:false
+  const rows=added.map(m=>{ const name=m.name, g=gm[name];
+    if(g && g!==name) return { name, guild:m.guild, is_main:false, main_char_name:g, join_date:today };  // 부캐
+    return { name, guild:m.guild, is_main:(g===name), join_date:today };                                  // 자기자신=본캐 / 미확인=is_main:false
   });
   const { error } = await db().from('members').insert(rows);
   if(error) return alert('추가 실패: '+error.message);
   alert(`${rows.length}명 추가됐어요 ✓ (본캐 ${selfCnt} · 부캐 ${subCnt} · 미지정 ${unkCnt})`); _syncRun();
+};
+window._syncMovedApply=async ()=>{
+  if(!isAdmin()) return alert('운영진만 적용할 수 있어요.');
+  const checks=[...document.querySelectorAll('.sync-moved-cb:checked')];
+  if(!checks.length) return alert('적용할 이동을 선택해주세요.');
+  const items=checks.map(c=>({ id:Number(c.dataset.id), name:c.dataset.name, from:c.dataset.from, to:c.dataset.to }));
+  if(!confirm(`${items.length}명의 길드 이동을 적용할까요?\n${items.slice(0,12).map(i=>`${i.name}: ${guildLabel(i.from)}→${guildLabel(i.to)}`).join('\n')}${items.length>12?`\n외 ${items.length-12}명`:''}\n\n※ 라이브 공유 DB(members.guild) · 수로/직위 기록은 유지`)) return;
+  const btn=document.getElementById('syncMovedBtn'); if(btn){ btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>적용 중…'; }
+  let ok=0, fail=0;
+  for(const it of items){ const { error } = await db().from('members').update({ guild:it.to }).eq('id', it.id); if(error) fail++; else ok++; }
+  alert(`이동 적용 ✓ (${ok}명${fail?` · 실패 ${fail}`:''})`); _syncRun();
 };
 window._syncRemoveGone=async ()=>{
   if(!isAdmin()) return alert('운영진만 삭제할 수 있어요.');
