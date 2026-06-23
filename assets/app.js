@@ -116,6 +116,8 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-23', date:'2026-06-23', items:[
+    { t:'feat', x:'전체 모바일 최적화 — 아이폰·안드로이드 대응(사이드바 드로어 메뉴·카드 1열 정렬)' },
+    { t:'feat', x:'운영진 할 일 — 글마다 작성자 이름·작성일 표시' },
     { t:'feat', x:'운영진 할 일 — 사진을 Ctrl+V로 바로 붙여넣기' },
     { t:'fix',  x:'수로 보상 조각 계산이 0으로 나오던 버그 수정' },
   ]},
@@ -999,16 +1001,18 @@ function _todoParseNote(note){ if(!note) return {text:'',images:[]}; try{ const 
 let _todoData=[]; let _todoFold=true; let _todoEdit=null; let _todoComposeImgs=[];
 async function buildTodos(){
   let data=[];
-  try{ const r=await db().from('admin_todos').select('id,title,note,priority,category,status,due_date,done_by').order('created_at',{ascending:false}).limit(300); if(r.error) throw r.error; data=r.data||[]; }catch(e){ data=[]; }
+  try{ const r=await db().from('admin_todos').select('id,title,note,priority,category,status,due_date,done_by,created_by,created_at').order('created_at',{ascending:false}).limit(300); if(r.error) throw r.error; data=r.data||[]; }catch(e){ data=[]; }
   _todoData=data; _todoComposeImgs=[];
   const rank={urgent:0,high:1,normal:2,low:3};
   const todo=data.filter(t=>t.status!=='done').sort((a,b)=>(rank[a.priority]??2)-(rank[b.priority]??2));
   const done=data.filter(t=>t.status==='done');
   const post=(t,isDone)=>{ const {text,images}=_todoParseNote(t.note);
+    const author=(t.created_by||'운영진').split('@')[0];
+    const when=t.created_at?String(t.created_at).slice(0,10):'';
     return `<div class="panel" style="border-radius:16px;padding:0;margin-bottom:12px;overflow:hidden;${isDone?'opacity:.62':''}">
       <div style="display:flex;align-items:center;gap:10px;padding:13px 15px 0">
-        <div style="width:34px;height:34px;border-radius:999px;background:linear-gradient(135deg,var(--bunny-light),var(--bunny-main));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;flex-shrink:0">운</div>
-        <div style="min-width:0"><div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">운영진${t.category?` <span class="chip" style="background:var(--panel-3);color:var(--bunny-deep)">${escHtml(t.category)}</span>`:''} ${todoPrio(t.priority)}</div>${t.due_date?`<div class="dim" style="font-size:11px;font-weight:700">~${t.due_date} 마감</div>`:''}</div>
+        <div style="width:34px;height:34px;border-radius:999px;background:linear-gradient(135deg,var(--bunny-light),var(--bunny-main));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;flex-shrink:0">${escHtml(author.slice(0,1))}</div>
+        <div style="min-width:0"><div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${escHtml(author)}${t.category?` <span class="chip" style="background:var(--panel-3);color:var(--bunny-deep)">${escHtml(t.category)}</span>`:''} ${todoPrio(t.priority)}</div><div class="dim" style="font-size:11px;font-weight:700">${when}${t.due_date?` · ~${t.due_date} 마감`:''}${isDone&&t.done_by?` · ${escHtml(String(t.done_by).split('@')[0])} 완료`:''}</div></div>
         <button onclick="_todoToggle(${t.id},${isDone?'false':'true'})" style="margin-left:auto;border:1px solid var(--line);border-radius:9px;padding:7px 13px;font-weight:800;font-size:12.5px;cursor:pointer;${isDone?'background:var(--ok-bg);color:var(--ok-tx)':'background:var(--panel-2);color:var(--text)'};flex-shrink:0">${isDone?'<i class="fa-solid fa-rotate-left"></i> 완료됨':'<i class="fa-solid fa-check"></i> 완료'}</button>
       </div>
       <div style="padding:9px 15px 13px">
@@ -4223,12 +4227,21 @@ function render(){
   else if(hasBuilder)        content = `<div id="pageBody">${loadingHTML(page)}</div>`;  // 실데이터 페이지
   else                       content = placeholderHTML(page);   // 아직 와꾸
 
+  const mtitle = (page==='home') ? '버니 길드' : (META[page] ? META[page].t : '버니 길드');
   app.innerHTML = `
     <button id="darkBtn" class="dark-btn panel" onclick="toggleDark()">${localStorage.getItem('bunny_dark')==='1'?'☀️':'🌙'}</button>
+    <div class="sidebar-ovl" onclick="closeNav()"></div>
     <div class="app-shell">
       ${sidebarHTML(page)}
-      <main class="main scroll"><div class="fade" style="padding:28px;">${content}</div></main>
+      <main class="main scroll">
+        <div class="mobile-bar">
+          <button class="mb-btn" onclick="openNav()" aria-label="메뉴"><i class="fa-solid fa-bars"></i></button>
+          <h1>🐰 ${mtitle}</h1>
+        </div>
+        <div class="fade" style="padding:28px;">${content}</div>
+      </main>
     </div>`;
+  document.body.classList.remove('nav-open');
 
   // 실데이터 페이지는 DB 준비된 뒤 비동기로 채움
   if(hasBuilder && BACKEND.db){
@@ -4237,6 +4250,10 @@ function render(){
       .catch(e=>{ const el=document.getElementById('pageBody'); if(el) el.innerHTML = errorHTML(page,e); });
   }
 }
+
+/* ---------- 모바일 드로어 ---------- */
+window.openNav  = ()=> document.body.classList.add('nav-open');
+window.closeNav = ()=> document.body.classList.remove('nav-open');
 
 /* ---------- 부트 ---------- */
 (async function(){
