@@ -941,11 +941,12 @@ async function buildTodos(){
   const composer=`<div class="panel" style="border-radius:18px;padding:14px 16px;margin-bottom:18px;display:flex;gap:11px">
       <div style="width:38px;height:38px;border-radius:999px;background:linear-gradient(135deg,var(--bunny-light),var(--bunny-main));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900">운</div>
       <div style="flex:1;min-width:0">
-        <input id="tdc_t" placeholder="무엇을 QA할까요? (제목)" style="width:100%;border:0;background:transparent;outline:0;font-weight:800;font-size:15px;color:var(--text);padding:8px 4px">
-        <textarea id="tdc_c" placeholder="내용 · QA 할 부분, 재현 절차 등" style="width:100%;border:0;background:transparent;outline:0;font-size:14px;font-weight:600;color:var(--text);padding:4px;height:74px;resize:vertical;line-height:1.55"></textarea>
+        <input id="tdc_t" placeholder="무엇을 QA할까요? (제목)" onpaste="_todoComposePaste(event)" style="width:100%;border:0;background:transparent;outline:0;font-weight:800;font-size:15px;color:var(--text);padding:8px 4px">
+        <textarea id="tdc_c" placeholder="내용 · QA 할 부분, 재현 절차 등  (사진은 Ctrl+V로 바로 붙여넣기)" onpaste="_todoComposePaste(event)" style="width:100%;border:0;background:transparent;outline:0;font-size:14px;font-weight:600;color:var(--text);padding:4px;height:74px;resize:vertical;line-height:1.55"></textarea>
         <div id="tdc_imgs" style="display:flex;gap:7px;flex-wrap:wrap;margin:4px 0"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
           <label style="border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-weight:800;font-size:12.5px;cursor:pointer;background:var(--panel-2)"><i class="fa-solid fa-image" style="margin-right:5px"></i>사진<input type="file" accept="image/*" multiple onchange="_todoComposeAttach(event)" style="display:none"></label>
+          <span class="dim" style="font-size:11px;font-weight:700"><i class="fa-solid fa-paste" style="margin-right:4px"></i>Ctrl+V 붙여넣기</span>
           <input id="tdc_cat" value="QA" placeholder="분류" style="border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-weight:700;font-size:13px;color:var(--text);background:var(--panel-2);outline:0;width:84px">
           <select id="tdc_prio" style="border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-weight:700;font-size:13px;color:var(--text);background:var(--panel-2);outline:0"><option value="normal">보통</option><option value="high">높음</option><option value="urgent">긴급</option></select>
           <button onclick="_todoComposePost()" style="margin-left:auto;border:0;border-radius:10px;padding:9px 20px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer"><i class="fa-solid fa-paper-plane" style="margin-right:6px"></i>게시</button>
@@ -962,14 +963,27 @@ async function buildTodos(){
       <div id="todoDoneBox" style="display:${_todoFold?'none':'block'};margin-top:12px">${done.map(t=>post(t,true)).join('')}</div>
     </div>`:''}`;
 }
+/* 공통: File 목록을 R2 업로드 → arr에 url 추가 → box 갱신 (첨부·붙여넣기 공용) */
+async function _todoUploadImgs(files, arr, boxId, htmlFn){
+  const box=document.getElementById(boxId); let any=false;
+  for(const f of files){ if(!f || !f.type.startsWith('image/')) continue; any=true;
+    if(box) box.insertAdjacentHTML('beforeend','<div class="tdc_uploading" style="width:74px;height:56px;border-radius:8px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-spinner fa-spin dim"></i></div>');
+    try{ const ext=((f.name||'').split('.').pop()||'png').toLowerCase().replace(/[^a-z0-9]/g,'')||'png'; const fn=`todo-${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`; const url=await window._r2Upload('guide-images', fn, f); arr.push(url); }catch(e){ alert('업로드 실패: '+(e.message||e)); }
+    if(box) box.innerHTML=htmlFn();
+  }
+  return any;
+}
+/* clipboard 이벤트에서 이미지 File만 추출 */
+function _todoClipImgs(ev){ const items=(ev.clipboardData&&ev.clipboardData.items)||[]; const out=[]; for(const it of items){ if(it.kind==='file'&&it.type.startsWith('image/')){ const f=it.getAsFile(); if(f) out.push(f); } } return out; }
 function _todoComposeImgsHtml(){ return _todoComposeImgs.map((u,i)=>`<div style="position:relative;width:74px;height:56px;border-radius:8px;overflow:hidden;border:1px solid var(--line)"><img src="${escAttr(u)}" style="width:100%;height:100%;object-fit:cover"><button onclick="_todoComposeRmImg(${i})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:999px;border:0;background:var(--bad-tx);color:#fff;cursor:pointer;font-size:10px"><i class="fa-solid fa-xmark"></i></button></div>`).join(''); }
 window._todoComposeRmImg = (i)=>{ _todoComposeImgs.splice(i,1); const el=document.getElementById('tdc_imgs'); if(el)el.innerHTML=_todoComposeImgsHtml(); };
 window._todoComposeAttach = async (ev)=>{
-  const files=Array.from(ev.target.files||[]); ev.target.value=''; const box=document.getElementById('tdc_imgs');
-  for(const f of files){ if(!f.type.startsWith('image/')) continue; if(box) box.insertAdjacentHTML('beforeend','<div id="tdc_up" style="width:74px;height:56px;border-radius:8px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-spinner fa-spin dim"></i></div>');
-    try{ const ext=(f.name.split('.').pop()||'png').toLowerCase().replace(/[^a-z0-9]/g,''); const fn=`todo-${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`; const url=await window._r2Upload('guide-images', fn, f); _todoComposeImgs.push(url); }catch(e){ alert('업로드 실패: '+(e.message||e)); }
-    const up=document.getElementById('tdc_up'); if(up)up.remove(); if(box) box.innerHTML=_todoComposeImgsHtml();
-  }
+  const files=Array.from(ev.target.files||[]); ev.target.value='';
+  await _todoUploadImgs(files, _todoComposeImgs, 'tdc_imgs', _todoComposeImgsHtml);
+};
+window._todoComposePaste = async (ev)=>{
+  const imgs=_todoClipImgs(ev); if(!imgs.length) return; ev.preventDefault();
+  await _todoUploadImgs(imgs, _todoComposeImgs, 'tdc_imgs', _todoComposeImgsHtml);
 };
 window._todoComposePost = async ()=>{
   if(!isAdmin()) return alert('운영진만 작성할 수 있어요.');
@@ -1004,8 +1018,8 @@ function _todoEditRender(){
     <label style="display:block;font-weight:800;font-size:12px;margin:0 0 5px">제목</label>
     <input id="te_title" value="${escAttr(e.title)}" oninput="_todoEdit.title=this.value" style="${inp};margin-bottom:14px">
     <label style="display:block;font-weight:800;font-size:12px;margin:0 0 5px">상세 설명 (QA 할 부분·재현 절차 등)</label>
-    <textarea id="te_text" oninput="_todoEdit.text=this.value" placeholder="예) 동기화 페이지에서 본캐 추론 누르면 ... / 재현: 1) ... 2) ..." style="${inp};height:170px;resize:vertical;line-height:1.6;margin-bottom:14px">${escHtml(e.text)}</textarea>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:800;font-size:12px">스크린샷 (${e.images.length})</label>
+    <textarea id="te_text" oninput="_todoEdit.text=this.value" onpaste="_todoEditPaste(event)" placeholder="예) 동기화 페이지에서 본캐 추론 누르면 ... / 재현: 1) ... 2) ...  (사진은 Ctrl+V로 바로 붙여넣기)" style="${inp};height:170px;resize:vertical;line-height:1.6;margin-bottom:14px">${escHtml(e.text)}</textarea>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><label style="font-weight:800;font-size:12px">스크린샷 (${e.images.length}) <span class="dim" style="font-weight:700"><i class="fa-solid fa-paste" style="margin:0 3px 0 4px"></i>Ctrl+V 가능</span></label>
       <label style="background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:7px 13px;font-weight:800;font-size:12.5px;cursor:pointer"><i class="fa-solid fa-image" style="margin-right:5px"></i>이미지 첨부<input type="file" accept="image/*" multiple onchange="_todoEditAddImg(event)" style="display:none"></label></div>
     <div id="te_imgs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${_todoEditImgsHtml()}</div>
     <div style="display:flex;gap:8px;justify-content:flex-end"><button onclick="_todoEditClose()" style="border:0;border-radius:10px;padding:10px 18px;font-weight:800;background:var(--panel-2);color:var(--text);cursor:pointer">취소</button><button onclick="_todoEditSave()" style="border:0;border-radius:10px;padding:10px 20px;font-weight:800;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:6px"></i>저장</button></div>
@@ -1014,13 +1028,12 @@ function _todoEditRender(){
 function _todoEditImgsHtml(){ const e=_todoEdit; if(!e.images.length) return '<span class="dim" style="font-size:12px;font-weight:700">첨부된 이미지 없음</span>'; return e.images.map((u,i)=>`<div style="position:relative"><img src="${escAttr(u)}" style="width:110px;height:84px;object-fit:cover;border-radius:9px;border:1px solid var(--line)"><button onclick="_todoEditRemoveImg(${i})" style="position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:999px;border:0;background:var(--bad-tx);color:#fff;cursor:pointer;font-size:11px"><i class="fa-solid fa-xmark"></i></button></div>`).join(''); }
 window._todoEditRemoveImg = (i)=>{ _todoEdit.images.splice(i,1); document.getElementById('te_imgs').innerHTML=_todoEditImgsHtml(); };
 window._todoEditAddImg = async (ev)=>{
-  const files=Array.from(ev.target.files||[]); if(!files.length) return; const box=document.getElementById('te_imgs');
-  for(const f of files){ if(!f.type.startsWith('image/')) continue; if(box) box.insertAdjacentHTML('beforeend','<div id="te_up" style="width:110px;height:84px;border-radius:9px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-spinner fa-spin dim"></i></div>');
-    try{ const ext=(f.name.split('.').pop()||'png').toLowerCase().replace(/[^a-z0-9]/g,''); const fn=`todo-${Date.now()}-${Math.random().toString(36).slice(2,7)}.${ext}`; const url=await window._r2Upload('guide-images', fn, f); _todoEdit.images.push(url); }catch(err){ alert('업로드 실패: '+(err.message||err)); }
-    const up=document.getElementById('te_up'); if(up)up.remove();
-    if(box) box.innerHTML=_todoEditImgsHtml();
-  }
-  ev.target.value='';
+  const files=Array.from(ev.target.files||[]); ev.target.value=''; if(!files.length||!_todoEdit) return;
+  await _todoUploadImgs(files, _todoEdit.images, 'te_imgs', _todoEditImgsHtml);
+};
+window._todoEditPaste = async (ev)=>{
+  if(!_todoEdit) return; const imgs=_todoClipImgs(ev); if(!imgs.length) return; ev.preventDefault();
+  await _todoUploadImgs(imgs, _todoEdit.images, 'te_imgs', _todoEditImgsHtml);
 };
 window._todoEditSave = async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.'); const e=_todoEdit; if(!e) return;
