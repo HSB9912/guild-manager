@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-23', date:'2026-06-23', items:[
+    { t:'feat', x:'길드원 — 헤더 클릭 정렬(활성 기준 강조·오름/내림 토글) + 전체 펼치기. 전체/본캐/부캐 버튼 정리, 이름 정렬은 유니코드순' },
     { t:'feat', x:'수로 입력 — 실시간 동시 입력(여러 운영진 같이 작업·자동 저장·Enter로 다음 칸·검색/미입력만·진행률·누가 입력 중 표시)' },
     { t:'feat', x:'전체 모바일 최적화 — 아이폰·안드로이드 대응(사이드바 드로어 메뉴·카드 1열 정렬)' },
     { t:'feat', x:'운영진 할 일 — 글마다 작성자 이름·작성일 표시' },
@@ -404,7 +405,7 @@ let _memRanks = [];       // 직위 위계순 (설정 cfg.ranks) — 직위별 �
 function _memRoleRank(role){ if(!role) return 998; const i=_memRanks.indexOf(role); return i>=0?i:998; }
 const _suroFmt=n=> n>=10000?(n/10000).toFixed(n%10000?1:0)+'만': (n? n.toLocaleString():'0');
 function _suroTier(s){ return s<=0?'#C03A3A': s<50000?'#E0A52E': s<120000?'#3D7DD6':'#1A8A4A'; }  // 미참/저조/양호/우수
-const _memState = { mode:'group' };   // 기본 = 계정그룹(대표만, 부캐 묶임)
+const _memState = { mode:'group', sort:'suro', dir:'desc', expandAll:false };   // 계정그룹 아코디언 · 헤더 클릭 정렬
 async function buildMembers(){
   const FK = FACTIONS[_memFac] || FACTIONS.bunny;
   const { data, error } = await db().from('members')
@@ -421,30 +422,24 @@ async function buildMembers(){
     }
   }catch(e){}
   try{ const cfg=await getConfig(); _memRanks=(cfg.ranks&&(cfg.ranks[FK.key]||cfg.ranks[GUILD]))||[]; }catch(e){ _memRanks=[]; }
-  const mains = _mem.filter(m=>m.is_main).length;
-  const BTN='padding:8px 14px;border:0;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;';
-  const modeBtns = [['group','계정그룹'],['all','전체'],['main','본캐'],['sub','부캐']].map(([v,l])=>
-    `<button class="memMode" data-mode="${v}" onclick="_memMode('${v}')" style="${BTN}${v===_memState.mode?'background:var(--bunny-main);color:#fff;':'background:var(--panel-2);color:var(--text);'}">${l}</button>`).join('');
+  const mains = _mem.filter(m=>m.is_main!==false).length;
   const controls = `<div class="panel" style="border-radius:20px;padding:14px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;position:sticky;top:0;z-index:6;box-shadow:0 6px 16px -10px rgba(0,0,0,.25)">
-    <div style="flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:12px;padding:10px 14px;">
+    <div style="flex:1;min-width:170px;display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:12px;padding:10px 14px;">
       <i class="fa-solid fa-magnifying-glass dim"></i>
       <input id="memSearch" oninput="_memApply()" placeholder="닉네임 검색" autocomplete="off" style="border:0;background:transparent;outline:0;color:var(--text);font-size:14px;font-weight:700;width:100%;">
     </div>
-    <div style="display:flex;gap:6px;">${modeBtns}</div>
-    <select id="memSort" onchange="_memApply()" style="${BTN}background:var(--panel-2);color:var(--text)">
-      <option value="suro">이번주차 수로순</option><option value="level">레벨순</option><option value="name">닉네임순</option><option value="class">직업순</option><option value="role">직위순</option><option value="join">가입일순</option>
-    </select>
-    <span class="dim" style="font-size:13px;font-weight:800;margin-left:auto"><b id="memCount" style="color:var(--bunny-deep)">${_mem.length}</b>명 · 본캐 ${mains}</span>
+    <button id="memExpand" onclick="_memExpandAll()" style="padding:10px 15px;border:1px solid var(--line);border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text);white-space:nowrap"><i class="fa-solid fa-chevron-${_memState.expandAll?'up':'down'}" style="margin-right:6px"></i>${_memState.expandAll?'전체 접기':'전체 펼치기'}</button>
+    <span class="dim" style="font-size:13px;font-weight:800;margin-left:auto"><b id="memCount" style="color:var(--bunny-deep)">${mains}</b> 그룹</span>
   </div>`;
   const facBtn = (k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_memFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85;font-weight:700">메인</span>':''; return `<button onclick="_memTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
   const facTabs = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">${facBtn('bunny')}<span class="dim" style="font-size:11px;font-weight:800;margin:0 2px">· 부길드</span>${facBtn('wolf')}${facBtn('cougar')}</div>`;
-  const initBody = _memState.mode==='group' ? memberGroups('').body : memberRows(_mem);
+  const initBody = memberGroups('').body;
   return headerHTML('길드원', `${FK.label} · 총 ${_mem.length}명`) + facTabs + controls +
     `<div class="panel" style="border-radius:24px;padding:18px;"><div id="memTbl">${initBody}</div></div>`;
 }
 window._memTab = async (k)=>{
   if(!FACTIONS[k]) return;
-  _memFac = k; _memState.mode = 'all';
+  _memFac = k;
   const el = document.getElementById('pageBody'); if(!el) return;
   el.innerHTML = loadingHTML('members');
   try{ el.innerHTML = await buildMembers(); }catch(e){ el.innerHTML = errorHTML('members', e); }
@@ -464,23 +459,19 @@ function memberRows(list){
       <th style="text-align:left;padding:10px 8px">닉네임</th><th style="text-align:left;padding:10px 0">역할</th><th style="text-align:left;padding:10px 0">직업</th><th style="text-align:left;padding:10px 0">레벨</th><th style="text-align:left;padding:10px 0">구분</th><th style="text-align:left;padding:10px 0">가입일</th>
     </tr></thead><tbody style="font-weight:500">${body}</tbody></table></div>`;
 }
-window._memMode = (v)=>{ _memState.mode=v; document.querySelectorAll('.memMode').forEach(b=>{ const on=b.dataset.mode===v; b.style.background=on?'var(--bunny-main)':'var(--panel-2)'; b.style.color=on?'#fff':'var(--text)'; }); _memApply(); };
+const _MEM_SORT_DEF = { suro:'desc', level:'desc', join:'desc', name:'asc', role:'asc', class:'asc' };
+window._memSort = (k)=>{
+  if(_memState.sort===k) _memState.dir = _memState.dir==='asc'?'desc':'asc';
+  else { _memState.sort=k; _memState.dir=_MEM_SORT_DEF[k]||'asc'; }
+  _memApply();
+};
+window._memExpandAll = ()=>{ _memState.expandAll=!_memState.expandAll; _memApply(); };
 window._memApply = ()=>{
-  const q=(document.getElementById('memSearch').value||'').trim();
-  const sort=document.getElementById('memSort').value;
-  if(_memState.mode==='group'){ const html=memberGroups(q, sort); document.getElementById('memTbl').innerHTML=html.body; document.getElementById('memCount').textContent=html.count; return; }
-  let list=_mem.slice();
-  if(_memState.mode==='main') list=list.filter(m=>m.is_main);
-  else if(_memState.mode==='sub') list=list.filter(m=>!m.is_main);
-  if(q) list=list.filter(m=>(m.name||'').includes(q));
-  if(sort==='suro') list.sort((a,b)=>((_memSuro[b.id]||0)-(_memSuro[a.id]||0))||((b.level||0)-(a.level||0)));
-  else if(sort==='name') list.sort((a,b)=>{ const x=a.name||'',y=b.name||''; return x<y?-1:x>y?1:0; });   // 유니코드(코드포인트) 순
-  else if(sort==='class') list.sort((a,b)=>{ const ca=a.class||'',cb=b.class||''; if(!ca&&!cb) return (b.level||0)-(a.level||0); if(!ca) return 1; if(!cb) return -1; return ca.localeCompare(cb,'ko')||((b.level||0)-(a.level||0)); });
-  else if(sort==='role') list.sort((a,b)=>(_memRoleRank(a.role)-_memRoleRank(b.role))||((b.level||0)-(a.level||0)));
-  else if(sort==='join') list.sort((a,b)=>(b.join_date||'').localeCompare(a.join_date||''));
-  else list.sort((a,b)=>(b.level||0)-(a.level||0));
-  document.getElementById('memTbl').innerHTML = memberRows(list);
-  document.getElementById('memCount').textContent = list.length;
+  const q=(document.getElementById('memSearch')?.value||'').trim();
+  const html=memberGroups(q);
+  const tbl=document.getElementById('memTbl'); if(tbl) tbl.innerHTML=html.body;
+  const c=document.getElementById('memCount'); if(c) c.textContent=html.count;
+  const b=document.getElementById('memExpand'); if(b) b.innerHTML=`<i class="fa-solid fa-chevron-${_memState.expandAll?'up':'down'}" style="margin-right:6px"></i>${_memState.expandAll?'전체 접기':'전체 펼치기'}`;
 };
 /* 계정그룹 아코디언 — 대표(본캐)+부캐 · 대표 수로 여부 · 편집(👑 대표변경/드래그 이동/저장) */
 let _grpEdit=false; let _grpDirty=new Set();
@@ -546,8 +537,8 @@ window._grpSave = async ()=>{
   alert(`저장 완료 ✓ (${ok}명${fail?` · 실패 ${fail}`:''})`); _grpDirty=new Set(); _grpEdit=false;
   const el=document.getElementById('pageBody'); if(el){ el.innerHTML=loadingHTML('members'); try{ el.innerHTML=await buildMembers(); }catch(e){ el.innerHTML=errorHTML('members',e); } }
 };
-function memberGroups(q, sort){
-  sort=sort||'suro';
+function memberGroups(q){
+  const sort=_memState.sort||'suro', dir=_memState.dir||'desc';
   const hasSuro = Object.keys(_memSuro).length>0;
   const reps = _mem.filter(m=>m.is_main!==false);
   const byMain = {}; _mem.filter(m=>m.is_main===false).forEach(m=>{ const k=m.main_char_name||''; (byMain[k]||(byMain[k]=[])).push(m); });
@@ -557,15 +548,17 @@ function memberGroups(q, sort){
   if(q) groups = groups.filter(g=> g.rep.name.includes(q) || g.alts.some(a=>(a.name||'').includes(q)));
   const sv=(m)=>_memSuro[m.id]||0;
   const maxS=Math.max(1,...reps.map(r=>sv(r)));   // 1등 점수 = 게이지 만땅(100%), 나머지는 그 비율
-  const repCmp={
-    suro:(a,b)=>(sv(b.rep)-sv(a.rep))||((b.rep.level||0)-(a.rep.level||0)),
-    name:(a,b)=>{ const x=a.rep.name||'',y=b.rep.name||''; return x<y?-1:x>y?1:0; },   // 유니코드순
-    level:(a,b)=>(b.rep.level||0)-(a.rep.level||0),
-    role:(a,b)=>(_memRoleRank(a.rep.role)-_memRoleRank(b.rep.role))||((b.rep.level||0)-(a.rep.level||0)),
-    class:(a,b)=>{ const ca=a.rep.class||'',cb=b.rep.class||''; if(!ca&&!cb)return (b.rep.level||0)-(a.rep.level||0); if(!ca)return 1; if(!cb)return -1; return ca.localeCompare(cb,'ko')||((b.rep.level||0)-(a.rep.level||0)); },
-    join:(a,b)=>(b.rep.join_date||'').localeCompare(a.rep.join_date||''),
+  // 오름차순 기준 비교기(이름·직업은 유니코드 코드포인트순) → dir로 방향 적용
+  const repAsc={
+    suro:(a,b)=>(sv(a.rep)-sv(b.rep))||((a.rep.level||0)-(b.rep.level||0)),
+    name:(a,b)=>{ const x=a.rep.name||'',y=b.rep.name||''; return x<y?-1:x>y?1:0; },
+    level:(a,b)=>(a.rep.level||0)-(b.rep.level||0),
+    role:(a,b)=>(_memRoleRank(a.rep.role)-_memRoleRank(b.rep.role))||((a.rep.level||0)-(b.rep.level||0)),
+    class:(a,b)=>{ const ca=a.rep.class||'',cb=b.rep.class||''; if(!ca&&!cb)return 0; if(!ca)return 1; if(!cb)return -1; return ca<cb?-1:ca>cb?1:0; },
+    join:(a,b)=>{ const x=a.rep.join_date||'',y=b.rep.join_date||''; return x<y?-1:x>y?1:0; },
   };
-  groups.sort(repCmp[sort]||repCmp.suro);
+  const _baseCmp=repAsc[sort]||repAsc.suro;
+  groups.sort((a,b)=>{ const r=_baseCmp(a,b); return dir==='desc'?-r:r; });
   const miss = hasSuro ? groups.filter(g=>sv(g.rep)<=0).length : 0;
   const played = hasSuro ? groups.filter(g=>sv(g.rep)>0) : [];
   const avg = played.length ? Math.round(played.reduce((s,g)=>s+sv(g.rep),0)/played.length) : 0;
@@ -587,7 +580,7 @@ function memberGroups(q, sort){
       ? memRow(g.rep,true,g.alts.length===0) + g.alts.map(a=>memRow(a,false,true)).join('')
       : (g.alts.length ? g.alts.map(a=>memRow(a,false,false)).join('') : `<div class="dim" style="font-size:11px;font-weight:700;padding:5px 4px">부캐 없음 · 단일 캐릭</div>`);
     const drop = ed?`ondragover="event.preventDefault();this.classList.add('gover')" ondragleave="this.classList.remove('gover')" ondrop="_grpDropOn(event,'${escAttr(g.rep.name).replace(/'/g,"\\'")}')"`:'';
-    return `<div class="acc-grp" data-rep="${escAttr(g.rep.name)}" style="border-bottom:1px solid var(--line)">
+    return `<div class="acc-grp${_memState.expandAll?' open':''}" data-rep="${escAttr(g.rep.name)}" style="border-bottom:1px solid var(--line)">
       <div class="acc-head" onclick="_grpToggle(this)" ${drop} style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;${miss?'box-shadow:inset 3px 0 0 var(--bad-tx)':''}">
         <i class="fa-solid fa-chevron-right acc-chev dim" style="font-size:10px;width:10px;transition:.15s"></i>
         ${av(g.rep.name,26)}
@@ -600,7 +593,7 @@ function memberGroups(q, sort){
       <div class="acc-body" style="display:none;background:var(--panel-2);padding:4px 12px 9px 34px">${bodyRows}</div>
     </div>`;
   };
-  const orphanBlock = orphans.length ? `<div class="acc-grp" style="border-top:2px solid var(--line)">
+  const orphanBlock = orphans.length ? `<div class="acc-grp${_memState.expandAll?' open':''}" style="border-top:2px solid var(--line)">
       <div onclick="_grpToggle(this)" style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer">
         <i class="fa-solid fa-chevron-right acc-chev dim" style="font-size:10px;width:10px;transition:.15s"></i>
         <i class="fa-solid fa-link-slash dim"></i><span style="font-weight:900;font-size:14px;color:var(--warn-tx)">대표 미상 (부캐인데 본캐 못 찾음)</span>
@@ -623,7 +616,13 @@ function memberGroups(q, sort){
     </div>` : '';
   const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
   const repDatalist = ed ? `<datalist id="grpRepList">${reps.map(r=>`<option value="${escAttr(r.name)}"></option>`).join('')}</datalist>` : '';
-  const body = css + repDatalist + editBar + summary + warnBar + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${groups.map(grpHtml).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
+  // 헤더 클릭 정렬 바 (C안: 활성 기준 핑크 강조 + 방향 화살표) — 닉네임은 유니코드순
+  const arr = dir==='asc' ? '<i class="fa-solid fa-arrow-up-short-wide" style="margin-left:5px;font-size:10px"></i>' : '<i class="fa-solid fa-arrow-down-wide-short" style="margin-left:5px;font-size:10px"></i>';
+  const sk=(k,l,right)=>`<span onclick="_memSort('${k}')" title="${l} 정렬" style="cursor:pointer;padding:5px 10px;border-radius:8px;transition:.12s;${k===sort?'background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff':'color:var(--dim)'}${right?';margin-left:auto':''}">${l}${k===sort?arr:''}</span>`;
+  const sortBar = `<div style="display:flex;align-items:center;gap:4px;padding:9px 11px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:12px;font-weight:800;flex-wrap:wrap">
+    ${sk('name','닉네임')}${sk('role','직위')}${sk('level','레벨')}${sk('class','직업')}${sk('join','가입일')}${sk('suro','이번주 수로',true)}
+  </div>`;
+  const body = css + repDatalist + editBar + summary + warnBar + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${sortBar}${groups.map(grpHtml).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
   return { body, count: groups.length };
 }
 
@@ -1654,7 +1653,7 @@ async function _siFetch(pid){
   const members=res[0].data||[], scores=res[1].data||[], prev=prevPid?(res[2].data||[]):[];
   scores.forEach(s=>{ _siScores[s.member_id]=String(Number(s.score)||0); });
   prev.forEach(s=>{ _siPrev[s.member_id]=Number(s.score)||0; });
-  _siMembers=members.slice().sort((a,b)=> (_siPrev[b.id]||0)-(_siPrev[a.id]||0) || String(a.name||'').localeCompare(String(b.name||''),'ko'));
+  _siMembers=members.slice().sort((a,b)=>{ const d=(_siPrev[b.id]||0)-(_siPrev[a.id]||0); if(d) return d; const x=String(a.name||''),y=String(b.name||''); return x<y?-1:x>y?1:0; });   // 동점은 닉네임 유니코드순
   return _siMembers.length ? _siMembers.map(_siRowHTML).join('') : '<div class="dim" style="padding:26px;text-align:center;font-weight:700">멤버 없음</div>';
 }
 function _siRowHTML(m){
