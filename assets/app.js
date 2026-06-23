@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-23', date:'2026-06-23', items:[
+    { t:'feat', x:'수로 입력 — 실시간 동시 입력(여러 운영진 같이 작업·자동 저장·Enter로 다음 칸·검색/미입력만·진행률·누가 입력 중 표시)' },
     { t:'feat', x:'전체 모바일 최적화 — 아이폰·안드로이드 대응(사이드바 드로어 메뉴·카드 1열 정렬)' },
     { t:'feat', x:'운영진 할 일 — 글마다 작성자 이름·작성일 표시' },
     { t:'tweak', x:'사이드바 하단 정모 안내 박스 제거' },
@@ -1615,47 +1616,156 @@ window._roleApply = async ()=>{
   alert(`적용 완료 — 성공 ${ok}${fail?` · 실패 ${fail}`:''}`); render();
 };
 
-/* ----- 수로 입력 (회차별 점수 일괄 입력) ----- */
-let _siMembers=[], _siPid=null;
+/* ----- 수로 입력 (실시간 동시 입력 · 셀 단위 자동저장) ----- */
+let _siMembers=[], _siPid=null, _siPeriods=[], _siScores={}, _siPrev={}, _siEditing={}, _siPresence=[], _siCh=null, _siOnlyEmpty=false, _siTimers={}, _siPoll=null, _siVisBound=false;
 async function buildSuroInput(){
-  const { data:periods, error } = await db().from('suro_periods').select('id,period_label').order('start_date',{ascending:false}).limit(80);
+  const { data:periods, error } = await db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(80);
   if(error) throw error;
-  _siPid=periods?.[0]?.id;
-  const inp='border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:9px 12px;font-weight:800;font-size:14px;color:var(--text);outline:0;';
-  return headerHTML('수로 입력','회차별 점수 일괄 입력') +
-    `<div class="panel" style="border-radius:20px;padding:14px;margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <span style="font-weight:800"><i class="fa-solid fa-calendar-week" style="color:var(--bunny-main);margin-right:6px"></i>회차</span>
-      <select id="si_period" onchange="_siLoad(this.value)" style="${inp};flex:1;min-width:220px">${(periods||[]).map(p=>`<option value="${p.id}">${p.period_label}</option>`).join('')}</select>
-      <button onclick="_siSave()" style="border:0;border-radius:10px;padding:10px 22px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
+  _siPeriods=periods||[]; _siPid=_siPeriods[0]?.id;
+  const inp='border:1px solid var(--line);background:var(--panel-2);border-radius:11px;padding:10px 12px;font-weight:800;font-size:14px;color:var(--text);outline:0;';
+  const rowsHtml = _siPid ? await _siFetch(_siPid) : '<div class="dim" style="padding:30px;text-align:center;font-weight:700">회차가 없어요</div>';
+  setTimeout(()=>{ try{ _siSubscribe(); }catch(e){} _siUpdateProgress(); }, 60);
+  if(!_siVisBound){ _siVisBound=true; document.addEventListener('visibilitychange',()=>{ if(!document.hidden && document.getElementById('si_list')) _siRefresh(); }); }
+  return headerHTML('수로 입력','실시간 동시 입력 · 자동 저장') +
+    `<div class="panel" style="border-radius:18px;padding:13px 15px;margin-bottom:13px;position:sticky;top:8px;z-index:8">
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <select id="si_period" onchange="_siLoad(this.value)" style="${inp};flex:1;min-width:180px">${_siPeriods.map(p=>`<option value="${p.id}">${escHtml(p.period_label)}</option>`).join('')}</select>
+        <div style="flex:1;min-width:150px;display:flex;align-items:center;gap:7px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:0 12px"><i class="fa-solid fa-magnifying-glass dim"></i><input id="si_q" oninput="_siSearch()" placeholder="닉네임 검색…" style="border:0;background:transparent;flex:1;padding:10px 0;font-weight:800;font-size:14px;color:var(--text);outline:0"></div>
+        <button id="si_only" onclick="_siToggleEmpty()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">미입력만</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px;font-size:12px;font-weight:800;flex-wrap:wrap;gap:4px">
+        <span id="si_presence" class="dim"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>연결 중…</span>
+        <span id="si_pcount" style="color:var(--bunny-deep)">입력 0 / 0</span>
+      </div>
+      <div style="height:8px;background:var(--panel-2);border-radius:99px;overflow:hidden;margin-top:7px"><div id="si_fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--bunny-main),var(--bunny-deep));border-radius:99px;transition:width .25s"></div></div>
     </div>
-    <div id="siBody">${_siPid?await siBody(_siPid):'<div class="panel" style="border-radius:24px;padding:40px;text-align:center"><span class="dim" style="font-weight:700">회차가 없어요</span></div>'}</div>`;
+    <div class="panel" style="border-radius:18px;padding:4px 2px"><div id="si_list" class="scroll" style="max-height:66vh;overflow-y:auto">${rowsHtml}</div></div>
+    <p class="dim" style="font-size:12px;font-weight:700;text-align:center;margin-top:12px"><i class="fa-solid fa-bolt" style="color:var(--bunny-main);margin-right:5px"></i>점수 입력 후 Enter → 자동 저장 + 다음 칸. 다른 운영진 입력도 실시간으로 반영돼요.</p>`;
 }
-async function siBody(pid){
-  const [{data:members},{data:scores}] = await Promise.all([
+async function _siFetch(pid){
+  _siScores={}; _siPrev={}; _siEditing={};
+  const idx=_siPeriods.findIndex(p=>String(p.id)===String(pid)); const prevPid=_siPeriods[idx+1]?.id;
+  const qs=[
     db().from('members').select('id,name,role').eq('guild',GUILD).eq('is_main',true).limit(3000),
     db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',pid).limit(4000),
-  ]);
-  const sm={}; (scores||[]).forEach(s=>sm[s.member_id]=Number(s.score)||0);
-  _siMembers=(members||[]).slice().sort((a,b)=>(sm[b.id]||0)-(sm[a.id]||0));
-  const rows=_siMembers.map(m=>`<tr style="border-bottom:1px solid var(--line)">
-    <td style="padding:7px 8px;font-weight:800">${m.name}</td><td>${memRoleChip((m.role||'').trim()||'-')}</td>
-    <td style="width:160px"><input class="si_in" data-mid="${m.id}" type="number" inputmode="numeric" value="${sm[m.id]!=null?sm[m.id]:''}" placeholder="0" style="width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 10px;font-weight:800;text-align:right;color:var(--text);outline:0"></td></tr>`).join('');
-  return `<div class="panel" style="border-radius:24px;padding:18px">
-    <p class="dim" style="font-size:13px;font-weight:700;margin:0 0 12px">본캐 ${_siMembers.length}명 · 점수 입력 후 저장 (빈칸은 미반영)</p>
-    <div class="scroll" style="overflow-y:auto;max-height:640px"><table style="width:100%;border-collapse:collapse;font-size:14px">
-      <thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--panel)"><th style="text-align:left;padding:10px 8px">닉네임</th><th style="text-align:left;padding:10px 0">직위</th><th style="text-align:right;padding:10px 0">점수</th></tr></thead>
-      <tbody style="font-weight:500">${rows||'<tr><td colspan="3" class="dim" style="padding:24px;text-align:center;font-weight:700">멤버 없음</td></tr>'}</tbody></table></div>
+  ];
+  if(prevPid) qs.push(db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',prevPid).limit(4000));
+  const res=await Promise.all(qs);
+  const members=res[0].data||[], scores=res[1].data||[], prev=prevPid?(res[2].data||[]):[];
+  scores.forEach(s=>{ _siScores[s.member_id]=String(Number(s.score)||0); });
+  prev.forEach(s=>{ _siPrev[s.member_id]=Number(s.score)||0; });
+  _siMembers=members.slice().sort((a,b)=> (_siPrev[b.id]||0)-(_siPrev[a.id]||0) || String(a.name||'').localeCompare(String(b.name||''),'ko'));
+  return _siMembers.length ? _siMembers.map(_siRowHTML).join('') : '<div class="dim" style="padding:26px;text-align:center;font-weight:700">멤버 없음</div>';
+}
+function _siRowHTML(m){
+  const v=_siScores[m.id]??''; const prev=_siPrev[m.id]; const who=_siEditing[m.id]; const has=v!=='';
+  return `<div class="si_row" data-mid="${m.id}" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border-bottom:1px solid var(--line)">
+    <div style="width:32px;height:32px;border-radius:99px;background:linear-gradient(135deg,var(--bunny-light),var(--bunny-main));color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">${escHtml(String(m.name||'?').slice(0,1))}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(m.name)}</div>
+      <div style="font-size:11px;color:var(--dim);font-weight:700;margin-top:1px">${memRoleChip((m.role||'').trim()||'-')} 지난주 ${prev!=null?prev.toLocaleString():'-'} <span class="si_edit" data-mid="${m.id}">${who?`· <span style="color:var(--bunny-deep);font-weight:800"><i class="fa-solid fa-pen"></i> ${escHtml(who)} 입력 중</span>`:''}</span></div>
+    </div>
+    <input class="si_in${has?' si_done':''}" data-mid="${m.id}" type="number" inputmode="numeric" value="${escAttr(v)}" placeholder="0"
+      onfocus="_siFocus(${m.id})" onblur="_siBlur(${m.id},this.value)" oninput="_siInput(${m.id},this.value)" onkeydown="_siKey(event,${m.id})"
+      style="width:108px;border:1.5px solid var(--line);background:var(--panel-2);border-radius:11px;padding:10px 11px;font-weight:900;font-size:15px;text-align:right;color:var(--text);outline:0;flex-shrink:0">
+    <i class="fa-solid fa-circle-check si_tick" data-mid="${m.id}" style="width:16px;color:var(--ok-tx);opacity:${has?'1':'0'};flex-shrink:0;font-size:13px"></i>
   </div>`;
 }
-window._siLoad = async (pid)=>{ _siPid=pid; const el=document.getElementById('siBody'); el.innerHTML=`<div class="panel" style="border-radius:24px;padding:50px;text-align:center"><span class="dim" style="font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>불러오는 중…</span></div>`; try{ el.innerHTML=await siBody(pid); }catch(e){ el.innerHTML=`<div class="panel" style="border-radius:24px;padding:30px;text-align:center"><span class="dim" style="font-weight:700">${e.message||e}</span></div>`; } };
-window._siSave = async ()=>{
-  if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
-  const payload=[...document.querySelectorAll('.si_in')].filter(i=>i.value!=='').map(i=>({ member_id:+i.dataset.mid, period_id:_siPid, score:Number(i.value)||0, guild:GUILD }));
-  if(!payload.length) return alert('입력된 점수가 없어요.');
-  if(!confirm(`${payload.length}명의 점수를 저장할까요?`)) return;
-  const { error } = await db().from('suro_scores').upsert(payload,{onConflict:'member_id,period_id'});
-  if(error) return alert('저장 실패: '+error.message+'\n(고유 제약이 다르면 알려줘요)');
-  alert(`${payload.length}명 점수 저장됐어요 ✓`);
+function _siRenderList(){
+  const q=(document.getElementById('si_q')?.value||'').trim(); const list=document.getElementById('si_list'); if(!list) return;
+  const vis=_siMembers.filter(m=> (!_siOnlyEmpty||(_siScores[m.id]??'')==='') && (!q||String(m.name||'').includes(q)) );
+  list.innerHTML = vis.length ? vis.map(_siRowHTML).join('') : '<div class="dim" style="padding:26px;text-align:center;font-weight:700">표시할 사람이 없어요</div>';
+  _siUpdateProgress();
+}
+function _siUpdateProgress(){
+  const done=_siMembers.filter(m=>(_siScores[m.id]??'')!=='').length, tot=_siMembers.length;
+  const c=document.getElementById('si_pcount'); if(c) c.textContent=`입력 ${done} / ${tot}`;
+  const f=document.getElementById('si_fill'); if(f) f.style.width=(tot?done/tot*100:0)+'%';
+}
+function _siRenderPresence(){
+  const el=document.getElementById('si_presence'); if(!el) return;
+  const others=_siPresence.filter(n=>n!==(CURRENT.name||'운영진'));
+  el.innerHTML = others.length
+    ? `<i class="fa-solid fa-user-group" style="color:var(--bunny-deep);margin-right:6px"></i>같이 작업 중 ${others.length}명 · ${others.map(escHtml).join(' · ')}`
+    : '<i class="fa-solid fa-user-check" style="color:var(--ok-tx);margin-right:6px"></i>나만 작업 중';
+}
+/* 입력 이벤트 */
+window._siInput=(mid,val)=>{
+  _siScores[mid]=val; const has=val!=='';
+  const inp=document.querySelector(`.si_in[data-mid="${mid}"]`); if(inp) inp.classList.toggle('si_done',has);
+  const tk=document.querySelector(`.si_tick[data-mid="${mid}"]`); if(tk) tk.style.opacity=has?'1':'0';
+  _siUpdateProgress();
+  clearTimeout(_siTimers[mid]); _siTimers[mid]=setTimeout(()=>_siSaveCell(mid,val),700);
+};
+window._siFocus=(mid)=>{ _siBroadcast('editing',{mid,by:CURRENT.name||'운영진',on:true}); };
+window._siBlur=(mid,val)=>{ _siBroadcast('editing',{mid,by:CURRENT.name||'운영진',on:false}); clearTimeout(_siTimers[mid]); _siSaveCell(mid,val); };
+window._siKey=(e,mid)=>{
+  if(e.key!=='Enter') return; e.preventDefault();
+  clearTimeout(_siTimers[mid]); _siSaveCell(mid, e.target.value);
+  const inputs=[...document.querySelectorAll('.si_in')]; const idx=inputs.findIndex(x=>+x.dataset.mid===mid);
+  const nx=inputs.slice(idx+1).find(x=>x.value==='')||inputs[idx+1];
+  if(nx){ nx.focus(); nx.select&&nx.select(); nx.scrollIntoView({block:'center',behavior:'smooth'}); }
+  else { const qq=document.getElementById('si_q'); qq&&qq.focus(); }
+};
+window._siSearch=()=>_siRenderList();
+window._siToggleEmpty=()=>{
+  _siOnlyEmpty=!_siOnlyEmpty; const b=document.getElementById('si_only');
+  if(b){ b.style.background=_siOnlyEmpty?'linear-gradient(135deg,var(--bunny-main),var(--bunny-deep))':'var(--panel-2)'; b.style.color=_siOnlyEmpty?'#fff':'var(--text)'; b.style.borderColor=_siOnlyEmpty?'transparent':'var(--line)'; }
+  _siRenderList();
+};
+async function _siSaveCell(mid,raw){
+  if(!isAdmin()) return;
+  if(raw===''||raw==null) return;                 // 빈칸은 저장하지 않음
+  const v=Number(raw)||0; _siScores[mid]=String(v);
+  const tk=document.querySelector(`.si_tick[data-mid="${mid}"]`);
+  if(tk){ tk.className='fa-solid fa-spinner fa-spin si_tick'; tk.style.opacity='1'; tk.style.color='var(--dim)'; }
+  const { error } = await db().from('suro_scores').upsert([{member_id:mid,period_id:_siPid,score:v,guild:GUILD}],{onConflict:'member_id,period_id'});
+  if(!tk) return;
+  if(error){ tk.className='fa-solid fa-triangle-exclamation si_tick'; tk.style.color='var(--bad-tx)'; tk.title=error.message; }
+  else { tk.className='fa-solid fa-circle-check si_tick'; tk.style.color='var(--ok-tx)'; tk.title=''; _siBroadcast('score',{mid,score:v,by:CURRENT.name||'운영진'}); }
+}
+/* 실시간 (presence + broadcast) — 무료 플랜 내, postgres replication 불필요 */
+function _siChannelName(){ return `suro-${GUILD}-${_siPid}`; }
+function _siBroadcast(event,payload){ if(_siCh){ try{ _siCh.send({type:'broadcast',event,payload}); }catch(e){} } }
+function _siSubscribe(){
+  if(_siCh){ try{ db().removeChannel(_siCh); }catch(e){} _siCh=null; }
+  if(!_siPid) return;
+  const me=CURRENT.name||('운영진'+Math.random().toString(36).slice(2,5));
+  const ch=db().channel(_siChannelName(),{ config:{ presence:{ key:me }, broadcast:{ self:false } } });
+  ch.on('presence',{event:'sync'},()=>{ const st=ch.presenceState(); const names=[]; Object.values(st).forEach(arr=>arr.forEach(m=>names.push(m.name))); _siPresence=[...new Set(names)]; _siRenderPresence(); });
+  ch.on('broadcast',{event:'score'},({payload})=>{
+    if(!payload||payload.by===(CURRENT.name||'운영진')) return;
+    _siScores[payload.mid]=String(payload.score);
+    const inp=document.querySelector(`.si_in[data-mid="${payload.mid}"]`);
+    if(inp && document.activeElement!==inp){ inp.value=String(payload.score); inp.classList.add('si_done'); const tk=document.querySelector(`.si_tick[data-mid="${payload.mid}"]`); if(tk){ tk.style.opacity='1'; tk.style.color='var(--ok-tx)'; } }
+    if(_siOnlyEmpty){ const row=document.querySelector(`.si_row[data-mid="${payload.mid}"]`); if(row && document.activeElement!==inp) row.remove(); }
+    _siUpdateProgress();
+  });
+  ch.on('broadcast',{event:'editing'},({payload})=>{
+    if(!payload||payload.by===(CURRENT.name||'운영진')) return;
+    if(payload.on) _siEditing[payload.mid]=payload.by; else if(_siEditing[payload.mid]===payload.by) delete _siEditing[payload.mid];
+    const b=document.querySelector(`.si_edit[data-mid="${payload.mid}"]`); if(b){ const who=_siEditing[payload.mid]; b.innerHTML=who?`· <span style="color:var(--bunny-deep);font-weight:800"><i class="fa-solid fa-pen"></i> ${escHtml(who)} 입력 중</span>`:''; }
+  });
+  ch.subscribe(async(status)=>{ if(status==='SUBSCRIBED'){ try{ await ch.track({ name:me, at:Date.now() }); }catch(e){} } });
+  _siCh=ch;
+  clearInterval(_siPoll); _siPoll=setInterval(()=>{ if(!document.hidden && document.getElementById('si_list')) _siRefresh(); }, 25000);
+}
+/* 놓친 실시간 업데이트 보정: 현재 회차 점수 재조회 (포커스 중인 칸은 건드리지 않음) */
+async function _siRefresh(){
+  if(!_siPid) return;
+  let data; try{ const r=await db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',_siPid).limit(4000); data=r.data; }catch(e){ return; }
+  if(!data) return; let changed=false;
+  data.forEach(s=>{ const v=String(Number(s.score)||0); if(_siScores[s.member_id]!==v){ _siScores[s.member_id]=v; changed=true;
+    const inp=document.querySelector(`.si_in[data-mid="${s.member_id}"]`);
+    if(inp && document.activeElement!==inp){ inp.value=v; inp.classList.add('si_done'); const tk=document.querySelector(`.si_tick[data-mid="${s.member_id}"]`); if(tk){ tk.className='fa-solid fa-circle-check si_tick'; tk.style.opacity='1'; tk.style.color='var(--ok-tx)'; } }
+  }});
+  if(changed){ _siUpdateProgress(); if(_siOnlyEmpty) _siRenderList(); }
+}
+window._siLoad = async (pid)=>{
+  _siPid=pid; const list=document.getElementById('si_list');
+  if(list) list.innerHTML='<div class="dim" style="padding:40px;text-align:center;font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>불러오는 중…</div>';
+  try{ const html=await _siFetch(pid); if(list) list.innerHTML=html; _siUpdateProgress(); _siSubscribe(); }
+  catch(e){ if(list) list.innerHTML=`<div class="dim" style="padding:30px;text-align:center;font-weight:700">${escHtml(e.message||String(e))}</div>`; }
 };
 
 /* ----- 동기화 (Nexon · 뚠카롱 본진 대표캐릭만) ----- */
