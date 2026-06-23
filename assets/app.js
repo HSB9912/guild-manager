@@ -109,6 +109,84 @@ const GROUPS = [
 const META = {}; GROUPS.forEach(g=>g.items.forEach(it=>META[it.k]={...it, admin:!!g.admin}));
 const href = (k)=> k==='home' ? 'index.html' : k + '.html';
 
+/* ============================================================
+ *  업데이트 내역 (CHANGELOG)  ·  최신이 맨 위
+ *  ★ 사용자 체감 변경을 추가할 때마다 맨 위 블록에 항목 한 줄 추가
+ *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
+ * ============================================================ */
+const CHANGELOG = [
+  { id:'2026-06-23', date:'2026-06-23', items:[
+    { t:'feat', x:'운영진 할 일 — 사진을 Ctrl+V로 바로 붙여넣기' },
+    { t:'fix',  x:'수로 보상 조각 계산이 0으로 나오던 버그 수정' },
+  ]},
+  { id:'2026-06-22', date:'2026-06-22', items:[
+    { t:'feat',  x:'설정을 폼 편집기로 — 간부도 쉽게 직위·승강 기준 수정' },
+    { t:'feat',  x:'3길드 일괄 동기화 + 길드 이동 자동 감지' },
+    { t:'tweak', x:'길드원 계정그룹 — 유니온 본캐 자동 묶기' },
+    { t:'feat',  x:'길드원 최근주차 수로 그래프 + 점수순 정렬' },
+  ]},
+  { id:'2026-06-21', date:'2026-06-21', items:[
+    { t:'feat',  x:'아이템 컨설팅 게시판 이식' },
+    { t:'chore', x:'루트 페이지를 버니로 승격 (옛 화면은 ddun.html 보존)' },
+  ]},
+  { id:'2026-06-20', date:'2026-06-20', items:[
+    { t:'feat',  x:'가입 신청 폼 수로 게이지 — 동적 컷 + 예상 직위·기수' },
+  ]},
+];
+const _CLOG_TYPE = { feat:['새기능','#FFE3ED','#C03364'], fix:['수정','#FDE0E0','#C53636'], tweak:['개선','#FBEFD3','#A9762A'], chore:['정리','#ECE7EA','#857580'] };
+function _clogChip(t){ const m=_CLOG_TYPE[t]||_CLOG_TYPE.feat; return `<span style="flex-shrink:0;font-size:10px;font-weight:900;border-radius:7px;padding:2px 7px;margin-top:1px;background:${m[1]};color:${m[2]}">${m[0]}</span>`; }
+function _clogLatestId(){ return CHANGELOG.length?CHANGELOG[0].id:''; }
+function _clogShortDate(){ const d=_clogLatestId(); return d?d.slice(5).replace('-','.'):''; }
+function _clogSeen(){ try{ return localStorage.getItem('bunny_clog_seen')||''; }catch(e){ return ''; } }
+function _clogHasNew(){ return _clogLatestId() && _clogSeen()!==_clogLatestId(); }
+function _clogMarkSeen(){ try{ localStorage.setItem('bunny_clog_seen', _clogLatestId()); }catch(e){} const d=document.getElementById('clogDot'); if(d)d.remove(); }
+function _clogEntryHTML(e, isNew){
+  const rows = e.items.map(it=>`<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:13.5px;font-weight:600;line-height:1.5;color:var(--text)">${_clogChip(it.t)}<span>${it.x}</span></div>`).join('');
+  return `<div style="position:relative;padding:16px 0 6px">
+    <div style="position:absolute;left:-23px;top:20px;width:14px;height:14px;border-radius:99px;background:${isNew?'#E8456B':'var(--bunny-main)'};border:3px solid var(--panel);box-shadow:0 0 0 1px var(--line)"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-weight:900;font-size:15px">${e.date}</span>${isNew?'<span style="font-size:10px;font-weight:900;color:#fff;background:#E8456B;border-radius:99px;padding:2px 8px">NEW</span>':''}
+    </div>${rows}</div>`;
+}
+window._clogOpen = ()=>{
+  let m=document.getElementById('_clogModal');
+  if(!m){ m=document.createElement('div'); m.id='_clogModal'; m.style.cssText='position:fixed;inset:0;z-index:2600;background:rgba(60,30,42,.42);display:flex;align-items:center;justify-content:center;padding:24px'; m.onclick=(ev)=>{ if(ev.target===m)_clogClose(); }; document.body.appendChild(m); }
+  const tl = CHANGELOG.map((e,i)=>_clogEntryHTML(e, i===0 && _clogHasNew())).join('');
+  m.innerHTML = `<div class="panel" style="border-radius:24px;width:520px;max-width:100%;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(120,40,70,.25)">
+    <div style="padding:20px 24px 15px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <h3 style="margin:0;font-weight:900;font-size:18px;display:flex;align-items:center;gap:9px"><i class="fa-solid fa-bullhorn" style="color:var(--bunny-main)"></i> 업데이트 내역</h3>
+      <button onclick="_clogClose()" style="border:0;background:var(--panel-2);width:34px;height:34px;border-radius:99px;cursor:pointer;color:var(--dim);font-size:15px"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="scroll" style="padding:8px 26px 22px;overflow:auto"><div style="position:relative;padding-left:26px">
+      <div style="position:absolute;left:7px;top:10px;bottom:6px;width:2px;background:var(--line)"></div>${tl}
+    </div></div></div>`;
+  _clogMarkSeen();
+};
+window._clogClose = ()=>{ const m=document.getElementById('_clogModal'); if(m)m.remove(); };
+window._clogPopupClose = ()=>{ const p=document.getElementById('_clogPopup'); if(p)p.remove(); _clogMarkSeen(); };
+window._clogPopupMore = ()=>{ _clogPopupClose(); _clogOpen(); };
+function _clogMaybePopup(){
+  if(!_clogHasNew() || document.getElementById('_clogPopup')) return;
+  const e=CHANGELOG[0];
+  const rows=e.items.slice(0,3).map(it=>`<div style="display:flex;gap:9px;align-items:flex-start;font-size:13px;font-weight:600;line-height:1.5;padding:5px 0;color:var(--text)">${_clogChip(it.t)}<span>${it.x}</span></div>`).join('');
+  const p=document.createElement('div'); p.id='_clogPopup';
+  p.style.cssText='position:fixed;right:26px;bottom:26px;width:340px;z-index:2400;animation:clogIn .35s cubic-bezier(.2,.9,.3,1.2)';
+  p.innerHTML=`<div class="panel" style="border-radius:22px;overflow:hidden;box-shadow:0 24px 55px rgba(120,40,70,.3)">
+    <div style="background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));padding:17px 20px;color:#fff;position:relative">
+      <button onclick="_clogPopupClose()" style="position:absolute;top:13px;right:13px;border:0;background:rgba(255,255,255,.25);color:#fff;width:28px;height:28px;border-radius:99px;cursor:pointer;font-size:13px"><i class="fa-solid fa-xmark"></i></button>
+      <div style="font-size:25px">🎉</div>
+      <h3 style="margin:5px 0 2px;font-weight:900;font-size:18px">업데이트 됐어요!</h3>
+      <p style="margin:0;font-size:12px;font-weight:700;opacity:.92">${e.date}</p>
+    </div>
+    <div style="padding:15px 20px 6px">${rows}</div>
+    <div style="padding:12px 20px 18px;display:flex;gap:8px">
+      <button onclick="_clogPopupMore()" style="flex:1;border:0;border-radius:12px;padding:11px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--bunny-deep)">자세히</button>
+      <button onclick="_clogPopupClose()" style="flex:1;border:0;border-radius:12px;padding:11px;font-weight:800;font-size:13px;cursor:pointer;background:var(--bunny-main);color:#fff">확인했어요</button>
+    </div></div>`;
+  document.body.appendChild(p);
+}
+if(!document.getElementById('_clogKeyframes')){ const st=document.createElement('style'); st.id='_clogKeyframes'; st.textContent='@keyframes clogIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}'; document.head.appendChild(st); }
+
 /* ---------- 사이드바 (관리자 그룹은 비관리자에게 숨김) ---------- */
 function sidebarHTML(active){
   const nav = GROUPS.filter(g=>!g.admin || isAdmin()).map(g=>{
@@ -136,6 +214,10 @@ function sidebarHTML(active){
            </div>`
         : `<button onclick="bunnyLogin()" class="panel" style="border-radius:12px;padding:10px;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--text)"><i class="fa-brands fa-google" style="color:var(--bunny-deep)"></i> 운영진 로그인</button>`
       }
+      <button onclick="_clogOpen()" class="panel" style="border-radius:13px;padding:11px 13px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--text);font-weight:800;font-size:13px">
+        <span style="display:flex;align-items:center;gap:9px"><i class="fa-solid fa-bullhorn" style="color:var(--bunny-deep)"></i>업데이트 내역</span>
+        <span style="display:flex;align-items:center;gap:7px"><span class="dim" style="font-size:11px;font-weight:700">${_clogShortDate()}</span>${_clogHasNew()?'<span id="clogDot" style="width:8px;height:8px;border-radius:99px;background:#E8456B;box-shadow:0 0 0 3px rgba(232,69,107,.18)"></span>':''}</span>
+      </button>
       <div class="tone-cream" style="border-radius:16px;padding:12px;text-align:center;">
         <p class="dim" style="font-size:11px;font-weight:700;margin:0 0 2px">이번 주 정모</p>
         <p style="font-weight:900;font-size:14px;margin:0">토 · 21:00</p>
@@ -4161,6 +4243,7 @@ function render(){
   if(localStorage.getItem('bunny_dark')==='1') document.body.classList.add('dark');
   applyTheme();                   // 팩션 색 적용
   render();                       // 즉시 1차 렌더 (게스트, 빠른 페인트)
+  _clogMaybePopup();              // 새 버전이면 What's New 팝업 (1회)
   try{
     await loadSupabase();
     BACKEND.db = window.supabase.createClient(BACKEND.SUPABASE_URL, BACKEND.SUPABASE_ANON_KEY);
