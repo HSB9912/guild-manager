@@ -118,6 +118,7 @@ const CHANGELOG = [
   { id:'2026-06-23', date:'2026-06-23', items:[
     { t:'feat', x:'전체 모바일 최적화 — 아이폰·안드로이드 대응(사이드바 드로어 메뉴·카드 1열 정렬)' },
     { t:'feat', x:'운영진 할 일 — 글마다 작성자 이름·작성일 표시' },
+    { t:'tweak', x:'사이드바 하단 정모 안내 박스 제거' },
     { t:'feat', x:'운영진 할 일 — 사진을 Ctrl+V로 바로 붙여넣기' },
     { t:'fix',  x:'수로 보상 조각 계산이 0으로 나오던 버그 수정' },
   ]},
@@ -220,10 +221,6 @@ function sidebarHTML(active){
         <span style="display:flex;align-items:center;gap:9px"><i class="fa-solid fa-bullhorn" style="color:var(--bunny-deep)"></i>업데이트 내역</span>
         <span style="display:flex;align-items:center;gap:7px"><span class="dim" style="font-size:11px;font-weight:700">${_clogShortDate()}</span>${_clogHasNew()?'<span id="clogDot" style="width:8px;height:8px;border-radius:99px;background:#E8456B;box-shadow:0 0 0 3px rgba(232,69,107,.18)"></span>':''}</span>
       </button>
-      <div class="tone-cream" style="border-radius:16px;padding:12px;text-align:center;">
-        <p class="dim" style="font-size:11px;font-weight:700;margin:0 0 2px">이번 주 정모</p>
-        <p style="font-weight:900;font-size:14px;margin:0">토 · 21:00</p>
-      </div>
     </div>
   </aside>`;
 }
