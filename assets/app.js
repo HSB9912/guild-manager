@@ -115,6 +115,9 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
  * ============================================================ */
 const CHANGELOG = [
+  { id:'2026-06-25', date:'2026-06-25', items:[
+    { t:'feat', x:'수로 입력 — 새 회차(주차) 추가 버튼. 이번 주차 회차가 없으면 안내 배너로 바로 생성' },
+  ]},
   { id:'2026-06-23', date:'2026-06-23', items:[
     { t:'feat', x:'길드원 — 헤더 클릭 정렬(활성 기준 강조·오름/내림 토글) + 전체 펼치기. 전체/본캐/부캐 버튼 정리, 이름 정렬은 유니코드순' },
     { t:'feat', x:'수로 입력 — 실시간 동시 입력(여러 운영진 같이 작업·자동 저장·Enter로 다음 칸·검색/미입력만·진행률·누가 입력 중 표시)' },
@@ -1621,8 +1624,9 @@ async function buildSuroInput(){
   const { data:periods, error } = await db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(80);
   if(error) throw error;
   _siPeriods=periods||[]; _siPid=_siPeriods[0]?.id;
+  const curLabel=_suroPeriodLabel(); const hasCur=_siPeriods.some(p=>p.period_label===curLabel); const curRange=curLabel.replace(' 수로 점수','');
   const inp='border:1px solid var(--line);background:var(--panel-2);border-radius:11px;padding:10px 12px;font-weight:800;font-size:14px;color:var(--text);outline:0;';
-  const rowsHtml = _siPid ? await _siFetch(_siPid) : '<div class="dim" style="padding:30px;text-align:center;font-weight:700">회차가 없어요</div>';
+  const rowsHtml = _siPid ? await _siFetch(_siPid) : `<div class="dim" style="padding:30px;text-align:center;font-weight:700">아직 회차가 없어요 — 위 <b>+ 회차</b>로 이번 주차(${escHtml(curRange)})를 만들어주세요</div>`;
   setTimeout(()=>{ try{ _siSubscribe(); }catch(e){} _siUpdateProgress(); }, 60);
   if(!_siVisBound){ _siVisBound=true; document.addEventListener('visibilitychange',()=>{ if(!document.hidden && document.getElementById('si_list')) _siRefresh(); }); }
   return headerHTML('수로 입력','실시간 동시 입력 · 자동 저장') +
@@ -1631,6 +1635,7 @@ async function buildSuroInput(){
         <select id="si_period" onchange="_siLoad(this.value)" style="${inp};flex:1;min-width:180px">${_siPeriods.map(p=>`<option value="${p.id}">${escHtml(p.period_label)}</option>`).join('')}</select>
         <div style="flex:1;min-width:150px;display:flex;align-items:center;gap:7px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:0 12px"><i class="fa-solid fa-magnifying-glass dim"></i><input id="si_q" oninput="_siSearch()" placeholder="닉네임 검색…" style="border:0;background:transparent;flex:1;padding:10px 0;font-weight:800;font-size:14px;color:var(--text);outline:0"></div>
         <button id="si_only" onclick="_siToggleEmpty()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">미입력만</button>
+        <button onclick="_siAddPeriod()" title="새 회차(주차) 추가" style="border:1px solid var(--bunny-main);background:var(--bunny-light);color:var(--bunny-deep);border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-plus" style="margin-right:4px"></i>회차</button>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px;font-size:12px;font-weight:800;flex-wrap:wrap;gap:4px">
         <span id="si_presence" class="dim"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>연결 중…</span>
@@ -1638,9 +1643,34 @@ async function buildSuroInput(){
       </div>
       <div style="height:8px;background:var(--panel-2);border-radius:99px;overflow:hidden;margin-top:7px"><div id="si_fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--bunny-main),var(--bunny-deep));border-radius:99px;transition:width .25s"></div></div>
     </div>
+    ${!hasCur?`<div class="panel" style="border-radius:14px;padding:12px 15px;margin-bottom:13px;border:2px solid var(--bunny-light);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-weight:800;font-size:13px"><i class="fa-solid fa-calendar-plus" style="color:var(--bunny-deep);margin-right:6px"></i>이번 주차 <b style="color:var(--bunny-deep)">${escHtml(curRange)}</b> 회차가 아직 없어요</span>
+      <button onclick="_siAddPeriod('${curLabel}')" style="border:0;background:var(--bunny-deep);color:#fff;border-radius:9px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;margin-left:auto"><i class="fa-solid fa-plus" style="margin-right:4px"></i>이번 주차 만들기</button>
+    </div>`:''}
     <div class="panel" style="border-radius:18px;padding:4px 2px"><div id="si_list" class="scroll" style="max-height:66vh;overflow-y:auto">${rowsHtml}</div></div>
     <p class="dim" style="font-size:12px;font-weight:700;text-align:center;margin-top:12px"><i class="fa-solid fa-bolt" style="color:var(--bunny-main);margin-right:5px"></i>점수 입력 후 Enter → 자동 저장 + 다음 칸. 다른 운영진 입력도 실시간으로 반영돼요.</p>`;
 }
+function _suroPeriodLabel(dateObj){ const now=dateObj||new Date(); let d=now.getDay()-3; if(d<0)d+=7; const end=new Date(now); end.setDate(now.getDate()-d); const start=new Date(end); start.setDate(end.getDate()-6); const f=x=>`${String(x.getFullYear()).slice(-2)}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; return `${f(start)}(목) ~ ${f(end)}(수) 수로 점수`; }
+window._siAddPeriod=async (preset)=>{
+  if(!isAdmin()) return alert('운영진만 회차를 추가할 수 있어요. 운영진 로그인 후 이용해주세요.');
+  const label=(prompt('새 회차(주차) 라벨\n형식: YY-MM-DD(목) ~ YY-MM-DD(수) 수로 점수', preset||_suroPeriodLabel())||'').trim();
+  if(!label) return;
+  let newId=null;
+  const { data:exist }=await db().from('suro_periods').select('id').eq('period_label',label).maybeSingle();
+  if(exist){ alert('이미 있는 회차예요 — 선택해서 입력하면 돼요.'); newId=exist.id; }
+  else{
+    const m=label.match(/(\d{2})-(\d{2})-(\d{2})\(.\)\s*~\s*(\d{2})-(\d{2})-(\d{2})/);
+    const start=m?`20${m[1]}-${m[2]}-${m[3]}`:new Date().toISOString().slice(0,10);
+    const end=m?`20${m[4]}-${m[5]}-${m[6]}`:new Date().toISOString().slice(0,10);
+    const { data:np, error }=await db().from('suro_periods').insert({ period_label:label, start_date:start, end_date:end }).select().single();
+    if(error) return alert('회차 생성 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
+    newId=np.id;
+  }
+  const el=document.getElementById('pageBody'); if(!el) return;
+  el.innerHTML=loadingHTML('suro_input');
+  try{ el.innerHTML=await buildSuroInput(); const sel=document.getElementById('si_period'); if(sel&&newId){ sel.value=String(newId); await _siLoad(newId); } }
+  catch(e){ el.innerHTML=errorHTML('suro_input',e); }
+};
 async function _siFetch(pid){
   _siScores={}; _siPrev={}; _siEditing={};
   const idx=_siPeriods.findIndex(p=>String(p.id)===String(pid)); const prevPid=_siPeriods[idx+1]?.id;
