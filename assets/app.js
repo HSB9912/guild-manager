@@ -4439,33 +4439,34 @@ window._buddyDetail=async (id)=>{
   }catch(e){ el.innerHTML=errorHTML('buddy',e); }
 };
 /* 과거 버니버디 완료 이력(디스코드 #버니-버디 export 기준) — 운영진이 1회 가져오기 */
+const _BP='https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev/guide-images/buddy-past-';
 const BUDDY_PAST=[
-  {m:'헌이밍',e:'심탱',t:'금태양',d:'2025-08-13'},
-  {m:'SumireUesaka',e:'스딜',t:'재획 재미 없어요',d:'2025-08-13'},
-  {m:'쫑쫑종옹',e:'머리터진짐승',t:'화양연화',d:'2025-08-20'},
-  {m:'학급붕괴',e:'손만두',t:'오늘 급식 만두',d:'2025-08-20'},
-  {m:'정전위험',e:'뿅가',t:'위험해! 뿅가기전에~',d:'2025-08-27'},
-  {m:'엔바쓰',e:'덕춘이',t:'0.9% 헌터쓰',d:'2025-09-24'},
-  {m:'칸코',e:'조망렌',t:'레드',d:'2025-09-24'},
-  {m:'새론이',e:'삼구',t:'닭둘기',d:'2025-10-01'},
-  {m:'반경',e:'딕밤',t:'반딕',d:'2025-10-15'},
-  {m:'떡공',e:'조디아가',t:'다크 아크',d:'2025-10-22'},
-  {m:'멘토스자두맛',e:'경민앗',t:'경-멘',d:'2025-10-29'},
-  {m:'불통',e:'타임아스트랄',t:'소마',d:'2025-11-05'},
-  {m:'신제',e:'딩굴댕굴',t:'딩굴신제',d:'2025-11-05'},
-  {m:'형두',e:'한가위',t:'두가위',d:'2025-11-19'},
-  {m:'SumireUesaka',e:'꽃화관',t:'신규지역내놔!',d:'2025-12-03'},
-  {m:'스딜',e:'두근해',t:'초식동물',d:'2025-12-03'},
-  {m:'커플장소',e:'검토요소',t:'챌섭에서 루나까지',d:'2026-01-21'},
-  {m:'두근해',e:'므농',t:'김부부',d:'2026-01-21'},
+  {m:'헌이밍',e:'심탱',t:'금태양',d:'2025-08-13',img:_BP+'0.png'},
+  {m:'SumireUesaka',e:'스딜',t:'재획 재미 없어요',d:'2025-08-13',img:_BP+'1.png'},
+  {m:'쫑쫑종옹',e:'머리터진짐승',t:'화양연화',d:'2025-08-20',img:_BP+'2.png'},
+  {m:'학급붕괴',e:'손만두',t:'오늘 급식 만두',d:'2025-08-20',img:_BP+'3.png'},
+  {m:'정전위험',e:'뿅가',t:'위험해! 뿅가기전에~',d:'2025-08-27',img:_BP+'4.png'},
+  {m:'엔바쓰',e:'덕춘이',t:'0.9% 헌터쓰',d:'2025-09-24',img:_BP+'5.png'},
+  {m:'칸코',e:'조망렌',t:'레드',d:'2025-09-24',img:_BP+'6.png'},
+  {m:'새론이',e:'삼구',t:'닭둘기',d:'2025-10-01',img:_BP+'7.png'},
+  {m:'반경',e:'딕밤',t:'반딕',d:'2025-10-15',img:_BP+'8.png'},
+  {m:'떡공',e:'조디아가',t:'다크 아크',d:'2025-10-22',img:_BP+'9.png'},
+  {m:'멘토스자두맛',e:'경민앗',t:'경-멘',d:'2025-10-29',img:_BP+'10.png'},
+  {m:'불통',e:'타임아스트랄',t:'소마',d:'2025-11-05',img:_BP+'11.png'},
+  {m:'신제',e:'딩굴댕굴',t:'딩굴신제',d:'2025-11-05',img:_BP+'12.png'},
+  {m:'형두',e:'한가위',t:'두가위',d:'2025-11-19',img:_BP+'13.png'},
+  {m:'SumireUesaka',e:'꽃화관',t:'신규지역내놔!',d:'2025-12-03',img:_BP+'14.png'},
+  {m:'스딜',e:'두근해',t:'초식동물',d:'2025-12-03',img:_BP+'15.png'},
+  {m:'커플장소',e:'검토요소',t:'챌섭에서 루나까지',d:'2026-01-21',img:_BP+'16.png'},
+  {m:'두근해',e:'므농',t:'김부부',d:'2026-01-21',img:_BP+'17.png'},
   {m:'경록남',e:'도규',t:'경도(경찰과도둑)',d:'2026-02-11'},
 ];
 window._buddyImportPast=async ()=>{
   if(!isAdmin()) return alert('운영진만 가능해요.');
-  if(!confirm(`과거 버니버디 ${BUDDY_PAST.length}팀을 '완료' 이력으로 추가할까요?\n· 이미 있는 팀은 건너뜀\n· 이미지는 디스코드 링크 만료로 제외(팀 상세에서 따로 등록)`)) return;
+  if(!confirm(`과거 버니버디 ${BUDDY_PAST.length}팀을 '완료' 이력으로 추가할까요?\n· 팀 이미지 포함 (R2 호스팅)\n· 이미 있는 팀은 건너뜀`)) return;
   let seen=new Set();
   try{ const { data:ex }=await db().from('buddy_teams').select('mentor_name,mentee_name,team_name'); (ex||[]).forEach(x=>seen.add(`${x.mentor_name}|${x.mentee_name}|${x.team_name}`)); }catch(e){}
-  const rows=BUDDY_PAST.filter(b=>!seen.has(`${b.m}|${b.e}|${b.t}`)).map(b=>({ mentor_name:b.m, mentee_name:b.e, team_name:b.t, status:'completed', start_date:b.d }));
+  const rows=BUDDY_PAST.filter(b=>!seen.has(`${b.m}|${b.e}|${b.t}`)).map(b=>({ mentor_name:b.m, mentee_name:b.e, team_name:b.t, status:'completed', start_date:b.d, team_image:b.img||null }));
   if(!rows.length){ alert('이미 모두 등록돼 있어요.'); return; }
   const { error }=await db().from('buddy_teams').insert(rows);
   if(error) return alert('추가 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
