@@ -116,6 +116,8 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-25', date:'2026-06-25', items:[
+    { t:'feat', x:'신청 처리 3탭 복원 — 가입 신청 · 아인슈페너(수로 면제) 신청 · 수로 보석금 신청을 한 곳에서 승인/거절' },
+    { t:'tweak', x:'주소창·탭 아이콘(파비콘)을 현재 길드 마크로 (🐰버니 / 🐺늑대 / 🐆쿠거), 옛 뚠카롱 아이콘 제거' },
     { t:'feat', x:'수로 입력 — 새 회차(주차) 추가 버튼. 이번 주차 회차가 없으면 안내 배너로 바로 생성' },
   ]},
   { id:'2026-06-23', date:'2026-06-23', items:[
@@ -661,9 +663,23 @@ async function buildPromotion(){
     </div>`;
 }
 
-/* ----- 신청 처리 (가입 큐) ----- */
-let _reqTab='pending'; let _reqBg={};
+/* ----- 신청 처리 (3탭 허브: 가입 / 아인슈페너(면제) / 수로 보석금) ----- */
+let _reqMainTab='join'; let _reqTab='pending'; let _reqBg={};
 async function buildRequests(){
+  let cj=0,ce=0,cb=0;
+  try{ const r=await db().from('join_requests').select('id',{count:'exact',head:true}).or('status.is.null,status.eq.pending'); cj=r.count||0; }catch(e){}
+  try{ const r=await db().from('exempt_requests').select('id',{count:'exact',head:true}).eq('status','pending'); ce=r.count||0; }catch(e){}
+  try{ const r=await db().from('bail_requests').select('id',{count:'exact',head:true}).eq('status','pending').eq('payer_guild',GUILD); cb=r.count||0; }catch(e){}
+  const mtab=(k,l,ic,c)=>{ const on=_reqMainTab===k; return `<button onclick="_reqMain('${k}')" style="border:0;border-radius:13px;padding:11px 17px;font-weight:800;font-size:14px;cursor:pointer;${on?'background:var(--bunny-main);color:#fff':'background:var(--panel-2);color:var(--text)'}"><i class="fa-solid ${ic}" style="margin-right:6px"></i>${l}${c?` <span class="chip" style="background:${on?'rgba(255,255,255,.28)':'var(--bad-tx)'};color:#fff;margin-left:2px">${c}</span>`:''}</button>`; };
+  let body='';
+  try{ body = _reqMainTab==='exempt' ? await _reqExemptBody() : _reqMainTab==='bail' ? await _reqBailBody() : await _reqJoinBody(); }
+  catch(e){ body=`<div class="panel" style="border-radius:18px;padding:30px;text-align:center"><span class="dim" style="font-weight:700">${escHtml(e.message||String(e))}</span></div>`; }
+  return headerHTML('신청 처리', `가입 ${cj} · 아인슈페너 ${ce} · 보석금 ${cb}`) +
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">${mtab('join','가입 신청','fa-user-plus',cj)}${mtab('exempt','아인슈페너 신청','fa-mug-hot',ce)}${mtab('bail','수로 보석금','fa-gem',cb)}</div>
+     <div id="reqMainBody">${body}</div>`;
+}
+window._reqMain=async (k)=>{ _reqMainTab=k; const el=document.getElementById('pageBody'); if(!el) return; el.innerHTML=loadingHTML('requests'); try{ el.innerHTML=await buildRequests(); }catch(e){ el.innerHTML=errorHTML('requests',e); } };
+async function _reqJoinBody(){
   const { data, error } = await db().from('join_requests')
     .select('id,nickname,suro_score,job,prev_guild,answers,hands_image_url,status,admin_note,processed_by,processed_at,created_at,join_source,join_category')
     .order('created_at',{ascending:false}).limit(300);
@@ -672,8 +688,7 @@ async function buildRequests(){
   const counts={pending:0,approved:0,rejected:0}; all.forEach(r=>{ const s=r.status||'pending'; counts[s]=(counts[s]||0)+1; });
   const filtered=all.filter(r=>(r.status||'pending')===_reqTab);
   const tabBtn=(k,l,col)=>{ const on=_reqTab===k; return `<button onclick="_reqSetTab('${k}')" style="border:0;border-radius:11px;padding:8px 15px;font-weight:800;font-size:13px;cursor:pointer;${on?`background:${col};color:#fff`:'background:var(--panel-2);color:var(--text)'}">${l} <span class="chip" style="background:${on?'rgba(255,255,255,.25)':'var(--panel-3)'};color:${on?'#fff':'var(--dim)'}">${counts[k]||0}</span></button>`; };
-  return headerHTML('신청 처리', `가입 대기 ${counts.pending||0}건`) +
-    `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
        ${tabBtn('pending','처리 대기','var(--warn-tx)')}${tabBtn('approved','승인됨','var(--ok-tx)')}${tabBtn('rejected','거절됨','var(--bad-tx)')}
      </div>
      <div>${filtered.length?filtered.map(reqCard).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-inbox" style="margin-right:6px"></i>해당 상태의 신청이 없어요</span></div>'}</div>`;
@@ -726,6 +741,96 @@ window._reqSearch=(site,id,nickEnc)=>{ const nick=decodeURIComponent(nickEnc), n
 window._reqCopyNotice=(enc)=>{ try{ navigator.clipboard.writeText(decodeURIComponent(enc)); alert('모집공고 복사됨 — 공지방에 붙여넣기'); }catch(e){ alert('복사 실패 — 길게 눌러 복사해주세요'); } };
 window._reqRevert=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 신청을 대기 상태로 되돌릴까요?')) return; const { error }=await db().from('join_requests').update({ status:'pending', processed_by:null, processed_at:null, admin_note:null }).eq('id',id); if(error) return alert('실패: '+error.message); render(); };
 window._reqDelete=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 신청을 삭제할까요? (되돌릴 수 없음)')) return; const { error }=await db().from('join_requests').delete().eq('id',id); if(error) return alert('삭제 실패: '+error.message); render(); };
+
+/* ===== 아인슈페너(면제) 신청 처리 — exempt_requests ===== */
+async function _reqExemptBody(){
+  const { data, error } = await db().from('exempt_requests').select('*').order('created_at',{ascending:false}).limit(300);
+  if(error) throw error;
+  const all=data||[]; const pending=all.filter(r=>(r.status||'pending')==='pending'); const done=all.filter(r=>r.status&&r.status!=='pending');
+  const gl=(g)=>{ const f=Object.values(FACTIONS).find(x=>x.key===g); return f?f.label:(g||'-'); };
+  const rtype=(t)=> t==='full'?'전체 면제': t==='partial'?'부분 면제': (t||'면제');
+  const card=(r)=>{
+    const subs=(Array.isArray(r.sub_chars)?r.sub_chars:[]).map(s=>`<span class="chip" style="background:var(--panel-3);color:var(--text);font-weight:700">${escHtml(s.name||'?')}${s.guild?` <span class="dim" style="font-size:9px">${escHtml(gl(s.guild))}</span>`:''}</span>`).join(' ');
+    const st=r.status||'pending';
+    const proc=r.processed_at?`<div class="dim" style="font-size:10px;font-weight:700;margin-top:7px"><i class="fa-solid fa-user-shield" style="margin-right:4px"></i>${escHtml(r.processed_by||'?')} · ${new Date(r.processed_at).toLocaleString('ko-KR')}${r.admin_note?' · '+escHtml(r.admin_note):''}</div>`:'';
+    const actions = st==='pending'
+      ? `<button onclick="_reqExemptAct(${r.id},'approved')" style="flex:1;min-width:120px;border:0;border-radius:10px;padding:9px;font-weight:900;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-check" style="margin-right:5px"></i>면제 승인</button><button onclick="_reqExemptAct(${r.id},'rejected')" style="border:1px solid var(--bad-tx);background:var(--panel);color:var(--bad-tx);border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer">거절</button>`
+      : `<span class="chip" style="background:${st==='approved'?'var(--ok-bg)':'var(--bad-bg)'};color:${st==='approved'?'var(--ok-tx)':'var(--bad-tx)'};font-weight:800">${st==='approved'?'승인됨':'거절됨'}</span><button onclick="_reqExemptAct(${r.id},'pending')" style="border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:7px 13px;font-weight:800;font-size:12px;cursor:pointer;margin-left:6px">되돌리기</button>`;
+    return `<div class="panel ${st==='pending'?'tone-light':''}" style="border-radius:18px;padding:16px;margin-bottom:12px;${st==='pending'?'border:2px solid var(--bunny-light)':''}">
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:9px">
+        <span style="font-weight:900;font-size:16px">${escHtml(r.main_char||'-')}</span>
+        <span class="chip" style="background:var(--panel-3);color:var(--text);font-weight:800">${escHtml(r.main_class||'직업?')}</span>
+        <span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep);font-weight:800">${escHtml(gl(r.main_guild))}</span>
+        <span class="chip" style="background:var(--warn-bg);color:var(--warn-tx);font-weight:800">수로 ${(Number(r.main_score)||0).toLocaleString()}</span>
+        <span class="chip" style="background:rgba(155,89,182,.15);color:#9B59B6;font-weight:800">${rtype(r.request_type)}</span>
+        ${r.is_new_member?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx);font-weight:800">신규</span>':''}
+        ${r.kakao_nick?`<span class="dim" style="font-size:11px;font-weight:700"><i class="fa-solid fa-comment" style="margin-right:3px"></i>${escHtml(r.kakao_nick)}</span>`:''}
+        <span class="dim" style="font-size:11px;font-weight:700;margin-left:auto">${new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+      </div>
+      ${subs?`<div style="margin-bottom:9px"><span class="dim" style="font-size:11px;font-weight:800;margin-right:6px">면제 부캐</span>${subs}</div>`:''}
+      ${r.reason?`<div class="panel" style="border-radius:12px;padding:11px;font-size:12.5px;font-weight:600;white-space:pre-wrap;margin-bottom:10px">${escHtml(r.reason)}</div>`:''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${actions}</div>${proc}
+    </div>`;
+  };
+  const doneRow=(r)=>`<tr style="border-bottom:1px solid var(--line)"><td style="padding:9px 8px;font-weight:800">${escHtml(r.main_char||'-')}</td><td class="dim" style="font-weight:700">${rtype(r.request_type)}</td><td>${r.status==='approved'?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">승인</span>':'<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx)">거절</span>'}</td><td class="dim" style="font-weight:700">${(r.processed_at||r.created_at||'').slice(0,10)}</td></tr>`;
+  return `<div>${pending.length?pending.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-mug-hot" style="margin-right:6px"></i>대기 중인 아인슈페너(면제) 신청이 없어요</span></div>'}</div>
+    ${done.length?`<h3 style="font-weight:900;font-size:15px;margin:22px 0 12px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--bunny-main);margin-right:8px"></i>처리 완료 (${done.length})</h3>
+    <div class="panel" style="border-radius:20px;padding:16px"><div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:420px"><thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:9px 8px">대표</th><th style="text-align:left;padding:9px 0">유형</th><th style="text-align:left;padding:9px 0">결과</th><th style="text-align:left;padding:9px 0">처리일</th></tr></thead><tbody style="font-weight:500">${done.map(doneRow).join('')}</tbody></table></div></div>`:''}`;
+}
+window._reqExemptAct=async (id,status)=>{
+  if(!isAdmin()) return alert('운영진만 처리할 수 있어요.');
+  const me=CURRENT.name||CURRENT.email||'운영진';
+  if(status==='pending'){ if(!confirm('대기 상태로 되돌릴까요?')) return; const { error }=await db().from('exempt_requests').update({ status:'pending', processed_by:null, processed_at:null, admin_note:null }).eq('id',id); if(error) return alert('실패: '+error.message); return render(); }
+  let note=null; if(status==='rejected'){ note=prompt('거절 사유 (선택)','')||null; }
+  if(!confirm(status==='approved'?'이 면제 신청을 승인할까요? (해당 부캐 수로 면제)':'이 면제 신청을 거절할까요?')) return;
+  const { error }=await db().from('exempt_requests').update({ status, processed_by:me, processed_at:new Date().toISOString(), admin_note:note }).eq('id',id);
+  if(error) return alert('처리 실패: '+error.message); render();
+};
+
+/* ===== 수로 보석금 신청 처리 — bail_requests ===== */
+async function _reqBailBody(){
+  const { data, error } = await db().from('bail_requests').select('*').eq('payer_guild',GUILD).order('created_at',{ascending:false}).limit(300);
+  if(error) throw error;
+  const all=data||[]; const pending=all.filter(r=>(r.status||'pending')==='pending'); const done=all.filter(r=>r.status&&r.status!=='pending');
+  const stLabel=(s)=> s==='noble_unlocked'?['노블 해제됨','var(--ok-bg)','var(--ok-tx)']: s==='rejected'?['거절됨','var(--bad-bg)','var(--bad-tx)']: s==='paid'?['입금확인','var(--ok-bg)','var(--ok-tx)']:['대기','var(--warn-bg)','var(--warn-tx)'];
+  const card=(r)=>{
+    const st=r.status||'pending'; const proc=r.processed_at?`<div class="dim" style="font-size:10px;font-weight:700;margin-top:7px"><i class="fa-solid fa-user-shield" style="margin-right:4px"></i>${escHtml(r.unlocked_by||r.processed_by||'?')} · ${new Date(r.processed_at).toLocaleString('ko-KR')}${r.admin_note?' · '+escHtml(r.admin_note):''}</div>`:'';
+    const img=r.proof_image_url?`<a href="${escAttr(r.proof_image_url)}" target="_blank"><img src="${escAttr(r.proof_image_url)}" style="width:130px;max-height:150px;object-fit:contain;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)" loading="lazy"></a>`:'<div style="font-size:10px;color:var(--warn-tx);background:var(--warn-bg);border-radius:10px;padding:10px;text-align:center;font-weight:700;width:130px">인증샷 없음</div>';
+    const sl=stLabel(st);
+    const actions = st==='pending'
+      ? `<button onclick="_reqBailAct(${r.id},'unlock')" style="flex:1;min-width:140px;border:0;border-radius:10px;padding:9px;font-weight:900;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-unlock" style="margin-right:5px"></i>입금확인 · 노블 해제</button><button onclick="_reqBailAct(${r.id},'reject')" style="border:1px solid var(--bad-tx);background:var(--panel);color:var(--bad-tx);border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer">거절</button>`
+      : `<span class="chip" style="background:${sl[1]};color:${sl[2]};font-weight:800">${sl[0]}</span><button onclick="_reqBailAct(${r.id},'revert')" style="border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:10px;padding:7px 13px;font-weight:800;font-size:12px;cursor:pointer;margin-left:6px">되돌리기</button>`;
+    return `<div class="panel ${st==='pending'?'tone-light':''}" style="border-radius:18px;padding:16px;margin-bottom:12px;${st==='pending'?'border:2px solid var(--bunny-light)':''}">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="font-weight:900;font-size:16px">${escHtml(r.payer_char||r.main_char||'-')}</span>
+            ${r.payer_role?memRoleChip(r.payer_role):''}
+            <span class="chip" style="background:var(--bunny-deep);color:#fff;font-weight:900"><i class="fa-solid fa-gem" style="font-size:9px;margin-right:3px"></i>${Number(r.total_amount)||0}개</span>
+            ${r.offense_count>1?`<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx);font-weight:800">${r.offense_count}회차 누적 ×${r.multiplier||1}</span>`:''}
+            <span class="dim" style="font-size:11px;font-weight:700;margin-left:auto">${new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div class="dim" style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-calendar-xmark" style="margin-right:5px"></i>미참 회차: ${escHtml((r.miss_period_label||'-').replace(' 수로 점수',''))}</div>
+          ${r.half_year?`<div class="dim" style="font-size:11px;font-weight:700">반기 ${escHtml(r.half_year)}${r.kakao_nick?' · 카톡 '+escHtml(r.kakao_nick):''}</div>`:''}
+          ${r.reason?`<div class="panel" style="border-radius:12px;padding:10px;font-size:12px;font-weight:600;margin-top:8px">${escHtml(r.reason)}</div>`:''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">${actions}</div>${proc}
+        </div>
+        <div style="flex-shrink:0">${img}</div>
+      </div>
+    </div>`;
+  };
+  return `<div>${pending.length?pending.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-gem" style="margin-right:6px"></i>대기 중인 보석금 신청이 없어요</span></div>'}</div>
+    ${done.length?`<h3 style="font-weight:900;font-size:15px;margin:22px 0 12px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--bunny-main);margin-right:8px"></i>처리 완료 (${done.length})</h3>
+    <div class="panel" style="border-radius:20px;padding:16px"><div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:420px"><thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:9px 8px">납부자</th><th style="text-align:left;padding:9px 0">조각</th><th style="text-align:left;padding:9px 0">상태</th><th style="text-align:left;padding:9px 0">처리일</th></tr></thead><tbody style="font-weight:500">${done.map(r=>{ const sl=stLabel(r.status); return `<tr style="border-bottom:1px solid var(--line)"><td style="padding:9px 8px;font-weight:800">${escHtml(r.payer_char||r.main_char||'-')}</td><td class="dim" style="font-weight:800">${Number(r.total_amount)||0}개</td><td><span class="chip" style="background:${sl[1]};color:${sl[2]}">${sl[0]}</span></td><td class="dim" style="font-weight:700">${(r.processed_at||r.created_at||'').slice(0,10)}</td></tr>`; }).join('')}</tbody></table></div></div>`:''}`;
+}
+window._reqBailAct=async (id,action)=>{
+  if(!isAdmin()) return alert('운영진만 처리할 수 있어요.');
+  const me=CURRENT.name||CURRENT.email||'운영진'; const now=new Date().toISOString();
+  if(action==='unlock'){ if(!confirm('입금 확인 완료 → 노블 해제 처리할까요?')) return; const { error }=await db().from('bail_requests').update({ status:'noble_unlocked', processed_by:me, processed_at:now, unlocked_by:me, unlocked_at:now }).eq('id',id); if(error) return alert('처리 실패: '+error.message); }
+  else if(action==='reject'){ const note=prompt('거절 사유 (선택)','')||null; if(!confirm('이 보석금 신청을 거절할까요?')) return; const { error }=await db().from('bail_requests').update({ status:'rejected', processed_by:me, processed_at:now, admin_note:note }).eq('id',id); if(error) return alert('처리 실패: '+error.message); }
+  else if(action==='revert'){ if(!confirm('대기 상태로 되돌릴까요?')) return; const { error }=await db().from('bail_requests').update({ status:'pending', processed_by:null, processed_at:null, unlocked_by:null, unlocked_at:null, admin_note:null }).eq('id',id); if(error) return alert('실패: '+error.message); }
+  render();
+};
 window._joinAct = async (id, status)=>{
   if(!isAdmin()) return alert('운영진만 처리할 수 있어요. 로그인 후 이용해주세요.');
   const me = CURRENT.name || CURRENT.email || '운영진';
@@ -4349,11 +4454,19 @@ function toggleDark(){
 }
 
 /* ---------- 렌더 ---------- */
+function _setFavicon(){
+  try{ const emoji=(typeof fac==='function'&&fac().emoji)||'🐰';
+    const href='data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text y="52" font-size="54">${emoji}</text></svg>`);
+    let link=document.querySelector('link[rel="icon"]'); if(!link){ link=document.createElement('link'); link.rel='icon'; document.head.appendChild(link); }
+    link.setAttribute('type','image/svg+xml'); link.href=href;
+  }catch(e){}
+}
 function render(){
   const app = document.getElementById('app');
   let page = app.dataset.page || 'home';
   if(!META[page] && page!=='home') page = 'home';   // 모르는 키 → 홈으로 폴백
   document.title = (META[page] ? META[page].t + ' · ' : '') + fac().label + ' 길드 관리';
+  _setFavicon();   // 주소창/탭 아이콘 = 현재 길드 마크(🐰버니/🐺늑대/🐆쿠거) — 옛 뚠카롱 favicon 대체
 
   const blocked = META[page] && META[page].admin && !isAdmin();
   const hasBuilder = !!PAGES[page] && !blocked;
