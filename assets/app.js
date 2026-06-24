@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-25', date:'2026-06-25', items:[
+    { t:'feat', x:'버니버디 — 과거 완료 버디팀 19팀 한 번에 가져오기(운영진 "과거 이력 가져오기" 버튼)' },
     { t:'feat', x:'신청 처리 3탭 복원 — 가입 신청 · 아인슈페너(수로 면제) 신청 · 수로 보석금 신청을 한 곳에서 승인/거절' },
     { t:'tweak', x:'주소창·탭 아이콘(파비콘)을 현재 길드 마크로 (🐰버니 / 🐺늑대 / 🐆쿠거), 옛 뚠카롱 아이콘 제거' },
     { t:'feat', x:'수로 입력 — 새 회차(주차) 추가 버튼. 이번 주차 회차가 없으면 안내 배너로 바로 생성' },
@@ -4396,7 +4397,10 @@ async function buildBuddy(){
   return headerHTML('버니버디','멘토-멘티 버디팀') +
     `<div class="panel" style="border-radius:20px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <span style="font-weight:800"><i class="fa-solid fa-handshake" style="color:var(--amber);margin-right:6px"></i>진행 ${active.length}팀 · 완료 ${done.length}팀</span>
-      ${isAdmin()?`<button onclick="_buddyCreate()" style="margin-left:auto;border:0;border-radius:10px;padding:9px 16px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer"><i class="fa-solid fa-plus"></i> 팀 생성</button>`:''}
+      ${isAdmin()?`<div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="_buddyImportPast()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:10px;padding:9px 14px;font-weight:800;cursor:pointer"><i class="fa-solid fa-clock-rotate-left" style="margin-right:5px"></i>과거 이력 가져오기</button>
+        <button onclick="_buddyCreate()" style="border:0;border-radius:10px;padding:9px 16px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer"><i class="fa-solid fa-plus"></i> 팀 생성</button>
+      </div>`:''}
     </div>
     ${active.length?active.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:30px;text-align:center"><span class="dim" style="font-weight:700">진행 중인 버디팀이 없어요</span></div>'}
     ${done.length?`<h3 class="dim" style="font-weight:900;font-size:13px;margin:18px 0 10px">완료된 버디팀 (${done.length})</h3>${done.map(card).join('')}`:''}`;
@@ -4433,6 +4437,40 @@ window._buddyDetail=async (id)=>{
            <tbody style="font-weight:600">${rows||'<tr><td colspan="4" class="dim" style="padding:24px;text-align:center;font-weight:700">미션 기록 없음</td></tr>'}</tbody></table></div>
        </div>`;
   }catch(e){ el.innerHTML=errorHTML('buddy',e); }
+};
+/* 과거 버니버디 완료 이력(디스코드 #버니-버디 export 기준) — 운영진이 1회 가져오기 */
+const BUDDY_PAST=[
+  {m:'헌이밍',e:'심탱',t:'금태양',d:'2025-08-13'},
+  {m:'SumireUesaka',e:'스딜',t:'재획 재미 없어요',d:'2025-08-13'},
+  {m:'쫑쫑종옹',e:'머리터진짐승',t:'화양연화',d:'2025-08-20'},
+  {m:'학급붕괴',e:'손만두',t:'오늘 급식 만두',d:'2025-08-20'},
+  {m:'정전위험',e:'뿅가',t:'위험해! 뿅가기전에~',d:'2025-08-27'},
+  {m:'엔바쓰',e:'덕춘이',t:'0.9% 헌터쓰',d:'2025-09-24'},
+  {m:'칸코',e:'조망렌',t:'레드',d:'2025-09-24'},
+  {m:'새론이',e:'삼구',t:'닭둘기',d:'2025-10-01'},
+  {m:'반경',e:'딕밤',t:'반딕',d:'2025-10-15'},
+  {m:'떡공',e:'조디아가',t:'다크 아크',d:'2025-10-22'},
+  {m:'멘토스자두맛',e:'경민앗',t:'경-멘',d:'2025-10-29'},
+  {m:'불통',e:'타임아스트랄',t:'소마',d:'2025-11-05'},
+  {m:'신제',e:'딩굴댕굴',t:'딩굴신제',d:'2025-11-05'},
+  {m:'형두',e:'한가위',t:'두가위',d:'2025-11-19'},
+  {m:'SumireUesaka',e:'꽃화관',t:'신규지역내놔!',d:'2025-12-03'},
+  {m:'스딜',e:'두근해',t:'초식동물',d:'2025-12-03'},
+  {m:'커플장소',e:'검토요소',t:'챌섭에서 루나까지',d:'2026-01-21'},
+  {m:'두근해',e:'므농',t:'김부부',d:'2026-01-21'},
+  {m:'경록남',e:'도규',t:'경도(경찰과도둑)',d:'2026-02-11'},
+];
+window._buddyImportPast=async ()=>{
+  if(!isAdmin()) return alert('운영진만 가능해요.');
+  if(!confirm(`과거 버니버디 ${BUDDY_PAST.length}팀을 '완료' 이력으로 추가할까요?\n· 이미 있는 팀은 건너뜀\n· 이미지는 디스코드 링크 만료로 제외(팀 상세에서 따로 등록)`)) return;
+  let seen=new Set();
+  try{ const { data:ex }=await db().from('buddy_teams').select('mentor_name,mentee_name,team_name'); (ex||[]).forEach(x=>seen.add(`${x.mentor_name}|${x.mentee_name}|${x.team_name}`)); }catch(e){}
+  const rows=BUDDY_PAST.filter(b=>!seen.has(`${b.m}|${b.e}|${b.t}`)).map(b=>({ mentor_name:b.m, mentee_name:b.e, team_name:b.t, status:'completed', start_date:b.d }));
+  if(!rows.length){ alert('이미 모두 등록돼 있어요.'); return; }
+  const { error }=await db().from('buddy_teams').insert(rows);
+  if(error) return alert('추가 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
+  alert(`과거 버디 ${rows.length}팀 추가 완료 ✓ (건너뜀 ${BUDDY_PAST.length-rows.length})`);
+  _buddyBack();
 };
 window._buddyCreate=async ()=>{
   if(!isAdmin()) return alert('운영진만 생성할 수 있어요.');
