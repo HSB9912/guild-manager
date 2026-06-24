@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>수로 보석금 신청 — 뚠/뚱카롱</title>
-<meta name="description" content="뚠/뚱카롱 길드 수로 보석금 납부 신청 페이지 (노블 해제용)">
-<meta property="og:title" content="수로 보석금 신청 — 뚠/뚱카롱">
+<title>수로 보석금 신청 — 버니 길드</title>
+<meta name="description" content="버니 길드 수로 보석금 납부 신청 페이지 (노블 해제용)">
+<meta property="og:title" content="수로 보석금 신청 — 버니 길드">
 <meta property="og:description" content="여러 캐릭 동시 신청 가능 · 누진세 자동 계산">
-<link rel="icon" href="../favicon.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐰%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -41,7 +41,7 @@
       <i class="fas fa-gem text-white text-2xl"></i>
     </div>
     <h1 class="text-xl font-black text-gray-800">수로 보석금 신청</h1>
-    <p class="text-[11px] text-gray-500 mt-1">뚠/뚱카롱 길드 · 노블 해제 신청 · 여러 캐릭 동시 가능</p>
+    <p class="text-[11px] text-gray-500 mt-1">버니 길드 · 노블 해제 신청 · 여러 캐릭 동시 가능</p>
   </div>
 
   <!-- 안내 카드: 금액표 + 누진세 -->
@@ -51,11 +51,11 @@
     </h3>
     <div class="space-y-1.5 text-[12px] mb-3">
       <div class="flex justify-between items-center bg-pink-50 rounded-xl px-3 py-2">
-        <span class="font-bold text-pink-700">뚠카롱</span>
+        <span class="font-bold text-pink-700">버니</span>
         <span class="font-black text-pink-600">솔 에르다 조각 80개</span>
       </div>
       <div class="flex justify-between items-center bg-rose-50 rounded-xl px-3 py-2">
-        <span class="font-bold text-rose-700">뚱카롱</span>
+        <span class="font-bold text-rose-700">늑대</span>
         <span class="font-black text-rose-600">솔 에르다 조각 40개</span>
       </div>
       <div class="flex justify-between items-center bg-violet-50 rounded-xl px-3 py-2">
@@ -70,7 +70,7 @@
     </div>
     <div class="bg-cyan-50 border border-cyan-200 rounded-xl px-3 py-2.5 text-[11px] text-cyan-800 leading-relaxed mt-2">
       <i class="fas fa-warehouse mr-1"></i>
-      솔 에르다 조각은 <strong>뚠/뚱카롱 길드창고</strong>에 직접 입금 후, 인증 스샷을 첨부해 주세요.
+      솔 에르다 조각은 <strong>버니 길드창고</strong>에 직접 입금 후, 인증 스샷을 첨부해 주세요.
     </div>
   </div>
 
@@ -171,7 +171,7 @@
   <!-- 푸터 -->
   <div class="text-center py-4">
     <p class="text-[10px] text-gray-400">
-      <a href="../" class="hover:text-cyan-500"><i class="fas fa-home mr-1"></i>뚠/뚱카롱 메인</a>
+      <a href="../" class="hover:text-cyan-500"><i class="fas fa-home mr-1"></i>버니 길드 메인</a>
       <span class="mx-1">·</span>
       <a href="../exempt/" class="hover:text-cyan-500"><i class="fas fa-shield-alt mr-1"></i>면제 신청</a>
     </p>
@@ -196,6 +196,9 @@
     '뚠카롱': 80, '뚱카롱': 40,
     '밤카롱': 20, '별카롱': 20, '달카롱': 20, '꿀카롱': 20, '솜카롱': 20
   };
+  // 길드 DB키 → 표시 이름 (데이터는 키 유지, 화면엔 버니/늑대/쿠거)
+  const GUILD_LABEL = { '뚠카롱':'버니', '뚱카롱':'늑대', '밤카롱':'쿠거' };
+  const guildLabel = (g) => GUILD_LABEL[g] || g || '?';
 
   const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -308,7 +311,7 @@
             <div class="text-sm font-bold text-gray-800 truncate">${esc(c.name)}${mainBadge}</div>
             <div class="text-[11px] text-gray-400 truncate">${esc(c.class || '직업?')} · ${esc(c.role || '직위?')}</div>
           </div>
-          <span class="${guildClass} text-[10px] font-black px-2 py-1 rounded-lg">${esc(guild)}</span>
+          <span class="${guildClass} text-[10px] font-black px-2 py-1 rounded-lg">${esc(guildLabel(guild))}</span>
           <span class="text-[10px] font-black text-gray-600 bg-gray-100 px-2 py-1 rounded-lg">${base}개</span>
         </label>`;
     }).join('');
@@ -415,7 +418,7 @@
           <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
             <div class="flex items-center gap-2 min-w-0">
               <div class="text-sm font-black text-gray-800 truncate">${esc(p.name)}</div>
-              <span class="${guildBadge} text-[9px] font-black px-1.5 py-0.5 rounded">${esc(p.guild)}</span>
+              <span class="${guildBadge} text-[9px] font-black px-1.5 py-0.5 rounded">${esc(guildLabel(p.guild))}</span>
             </div>
             ${offenseLabel}
           </div>
@@ -458,7 +461,7 @@
         </div>
         <p class="text-[10px] text-gray-500 mt-2 leading-relaxed">
           <i class="fas fa-warehouse mr-1"></i>
-          위 합계만큼 <strong>뚠/뚱카롱 길드창고</strong>에 입금 후, 입금내역 스샷 1장만 첨부하면 됩니다.
+          위 합계만큼 <strong>버니 길드창고</strong>에 입금 후, 입금내역 스샷 1장만 첨부하면 됩니다.
         </p>
       </div>
     `;

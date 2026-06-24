@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>수로 면제 신청 — 뚠/뚱카롱</title>
-<meta name="description" content="뚠/뚱카롱 길드 수로 면제 신청 페이지">
-<meta property="og:title" content="수로 면제 신청 — 뚠/뚱카롱">
+<title>수로 면제 신청 — 버니 길드</title>
+<meta name="description" content="버니 길드 수로 면제 신청 페이지">
+<meta property="og:title" content="수로 면제 신청 — 버니 길드">
 <meta property="og:description" content="본캐닉만 입력하면 자동 분류됩니다">
-<link rel="icon" href="../favicon.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐰%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -36,7 +36,7 @@
       <i class="fas fa-shield-alt text-white text-2xl"></i>
     </div>
     <h1 class="text-xl font-black text-gray-800">수로 면제 신청</h1>
-    <p class="text-[11px] text-gray-500 mt-1">뚠/뚱카롱 길드 · 본캐닉만 입력하면 자동 분류</p>
+    <p class="text-[11px] text-gray-500 mt-1">버니 길드 · 본캐닉만 입력하면 자동 분류</p>
   </div>
 
   <!-- 점수 기준 안내 -->
@@ -111,7 +111,7 @@
   <!-- 푸터 -->
   <div class="text-center py-4">
     <p class="text-[10px] text-gray-400">
-      <a href="../" class="hover:text-pink-500"><i class="fas fa-home mr-1"></i>뚠/뚱카롱 메인</a>
+      <a href="../" class="hover:text-pink-500"><i class="fas fa-home mr-1"></i>버니 길드 메인</a>
     </p>
   </div>
 
@@ -130,7 +130,9 @@
   const SCORE_HALF_THRESHOLD = 55000;  // 5.5만 이상 ~ 9만 미만 → 절반 면제 / 5.5만 미만은 신청 불가
 
   // 길드 리스트 (수동 입력용 드롭다운)
-  const GUILDS = ['뚠카롱', '뚱카롱', '밤카롱', '별카롱', '달카롱', '꿀카롱', '솜카롱'];
+  // [DB키, 표시이름] — 값은 데이터 연결용 키 유지, 화면엔 버니/늑대/쿠거
+  const GUILDS = [['뚠카롱','버니'], ['뚱카롱','늑대'], ['밤카롱','쿠거'], ['별카롱','별카롱'], ['달카롱','달카롱'], ['꿀카롱','꿀카롱'], ['솜카롱','솜카롱']];
+  const guildLabel = (g) => { if(!g) return '길드 없음'; const p = GUILDS.find(([k]) => k === g); return p ? p[1] : g; };
   // 직업 (간소 버전)
   const JOBS = ['히어로','팔라딘','다크나이트','아크메이지(불,독)','아크메이지(썬,콜)','비숍','보우마스터','신궁','패스파인더','나이트로드','섀도어','듀얼블레이더','바이퍼','캡틴','캐논마스터','미하일','소울마스터','플레임위자드','윈드브레이커','나이트워커','스트라이커','아란','에반','루미너스','메르세데스','팬텀','은월','데몬슬레이어','데몬어벤져','블래스터','배틀메이지','와일드헌터','메카닉','제논','카이저','카인','카데나','엔젤릭버스터','라라','호영','아델','일리움','아크','칼리','제로','키네시스','렌'];
 
@@ -284,7 +286,7 @@
           <div class="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center"><i class="fas fa-user text-emerald-400"></i></div>
           <div class="flex-1">
             <div class="font-black text-gray-800 text-sm">${esc(m.name)}</div>
-            <div class="text-[11px] text-gray-500">${esc(m.class || '직업 없음')} · ${esc(m.guild || '길드 없음')}</div>
+            <div class="text-[11px] text-gray-500">${esc(m.class || '직업 없음')} · ${esc(guildLabel(m.guild))}</div>
           </div>
           ${badge}
         </div>
@@ -398,7 +400,7 @@
           <div class="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-2xl items-center">
             <input type="text" placeholder="부캐닉" value="${esc(s.name || '')}" oninput="updateManualSub(${i}, 'name', this.value)" class="flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
             <select onchange="updateManualSub(${i}, 'guild', this.value)" class="bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs">
-              ${GUILDS.map(g => `<option value="${esc(g)}" ${s.guild === g ? 'selected' : ''}>${esc(g)}</option>`).join('')}
+              ${GUILDS.map(([k,l]) => `<option value="${esc(k)}" ${s.guild === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}
             </select>
             <span class="text-[9px] font-black text-amber-700 bg-amber-200 px-2 py-1 rounded-md">신규</span>
             <button onclick="removeSub(${i})" class="text-red-400 hover:text-red-600 px-1"><i class="fas fa-times"></i></button>
@@ -409,7 +411,7 @@
           <input type="checkbox" ${s.selected ? 'checked' : ''} onchange="toggleSub(${i})" class="w-4 h-4 accent-pink-500">
           <div class="flex-1 min-w-0">
             <div class="text-sm font-bold text-gray-800 truncate">${esc(s.name)}</div>
-            <div class="text-[11px] text-gray-400">${esc(s.guild || '길드 없음')}${s.score != null ? ' · ' + s.score.toLocaleString() + '점' : ''}</div>
+            <div class="text-[11px] text-gray-400">${esc(guildLabel(s.guild))}${s.score != null ? ' · ' + s.score.toLocaleString() + '점' : ''}</div>
           </div>
           ${s.selected ? '<span class="text-[10px] font-black text-pink-600 bg-pink-100 px-2 py-0.5 rounded-full">선택</span>' : ''}
         </label>`;
@@ -422,7 +424,7 @@
   }
 
   function addManualSub() {
-    state.subChars.push({ name: '', guild: GUILDS[0], was_mapped: false, manual: true, selected: true });
+    state.subChars.push({ name: '', guild: GUILDS[0][0], was_mapped: false, manual: true, selected: true });
     renderSubList();
   }
 
