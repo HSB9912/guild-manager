@@ -4439,7 +4439,7 @@ window._buddyDetail=async (id)=>{
   }catch(e){ el.innerHTML=errorHTML('buddy',e); }
 };
 /* 과거 버니버디 완료 이력(디스코드 #버니-버디 export 기준) — 운영진이 1회 가져오기 */
-const _BP='https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev/guide-images/buddy-past-';
+const _BP='https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev/guide-images/buddy-fix-';
 const BUDDY_PAST=[
   {m:'헌이밍',e:'심탱',t:'금태양',d:'2025-08-13',img:_BP+'0.png'},
   {m:'SumireUesaka',e:'스딜',t:'재획 재미 없어요',d:'2025-08-13',img:_BP+'1.png'},
@@ -4459,7 +4459,7 @@ const BUDDY_PAST=[
   {m:'스딜',e:'두근해',t:'초식동물',d:'2025-12-03',img:_BP+'15.png'},
   {m:'커플장소',e:'검토요소',t:'챌섭에서 루나까지',d:'2026-01-21',img:_BP+'16.png'},
   {m:'두근해',e:'므농',t:'김부부',d:'2026-01-21',img:_BP+'17.png'},
-  {m:'경록남',e:'도규',t:'경도(경찰과도둑)',d:'2026-02-11'},
+  {m:'경록남',e:'도규',t:'경도(경찰과도둑)',d:'2026-02-11',img:_BP+'18.png'},
 ];
 window._buddyImportPast=async ()=>{
   if(!isAdmin()) return alert('운영진만 가능해요.');
@@ -4470,7 +4470,7 @@ window._buddyImportPast=async ()=>{
   const rows=[], updates=[];
   BUDDY_PAST.forEach(b=>{ const ex=map[`${b.m}|${b.e}|${b.t}`];
     if(!ex) rows.push({ mentor_name:b.m, mentee_name:b.e, team_name:b.t, status:'completed', start_date:b.d, team_image:b.img||null });
-    else if(b.img && !ex.team_image) updates.push({ id:ex.id, team_image:b.img });
+    else if(b.img && ex.team_image!==b.img) updates.push({ id:ex.id, team_image:b.img });
   });
   if(!rows.length && !updates.length){ alert('이미 다 등록됐고 이미지도 채워져 있어요.'); return; }
   let ins=0, upd=0, fail=0;
