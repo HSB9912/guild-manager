@@ -4463,14 +4463,20 @@ const BUDDY_PAST=[
 ];
 window._buddyImportPast=async ()=>{
   if(!isAdmin()) return alert('운영진만 가능해요.');
-  if(!confirm(`과거 버니버디 ${BUDDY_PAST.length}팀을 '완료' 이력으로 추가할까요?\n· 팀 이미지 포함 (R2 호스팅)\n· 이미 있는 팀은 건너뜀`)) return;
-  let seen=new Set();
-  try{ const { data:ex }=await db().from('buddy_teams').select('mentor_name,mentee_name,team_name'); (ex||[]).forEach(x=>seen.add(`${x.mentor_name}|${x.mentee_name}|${x.team_name}`)); }catch(e){}
-  const rows=BUDDY_PAST.filter(b=>!seen.has(`${b.m}|${b.e}|${b.t}`)).map(b=>({ mentor_name:b.m, mentee_name:b.e, team_name:b.t, status:'completed', start_date:b.d, team_image:b.img||null }));
-  if(!rows.length){ alert('이미 모두 등록돼 있어요.'); return; }
-  const { error }=await db().from('buddy_teams').insert(rows);
-  if(error) return alert('추가 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
-  alert(`과거 버디 ${rows.length}팀 추가 완료 ✓ (건너뜀 ${BUDDY_PAST.length-rows.length})`);
+  if(!confirm(`과거 버니버디 ${BUDDY_PAST.length}팀을 가져올까요?\n· 없는 팀은 추가(이미지 포함)\n· 이미 있는데 이미지 빠진 팀은 이미지만 채움`)) return;
+  let existing=[];
+  try{ const { data }=await db().from('buddy_teams').select('id,mentor_name,mentee_name,team_name,team_image'); existing=data||[]; }catch(e){}
+  const map={}; existing.forEach(x=>{ map[`${x.mentor_name}|${x.mentee_name}|${x.team_name}`]=x; });
+  const rows=[], updates=[];
+  BUDDY_PAST.forEach(b=>{ const ex=map[`${b.m}|${b.e}|${b.t}`];
+    if(!ex) rows.push({ mentor_name:b.m, mentee_name:b.e, team_name:b.t, status:'completed', start_date:b.d, team_image:b.img||null });
+    else if(b.img && !ex.team_image) updates.push({ id:ex.id, team_image:b.img });
+  });
+  if(!rows.length && !updates.length){ alert('이미 다 등록됐고 이미지도 채워져 있어요.'); return; }
+  let ins=0, upd=0, fail=0;
+  if(rows.length){ const { error }=await db().from('buddy_teams').insert(rows); if(error){ alert('추가 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)'); return; } ins=rows.length; }
+  for(const u of updates){ const { error }=await db().from('buddy_teams').update({ team_image:u.team_image }).eq('id',u.id); if(error) fail++; else upd++; }
+  alert(`완료 ✓ 추가 ${ins}팀 · 이미지 채움 ${upd}팀${fail?` · 실패 ${fail}`:''}`);
   _buddyBack();
 };
 window._buddyCreate=async ()=>{
