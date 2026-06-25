@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>길드 가입 신청 — 뚠/뚱카롱</title>
-<meta name="description" content="뚠/뚱카롱 길드 가입 신청 페이지">
-<meta property="og:title" content="길드 가입 신청 — 뚠/뚱카롱">
+<title>길드 가입 신청 — 버니</title>
+<meta name="description" content="버니 길드 가입 신청 페이지">
+<meta property="og:title" content="길드 가입 신청 — 버니">
 <meta property="og:description" content="질문에 답변하고 핸즈 인증만 하면 신청 완료">
 <link rel="icon" href="../favicon.png">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -52,7 +52,7 @@
     <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg mb-3">
       <i class="fas fa-user-plus text-white text-2xl"></i>
     </div>
-    <h1 class="text-xl font-black text-gray-800">뚠/뚱카롱 가입 신청</h1>
+    <h1 class="text-xl font-black text-gray-800">버니 가입 신청</h1>
     <p class="text-[11px] text-gray-500 mt-1">아래 항목을 작성하면 간부진이 검토 후 안내드립니다</p>
   </div>
 
@@ -74,8 +74,8 @@
       <div>• <strong class="text-emerald-700">안정권 = TOP 90 이내</strong> — 강등 거의 없음</div>
       <div>• <strong class="text-yellow-700">90~180등 = 변동성 위험구간</strong> — 갭이 적어 작은 변동에도 강등 가능</div>
       <div>• 🥞 <strong class="text-amber-700">팬케이크 = 하위 20명 (강등권)</strong> · 🍞 스콘 5.5만 미만 (강등 권유)</div>
-      <div class="border-t border-pink-200 mt-1.5 pt-1.5">⚔️ <strong>1기(뚠카롱) 가입 컷</strong>: <strong class="text-pink-700">꼴등 +5,000점</strong> 이상 → 점수 따라 직위 자동 부여</div>
-      <div>&nbsp;&nbsp;그 미만은 <strong class="text-blue-700">2기(뚱카롱)로 가입</strong> · ※ 현재 <strong>1기/2기 통합 운영</strong>이라 2→1 승급제는 휴지 상태</div>
+      <div class="border-t border-pink-200 mt-1.5 pt-1.5">⚔️ <strong>1기(버니) 가입 컷</strong>: <strong class="text-pink-700">꼴등 +5,000점</strong> 이상 → 점수 따라 직위 자동 부여</div>
+      <div>&nbsp;&nbsp;그 미만은 <strong class="text-blue-700">2기(늑대)로 가입</strong> · ※ 현재 <strong>1기/2기 통합 운영</strong>이라 2→1 승급제는 휴지 상태</div>
     </div>
 
     <!-- 슬라이더 -->
@@ -252,7 +252,7 @@
   </div>
 
   <div class="text-center py-4">
-    <p class="text-[10px] text-gray-400"><a href="../" class="hover:text-pink-500"><i class="fas fa-home mr-1"></i>뚠/뚱카롱 메인</a></p>
+    <p class="text-[10px] text-gray-400"><a href="../" class="hover:text-pink-500"><i class="fas fa-home mr-1"></i>버니 메인</a></p>
   </div>
 
 </div>
@@ -563,7 +563,7 @@
 
     if (v < 10000) { rank = '❌ 가입 불가'; msg = '1만점 미만은 신청 거절'; color = 'text-red-600'; }
     else if (v < joinCut1st) {
-      rank = '🥖 뚱카롱 (2기)';
+      rank = '🥖 늑대 (2기)';
       msg = `1기 컷 ${fmtMan(joinCut1st)} 미달 — 꼴등 ${fmtMan(scState.cut_last)}+5천 필요`;
       color = 'text-blue-700';
     }
@@ -615,7 +615,7 @@
       applyScState();
 
       const metaEl = document.getElementById('sc_meta');
-      if (metaEl) metaEl.textContent = `${latestPeriod.period_label} · 뚠카롱 ${total}명 · 매주 변동`;
+      if (metaEl) metaEl.textContent = `${latestPeriod.period_label} · 버니 ${total}명 · 매주 변동`;
     } catch (e) {
       console.warn('수로 컷 로드 실패 (기본값 사용):', e.message);
     }
