@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>수로 당근샵 — 보상 개편안 (간부 공유용)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root{--main:#FF8FAB;--light:#FFC9DE;--deep:#B5446E;--bg:#FFF5F8;--p2:#FFF0F5;--p3:#FFF7EF;--line:#F1D6E0;--text:#3A2832;--dim:#9A8189;--carrot:#F08A3C;--carrotbg:#FFF1E6;--ok:#1A8A4A;--okbg:#E3F6E9;--gold:#C99A2E;--goldbg:#FBF3DC;
+   --royal:#7E3FC0;--royalbg:#F3E8FF;--moon:#2A6FA6;--moonbg:#E3F1FF;--star:#D6447E;--starbg:#FFE6F0;--cotton:#1A8A4A;--cottonbg:#E3F6E9}
+  *{box-sizing:border-box;font-family:'Pretendard',system-ui,sans-serif}
+  body{margin:0;background:#F7E9EF;color:var(--text);padding:22px 14px}
+  .deck{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+  .slide{background:#fff;border-radius:22px;box-shadow:0 10px 30px rgba(150,60,95,.10);overflow:hidden}
+  .stop{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+  .num{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--main),var(--deep));color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .stop h2{margin:0;font-size:18px;font-weight:900}
+  .sbody{padding:20px 22px}
+  .cover{background:linear-gradient(150deg,var(--main),var(--deep));color:#fff;text-align:center;padding:34px 24px}
+  .cover .emoji{font-size:46px}.cover h1{font-size:26px;font-weight:900;margin:10px 0 4px}.cover p{margin:0;font-weight:700;opacity:.95;font-size:14px}
+  .three{display:flex;flex-direction:column;gap:10px;margin-top:18px;text-align:left}
+  .three .r{background:rgba(255,255,255,.16);border-radius:14px;padding:12px 15px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:11px}
+  .three .r i{width:22px;text-align:center}
+  .lead{font-size:15px;font-weight:800;margin:0 0 14px;line-height:1.55}.lead .big{color:var(--deep)}
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th{font-size:12px;font-weight:800;color:var(--dim);text-align:left;padding:9px 10px;border-bottom:2px solid var(--line)}
+  th.r,td.r{text-align:right}
+  td{padding:11px 10px;border-bottom:1px solid var(--line);font-weight:800}
+  tr.sum td{border-top:2px solid var(--line);background:var(--p3);font-weight:900;border-bottom:0}
+  .chip{font-weight:900;border-radius:99px;padding:3px 11px;font-size:13px;white-space:nowrap}
+  .c-royal{background:var(--royalbg);color:var(--royal)}.c-moon{background:var(--moonbg);color:var(--moon)}.c-star{background:var(--starbg);color:var(--star)}.c-cotton{background:var(--cottonbg);color:var(--cotton)}
+  .note{background:var(--p2);border-radius:13px;padding:13px 15px;font-size:13.5px;font-weight:700;line-height:1.65;margin-top:14px;color:#5a4a51}.note b{color:var(--text)}
+  .uses{display:flex;flex-direction:column;gap:11px}
+  .use{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:15px;padding:14px 16px}
+  .use .ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;flex-shrink:0}
+  .u1 .ic{background:var(--okbg)}.u2 .ic{background:var(--royalbg)}.u3 .ic{background:var(--goldbg)}
+  .use .t{font-weight:900;font-size:15px}.use .d{font-size:12.5px;color:var(--dim);font-weight:700;margin-top:2px}
+  .warn{margin-top:13px;background:var(--carrotbg);color:#9a5a1c;border-radius:13px;padding:11px 15px;font-weight:800;font-size:13.5px;text-align:center}
+  .store{border:1px solid var(--line);border-radius:15px;overflow:hidden;margin-bottom:12px}
+  .store .sh{padding:11px 15px;color:#fff;font-weight:900;font-size:14.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .store .sh span{font-size:11.5px;font-weight:700;opacity:.92;margin-left:auto}
+  .sh.c1{background:linear-gradient(135deg,#9a5fd0,var(--royal))}.sh.c2{background:linear-gradient(135deg,#4f93c9,var(--moon))}.sh.c3{background:linear-gradient(135deg,#e878a6,var(--star))}.sh.c4{background:linear-gradient(135deg,#46b977,var(--cotton))}
+  .ln{display:flex;align-items:center;justify-content:space-between;padding:10px 15px;border-top:1px solid var(--line);font-weight:800;font-size:13.5px}.ln b{color:var(--deep);font-weight:900}
+  .kpis{display:flex;gap:10px;margin-bottom:14px}
+  .kpi{flex:1;border-radius:14px;padding:13px;text-align:center;font-weight:800;font-size:12px}.kpi b{display:block;font-size:20px;margin-top:3px}
+  .kp1{background:var(--carrotbg);color:var(--carrot)}.kp2{background:var(--okbg);color:var(--ok)}.kp3{background:var(--goldbg);color:var(--gold)}
+  .mini td,.mini th{padding:8px 10px;font-size:13.5px}.win{color:var(--ok)}.jp{color:var(--gold);font-weight:900}
+  .foot{text-align:center;color:var(--dim);font-weight:700;font-size:12px;padding:6px 0 2px}
+  .big2{font-size:30px;font-weight:900;color:var(--deep)}
+</style></head>
+<body>
+<div class="deck">
+
+  <!-- 표지 -->
+  <div class="slide"><div class="cover">
+    <div class="emoji">🥕</div>
+    <h1>수로 당근샵</h1>
+    <p>수로 참여 보상 개편안</p>
+    <div class="three">
+      <div class="r"><i class="fa-solid fa-calendar-check"></i> 매주 수로 참여 → 당근(포인트) 적립</div>
+      <div class="r"><i class="fa-solid fa-store"></i> 10주마다 당근샵 열어 원하는 보상 교환</div>
+      <div class="r"><i class="fa-solid fa-crown"></i> 직위가 높을수록 더 좋은 당근</div>
+    </div>
+  </div></div>
+
+  <!-- 1. 적립 -->
+  <div class="slide">
+    <div class="stop"><div class="num">1</div><h2>어떻게 쌓이나</h2></div>
+    <div class="sbody">
+      <p class="lead">매주 자기 직위에 맞는 당근을 <span class="big">1개씩 자동 적립</span>해요.</p>
+      <table>
+        <thead><tr><th>직위</th><th>받는 당근</th><th class="r">주간</th><th class="r">10주</th></tr></thead>
+        <tbody>
+          <tr><td>로얄버니</td><td><span class="chip c-royal">최상급</span></td><td class="r">1개</td><td class="r">10개</td></tr>
+          <tr><td>문버니</td><td><span class="chip c-moon">상급</span></td><td class="r">1개</td><td class="r">10개</td></tr>
+          <tr><td>스타버니</td><td><span class="chip c-star">중급</span></td><td class="r">1개</td><td class="r">10개</td></tr>
+          <tr><td>코튼버니</td><td><span class="chip c-cotton">하급</span></td><td class="r">1개</td><td class="r">10개</td></tr>
+        </tbody>
+      </table>
+      <div class="note">직위가 바뀌면 그 주부터 바뀐 등급으로 받아요 → 여러 등급 당근을 같이 가질 수도 있어요.</div>
+    </div>
+  </div>
+
+  <!-- 2. 가치 -->
+  <div class="slide">
+    <div class="stop"><div class="num">2</div><h2>당근의 가치</h2></div>
+    <div class="sbody">
+      <p class="lead">당근 1개의 가치 (= 솔에르다 조각·메소로 교환)</p>
+      <table>
+        <thead><tr><th>당근</th><th class="r">1개 = 메소</th><th class="r">10주 모으면(1인)</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip c-royal">최상급</span></td><td class="r">5,000만</td><td class="r">5억</td></tr>
+          <tr><td><span class="chip c-moon">상급</span></td><td class="r">3,000만</td><td class="r">3억</td></tr>
+          <tr><td><span class="chip c-star">중급</span></td><td class="r">1,000만</td><td class="r">1억</td></tr>
+          <tr><td><span class="chip c-cotton">하급</span></td><td class="r">500만</td><td class="r">0.5억</td></tr>
+        </tbody>
+      </table>
+      <div class="note">교환 기준: <b>솔에르다 조각 1개 = 약 650만 메소</b>. 즉 최상급 당근 1개 ≈ 조각 7~8개.</div>
+    </div>
+  </div>
+
+  <!-- 3. 사용처 -->
+  <div class="slide">
+    <div class="stop"><div class="num">3</div><h2>어디에 쓰나 (당근샵)</h2></div>
+    <div class="sbody">
+      <div class="uses">
+        <div class="use u1"><div class="ic">⭐</div><div><div class="t">솔에르다 조각 교환</div><div class="d">당근을 조각으로 바로 교환</div></div></div>
+        <div class="use u2"><div class="ic">💎</div><div><div class="t">보석금 50% 할인권</div><div class="d">수로 미참 보석금을 절반으로 깎아주는 권리</div></div></div>
+        <div class="use u3"><div class="ic">🎰</div><div><div class="t">솔에르다 조각 뽑기</div><div class="d">운이 좋으면 대박! (5번 참고)</div></div></div>
+      </div>
+      <div class="warn"><i class="fa-solid fa-hourglass-half"></i> 10주 안에 안 쓰면 당근은 사라져요</div>
+    </div>
+  </div>
+
+  <!-- 4. 상점 전체 -->
+  <div class="slide">
+    <div class="stop"><div class="num">4</div><h2>당근샵 둘러보기 (4개 상점)</h2></div>
+    <div class="sbody">
+      <p class="lead">자기 등급 당근으로 <span class="big">자기 등급 상점</span>에서 교환해요.</p>
+      <div class="store">
+        <div class="sh c1">🟣 최상급 상점 <span>로얄 · 10주 5억어치</span></div>
+        <div class="ln"><span>⭐ 솔에르다 조각 교환</span><b>시세대로</b></div>
+        <div class="ln"><span>🎰 조각 뽑기</span><b>당근 1개</b></div>
+        <div class="ln"><span>👑 로얄 스타일 쿠폰</span><b>당근 3개</b></div>
+      </div>
+      <div class="store">
+        <div class="sh c2">🔵 상급 상점 <span>문 · 10주 3억어치</span></div>
+        <div class="ln"><span>⭐ 솔에르다 조각 교환</span><b>시세대로</b></div>
+        <div class="ln"><span>🎰 조각 뽑기</span><b>당근 1개</b></div>
+      </div>
+      <div class="store">
+        <div class="sh c3">🩷 중급 상점 <span>스타 · 10주 1억어치</span></div>
+        <div class="ln"><span>⭐ 솔에르다 조각 교환</span><b>시세대로</b></div>
+        <div class="ln"><span>🎰 조각 뽑기</span><b>당근 1개</b></div>
+      </div>
+      <div class="store">
+        <div class="sh c4">🟢 하급 상점 <span>코튼 · 10주 0.5억어치</span></div>
+        <div class="ln"><span>⭐ 솔에르다 조각 교환</span><b>시세대로</b></div>
+        <div class="ln"><span>🎰 조각 뽑기</span><b>당근 1개</b></div>
+      </div>
+      <div class="note">💎 <b>보석금 50% 할인권 = 솔에르다 조각 60개급 (약 3.9억)</b> · 전 등급 공통 고가 상품. 당근을 모아서 구매 — 등급별 환산: 최상급 8개 · 상급 13개 · 중급 39개 · 하급 78개.</div>
+    </div>
+  </div>
+
+  <!-- 5. 뽑기 -->
+  <div class="slide">
+    <div class="stop"><div class="num">5</div><h2>솔에르다 조각 뽑기 (등급별 룰렛)</h2></div>
+    <div class="sbody">
+      <p class="lead">당근 1개로 뽑기 1번 → 솔에르다 조각 <span class="big">랜덤</span> 획득. <b>등급마다 룰렛이 달라요</b> — 높을수록 크게 걸고 잭팟도 큽니다.</p>
+
+      <div class="store">
+        <div class="sh c1">🟣 최상급 뽑기권 <span>최상급당근 1개 · 평균 6.8조각</span></div>
+        <div class="ln"><span>조각 3개</span><b>50.0%</b></div>
+        <div class="ln"><span>조각 5개</span><b>30.0%</b></div>
+        <div class="ln"><span>조각 8개</span><b>12.0%</b></div>
+        <div class="ln"><span class="win">조각 15개</span><b>5.0%</b></div>
+        <div class="ln"><span class="win">조각 40개</span><b>2.8%</b></div>
+        <div class="ln"><span class="jp">조각 500개 (잭팟 · 32.5억)</span><b>0.2%</b></div>
+      </div>
+      <div class="store">
+        <div class="sh c2">🔵 상급 뽑기권 <span>상급당근 1개 · 평균 4.2조각</span></div>
+        <div class="ln"><span>조각 2개</span><b>52.0%</b></div>
+        <div class="ln"><span>조각 3개</span><b>30.0%</b></div>
+        <div class="ln"><span>조각 5개</span><b>10.0%</b></div>
+        <div class="ln"><span class="win">조각 10개</span><b>5.0%</b></div>
+        <div class="ln"><span class="win">조각 25개</span><b>2.7%</b></div>
+        <div class="ln"><span class="jp">조각 200개 (잭팟 · 13억)</span><b>0.3%</b></div>
+      </div>
+      <div class="store">
+        <div class="sh c3">🩷 중급 뽑기권 <span>중급당근 1개 · 평균 1.5조각</span></div>
+        <div class="ln"><span>조각 1개</span><b>66.0%</b></div>
+        <div class="ln"><span>조각 2개</span><b>28.0%</b></div>
+        <div class="ln"><span>조각 3개</span><b>4.0%</b></div>
+        <div class="ln"><span class="win">조각 6개</span><b>1.8%</b></div>
+        <div class="ln"><span class="jp">조각 30개 (잭팟 · 1.95억)</span><b>0.2%</b></div>
+      </div>
+      <div class="store">
+        <div class="sh c4">🟢 하급 뽑기권 <span>하급당근 2개 · 평균 1.5조각</span></div>
+        <div class="ln"><span>조각 1개</span><b>68.0%</b></div>
+        <div class="ln"><span>조각 2개</span><b>27.0%</b></div>
+        <div class="ln"><span class="win">조각 4개</span><b>4.5%</b></div>
+        <div class="ln"><span class="jp">조각 20개 (잭팟 · 1.3억)</span><b>0.5%</b></div>
+      </div>
+
+      <div class="note">각 표 확률 합 = 100%. 모든 등급 <b>평균 획득 &lt; 뽑기 값 (길드 마진 ~10%)</b> → 손해 없음. ※ 하급당근(500만)이 조각 1개(650만)보다 싸서 <b>하급만 당근 2개</b>로 뽑아요.</div>
+    </div>
+  </div>
+
+  <!-- 6. 예산 = 인원풀 -->
+  <div class="slide">
+    <div class="stop"><div class="num">6</div><h2>예산 — 인원에 맞춰 고정</h2></div>
+    <div class="sbody">
+      <p class="lead">직위별 인원 × 1인 적립 = <span class="big">총 예산 140억</span> (보석금 풀 안)</p>
+      <table>
+        <thead><tr><th>직위</th><th class="r">인원</th><th class="r">1인(10주)</th><th class="r">소계</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip c-royal">로얄</span></td><td class="r">5명</td><td class="r">5억</td><td class="r">25억</td></tr>
+          <tr><td><span class="chip c-moon">문</span></td><td class="r">20명</td><td class="r">3억</td><td class="r">60억</td></tr>
+          <tr><td><span class="chip c-star">스타</span></td><td class="r">35명</td><td class="r">1억</td><td class="r">35억</td></tr>
+          <tr><td><span class="chip c-cotton">코튼</span></td><td class="r">40명</td><td class="r">0.5억</td><td class="r">20억</td></tr>
+          <tr class="sum"><td>합계</td><td class="r">100명</td><td class="r">—</td><td class="r">140억</td></tr>
+        </tbody>
+      </table>
+      <div class="note">발행량이 인원에 맞춰 <b>고정</b>이라 전부 써도 140억 안에서 끝나요. <b>안 쓴 당근 + 뽑기 마진</b>으로 실제 지출은 그보다 더 적습니다 → <b>적자 없음</b>.</div>
+    </div>
+  </div>
+
+  <div class="foot">수로 당근샵 보상 개편안 · 간부 검토용 초안</div>
+</div>
+</body></html>
