@@ -116,6 +116,8 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'feat', x:'동기화 신규 길드원 — 받을 사람만 체크해서 선택 추가(전체 토글 + 개별 체크박스). 기존엔 누르면 전원 일괄이었는데, 한 명씩 받을지 결정 가능' },
+    { t:'feat', x:'동기화 닉변 검사 — "유니온 부캐 겹침=계정 확정" 추가(OCID 백필 없이도 이미 닉변한 사람 잡힘). ①OCID ②부캐겹침 ③직업·레벨추정' },
     { t:'feat', x:'동기화 — OCID 기반 닉변(닉네임 변경) 감지. OCID는 닉변해도 안 변해서, "OCID 백필"로 멤버 OCID를 미리 저장 → 동기화 후 "닉변 의심 검사"가 사라진 옛 닉 ↔ 새 닉을 확정 매칭 → 이름만 바꿔 수로 이력·점수 보존 (members.ocid 컬럼 필요)' },
     { t:'fix',  x:'수로 보상 — 점수가 1000건에서 잘려(DB 한 번에 1000행 제한) 상위권 분기평균이 반토막 나고 순위가 뒤집히던 치명 버그 수정. 전체 회차 점수를 나눠 받도록 변경(리케아 5/12→12/12주, 평균이 분석탭과 일치)' },
     { t:'fix',  x:'수로 보상 — 부캐(수로 0점)가 보상 랭킹에 섞여 등급 분포(롤케이크/팬케이크)를 오염시키던 문제 수정. 본캐만 산정(557 → 181명)' },
@@ -2165,7 +2167,7 @@ function _syncRenderNewRows(){
   const added=window._syncAdded||[], gm=window._syncGuessMap||{};
   if(!added.length) return '<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>';
   return `<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">${added.map((m,i)=>{ const n=m.name;
-    return `<div style="display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:10px;padding:6px 11px"><span style="font-weight:800;font-size:13px">${escHtml(n)}</span><span class="chip" style="background:var(--panel-3);color:var(--dim);font-weight:800">${escHtml(guildLabel(m.guild))}</span><span id="sg_${i}" style="margin-left:auto;text-align:right">${_syncGuessLabel(n,gm[n])}</span></div>`;
+    return `<label style="display:flex;align-items:center;gap:9px;background:var(--panel-2);border-radius:10px;padding:6px 11px;cursor:pointer"><input type="checkbox" class="sync-add-cb" data-name="${escAttr(n)}" checked style="accent-color:var(--bunny-deep);width:16px;height:16px;flex-shrink:0"><span style="font-weight:800;font-size:13px">${escHtml(n)}</span><span class="chip" style="background:var(--panel-3);color:var(--dim);font-weight:800">${escHtml(guildLabel(m.guild))}</span><span id="sg_${i}" style="margin-left:auto;text-align:right">${_syncGuessLabel(n,gm[n])}</span></label>`;
   }).join('')}</div>`;
 }
 window._syncGuessAll=async ()=>{
@@ -2222,8 +2224,9 @@ window._syncRun=async ()=>{
       <div class="panel" style="border-radius:16px;padding:14px;margin-bottom:14px"><div style="font-weight:900;font-size:13px;margin-bottom:8px"><i class="fa-solid fa-chart-pie" style="color:var(--bunny-main);margin-right:6px"></i>길드별 현황</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">${guildStatus}</div></div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 0">
         <span style="font-weight:900;font-size:14px">신규 길드원 ${added.length}</span>
-        ${added.length?`<button id="syncGuessBtn" onclick="_syncGuessAll()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>본캐 추론</button>
-        <button onclick="_syncAdd()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:#1A8A4A;cursor:pointer">DB에 추가</button>`:''}
+        ${added.length?`<label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;cursor:pointer"><input type="checkbox" checked onclick="document.querySelectorAll('.sync-add-cb').forEach(c=>c.checked=this.checked)" style="accent-color:var(--bunny-deep)">전체</label>
+        <button id="syncGuessBtn" onclick="_syncGuessAll()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:5px"></i>본캐 추론</button>
+        <button onclick="_syncAdd()" style="border:0;border-radius:8px;padding:6px 13px;font-weight:800;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-check" style="margin-right:5px"></i>체크한 사람 추가</button>`:''}
       </div>
       <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">본캐 추론: 유니온 챔피언으로 같은 계정 묶고 대표(슬롯1) 추정 · 자기자신=본캐(is_main) / 다른캐=그 본캐의 부캐 / 미확인=미지정(챔피언 없는 저레벨 계정)</p>
       <div id="syncNewBox">${_syncRenderNewRows()}</div>
@@ -2245,12 +2248,16 @@ window._syncRun=async ()=>{
 };
 window._syncAdd=async ()=>{
   if(!isAdmin()) return alert('운영진만 추가할 수 있어요.');
-  const added=window._syncAdded||[]; if(!added.length) return;
+  const all=window._syncAdded||[]; if(!all.length) return;
+  const checked=new Set([...document.querySelectorAll('.sync-add-cb:checked')].map(c=>c.dataset.name));   // 받을 사람만 체크
+  const added=all.filter(m=>checked.has(m.name));
+  if(!added.length) return alert('추가할 사람을 한 명 이상 체크해주세요. (받을 사람만 체크 → 안 받을 사람은 체크 해제)');
   const gm=window._syncGuessMap||{};
   const subCnt=added.filter(m=>gm[m.name]&&gm[m.name]!==m.name).length;     // 부캐(추론됨)
   const selfCnt=added.filter(m=>gm[m.name]&&gm[m.name]===m.name).length;    // 본캐(자기자신)
   const unkCnt=added.length-subCnt-selfCnt;                                 // 미확인 → is_main:false
-  if(!confirm(`${added.length}명을 DB에 추가할까요? (각자 소속 길드로)\n· 본캐(자기자신): ${selfCnt}명\n· 부캐(본캐 추론됨): ${subCnt}명\n· 미확인(미지정): ${unkCnt}명\n※ 라이브 공유 DB에 반영됩니다.`)) return;
+  const skip=all.length-added.length;
+  if(!confirm(`체크한 ${added.length}명을 DB에 추가할까요?${skip?` (${skip}명은 제외)`:''}\n· 본캐(자기자신): ${selfCnt}명\n· 부캐(본캐 추론됨): ${subCnt}명\n· 미확인(미지정): ${unkCnt}명\n※ 라이브 공유 DB에 반영됩니다.`)) return;
   const today=new Date().toISOString().slice(0,10);
   const rows=added.map(m=>{ const name=m.name, g=gm[name];
     if(g && g!==name) return { name, guild:m.guild, is_main:false, main_char_name:g, join_date:today };  // 부캐
