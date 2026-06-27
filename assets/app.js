@@ -115,6 +115,10 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
  * ============================================================ */
 const CHANGELOG = [
+  { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'feat', x:'수로 입력 — 📷 화면 캡처 OCR 부활. 메이플 길드 컨텐츠 창을 캡처하면 닉네임·지하수로 점수를 자동 인식 → 멤버 이름 매칭 → 현재 회차에 일괄 반영 (스크린샷 이미지 파일 인식도 지원)' },
+    { t:'fix',  x:'OCR 인식 엔진·템플릿을 최신 버전으로 갱신(메이플 길드창 UI 변경 대응) — 기존에 안 먹던 화면 인식 정상화' },
+  ]},
   { id:'2026-06-25', date:'2026-06-25', items:[
     { t:'feat', x:'버니버디 — 과거 완료 버디팀 19팀 한 번에 가져오기(운영진 "과거 이력 가져오기" 버튼)' },
     { t:'feat', x:'신청 처리 3탭 복원 — 가입 신청 · 아인슈페너(수로 면제) 신청 · 수로 보석금 신청을 한 곳에서 승인/거절' },
@@ -1742,6 +1746,7 @@ async function buildSuroInput(){
         <div style="flex:1;min-width:150px;display:flex;align-items:center;gap:7px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:0 12px"><i class="fa-solid fa-magnifying-glass dim"></i><input id="si_q" oninput="_siSearch()" placeholder="닉네임 검색…" style="border:0;background:transparent;flex:1;padding:10px 0;font-weight:800;font-size:14px;color:var(--text);outline:0"></div>
         <button id="si_only" onclick="_siToggleEmpty()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">미입력만</button>
         <button onclick="_siAddPeriod()" title="새 회차(주차) 추가" style="border:1px solid var(--bunny-main);background:var(--bunny-light);color:var(--bunny-deep);border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-plus" style="margin-right:4px"></i>회차</button>
+        <button onclick="_siOcrOpen()" title="화면 캡처로 수로 점수 자동 인식" style="border:1px solid var(--bunny-deep);background:var(--bunny-deep);color:#fff;border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-camera" style="margin-right:4px"></i>OCR</button>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px;font-size:12px;font-weight:800;flex-wrap:wrap;gap:4px">
         <span id="si_presence" class="dim"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>연결 중…</span>
@@ -1776,6 +1781,125 @@ window._siAddPeriod=async (preset)=>{
   el.innerHTML=loadingHTML('suro_input');
   try{ el.innerHTML=await buildSuroInput(); const sel=document.getElementById('si_period'); if(sel&&newId){ sel.value=String(newId); await _siLoad(newId); } }
   catch(e){ el.innerHTML=errorHTML('suro_input',e); }
+};
+/* ===== 수로 OCR 가져오기 (maplelens 자체호스팅 워커: ocr/worker.js) =====
+   화면 캡처 → OpenCV 템플릿매칭으로 {name,culv(지하수로)} 인식 → 현재 회차 멤버 이름매칭 → 일괄 반영 */
+let _siOcrWorker=null,_siOcrReady=false,_siOcrStream=null,_siOcrVideo=null,_siOcrLoop=null,_siOcrBusy=false,_siOcrRecs=new Map();
+const _siOcrNorm=s=>String(s||'').replace(/\s+/g,'').trim();
+function _siOcrStatus(t){ const el=document.getElementById('siocr_status'); if(el) el.textContent=t; }
+function _siOcrSetDot(c){ const dot=document.getElementById('siocr_dot'); if(dot) dot.style.background=c; }
+function _siOcrInit(){
+  if(_siOcrWorker) return;
+  try{ _siOcrWorker=new Worker(new URL('ocr/worker.js',location.href)); }
+  catch(e){ _siOcrStatus('OCR 워커 생성 실패: '+e.message); return; }
+  _siOcrWorker.onmessage=(ev)=>{ const d=ev.data||{};
+    if(d.type==='READY'){ _siOcrReady=true; _siOcrStatus('OCR 엔진 준비 완료 — 캡처 시작'); _siOcrSetDot('var(--ok-tx)'); const b=document.getElementById('siocr_start'); if(b) b.disabled=false; }
+    else if(d.type==='RESULT'){ (d.payload||[]).forEach(r=>{ if(r&&r.name) _siOcrRecs.set(r.name,{name:r.name,culv:Number(r.culv)||0}); }); _siOcrBusy=false; _siOcrRenderList(); }
+  };
+  _siOcrWorker.onerror=(e)=>{ _siOcrStatus('OCR 오류: '+(e.message||'worker error')); _siOcrBusy=false; };
+}
+window._siOcrOpen=()=>{
+  _siOcrRecs=new Map(); _siOcrInit();
+  document.getElementById('siocr_modal')?.remove();
+  const m=document.createElement('div'); m.id='siocr_modal';
+  m.style.cssText='position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(40,12,24,.34);backdrop-filter:blur(3px);padding:14px';
+  m.innerHTML=`<div class="panel" style="width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;border-radius:20px;overflow:hidden">
+    <div style="padding:15px 18px;background:linear-gradient(135deg,var(--bunny-light),var(--bunny-main));color:#fff;display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div style="font-weight:900;font-size:16px"><i class="fa-solid fa-camera" style="margin-right:7px"></i>화면 캡처 OCR</div>
+      <div style="font-size:11px;opacity:.95;margin-top:3px">메이플 <b>길드 → 길드 컨텐츠</b> 창을 띄운 채로 캡처</div></div>
+      <button onclick="_siOcrClose()" style="background:transparent;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1">&times;</button>
+    </div>
+    <div style="padding:16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:13px">
+      <div class="panel" style="background:var(--panel-2);border-radius:13px;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:800"><span id="siocr_dot" style="width:9px;height:9px;border-radius:99px;background:var(--warn-tx);display:inline-block"></span><span id="siocr_status">OCR 엔진 로딩 중… (최초 1회 약 10초)</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="siocr_start" onclick="_siOcrStart()" disabled style="flex:1;min-width:130px;border:0;background:var(--bunny-deep);color:#fff;border-radius:11px;padding:11px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-play" style="margin-right:5px"></i>화면 캡처 시작</button>
+          <button id="siocr_stop" onclick="_siOcrStop()" style="display:none;flex:1;min-width:130px;border:0;background:var(--bad-tx);color:#fff;border-radius:11px;padding:11px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-stop" style="margin-right:5px"></i>캡처 중지</button>
+          <button onclick="_siOcrFile()" title="스크린샷 파일로 인식" style="border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:11px;padding:11px 13px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-image" style="margin-right:5px"></i>이미지</button>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:var(--dim);font-weight:700;line-height:1.75">
+        1. <b>화면 캡처 시작</b> → 메이플 창(또는 화면) 선택<br>
+        2. 길드 컨텐츠 창을 <b>천천히 위→아래로 스크롤</b> (커서가 닉네임·점수 가리지 않게)<br>
+        3. 인식되면 아래에 쌓임 → <b>현재 회차에 반영</b>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--dim);margin-bottom:5px"><span>인식 결과</span><span id="siocr_sum">0명</span></div>
+        <div class="panel" style="border-radius:12px;max-height:230px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px" id="siocr_tbl"><tbody><tr><td style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 인식된 데이터가 없어요</td></tr></tbody></table></div>
+      </div>
+      <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:6px"></i>매칭된 사람 현재 회차에 반영</button>
+    </div></div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{ if(e.target===m) _siOcrClose(); });
+  if(_siOcrReady){ _siOcrStatus('OCR 엔진 준비 완료 — 캡처 시작'); _siOcrSetDot('var(--ok-tx)'); const b=document.getElementById('siocr_start'); if(b) b.disabled=false; }
+};
+window._siOcrClose=()=>{ _siOcrStop(); document.getElementById('siocr_modal')?.remove(); };
+window._siOcrStart=async ()=>{
+  if(!_siOcrReady) return _siOcrStatus('OCR 엔진 로딩 중… 잠시만요');
+  try{
+    const stream=await navigator.mediaDevices.getDisplayMedia({video:{cursor:'never'},audio:false});
+    _siOcrStream=stream;
+    const v=document.createElement('video'); v.srcObject=stream; v.autoplay=true; v.muted=true; _siOcrVideo=v;
+    stream.getVideoTracks()[0].onended=()=>_siOcrStop();
+    const a=document.getElementById('siocr_start'), b=document.getElementById('siocr_stop'); if(a) a.style.display='none'; if(b) b.style.display='';
+    _siOcrStatus('캡처 중… 길드 컨텐츠 창을 스크롤하세요'); _siOcrSetDot('var(--bunny-deep)');
+    const loop=async()=>{
+      if(!_siOcrStream) return;
+      if(_siOcrBusy || !_siOcrVideo || _siOcrVideo.readyState<2){ _siOcrLoop=setTimeout(loop,200); return; }
+      try{ _siOcrBusy=true; const bmp=await createImageBitmap(_siOcrVideo); _siOcrWorker.postMessage({type:'PROCESS_IMAGE',payload:bmp,source:'STREAM'},[bmp]); }
+      catch(e){ _siOcrBusy=false; }
+      _siOcrLoop=setTimeout(loop,200);
+    };
+    v.onloadedmetadata=()=>{ v.play(); loop(); };
+  }catch(e){ _siOcrStatus('화면 캡처가 취소되었거나 권한이 없어요'); }
+};
+window._siOcrStop=()=>{
+  if(_siOcrLoop){ clearTimeout(_siOcrLoop); _siOcrLoop=null; }
+  if(_siOcrStream){ try{ _siOcrStream.getTracks().forEach(t=>t.stop()); }catch(e){} _siOcrStream=null; }
+  _siOcrVideo=null; _siOcrBusy=false;
+  const a=document.getElementById('siocr_start'), b=document.getElementById('siocr_stop'); if(a) a.style.display=''; if(b) b.style.display='none';
+  _siOcrSetDot(_siOcrReady?'var(--ok-tx)':'var(--warn-tx)');
+  if(document.getElementById('siocr_modal')) _siOcrStatus('캡처 중지됨 — 결과 확인 후 반영');
+};
+window._siOcrFile=()=>{
+  if(!_siOcrReady) return _siOcrStatus('OCR 엔진 로딩 중… 잠시만요');
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
+    try{ const bmp=await createImageBitmap(f); _siOcrBusy=true; _siOcrStatus('이미지 인식 중…'); _siOcrWorker.postMessage({type:'PROCESS_IMAGE',payload:bmp,source:'FILE'},[bmp]); }
+    catch(err){ _siOcrStatus('이미지 처리 실패: '+err.message); } };
+  inp.click();
+};
+function _siOcrRenderList(){
+  const tbl=document.getElementById('siocr_tbl'); if(!tbl) return;
+  const recs=[..._siOcrRecs.values()];
+  const byName={}; _siMembers.forEach(mm=>byName[_siOcrNorm(mm.name)]=mm);
+  let nMatch=0;
+  const body=recs.map(r=>{
+    const mm=byName[_siOcrNorm(r.name)]; const cur=mm?(_siScores[mm.id]??''):''; if(mm) nMatch++;
+    const badge=mm?`<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--ok-bg);color:var(--ok-tx)">매칭</span>`
+                  :`<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--bad-bg);color:var(--bad-tx)">멤버없음</span>`;
+    return `<tr style="border-top:1px solid var(--line)">
+      <td style="padding:6px 9px;font-weight:800">${escHtml(r.name)}</td>
+      <td style="padding:6px 9px;text-align:right;color:var(--dim)">${cur!==''?Number(cur).toLocaleString():'-'}</td>
+      <td style="padding:6px 9px;text-align:right;font-weight:800;color:var(--bunny-deep)">${(r.culv||0).toLocaleString()}</td>
+      <td style="padding:6px 9px;text-align:right">${badge}</td></tr>`;
+  }).join('');
+  tbl.innerHTML=`<thead><tr style="font-size:10px;color:var(--dim);text-transform:uppercase"><th style="padding:6px 9px;text-align:left">닉네임</th><th style="padding:6px 9px;text-align:right">기존</th><th style="padding:6px 9px;text-align:right">인식</th><th style="padding:6px 9px;text-align:right">상태</th></tr></thead><tbody>${body||'<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 없음</td></tr>'}</tbody>`;
+  const sum=document.getElementById('siocr_sum'); if(sum) sum.textContent=`인식 ${recs.length} · 매칭 ${nMatch}`;
+}
+window._siOcrApply=async ()=>{
+  const recs=[..._siOcrRecs.values()]; if(!recs.length) return alert('인식된 데이터가 없어요. 먼저 캡처해주세요.');
+  if(!isAdmin()) return alert('운영진만 반영할 수 있어요. 운영진 로그인 후 이용해주세요.');
+  if(!_siPid) return alert('회차를 먼저 선택/생성해주세요.');
+  const byName={}; _siMembers.forEach(mm=>byName[_siOcrNorm(mm.name)]=mm);
+  const matched=recs.map(r=>({m:byName[_siOcrNorm(r.name)],r})).filter(x=>x.m);
+  if(!matched.length) return alert('이름이 매칭되는 멤버가 없어요. 닉네임을 확인해주세요.');
+  const rows=matched.map(({m,r})=>({member_id:m.id,period_id:_siPid,score:Number(r.culv)||0,guild:GUILD}));
+  const { error }=await db().from('suro_scores').upsert(rows,{onConflict:'member_id,period_id'});
+  if(error) return alert('반영 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
+  matched.forEach(({m,r})=>{ const v=Number(r.culv)||0; _siScores[m.id]=String(v); _siBroadcast('score',{mid:m.id,score:v,by:CURRENT.name||'운영진'}); });
+  const n=matched.length, tot=recs.length; _siOcrClose(); _siRenderList();
+  alert(`${n}명 수로 점수를 현재 회차에 반영했어요. (인식 ${tot}명 중 매칭 ${n}명)`);
 };
 async function _siFetch(pid){
   _siScores={}; _siPrev={}; _siEditing={};
