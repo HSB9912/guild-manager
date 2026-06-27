@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'feat', x:'동기화 — OCID 기반 닉변(닉네임 변경) 감지. OCID는 닉변해도 안 변해서, "OCID 백필"로 멤버 OCID를 미리 저장 → 동기화 후 "닉변 의심 검사"가 사라진 옛 닉 ↔ 새 닉을 확정 매칭 → 이름만 바꿔 수로 이력·점수 보존 (members.ocid 컬럼 필요)' },
     { t:'fix',  x:'수로 보상 — 점수가 1000건에서 잘려(DB 한 번에 1000행 제한) 상위권 분기평균이 반토막 나고 순위가 뒤집히던 치명 버그 수정. 전체 회차 점수를 나눠 받도록 변경(리케아 5/12→12/12주, 평균이 분석탭과 일치)' },
     { t:'fix',  x:'수로 보상 — 부캐(수로 0점)가 보상 랭킹에 섞여 등급 분포(롤케이크/팬케이크)를 오염시키던 문제 수정. 본캐만 산정(557 → 181명)' },
     { t:'feat', x:'수로 분석 전면 개편(기존 뚠카롱 분석 복원) — 평균순 안정 랭킹 · 최근 4주 비교표 · 주차 변동 · MVP(고득점/떡상/상승률/평균↑) · 길드 총점 추이 · 직업/직위/검색 필터 · 헤더 클릭 정렬' },
@@ -2117,6 +2118,17 @@ async function buildSync(){
         <i class="fa-solid fa-arrow-right" style="margin:0 4px 0 14px"></i><span style="color:var(--ok-tx)">신규</span>: 넥슨엔 있고 DB엔 없는 캐릭 → <b style="color:var(--text)">부캐로 추가</b><br>
         <i class="fa-solid fa-arrow-right" style="margin:0 4px 0 14px"></i><span style="color:var(--bad-tx)">탈퇴 의심</span>: DB 본캐인데 넥슨 길드에 없음 (수동 확인)
       </div>
+      <div class="panel" style="border-radius:14px;padding:14px;margin-top:14px;background:var(--panel-3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <h4 style="font-weight:900;font-size:13px;margin:0"><i class="fa-solid fa-id-badge" style="color:var(--bunny-main);margin-right:6px"></i>OCID · 닉변 감지</h4>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button onclick="_syncBackfillOcid()" style="border:1px solid var(--line);border-radius:9px;padding:7px 13px;font-weight:800;font-size:12px;color:var(--bunny-deep);background:var(--panel);cursor:pointer"><i class="fa-solid fa-download" style="margin-right:4px"></i>OCID 백필</button>
+            <button onclick="_syncNickCheck()" style="border:0;border-radius:9px;padding:7px 13px;font-weight:800;font-size:12px;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-id-badge" style="margin-right:4px"></i>닉변 의심 검사</button>
+          </div>
+        </div>
+        <p class="dim" style="font-size:11px;font-weight:700;margin:7px 0 0">OCID는 닉변해도 안 변해요. <b>백필</b>로 멤버 OCID를 미리 저장해두면, 동기화 후 <b>닉변 검사</b>가 "사라진 옛 닉 ↔ 새 닉"을 OCID로 확정 매칭. (members에 <code style="font-size:10px">ocid</code> 컬럼 필요)</p>
+        <div id="ocidResult" style="margin-top:8px"></div>
+      </div>
       <div id="syncResult" style="margin-top:16px"></div>
     </div>`;
 }
@@ -2124,11 +2136,11 @@ window._syncSaveKey=()=>{ const v=document.getElementById('nx_key').value.trim()
 /* ----- 본캐 추론 (메애기 → 유니온 랭킹) · 원본 뚠카롱 sync에서 믹스 ·----- */
 function _kstDate(daysBack){ const t=Date.now()+9*3600*1000-(daysBack||0)*86400000; return new Date(t).toISOString().slice(0,10); }
 function _fetchT(url, ms){ const c=new AbortController(); const t=setTimeout(()=>c.abort(), ms||2500); return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t)); }
-let _guessCache = {};   // {캐릭명: 본캐명|null} — 세션 캐시 (재추론 시 재호출 방지)
+let _guessCache = {}, _ocidCache = {};   // {캐릭명: 본캐명|null} · {캐릭명: ocid|null} — 세션 캐시 (재추론 시 재호출 방지)
 async function guessMainChar(name){
-  if(name in _guessCache) return { name:_guessCache[name], method:'cache' };
-  let result=null;
-  try{ const { ocid }=await nexonFetch('/maplestory/v1/id',{ character_name:name });
+  if(name in _guessCache) return { name:_guessCache[name], method:'cache', ocid:_ocidCache[name]||null };
+  let result=null, myOcid=null;
+  try{ const { ocid }=await nexonFetch('/maplestory/v1/id',{ character_name:name }); myOcid=ocid||null;
     // 1차: 유니온 챔피언 (계정 공통 캐릭 목록 · 이름 포함) — 슬롯1 = 본캐(대표)
     try{ const c=await nexonFetch('/maplestory/v1/user/union-champion',{ ocid });
       const champs=(c&&c.union_champion)||[];
@@ -2140,8 +2152,8 @@ async function guessMainChar(name){
     // 2차 폴백: 유니온 랭킹 (챔피언 없는 계정 — 본캐 자기참조)
     if(!result){ for(const dz of [2,1,3]){ try{ const rk=await nexonFetch('/maplestory/v1/ranking/union',{ ocid, date:_kstDate(dz) }); if(rk&&rk.ranking&&rk.ranking.length){ result=rk.ranking[0].character_name; break; } }catch(e){} } }
   }catch(e){}
-  _guessCache[name]=result;
-  return { name:result, method: result?'ok':'fail' };
+  _guessCache[name]=result; _ocidCache[name]=myOcid;
+  return { name:result, method: result?'ok':'fail', ocid:myOcid };
 }
 function _syncGuessLabel(n,g){
   if(g===undefined) return '<span class="dim" style="font-size:11px;font-weight:700">추론 전</span>';
@@ -2160,10 +2172,11 @@ window._syncGuessAll=async ()=>{
   const added=window._syncAdded||[]; if(!added.length) return;
   const btn=document.getElementById('syncGuessBtn'); if(btn) btn.disabled=true;
   const gm=window._syncGuessMap=window._syncGuessMap||{};
+  const om=window._syncOcidMap=window._syncOcidMap||{};   // {캐릭명: ocid} — 닉변 검사에 재활용
   added.forEach((m,i)=>{ const el=document.getElementById('sg_'+i); if(el)el.innerHTML='<i class="fa-solid fa-spinner fa-spin dim" style="font-size:10px"></i>'; });
   const CONC=10; let next=0, done=0;
   const worker=async ()=>{ while(next<added.length){ const i=next++; const n=added[i].name;
-    try{ const r=await guessMainChar(n); gm[n]=r.name; }catch(e){ gm[n]=null; }
+    try{ const r=await guessMainChar(n); gm[n]=r.name; om[n]=r.ocid||null; }catch(e){ gm[n]=null; }
     const el=document.getElementById('sg_'+i); if(el) el.innerHTML=_syncGuessLabel(n,gm[n]);
     done++; if(btn) btn.innerHTML=`<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>${done}/${added.length}`;
   } };
@@ -2270,6 +2283,64 @@ window._syncRemoveGone=async ()=>{
   alert(`${ids.length}명 삭제됐어요 ✓`); _syncRun();
 };
 
+/* ----- OCID 백필 · 닉변(닉네임 변경) 감지 — OCID는 닉변해도 불변이라 확정 매칭 가능 ----- */
+window._syncBackfillOcid=async ()=>{
+  if(!isAdmin()) return alert('운영진만 가능해요.');
+  if(!nexonKey()) return alert('먼저 Nexon API Key를 등록해주세요.');
+  const out=document.getElementById('ocidResult');
+  const set=(h)=>{ if(out) out.innerHTML=h; };
+  set('<div class="dim" style="font-weight:700;padding:8px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>OCID 없는 멤버 조회 중…</div>');
+  let ms;
+  try{ const r=await db().from('members').select('id,name').is('ocid',null).limit(8000); if(r.error) throw r.error; ms=r.data||[]; }
+  catch(e){ set('<div style="color:var(--bad-tx);font-weight:800;padding:8px;line-height:1.6">members에 <b>ocid</b> 컬럼이 없어요. Supabase에서 먼저 추가해주세요:<br><code style="font-size:11px;background:var(--panel);padding:2px 6px;border-radius:5px">ALTER TABLE members ADD COLUMN ocid text;</code></div>'); return; }
+  if(!ms.length){ set('<div class="dim" style="font-weight:700;padding:8px">OCID가 비어있는 멤버가 없어요 ✓ (이미 다 채워짐)</div>'); return; }
+  if(!confirm(`${ms.length}명의 OCID를 넥슨에서 받아 저장할까요?\n(이름당 1회 호출 · 시간이 좀 걸려요)`)){ set(''); return; }
+  const CONC=8; let next=0, ok=0, fail=0;
+  const tick=()=>set(`<div class="dim" style="font-weight:700;padding:8px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>${ok+fail}/${ms.length} 처리 중 (성공 ${ok} · 실패 ${fail})</div>`);
+  const worker=async ()=>{ while(next<ms.length){ const m=ms[next++];
+    try{ const ocid=await _getCharOcid(m.name); if(ocid){ await db().from('members').update({ ocid }).eq('id', m.id); ok++; } else fail++; }
+    catch(e){ fail++; }
+    if((ok+fail)%5===0) tick();
+  } };
+  await Promise.all(Array.from({length:CONC}, worker));
+  set(`<div style="font-weight:800;color:var(--ok-tx);padding:8px">OCID 백필 완료 ✓ 성공 ${ok}명${fail?` · 실패 ${fail}명 (닉변/탈퇴/저레벨 가능)`:''}</div>`);
+};
+window._syncNickCheck=async ()=>{
+  if(!nexonKey()) return alert('먼저 Nexon API Key를 등록해주세요.');
+  const out=document.getElementById('ocidResult'); const set=(h)=>{ if(out) out.innerHTML=h; };
+  const added=window._syncAdded||[], left=window._syncLeft||[];
+  if(!added.length||!left.length){ set('<div class="dim" style="font-weight:700;padding:8px">먼저 <b>동기화 실행</b> 후 → 신규·탈퇴 의심이 둘 다 있어야 닉변을 검사할 수 있어요.</div>'); return; }
+  set('<div class="dim" style="font-weight:700;padding:8px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>탈퇴 의심 OCID 조회 + 신규 OCID 대조 중…</div>');
+  let leftM;
+  try{ const r=await db().from('members').select('id,name,ocid').in('id', left.map(l=>l.id)); if(r.error) throw r.error; leftM=r.data||[]; }
+  catch(e){ set('<div style="color:var(--bad-tx);font-weight:800;padding:8px">members에 <b>ocid</b> 컬럼이 없어요. 컬럼 추가 + OCID 백필을 먼저 해주세요.</div>'); return; }
+  const leftByOcid={}; leftM.forEach(m=>{ if(m.ocid) leftByOcid[m.ocid]=m; });
+  const haveOcid=Object.keys(leftByOcid).length;
+  const om=window._syncOcidMap=window._syncOcidMap||{};
+  const pairs=[];
+  for(const a of added){ let oc=om[a.name];
+    if(oc===undefined||oc===null){ try{ oc=await _getCharOcid(a.name); om[a.name]=oc||null; }catch(e){ oc=null; } }
+    if(oc && leftByOcid[oc]){ const old=leftByOcid[oc]; pairs.push({ oldId:old.id, oldName:old.name, newName:a.name, ocid:oc }); }
+  }
+  if(!pairs.length){ set(`<div class="dim" style="font-weight:700;padding:8px">닉변 의심 없음 ✓ (탈퇴 의심 중 OCID 보유 ${haveOcid}/${left.length}명 대조${haveOcid<left.length?` · 나머지는 OCID 미저장 → <b>백필</b> 먼저 하면 정확도↑`:''})</div>`); return; }
+  set(`<div style="font-weight:900;font-size:13px;margin:6px 0;color:var(--bunny-deep)"><i class="fa-solid fa-id-badge" style="margin-right:5px"></i>닉변 의심 ${pairs.length}건 — OCID 일치(확정)</div>`+
+    pairs.map(p=>`<div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:6px;flex-wrap:wrap">
+      <span style="font-weight:800;font-size:13px;color:var(--bad-tx);text-decoration:line-through">${escHtml(p.oldName)}</span>
+      <i class="fa-solid fa-arrow-right dim"></i>
+      <span style="font-weight:900;font-size:13px;color:var(--ok-tx)">${escHtml(p.newName)}</span>
+      <span class="dim" style="font-size:10px;font-weight:700">OCID ${escHtml(p.ocid.slice(0,12))}…</span>
+      <button onclick="_syncNickApply(${p.oldId},'${escAttr(p.newName).replace(/'/g,"\\'")}')" style="margin-left:auto;border:0;border-radius:8px;padding:6px 13px;font-weight:800;font-size:12px;color:#fff;background:var(--bunny-deep);cursor:pointer">이름 변경(연결)</button>
+    </div>`).join('')+
+    `<p class="dim" style="font-size:11px;font-weight:700;margin:4px 0 0">연결 = 기존 멤버의 <b>이름만 새 닉으로 변경</b> → 수로 이력·점수·직위 전부 보존. (이 사람들은 신규로 추가하지 마세요)</p>`);
+};
+window._syncNickApply=async (oldId, newName)=>{
+  if(!isAdmin()) return alert('운영진만 가능해요.');
+  if(!confirm(`기존 멤버의 이름을 "${newName}" 으로 변경할까요?\n(수로 이력·점수·직위 유지 · 끝나면 동기화 다시 실행 권장)`)) return;
+  const { error }=await db().from('members').update({ name:newName }).eq('id', oldId);
+  if(error) return alert('변경 실패: '+error.message);
+  alert(`이름 변경 완료 ✓ → ${newName}\n동기화를 다시 실행하면 신규·탈퇴 목록이 정리돼요.`);
+  _syncRun();
+};
 const PAGES = {
   home:      buildHome,
   members:   buildMembers,
