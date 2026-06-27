@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'fix',  x:'수로 보상 — 부캐(수로 0점)가 보상 랭킹에 섞여 등급 분포(롤케이크/팬케이크)를 오염시키던 문제 수정. 본캐만 산정(557 → 181명)' },
     { t:'feat', x:'수로 분석 전면 개편(기존 뚠카롱 분석 복원) — 평균순 안정 랭킹 · 최근 4주 비교표 · 주차 변동 · MVP(고득점/떡상/상승률/평균↑) · 길드 총점 추이 · 직업/직위/검색 필터 · 헤더 클릭 정렬' },
     { t:'fix',  x:'수로 분석 상위권 순위가 격변하던 문제 해결 — 기본 정렬을 최근주차 → 평균순으로(이번주 미참자가 평소 등수에서 추락하지 않게)' },
     { t:'feat', x:'수로 입력 — 📷 화면 캡처 OCR 부활. 메이플 길드 컨텐츠 창을 캡처하면 닉네임·지하수로 점수를 자동 인식 → 멤버 이름 매칭 → 현재 회차에 일괄 반영 (스크린샷 이미지 파일 인식도 지원)' },
@@ -1324,7 +1325,7 @@ async function buildSuroReward(){
   const piecePrice = rawPiece > 100000 ? rawPiece : rawPiece*10000;   // 원 단위로 정규화(예전 만원 데이터(예:730) 호환)
   const [{data:periods,error:ep},{data:mem,error:em}] = await Promise.all([
     db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:true}).limit(400),
-    db().from('members').select('id,name,role,is_main,main_char_name').eq('guild',GUILD).limit(5000),
+    db().from('members').select('id,name,role,is_main,main_char_name').eq('guild',GUILD).eq('is_main',true).limit(5000),   // 본캐만 — 부캐(수로 0점)가 랭킹·등급분포를 오염시키던 문제 수정
   ]);
   if(ep) throw ep; if(em) throw em;
   const scoreMap={};
