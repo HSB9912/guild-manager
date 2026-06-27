@@ -2200,8 +2200,13 @@ window._syncRun=async ()=>{
     }catch(e){ apiByKey[f.key]=null; errs.push(`${f.label}: ${e.message||e}`); } }
     step('DB와 비교 중 (신규/탈퇴/이동)');
     const keys=FACS.map(f=>f.key);
-    const { data:dbm, error } = await db().from('members').select('id,name,guild,is_main').in('guild',keys).limit(8000);
-    if(error) throw error;
+    let dbm=[];   // Supabase 1000행 제한 → range로 전체 로드(안 그러면 1000명 넘는 멤버를 못 읽어 기존 멤버가 "신규"로 오판→중복추가)
+    for(let from=0; from<60000; from+=1000){
+      const { data:chunk, error } = await db().from('members').select('id,name,guild,is_main').in('guild',keys).order('id',{ascending:true}).range(from,from+999);
+      if(error) throw error;
+      dbm=dbm.concat(chunk||[]);
+      if(!chunk || chunk.length<1000) break;
+    }
     const dbNameSet=new Set((dbm||[]).map(m=>m.name));
     const apiNameSet=new Set(); Object.values(apiByKey).forEach(a=>{ if(a) a.forEach(n=>apiNameSet.add(n)); });
     window._syncGuildNameSet=apiNameSet;   // 현재 길드 실명단 — OCID 백필이 "지금 길드에 같은 닉으로 있는 멤버"만 처리하게(닉변/탈퇴 오염 방지)
