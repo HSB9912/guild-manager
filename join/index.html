@@ -590,7 +590,7 @@
       const { data: scores, error } = await supa.from('suro_scores')
         .select('member_id, score, guild')
         .eq('period_id', latestPeriod.id)
-        .eq('guild', '뚠카롱')
+        .eq('guild', '버니')
         .gt('score', 0)
         .order('score', { ascending: false });
       if (error || !scores || scores.length === 0) return;

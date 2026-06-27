@@ -192,9 +192,9 @@
   const R2_BUCKET = 'bail-images';
   const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
 
-  const BASE_AMOUNT = { '뚠카롱': 80, '뚱카롱': 40, '밤카롱': 20 };  // 그 외(옛 길드)는 기본 20
-  // 길드 DB키 → 표시 이름 (데이터는 키 유지, 화면엔 버니/늑대/쿠거)
-  const GUILD_LABEL = { '뚠카롱':'버니', '뚱카롱':'늑대', '밤카롱':'쿠거' };
+  const BASE_AMOUNT = { '버니': 80, '늑대': 40, '쿠거': 20, '뚠카롱': 80, '뚱카롱': 40, '밤카롱': 20 };  // 신키+레거시. 그 외(옛 길드)는 기본 20
+  // 길드 DB키 → 표시 이름 (이제 DB값이 버니/늑대/쿠거 · 옛 키도 호환)
+  const GUILD_LABEL = { '버니':'버니', '늑대':'늑대', '쿠거':'쿠거', '뚠카롱':'버니', '뚱카롱':'늑대', '밤카롱':'쿠거' };
   const guildLabel = (g) => GUILD_LABEL[g] || g || '?';
 
   const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -297,7 +297,7 @@
   function renderCharSelect() {
     const rowHtml = state.allChars.map((c, i) => {
       const guild = c.guild || '?';
-      const guildClass = guild === '뚠카롱' ? 'badge-ddun' : guild === '뚱카롱' ? 'badge-ddung' : 'badge-sub';
+      const guildClass = (guild === '버니'||guild === '뚠카롱') ? 'badge-ddun' : (guild === '늑대'||guild === '뚱카롱') ? 'badge-ddung' : 'badge-sub';
       const base = baseAmountForGuild(guild);
       const mainBadge = c._isMain ? '<span class="text-[9px] font-black text-cyan-700 bg-cyan-100 px-1.5 py-0.5 rounded ml-1">본캐</span>' : '';
       const isSelected = state.payers.some(p => p.idx === i);
@@ -406,7 +406,7 @@
       const offenseLabel = p.offenseCnt === 1
         ? '<span class="text-[9px] text-emerald-600 bg-emerald-50 rounded px-1.5 py-0.5">반기 첫 신청</span>'
         : `<span class="text-[9px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.5">${p.offenseCnt}회차 누진</span>`;
-      const guildBadge = p.guild === '뚠카롱' ? 'badge-ddun' : p.guild === '뚱카롱' ? 'badge-ddung' : 'badge-sub';
+      const guildBadge = (p.guild === '버니'||p.guild === '뚠카롱') ? 'badge-ddun' : (p.guild === '늑대'||p.guild === '뚱카롱') ? 'badge-ddung' : 'badge-sub';
       const missTag = p.missPeriod && p.missPeriod.hint === 'miss'
         ? `<span class="text-[9px] text-amber-600 bg-amber-50 rounded px-1.5 py-0.5">${esc(p.missPeriod.label)} 미참 추정</span>`
         : '';
