@@ -2316,28 +2316,44 @@ window._syncNickCheck=async ()=>{
   const out=document.getElementById('ocidResult'); const set=(h)=>{ if(out) out.innerHTML=h; };
   const added=window._syncAdded||[], left=window._syncLeft||[];
   if(!added.length||!left.length){ set('<div class="dim" style="font-weight:700;padding:8px">먼저 <b>동기화 실행</b> 후 → 신규·탈퇴 의심이 둘 다 있어야 닉변을 검사할 수 있어요.</div>'); return; }
-  set('<div class="dim" style="font-weight:700;padding:8px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>탈퇴 의심 OCID 조회 + 신규 OCID 대조 중…</div>');
+  set('<div class="dim" style="font-weight:700;padding:8px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>신규 캐릭 정보(OCID·직업·레벨) 조회 + 탈퇴 의심과 대조 중…</div>');
+  // 탈퇴 의심: ocid(있으면)+직업·레벨 로드. ocid 컬럼 없어도 직업/레벨 추정은 가능
   let leftM;
-  try{ const r=await db().from('members').select('id,name,ocid').in('id', left.map(l=>l.id)); if(r.error) throw r.error; leftM=r.data||[]; }
-  catch(e){ set('<div style="color:var(--bad-tx);font-weight:800;padding:8px">members에 <b>ocid</b> 컬럼이 없어요. 컬럼 추가 + OCID 백필을 먼저 해주세요.</div>'); return; }
+  try{ const r=await db().from('members').select('id,name,ocid,class,level').in('id', left.map(l=>l.id)); if(r.error) throw r.error; leftM=r.data||[]; }
+  catch(e){ try{ const r2=await db().from('members').select('id,name,class,level').in('id', left.map(l=>l.id)); leftM=(r2.data||[]).map(m=>({ ...m, ocid:null })); }
+            catch(e2){ set('<div style="color:var(--bad-tx);font-weight:800;padding:8px">탈퇴 의심 조회 실패: '+escHtml(e2.message||String(e2))+'</div>'); return; } }
   const leftByOcid={}; leftM.forEach(m=>{ if(m.ocid) leftByOcid[m.ocid]=m; });
   const haveOcid=Object.keys(leftByOcid).length;
   const om=window._syncOcidMap=window._syncOcidMap||{};
-  const pairs=[];
+  // 신규 캐릭 정보 해석 (ocid → 직업/레벨)
+  const newInfo=[];
   for(const a of added){ let oc=om[a.name];
     if(oc===undefined||oc===null){ try{ oc=await _getCharOcid(a.name); om[a.name]=oc||null; }catch(e){ oc=null; } }
-    if(oc && leftByOcid[oc]){ const old=leftByOcid[oc]; pairs.push({ oldId:old.id, oldName:old.name, newName:a.name, ocid:oc }); }
+    let cls=null, lv=null;
+    if(oc){ try{ const b=await _getCharBasic(oc); cls=(b&&b.character_class)||null; lv=(b&&b.character_level)||null; }catch(e){} }
+    newInfo.push({ name:a.name, ocid:oc||null, cls, level:lv });
   }
-  if(!pairs.length){ set(`<div class="dim" style="font-weight:700;padding:8px">닉변 의심 없음 ✓ (탈퇴 의심 중 OCID 보유 ${haveOcid}/${left.length}명 대조${haveOcid<left.length?` · 나머지는 OCID 미저장 → <b>백필</b> 먼저 하면 정확도↑`:''})</div>`); return; }
-  set(`<div style="font-weight:900;font-size:13px;margin:6px 0;color:var(--bunny-deep)"><i class="fa-solid fa-id-badge" style="margin-right:5px"></i>닉변 의심 ${pairs.length}건 — OCID 일치(확정)</div>`+
+  const matched=new Set(), usedNew=new Set(), pairs=[];
+  // ① OCID 확정 매칭
+  newInfo.forEach(ni=>{ if(ni.ocid && leftByOcid[ni.ocid]){ const old=leftByOcid[ni.ocid]; pairs.push({ oldId:old.id, oldName:old.name, newName:ni.name, conf:'확정' }); matched.add(old.id); usedNew.add(ni.name); } });
+  // ② 직업+레벨 추정 (OCID로 못 잡은 탈퇴의심 · 후보 1명일 때만)
+  leftM.forEach(old=>{ if(matched.has(old.id)||!old.class) return;
+    const cands=newInfo.filter(ni=>!usedNew.has(ni.name) && ni.cls && ni.cls===old.class && ni.level!=null && old.level!=null && ni.level>=old.level && (ni.level-old.level)<=10);
+    if(cands.length===1){ pairs.push({ oldId:old.id, oldName:old.name, newName:cands[0].name, conf:'추정', cls:old.class }); matched.add(old.id); usedNew.add(cands[0].name); }
+  });
+  if(!pairs.length){ set(`<div class="dim" style="font-weight:700;padding:8px;line-height:1.6">닉변 의심 없음 ✓<br><span style="font-size:11px">OCID 확정 대조 ${haveOcid}/${leftM.length}명 + 직업·레벨 추정 — 일치 후보 없음. (OCID 미보유는 <b>백필</b> 후 정확도↑)</span></div>`); return; }
+  const badge=(c)=> c==='확정'
+    ? '<span style="font-size:9px;font-weight:900;background:var(--ok-bg);color:var(--ok-tx);padding:1px 6px;border-radius:99px">OCID 확정</span>'
+    : '<span style="font-size:9px;font-weight:900;background:var(--warn-bg);color:var(--warn-tx);padding:1px 6px;border-radius:99px">직업·레벨 추정</span>';
+  set(`<div style="font-weight:900;font-size:13px;margin:6px 0;color:var(--bunny-deep)"><i class="fa-solid fa-id-badge" style="margin-right:5px"></i>닉변 의심 ${pairs.length}건</div>`+
     pairs.map(p=>`<div style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:6px;flex-wrap:wrap">
       <span style="font-weight:800;font-size:13px;color:var(--bad-tx);text-decoration:line-through">${escHtml(p.oldName)}</span>
       <i class="fa-solid fa-arrow-right dim"></i>
       <span style="font-weight:900;font-size:13px;color:var(--ok-tx)">${escHtml(p.newName)}</span>
-      <span class="dim" style="font-size:10px;font-weight:700">OCID ${escHtml(p.ocid.slice(0,12))}…</span>
+      ${badge(p.conf)}${p.cls?`<span class="dim" style="font-size:10px;font-weight:700">${escHtml(p.cls)}</span>`:''}
       <button onclick="_syncNickApply(${p.oldId},'${escAttr(p.newName).replace(/'/g,"\\'")}')" style="margin-left:auto;border:0;border-radius:8px;padding:6px 13px;font-weight:800;font-size:12px;color:#fff;background:var(--bunny-deep);cursor:pointer">이름 변경(연결)</button>
     </div>`).join('')+
-    `<p class="dim" style="font-size:11px;font-weight:700;margin:4px 0 0">연결 = 기존 멤버의 <b>이름만 새 닉으로 변경</b> → 수로 이력·점수·직위 전부 보존. (이 사람들은 신규로 추가하지 마세요)</p>`);
+    `<p class="dim" style="font-size:11px;font-weight:700;margin:4px 0 0"><b>확정</b>=OCID 일치(틀림없음) · <b>추정</b>=직업·레벨 일치(확인 후 연결). 연결 시 기존 멤버 이름만 새 닉으로 → 수로 이력·점수 보존.</p>`);
 };
 window._syncNickApply=async (oldId, newName)=>{
   if(!isAdmin()) return alert('운영진만 가능해요.');
