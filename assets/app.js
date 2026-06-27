@@ -116,6 +116,8 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'feat', x:'수로 분석 전면 개편(기존 뚠카롱 분석 복원) — 평균순 안정 랭킹 · 최근 4주 비교표 · 주차 변동 · MVP(고득점/떡상/상승률/평균↑) · 길드 총점 추이 · 직업/직위/검색 필터 · 헤더 클릭 정렬' },
+    { t:'fix',  x:'수로 분석 상위권 순위가 격변하던 문제 해결 — 기본 정렬을 최근주차 → 평균순으로(이번주 미참자가 평소 등수에서 추락하지 않게)' },
     { t:'feat', x:'수로 입력 — 📷 화면 캡처 OCR 부활. 메이플 길드 컨텐츠 창을 캡처하면 닉네임·지하수로 점수를 자동 인식 → 멤버 이름 매칭 → 현재 회차에 일괄 반영 (스크린샷 이미지 파일 인식도 지원)' },
     { t:'fix',  x:'OCR 인식 엔진·템플릿을 최신 버전으로 갱신(메이플 길드창 UI 변경 대응) — 기존에 안 먹던 화면 인식 정상화' },
   ]},
@@ -993,56 +995,100 @@ window._joinSubmit = async ()=>{
       <p class="dim" style="font-weight:700;margin:0">운영진이 검토 후 처리할게요. 조금만 기다려주세요.</p></div>`;
 };
 
-/* ----- 수로 분석 (회차별 점수 랭킹) ----- */
-let _anPeriods=[], _anMembers={};
-async function buildAnalysis(){
-  const [{data:periods,error:ep},{data:mem,error:em}] = await Promise.all([
-    db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(80),
-    db().from('members').select('id,name,role').eq('guild',GUILD).limit(3000),
-  ]);
-  if(ep) throw ep; if(em) throw em;
-  _anPeriods=periods||[]; _anMembers={}; (mem||[]).forEach(m=>_anMembers[m.id]={name:m.name,role:m.role});
-  const first=_anPeriods[0];
-  const sel=`<div class="panel" style="border-radius:20px;padding:14px;margin-bottom:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-    <span style="font-weight:800"><i class="fa-solid fa-calendar-week" style="color:var(--bunny-main);margin-right:6px"></i>회차</span>
-    <select id="anPeriod" onchange="_anLoad(this.value)" style="border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:9px 14px;font-weight:800;font-size:14px;color:var(--text);outline:0;flex:1;min-width:220px">
-      ${_anPeriods.map(p=>`<option value="${p.id}">${p.period_label}</option>`).join('')}
-    </select></div>`;
-  return headerHTML('수로 분석',`${fac().label} · 회차별 점수`) + sel +
-    `<div id="anBody">${first?await analysisBody(first.id):'<div class="panel" style="border-radius:24px;padding:40px;text-align:center"><span class="dim" style="font-weight:700">회차 데이터가 없어요</span></div>'}</div>`;
+/* ----- 수로 분석 (ddun 원본 포팅: 평균·최근주차 비교·변동·MVP·총점 추이·참여) ----- */
+let _anRaw=null, _anSortField='last', _anSortOrder='desc', _anSearch='', _anClass='', _anRole='';
+const _anFmt=(n)=>(Number(n)||0).toLocaleString('ko-KR');
+function _anShort(label){ const s=String(label||'').split('~'); let r=(s.length>1?s[1]:s[0]).replace('수로 점수','').trim(); const p=r.split('-'); return p.length>=3?(p[1]+'-'+p[2].slice(0,2)):r; }
+function _anSpark(vals){
+  if(!vals.length) return '';
+  const w=Math.max(140,vals.length*34), h=46, mx=Math.max(...vals,1), n=vals.length;
+  const X=i=> n>1?(i/(n-1))*(w-8)+4:w/2, Y=v=> h-4-(v/mx)*(h-13);
+  const pts=vals.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const area=`4,${h-4} ${pts} ${X(n-1).toFixed(1)},${h-4}`;
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:46px;display:block"><polygon points="${area}" fill="rgba(255,143,171,.13)"/><polyline points="${pts}" fill="none" stroke="var(--bunny-deep)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${vals.map((v,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.4" fill="var(--bunny-main)"/>`).join('')}</svg>`;
 }
-async function analysisBody(pid){
-  const { data:scores, error } = await db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',pid).limit(4000);
-  if(error) throw error;
-  const fmt=(n)=>(Number(n)||0).toLocaleString('ko-KR');
-  const list=(scores||[]).map(s=>({ name:_anMembers[s.member_id]?.name||('#'+s.member_id), role:_anMembers[s.member_id]?.role||'', score:Number(s.score)||0 })).sort((a,b)=>b.score-a.score);
-  const total=list.length, sum=list.reduce((s,x)=>s+x.score,0), avg=total?Math.round(sum/total):0, zero=list.filter(x=>x.score===0).length, max=list[0]?.score||1;
-  const kpi=(l,v,tone,c)=>`<div class="panel ${tone}" style="border-radius:22px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;min-height:104px"><span class="dim" style="font-size:13px;font-weight:700">${l}</span><p style="font-size:28px;font-weight:900;margin:6px 0 0;color:${c||'inherit'}">${v}</p></div>`;
-  const rows=list.map((x,i)=>`<tr style="border-bottom:1px solid var(--line)">
-    <td style="padding:9px 8px;font-weight:900;color:${i<3?'var(--bunny-deep)':'var(--dim)'};width:44px">${i+1}</td>
-    <td style="font-weight:800"><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:900;background:${avatarColor(x.name)}">${(x.name||'?').slice(0,1)}</span>${x.name}</span></td>
-    <td>${memRoleChip(x.role)}</td>
-    <td style="font-weight:900;width:90px;text-align:right">${fmt(x.score)}</td>
-    <td style="width:34%"><div style="height:8px;border-radius:99px;background:var(--panel-2);overflow:hidden"><i style="display:block;height:100%;width:${max?x.score/max*100:0}%;border-radius:99px;background:${x.score===0?'var(--line)':'linear-gradient(90deg,var(--bunny-main),var(--bunny-deep))'}"></i></div></td>
-  </tr>`).join('');
-  return `<div class="bento" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px">
-      ${kpi('참여 인원',total+'명','tone-rose','#fff')}
-      ${kpi('평균 점수',fmt(avg),'tone-light')}
-      ${kpi('합계',fmt(sum),'tone-cream')}
-      ${kpi('미참(0점)',zero+'명','tone-light','var(--bad-tx)')}
+async function buildAnalysis(){
+  const { data:periods, error:ep } = await db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(80);
+  if(ep) throw ep;
+  const win=(periods||[]).slice(0,16).reverse();   // 최근 16주차, 과거→최신
+  const ids=win.map(p=>p.id);
+  const memP=db().from('members').select('id,name,role,class,is_main').eq('guild',GUILD).eq('is_main',true).limit(3000);
+  // 회차당 병렬 쿼리 → Supabase 행 제한(1000) 우회
+  const [{data:mem,error:em}, ...scoreRes] = await Promise.all([ memP, ...ids.map(id=>db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',id).limit(4000)) ]);
+  if(em) throw em;
+  const byMem={};
+  scoreRes.forEach((res,idx)=>{ const pid=ids[idx]; (res.data||[]).forEach(s=>{ (byMem[s.member_id]||(byMem[s.member_id]={}))[pid]=Number(s.score)||0; }); });
+  _anRaw={ periods:win, members:(mem||[]), byMem };
+  _anSortField='avg'; _anSortOrder='desc'; _anSearch=''; _anClass=''; _anRole='';   // ddun 원본대로 평균 내림차순 기본(최근주차 미참자가 추락하지 않게)
+  return headerHTML('수로 분석',`${fac().label} · 최근 ${win.length}주차 분석`) + _anControls() + `<div id="anBody">${_anRender()}</div>`;
+}
+function _anControls(){
+  if(!_anRaw) return '';
+  const cls=[...new Set(_anRaw.members.map(m=>(m.class||'').trim()).filter(Boolean))].sort();
+  const rol=[...new Set(_anRaw.members.map(m=>(m.role||'').trim()).filter(Boolean))].sort();
+  const ss='border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:8px 11px;font-weight:800;font-size:13px;color:var(--text);outline:0';
+  return `<div class="panel" style="border-radius:16px;padding:11px 13px;margin-bottom:14px;display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:7px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:0 11px;flex:1;min-width:160px"><i class="fa-solid fa-magnifying-glass dim"></i><input id="an_q" value="${escAttr(_anSearch)}" oninput="_anSetSearch(this.value)" placeholder="닉네임·직업 검색…" style="border:0;background:transparent;flex:1;padding:8px 0;font-weight:800;font-size:13px;color:var(--text);outline:0"></div>
+    <select onchange="_anSetClass(this.value)" style="${ss}"><option value="">직업 전체</option>${cls.map(c=>`<option value="${escAttr(c)}"${c===_anClass?' selected':''}>${escHtml(c)}</option>`).join('')}</select>
+    <select onchange="_anSetRole(this.value)" style="${ss}"><option value="">직위 전체</option>${rol.map(r=>`<option value="${escAttr(r)}"${r===_anRole?' selected':''}>${escHtml(r)}</option>`).join('')}</select>
+  </div>`;
+}
+function _anRender(){
+  if(!_anRaw || !_anRaw.periods.length) return `<div class="panel" style="border-radius:24px;padding:40px;text-align:center"><span class="dim" style="font-weight:700">회차 데이터가 없어요</span></div>`;
+  const { periods, members, byMem } = _anRaw;
+  const recent=periods.slice(-4), cur=recent[recent.length-1];
+  const sc=(id,p)=> (byMem[id]&&byMem[id][p.id])||0;
+  // 요약·MVP: 전체 대상(필터 무관)
+  const A=members.map(m=>{ const c=cur?sc(m.id,cur):0; const pv=recent.length>1?sc(m.id,recent[recent.length-2]):0; const ps=recent.slice(0,-1).map(p=>sc(m.id,p)).filter(v=>v>0); const pa=ps.length?Math.round(ps.reduce((a,b)=>a+b,0)/ps.length):0; return {name:m.name||'',c,pv,pa}; });
+  const total=A.reduce((s,x)=>s+x.c,0), part=A.filter(x=>x.c>0).length, missN=A.length-part, avgCur=part?Math.round(total/part):0;
+  const high=A.filter(x=>x.c>0).map(x=>({name:x.name,v:x.c})).sort((a,b)=>b.v-a.v).slice(0,5);
+  const up=A.filter(x=>x.pv>0&&x.c>x.pv).map(x=>({name:x.name,v:x.c-x.pv})).sort((a,b)=>b.v-a.v).slice(0,5);
+  const pctl=A.filter(x=>x.pv>0&&x.c>x.pv).map(x=>({name:x.name,v:(x.c-x.pv)/x.pv*100})).sort((a,b)=>b.v-a.v).slice(0,5);
+  const abv=A.filter(x=>x.pa>0&&x.c>x.pa).map(x=>({name:x.name,v:x.c-x.pa})).sort((a,b)=>b.v-a.v).slice(0,5);
+  const trend=periods.map(p=>members.reduce((s,m)=>s+sc(m.id,p),0));
+  // 표 rows (필터+정렬)
+  const tokens=_anSearch.trim().toLowerCase().split(/[\s,]+/).filter(Boolean);
+  let rows=members.map(m=>{ const rs=recent.map(p=>sc(m.id,p)); const ao=periods.map(p=>sc(m.id,p)).filter(v=>v>0); return {name:m.name||'',role:(m.role||'').trim(),cls:(m.class||'').trim(),rs,avg:ao.length?Math.round(ao.reduce((a,b)=>a+b,0)/ao.length):0}; })
+    .filter(r=>{ if(_anClass&&r.cls!==_anClass)return false; if(_anRole&&r.role!==_anRole)return false; if(!tokens.length)return true; return tokens.some(t=>r.name.toLowerCase().includes(t)||r.cls.toLowerCase().includes(t)); });
+  const last=r=>r.rs[r.rs.length-1]||0, o=_anSortOrder==='asc'?1:-1;
+  rows.sort((a,b)=>{ if(_anSortField==='name')return (a.name<b.name?-1:a.name>b.name?1:0)*o; if(_anSortField==='avg')return (a.avg-b.avg)*o; if(_anSortField.indexOf('date_')===0){const i=recent.findIndex(p=>'date_'+p.id===_anSortField);return ((a.rs[i]||0)-(b.rs[i]||0))*o;} return (last(a)-last(b))*o; });
+  const ic=f=> _anSortField===f?(_anSortOrder==='asc'?' <i class="fa-solid fa-caret-up"></i>':' <i class="fa-solid fa-caret-down"></i>'):'';
+  const kpi=(l,v,tone,c)=>`<div class="panel ${tone}" style="border-radius:18px;padding:15px;display:flex;flex-direction:column;gap:4px;min-height:88px;justify-content:center"><span class="dim" style="font-size:12px;font-weight:700">${l}</span><p style="font-size:24px;font-weight:900;margin:0;color:${c||'inherit'}">${v}</p></div>`;
+  const mvp=(t,emo,col,list,f)=>`<div style="flex:1;min-width:135px"><div style="font-weight:900;font-size:12.5px;color:${col};margin-bottom:7px">${emo} ${t}</div>${list.length?list.map((x,i)=>`<div style="display:flex;justify-content:space-between;gap:6px;font-size:12px;padding:2.5px 0"><span style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:96px"><b style="color:${col}">${i+1}</b> ${escHtml(x.name)}</span><b style="color:${col};white-space:nowrap">${f(x.v)}</b></div>`).join(''):'<div class="dim" style="font-size:11px;font-weight:700">데이터 부족</div>'}</div>`;
+  const head=`<tr class="dim" style="font-size:11px;font-weight:800;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--panel)">
+    <th style="text-align:center;padding:9px 4px;width:34px">#</th>
+    <th style="text-align:left;padding:9px 6px;cursor:pointer" onclick="_anSort('name')">캐릭터${ic('name')}</th>
+    <th style="text-align:center;padding:9px 4px;cursor:pointer;color:var(--bunny-deep)" onclick="_anSort('avg')">평균${ic('avg')}</th>
+    ${recent.map((p,i)=>`<th style="text-align:right;padding:9px 4px;cursor:pointer;${i===recent.length-1?'color:var(--bunny-deep);font-weight:900':''}" onclick="_anSort('date_${p.id}')">${_anShort(p.period_label)}${ic('date_'+p.id)}</th>`).join('')}
+    <th style="text-align:center;padding:9px 4px;width:54px">변동</th></tr>`;
+  const tbody=rows.map((r,i)=>{
+    const ls=r.rs[r.rs.length-1]||0, pl=r.rs.length>1?r.rs[r.rs.length-2]:0, df=ls-pl, miss=ls===0;
+    return `<tr style="border-bottom:1px solid var(--line);${miss?'background:var(--bad-bg)':''}">
+      <td style="text-align:center;padding:7px 4px;font-weight:900;color:${i<3?'var(--bunny-deep)':'var(--dim)'};font-size:12px">${i+1}</td>
+      <td style="padding:7px 6px"><span style="font-weight:800;font-size:13px;${miss?'color:var(--bad-tx)':''}">${escHtml(r.name)}</span> <span class="dim" style="font-size:11px">${escHtml(r.cls)}</span></td>
+      <td style="text-align:center;padding:7px 4px;color:var(--bunny-deep);font-weight:900;font-size:13px">${_anFmt(r.avg)}</td>
+      ${r.rs.map((s,si)=>{const isL=si===r.rs.length-1;return `<td style="text-align:right;padding:7px 4px;font-size:${isL?'13':'12'}px;${s===0?'color:var(--bad-tx)':isL?'font-weight:900':'color:var(--dim)'}">${s>0?_anFmt(s):'0'}</td>`;}).join('')}
+      <td style="text-align:center;padding:7px 4px;font-size:12px;font-weight:800">${miss?'<span style="color:var(--bad-tx)">미참</span>':pl===0&&ls>0?'<span style="color:var(--ok-tx)">NEW</span>':df===0?'<span class="dim">-</span>':`<span style="color:${df>0?'var(--ok-tx)':'var(--bad-tx)'}">${df>0?'+':''}${_anFmt(df)}</span>`}</td></tr>`;
+  }).join('');
+  return `<div class="bento" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      ${kpi('현재 주차 총점',_anFmt(total),'tone-rose','#fff')}
+      ${kpi('참여 인원',part+'명','tone-light')}
+      ${kpi('참여자 평균',_anFmt(avgCur),'tone-cream')}
+      ${kpi('미참(0점)',missN+'명','tone-light','var(--bad-tx)')}
     </div>
-    <div class="panel" style="border-radius:24px;padding:20px">
-      <h3 style="font-weight:900;font-size:16px;margin:0 0 14px"><i class="fa-solid fa-ranking-star" style="color:var(--bunny-main);margin-right:8px"></i>점수 랭킹</h3>
-      <div class="scroll" style="overflow-x:auto;max-height:620px;overflow-y:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:520px">
-        <thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--panel)"><th style="text-align:left;padding:10px 8px">#</th><th style="text-align:left;padding:10px 0">닉네임</th><th style="text-align:left;padding:10px 0">직위</th><th style="text-align:right;padding:10px 0">점수</th><th style="padding:10px 0 10px 12px">분포</th></tr></thead>
-        <tbody style="font-weight:500">${rows||'<tr><td colspan="5" class="dim" style="padding:30px;text-align:center;font-weight:700">이 회차 점수 없음</td></tr>'}</tbody></table></div>
+    <div class="an-grid" style="display:grid;grid-template-columns:1.05fr 1.25fr;gap:14px;margin-bottom:16px">
+      <div class="panel" style="border-radius:20px;padding:16px"><h3 style="font-weight:900;font-size:14px;margin:0 0 10px"><i class="fa-solid fa-chart-line" style="color:var(--bunny-main);margin-right:7px"></i>길드 총점 추이 <span class="dim" style="font-size:11px;font-weight:700">최근 ${trend.length}주차</span></h3>${_anSpark(trend)}<div class="dim" style="font-size:11px;font-weight:700;display:flex;justify-content:space-between;margin-top:4px"><span>${periods[0]?_anShort(periods[0].period_label):''}</span><span>현재 ${_anFmt(trend[trend.length-1]||0)}</span></div></div>
+      <div class="panel" style="border-radius:20px;padding:16px"><h3 style="font-weight:900;font-size:14px;margin:0 0 12px"><i class="fa-solid fa-trophy" style="color:var(--bunny-main);margin-right:7px"></i>이번 주차 MVP</h3><div style="display:flex;gap:14px;flex-wrap:wrap">${mvp('고득점','⭐','#2563eb',high,v=>_anFmt(Math.round(v)))}${mvp('떡상','📈','#d97706',up,v=>'+'+_anFmt(Math.round(v)))}${mvp('상승률','📊','#059669',pctl,v=>'▲'+v.toFixed(1)+'%')}${mvp('평균↑','⚡','#7c3aed',abv,v=>'+'+_anFmt(Math.round(v)))}</div></div>
+    </div>
+    <div class="panel" style="border-radius:20px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-weight:900;font-size:14px;margin:0"><i class="fa-solid fa-table-list" style="color:var(--bunny-main);margin-right:7px"></i>회차별 점수 <span class="dim" style="font-size:11px;font-weight:700">(헤더 클릭 정렬)</span></h3><span class="dim" style="font-size:11px;font-weight:700">${rows.length}명</span></div>
+      <div class="scroll" style="overflow:auto;max-height:62vh"><table style="width:100%;border-collapse:collapse;min-width:560px"><thead>${head}</thead><tbody style="font-weight:600">${tbody||`<tr><td colspan="${4+recent.length}" class="dim" style="padding:30px;text-align:center;font-weight:700">표시할 데이터가 없어요</td></tr>`}</tbody></table></div>
     </div>`;
 }
-window._anLoad = async (pid)=>{
-  const el=document.getElementById('anBody'); if(!el) return;
-  el.innerHTML=`<div class="panel" style="border-radius:24px;padding:50px;text-align:center"><span class="dim" style="font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>불러오는 중…</span></div>`;
-  try{ el.innerHTML=await analysisBody(pid); }catch(e){ el.innerHTML=`<div class="panel" style="border-radius:24px;padding:30px;text-align:center"><span class="dim" style="font-weight:700">${e.message||e}</span></div>`; }
-};
+window._anSort=(f)=>{ if(_anSortField===f) _anSortOrder=_anSortOrder==='asc'?'desc':'asc'; else { _anSortField=f; _anSortOrder=(f==='name')?'asc':'desc'; } const el=document.getElementById('anBody'); if(el) el.innerHTML=_anRender(); };
+window._anSetSearch=(v)=>{ _anSearch=v; const el=document.getElementById('anBody'); if(el) el.innerHTML=_anRender(); };
+window._anSetClass=(v)=>{ _anClass=v; const el=document.getElementById('anBody'); if(el) el.innerHTML=_anRender(); };
+window._anSetRole=(v)=>{ _anRole=v; const el=document.getElementById('anBody'); if(el) el.innerHTML=_anRender(); };
 
 
 /* ----- 장기부재 면제 (관리자: 승인/거절) ----- */
