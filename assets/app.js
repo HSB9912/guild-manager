@@ -377,9 +377,9 @@ async function buildHome(){
  * ============================================================ */
 /* ===== 길드 구분 (메인 버니 / 부길드 늑대·쿠거) — DB키·넥슨명·색 ===== */
 const FACTIONS = {
-  bunny:  { key:'뚠카롱', nexon:'버니', label:'버니', emoji:'🐰', main:'#FF8FAB', light:'#FFC9DE', cream:'#FFE8D6', deep:'#B5446E', bg:'#FFF5F8', p2:'#FFF0F5', p3:'#FFF7EF' },
-  wolf:   { key:'뚱카롱', nexon:'늑대', label:'늑대', emoji:'🐺', main:'#6C8EBF', light:'#8B9DC3', cream:'#DCE7F3', deep:'#2C3E57', bg:'#F2F6FB', p2:'#EAF1F9', p3:'#EEF3F8' },
-  cougar: { key:'밤카롱', nexon:'쿠거', label:'쿠거', emoji:'🐆', main:'#C98A42', light:'#F0D6A8', cream:'#F5E6CC', deep:'#6E3D1C', bg:'#FBF7F0', p2:'#FBF3E6', p3:'#FAF6EE' },
+  bunny:  { key:'버니', nexon:'버니', label:'버니', emoji:'🐰', main:'#FF8FAB', light:'#FFC9DE', cream:'#FFE8D6', deep:'#B5446E', bg:'#FFF5F8', p2:'#FFF0F5', p3:'#FFF7EF' },
+  wolf:   { key:'늑대', nexon:'늑대', label:'늑대', emoji:'🐺', main:'#6C8EBF', light:'#8B9DC3', cream:'#DCE7F3', deep:'#2C3E57', bg:'#F2F6FB', p2:'#EAF1F9', p3:'#EEF3F8' },
+  cougar: { key:'쿠거', nexon:'쿠거', label:'쿠거', emoji:'🐆', main:'#C98A42', light:'#F0D6A8', cream:'#F5E6CC', deep:'#6E3D1C', bg:'#FBF7F0', p2:'#FBF3E6', p3:'#FAF6EE' },
 };
 function facKey(){ return 'bunny'; }  // 전역 앱은 버니 고정 (메인/부길드 전환은 길드원 탭에서만)
 function fac(){ return FACTIONS[facKey()]||FACTIONS.bunny; }
@@ -1662,10 +1662,10 @@ window._setSaveBasic=async ()=>{
 };
 /* ===== 길드 대규모 개편(직위명 변경 + 승강기준) — 공지 기반 1회성 마이그레이션 ===== */
 const _REFORM = {
-  '뚠카롱': { label:'버니',
+  '버니': { label:'버니',
     renames:{ '마카롱':'버니버니','다쿠아즈':'당근당근','크라운':'로얄버니','파르페':'문버니','티라미슈':'스타버니','크로칸슈':'코튼버니','롤케이크':'토끼풀','팬케이크':'새싹','스콘':'돌멩이' },
     rules:{ '문버니':{topN:25}, '스타버니':{topN:60}, '코튼버니':{min:130000} } },  // 로얄버니 TOP5·새싹 하위20·돌멩이 미참은 기존과 동일
-  '뚱카롱': { label:'늑대',
+  '늑대': { label:'늑대',
     renames:{ '마카롱':'늑대','다쿠아즈':'울프','뚠케이크':'딩고','뚠바게트':'허스키','뚠브레드':'강아지','뚠스콘':'발자국' },
     rules:{} }
 };
@@ -2414,13 +2414,13 @@ const PAGES = {
 };
 
 /* ----- 보석금 신청 (멤버 폼) ----- */
-const BASE_AMOUNT = { '뚠카롱':80, '뚱카롱':40, '밤카롱':20 };
+const BASE_AMOUNT = { '버니':80, '늑대':40, '쿠거':20, '뚠카롱':80, '뚱카롱':40, '밤카롱':20 };   // 신키+레거시키 둘 다
 function curHalfYear(){ const d=new Date(); return `${d.getFullYear()}-H${(d.getMonth()+1)<=6?1:2}`; }
 const BAIL_MEAEGI_URL = 'https://guild-meaegi-proxy.hongsb9912.workers.dev/';
 const BAIL_R2 = { worker:'https://guild-images.hongsb9912.workers.dev', publicUrl:'https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev', apiKey:'guild-manager-r2-key-2026', bucket:'bail-images' };
 const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
 let _bailState = { mainChar:null, allChars:[], payers:[], halfYear:'', proofUrl:null, proofUploading:false, latestPeriod:null };
-function _bailNormGuild(g){ const s=String(g||'').trim(); if(!s)return ''; const known=['뚠카롱','뚱카롱','밤카롱','별카롱','달카롱','꿀카롱','솜카롱']; for(const k of known) if(s===k||s.includes(k)) return k; return s; }
+function _bailNormGuild(g){ const s=String(g||'').trim(); if(!s)return ''; const known=['버니','늑대','쿠거','뚠카롱','뚱카롱','밤카롱','별카롱','달카롱','꿀카롱','솜카롱']; for(const k of known) if(s===k||s.includes(k)) return k; return s; }
 function _bailBaseFor(guild){ return BASE_AMOUNT[guild]||20; }
 async function buildBailForm(){
   _bailState = { mainChar:null, allChars:[], payers:[], halfYear:curHalfYear(), proofUrl:null, proofUploading:false, latestPeriod:null };
@@ -2486,7 +2486,7 @@ window._bailSearch = async ()=>{
 };
 function _bailRenderCharSelect(){
   const rows=_bailState.allChars.map((c,i)=>{ const guild=c.guild||'?'; const base=_bailBaseFor(guild); const sel=_bailState.payers.some(p=>p.idx===i);
-    const gBg=guild==='뚠카롱'?'var(--bunny-light)':guild==='뚱카롱'?'#fecdd3':'var(--panel-3)';
+    const gBg=(guild==='버니'||guild==='뚠카롱')?'var(--bunny-light)':(guild==='늑대'||guild==='뚱카롱')?'#fecdd3':'var(--panel-3)';
     return `<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--panel-2);border:${sel?'2px solid var(--bunny-main)':'1px solid var(--line)'};border-radius:14px;cursor:pointer"><input type="checkbox" ${sel?'checked':''} onchange="_bailToggle(${i})" style="width:16px;height:16px;accent-color:var(--bunny-main)"><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(c.name)}${c.is_main?' <span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep)">본캐</span>':''}</div><div class="dim" style="font-size:11px;font-weight:700">${escHtml(c.class||'직업?')} · ${escHtml(c.role||'직위?')}</div></div><span style="background:${gBg};color:var(--bunny-deep);font-size:10px;font-weight:900;padding:4px 8px;border-radius:8px">${escHtml(guildLabel(guild))}</span><span class="dim" style="background:var(--line);color:var(--text);font-size:10px;font-weight:900;padding:4px 8px;border-radius:8px">${base}개</span></label>`; }).join('');
   const res=document.getElementById('bf_result'); if(res)res.innerHTML=`<div style="background:var(--ok-bg);color:var(--ok-tx);border-radius:14px;padding:11px 13px;margin-bottom:10px"><div style="font-size:12px;font-weight:900"><i class="fa-solid fa-circle-check" style="margin-right:5px"></i>본캐 매칭 — 보석금 낼 캐릭 선택 (여러 개 가능)</div></div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">${rows}</div>`;
 }
@@ -2504,7 +2504,7 @@ function _bailShowAmountLoading(){ const el=document.getElementById('bf_amount')
 function _bailHideAmount(){ const el=document.getElementById('bf_amount'); if(el){el.style.display='none';el.innerHTML='';} }
 function _bailRenderAmount(){
   const rows=_bailState.payers.map(p=>{ const mClr=p.multi<=1?['var(--ok-bg)','var(--ok-tx)']:p.multi===2?['var(--warn-bg)','var(--warn-tx)']:['var(--bad-bg)','var(--bad-tx)'];
-    const gBg=p.guild==='뚠카롱'?'var(--bunny-light)':p.guild==='뚱카롱'?'#fecdd3':'var(--panel-3)';
+    const gBg=(p.guild==='버니'||p.guild==='뚠카롱')?'var(--bunny-light)':(p.guild==='늑대'||p.guild==='뚱카롱')?'#fecdd3':'var(--panel-3)';
     return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="display:flex;align-items:center;gap:6px"><div style="font-size:14px;font-weight:900">${escHtml(p.name)}</div><span style="background:${gBg};color:var(--bunny-deep);font-size:9px;font-weight:900;padding:2px 6px;border-radius:5px">${escHtml(guildLabel(p.guild))}</span></div><span style="font-size:9px;background:${p.offenseCnt===1?'var(--ok-bg)':'var(--warn-bg)'};color:${p.offenseCnt===1?'var(--ok-tx)':'var(--warn-tx)'};border-radius:5px;padding:2px 6px;font-weight:800">${p.offenseCnt===1?'반기 첫 신청':p.offenseCnt+'회차 누진'}</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div class="dim" style="font-size:9px;font-weight:800">기본</div><div style="font-size:14px;font-weight:900">${p.base}개</div></div><div><div class="dim" style="font-size:9px;font-weight:800">배수</div><div style="font-size:14px;font-weight:900;display:inline-block;padding:1px 8px;border-radius:6px;background:${mClr[0]};color:${mClr[1]}">×${p.multi}</div></div><div><div class="dim" style="font-size:9px;font-weight:800">납부</div><div style="font-size:14px;font-weight:900;color:var(--bunny-deep)">${p.calculating?'<i class="fa-solid fa-spinner fa-spin"></i>':p.total}개</div></div></div></div>`; }).join('');
   const totalSum=_bailState.payers.reduce((s,p)=>s+(p.calculating?0:p.total),0);
   const el=document.getElementById('bf_amount'); if(el){ el.style.display=''; el.innerHTML=`<div class="panel tone-light" style="border-radius:18px;padding:16px;margin-bottom:16px"><div style="font-size:11px;font-weight:900;color:var(--bunny-deep);margin-bottom:12px"><i class="fa-solid fa-calculator" style="margin-right:5px"></i>자동 계산 (${_bailState.payers.length}캐)</div><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">${rows}</div><div style="background:var(--panel);border:2px solid var(--bunny-main);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between"><div><div class="dim" style="font-size:10px;font-weight:800">총 납부 금액</div></div><div style="font-size:26px;font-weight:900;color:var(--bunny-deep)">${totalSum}<span class="dim" style="font-size:12px;margin-left:3px">개</span></div></div></div>`; }
