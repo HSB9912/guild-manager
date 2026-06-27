@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'fix',  x:'수로 보상 — 점수가 1000건에서 잘려(DB 한 번에 1000행 제한) 상위권 분기평균이 반토막 나고 순위가 뒤집히던 치명 버그 수정. 전체 회차 점수를 나눠 받도록 변경(리케아 5/12→12/12주, 평균이 분석탭과 일치)' },
     { t:'fix',  x:'수로 보상 — 부캐(수로 0점)가 보상 랭킹에 섞여 등급 분포(롤케이크/팬케이크)를 오염시키던 문제 수정. 본캐만 산정(557 → 181명)' },
     { t:'feat', x:'수로 분석 전면 개편(기존 뚠카롱 분석 복원) — 평균순 안정 랭킹 · 최근 4주 비교표 · 주차 변동 · MVP(고득점/떡상/상승률/평균↑) · 길드 총점 추이 · 직업/직위/검색 필터 · 헤더 클릭 정렬' },
     { t:'fix',  x:'수로 분석 상위권 순위가 격변하던 문제 해결 — 기본 정렬을 최근주차 → 평균순으로(이번주 미참자가 평소 등수에서 추락하지 않게)' },
@@ -1330,8 +1331,12 @@ async function buildSuroReward(){
   if(ep) throw ep; if(em) throw em;
   const scoreMap={};
   try{
-    const {data:scores}=await db().from('suro_scores').select('member_id,period_id,score').eq('guild',GUILD).limit(40000);
-    (scores||[]).forEach(s=>{ (scoreMap[s.member_id]||(scoreMap[s.member_id]={}))[s.period_id]=Math.round(Number(s.score))||0; });
+    // Supabase는 한 요청당 최대 1000행만 반환 → range로 페이지네이션해 전체 점수 로드(단일 .limit이면 잘려서 상위권 평균이 망가짐)
+    for(let from=0; from<200000; from+=1000){
+      const { data:chunk } = await db().from('suro_scores').select('member_id,period_id,score').eq('guild',GUILD).order('id',{ascending:true}).range(from,from+999);
+      (chunk||[]).forEach(s=>{ (scoreMap[s.member_id]||(scoreMap[s.member_id]={}))[s.period_id]=Math.round(Number(s.score))||0; });
+      if(!chunk || chunk.length<1000) break;
+    }
   }catch(e){}
   _srData = { periods:periods||[], members:mem||[], scoreMap, piecePrice, cfg };
   setTimeout(()=>{ try{ _srRender(); }catch(e){ const el=document.getElementById('contentArea'); if(el) el.innerHTML='<div style="padding:40px;text-align:center;color:var(--bad-tx);font-weight:700">'+(e.message||e)+'</div>'; } },0);
