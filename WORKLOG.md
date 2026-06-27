@@ -16,6 +16,9 @@
 - [ ] **사용자 체감 변경을 했으면 → `app.js` 상단 `CHANGELOG` 배열 맨 위 블록에 항목 추가** (요청 없어도). type: feat/fix/tweak/chore.
 - [ ] **미리보기/시안 파일(`_preview/…`)은 커밋하지 않음** (로컬에서 브라우저로만 확인).
 - [ ] 변경 후 `node --check assets/app.js` 로 문법 확인.
+- [ ] **배포 전 `node tools/smoke.js`** — FACTIONS 키↔DB 일치, 멤버/수로 비어있지 않음, 길드 1000행 미만 자동확인(통과해야 배포).
+- [ ] **DB 파괴적 작업(DELETE/대량 UPDATE) 전 `node tools/db-snapshot.js`** — `backups/`에 members·suro_scores 백업(꼬이면 복구).
+- [ ] **1000행 넘는 쿼리는 `dbAll(()=>db().from(...)...order(...))` 사용** (단일 `.limit`은 1000에서 조용히 잘림 — 보상/동기화 버그 원인이었음).
 
 ---
 
@@ -37,6 +40,13 @@
 ---
 
 ## 📓 작업 로그
+
+### 2026-06-28 (집) — 길드명 마이그레이션 + 구조 하드닝
+- **길드 내부키 `뚠/뚱/밤카롱` → `버니/늑대/쿠거`**. DB(members·suro_scores 두 테이블만 guild 컬럼) UPDATE + 코드(FACTIONS key·BASE_AMOUNT·요청배경색 + bail/exempt/join 폼) 정렬. 레거시 키도 일부 병행 인식. (수로점수는 member_id로 묶여 라벨만 바뀜 → 안 날아감)
+- **Supabase anon 키로 직접 쓰기 가능** 확인(RLS가 쓰기 허용) → DB 작업 SQL 없이 REST PATCH/DELETE로 직접 가능. [[reference_bunny_db_write_and_guild_keys]]
+- **1000행 cap 하드닝**: 공용 `dbAll()` 헬퍼 신설(요청당 1000행 제한 우회). 보상 전체점수·동기화 멤버·OCID백필 쿼리를 전환. (이 버그가 보상 평균 망가짐·동기화 중복 482개 추가의 원인이었음)
+- **안전망 추가**: `tools/smoke.js`(배포 전 데이터계층 검증) · `tools/db-snapshot.js`(파괴적 작업 전 백업, `backups/`는 gitignore).
+- 동기화 닉변 감지(OCID/부캐겹침/직업·레벨) + 신규 선택추가(체크박스), 수로 OCR(maplelens), 수로분석 ddun 복원도 이번 주.
 
 ### 2026-06-26 (집)
 - **수로 OCR 부활 + 버니 수로입력 통합.** 기존 ddun/v2의 화면캡처 OCR이 "안 먹던" 원인 = 우리 `ocr/` 자원·워커가 구버전(메이플 길드창 UI 변경으로 좌표·앵커 어긋남). maplelens(peune)가 현재 작동본이라 거기서 최신화.

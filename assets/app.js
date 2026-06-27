@@ -1293,6 +1293,19 @@ window._todoEditSave = async ()=>{
 
 /* ----- 공통: 설정(site_config) 캐시 + Tailwind 온디맨드 ----- */
 let _cfg=null, _cfgId=null;
+/* Supabase는 요청당 최대 1000행만 반환 → 전체를 .range로 나눠 받아 합치는 공용 헬퍼.
+   makeQuery: 매번 새 쿼리를 반환하는 함수(>1000행 가능 테이블은 .order 포함 필수 — 페이지 경계 안정). 단일 .limit으로 큰 테이블 받으면 조용히 잘리는 버그 방지. */
+async function dbAll(makeQuery, pageSize=1000){
+  let out=[], from=0;
+  for(;;){
+    const { data, error } = await makeQuery().range(from, from+pageSize-1);
+    if(error) throw error;
+    const rows=data||[]; out=out.concat(rows);
+    if(rows.length<pageSize) break;
+    from+=pageSize;
+  }
+  return out;
+}
 async function getConfig(){ if(_cfg) return _cfg; const { data, error } = await db().from('site_config').select('id,config').limit(1).maybeSingle(); if(error) throw error; _cfg=data?.config||{}; _cfgId=data?.id; return _cfg; }
 function loadTailwind(){ return new Promise((res)=>{ if(window.tailwind||document.getElementById('twcdn')) return res(); const s=document.createElement('script'); s.id='twcdn'; s.src='https://cdn.tailwindcss.com'; s.onload=res; s.onerror=res; document.head.appendChild(s); }); }
 function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1334,12 +1347,8 @@ async function buildSuroReward(){
   if(ep) throw ep; if(em) throw em;
   const scoreMap={};
   try{
-    // Supabase는 한 요청당 최대 1000행만 반환 → range로 페이지네이션해 전체 점수 로드(단일 .limit이면 잘려서 상위권 평균이 망가짐)
-    for(let from=0; from<200000; from+=1000){
-      const { data:chunk } = await db().from('suro_scores').select('member_id,period_id,score').eq('guild',GUILD).order('id',{ascending:true}).range(from,from+999);
-      (chunk||[]).forEach(s=>{ (scoreMap[s.member_id]||(scoreMap[s.member_id]={}))[s.period_id]=Math.round(Number(s.score))||0; });
-      if(!chunk || chunk.length<1000) break;
-    }
+    const scores=await dbAll(()=>db().from('suro_scores').select('member_id,period_id,score').eq('guild',GUILD).order('id',{ascending:true}));
+    scores.forEach(s=>{ (scoreMap[s.member_id]||(scoreMap[s.member_id]={}))[s.period_id]=Math.round(Number(s.score))||0; });
   }catch(e){}
   _srData = { periods:periods||[], members:mem||[], scoreMap, piecePrice, cfg };
   setTimeout(()=>{ try{ _srRender(); }catch(e){ const el=document.getElementById('contentArea'); if(el) el.innerHTML='<div style="padding:40px;text-align:center;color:var(--bad-tx);font-weight:700">'+(e.message||e)+'</div>'; } },0);
@@ -2200,13 +2209,7 @@ window._syncRun=async ()=>{
     }catch(e){ apiByKey[f.key]=null; errs.push(`${f.label}: ${e.message||e}`); } }
     step('DB와 비교 중 (신규/탈퇴/이동)');
     const keys=FACS.map(f=>f.key);
-    let dbm=[];   // Supabase 1000행 제한 → range로 전체 로드(안 그러면 1000명 넘는 멤버를 못 읽어 기존 멤버가 "신규"로 오판→중복추가)
-    for(let from=0; from<60000; from+=1000){
-      const { data:chunk, error } = await db().from('members').select('id,name,guild,is_main').in('guild',keys).order('id',{ascending:true}).range(from,from+999);
-      if(error) throw error;
-      dbm=dbm.concat(chunk||[]);
-      if(!chunk || chunk.length<1000) break;
-    }
+    const dbm=await dbAll(()=>db().from('members').select('id,name,guild,is_main').in('guild',keys).order('id',{ascending:true}));   // 1000행 제한 우회(전체 로드 안 하면 기존 멤버가 "신규"로 오판→중복추가)
     const dbNameSet=new Set((dbm||[]).map(m=>m.name));
     const apiNameSet=new Set(); Object.values(apiByKey).forEach(a=>{ if(a) a.forEach(n=>apiNameSet.add(n)); });
     window._syncGuildNameSet=apiNameSet;   // 현재 길드 실명단 — OCID 백필이 "지금 길드에 같은 닉으로 있는 멤버"만 처리하게(닉변/탈퇴 오염 방지)
@@ -2305,7 +2308,7 @@ window._syncBackfillOcid=async ()=>{
   if(!gset||!gset.size){ set('<div style="color:var(--warn-tx);font-weight:800;padding:8px;line-height:1.6">먼저 위 <b>동기화 실행</b>을 눌러주세요.<br><b>현재 길드에 같은 닉으로 있는 멤버만</b> 백필해서, 닉변·탈퇴자에게 엉뚱한 OCID가 들어가는 걸 막아요.</div>'); return; }
   set('<div class="dim" style="font-weight:700;padding:8px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>OCID 없는 멤버 조회 중…</div>');
   let ms;
-  try{ const r=await db().from('members').select('id,name').is('ocid',null).limit(8000); if(r.error) throw r.error; ms=r.data||[]; }
+  try{ ms=await dbAll(()=>db().from('members').select('id,name').is('ocid',null).order('id',{ascending:true})); }
   catch(e){ set('<div style="color:var(--bad-tx);font-weight:800;padding:8px;line-height:1.6">members에 <b>ocid</b> 컬럼이 없어요. Supabase에서 먼저 추가해주세요:<br><code style="font-size:11px;background:var(--panel);padding:2px 6px;border-radius:5px">ALTER TABLE members ADD COLUMN ocid text;</code></div>'); return; }
   const total0=ms.length;
   ms=ms.filter(m=>gset.has(m.name));   // 현재 길드에 같은 닉으로 있는 멤버만 → 닉변/탈퇴자에게 엉뚱한 OCID 안 들어감
