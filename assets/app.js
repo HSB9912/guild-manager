@@ -2126,7 +2126,7 @@ async function buildSync(){
             <button onclick="_syncNickCheck()" style="border:0;border-radius:9px;padding:7px 13px;font-weight:800;font-size:12px;color:#fff;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));cursor:pointer"><i class="fa-solid fa-id-badge" style="margin-right:4px"></i>닉변 의심 검사</button>
           </div>
         </div>
-        <p class="dim" style="font-size:11px;font-weight:700;margin:7px 0 0">OCID는 닉변해도 안 변해요. <b>백필</b>로 멤버 OCID를 미리 저장해두면, 동기화 후 <b>닉변 검사</b>가 "사라진 옛 닉 ↔ 새 닉"을 OCID로 확정 매칭. (members에 <code style="font-size:10px">ocid</code> 컬럼 필요)</p>
+        <p class="dim" style="font-size:11px;font-weight:700;margin:7px 0 0">OCID는 닉변해도 안 변해요. <b>① 동기화 실행 → ② OCID 백필</b>(현재 길드에 있는 멤버만 안전하게 저장 — 닉변/탈퇴자 자동 제외) 해두면, 다음부터 <b>닉변 의심 검사</b>가 "사라진 옛 닉 ↔ 새 닉"을 OCID로 확정 매칭. (members에 <code style="font-size:10px">ocid</code> 컬럼 필요)</p>
         <div id="ocidResult" style="margin-top:8px"></div>
       </div>
       <div id="syncResult" style="margin-top:16px"></div>
@@ -2202,6 +2202,7 @@ window._syncRun=async ()=>{
     if(error) throw error;
     const dbNameSet=new Set((dbm||[]).map(m=>m.name));
     const apiNameSet=new Set(); Object.values(apiByKey).forEach(a=>{ if(a) a.forEach(n=>apiNameSet.add(n)); });
+    window._syncGuildNameSet=apiNameSet;   // 현재 길드 실명단 — OCID 백필이 "지금 길드에 같은 닉으로 있는 멤버"만 처리하게(닉변/탈퇴 오염 방지)
     const added=[]; for(const f of FACS){ const a=apiByKey[f.key]; if(!a) continue; a.forEach(n=>{ if(!dbNameSet.has(n)) added.push({ name:n, guild:f.key }); }); }
     const left=(dbm||[]).filter(m=>m.is_main!==false && apiByKey[m.guild] && !apiByKey[m.guild].includes(m.name) && !apiNameSet.has(m.name)).map(m=>({ id:m.id, name:m.name, guild:m.guild }));
     const moved=[]; (dbm||[]).forEach(m=>{ if(!apiByKey[m.guild]) return; for(const f of FACS){ if(f.key!==m.guild && apiByKey[f.key] && apiByKey[f.key].includes(m.name)){ moved.push({ id:m.id, name:m.name, from:m.guild, to:f.key }); break; } } });
@@ -2287,14 +2288,19 @@ window._syncRemoveGone=async ()=>{
 window._syncBackfillOcid=async ()=>{
   if(!isAdmin()) return alert('운영진만 가능해요.');
   if(!nexonKey()) return alert('먼저 Nexon API Key를 등록해주세요.');
-  const out=document.getElementById('ocidResult');
-  const set=(h)=>{ if(out) out.innerHTML=h; };
+  const out=document.getElementById('ocidResult'); const set=(h)=>{ if(out) out.innerHTML=h; };
+  const gset=window._syncGuildNameSet;
+  if(!gset||!gset.size){ set('<div style="color:var(--warn-tx);font-weight:800;padding:8px;line-height:1.6">먼저 위 <b>동기화 실행</b>을 눌러주세요.<br><b>현재 길드에 같은 닉으로 있는 멤버만</b> 백필해서, 닉변·탈퇴자에게 엉뚱한 OCID가 들어가는 걸 막아요.</div>'); return; }
   set('<div class="dim" style="font-weight:700;padding:8px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>OCID 없는 멤버 조회 중…</div>');
   let ms;
   try{ const r=await db().from('members').select('id,name').is('ocid',null).limit(8000); if(r.error) throw r.error; ms=r.data||[]; }
   catch(e){ set('<div style="color:var(--bad-tx);font-weight:800;padding:8px;line-height:1.6">members에 <b>ocid</b> 컬럼이 없어요. Supabase에서 먼저 추가해주세요:<br><code style="font-size:11px;background:var(--panel);padding:2px 6px;border-radius:5px">ALTER TABLE members ADD COLUMN ocid text;</code></div>'); return; }
-  if(!ms.length){ set('<div class="dim" style="font-weight:700;padding:8px">OCID가 비어있는 멤버가 없어요 ✓ (이미 다 채워짐)</div>'); return; }
-  if(!confirm(`${ms.length}명의 OCID를 넥슨에서 받아 저장할까요?\n(이름당 1회 호출 · 시간이 좀 걸려요)`)){ set(''); return; }
+  const total0=ms.length;
+  ms=ms.filter(m=>gset.has(m.name));   // 현재 길드에 같은 닉으로 있는 멤버만 → 닉변/탈퇴자에게 엉뚱한 OCID 안 들어감
+  const skipped=total0-ms.length;
+  if(!total0){ set('<div class="dim" style="font-weight:700;padding:8px">OCID가 비어있는 멤버가 없어요 ✓ (이미 다 채워짐)</div>'); return; }
+  if(!ms.length){ set(`<div class="dim" style="font-weight:700;padding:8px;line-height:1.6">백필 대상이 없어요 — OCID 미보유 ${total0}명이 전부 <b>현재 길드에 없는</b>(닉변/탈퇴 의심) 멤버라 제외했어요. <b>닉변 의심 검사</b>로 확인하세요.</div>`); return; }
+  if(!confirm(`현재 길드에 있는 ${ms.length}명의 OCID를 받아 저장할까요?${skipped?`\n닉변/탈퇴 의심 ${skipped}명은 안전하게 제외돼요.`:''}\n(이름당 1회 호출 · 시간이 좀 걸려요)`)){ set(''); return; }
   const CONC=8; let next=0, ok=0, fail=0;
   const tick=()=>set(`<div class="dim" style="font-weight:700;padding:8px"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px"></i>${ok+fail}/${ms.length} 처리 중 (성공 ${ok} · 실패 ${fail})</div>`);
   const worker=async ()=>{ while(next<ms.length){ const m=ms[next++];
@@ -2303,7 +2309,7 @@ window._syncBackfillOcid=async ()=>{
     if((ok+fail)%5===0) tick();
   } };
   await Promise.all(Array.from({length:CONC}, worker));
-  set(`<div style="font-weight:800;color:var(--ok-tx);padding:8px">OCID 백필 완료 ✓ 성공 ${ok}명${fail?` · 실패 ${fail}명 (닉변/탈퇴/저레벨 가능)`:''}</div>`);
+  set(`<div style="font-weight:800;color:var(--ok-tx);padding:8px">OCID 백필 완료 ✓ 성공 ${ok}명${fail?` · 실패 ${fail}`:''}${skipped?` · 제외 ${skipped}명(닉변/탈퇴 의심)`:''}</div>`);
 };
 window._syncNickCheck=async ()=>{
   if(!nexonKey()) return alert('먼저 Nexon API Key를 등록해주세요.');
