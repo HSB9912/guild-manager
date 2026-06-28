@@ -1891,7 +1891,7 @@ window._siOcrOpen=()=>{
         3. 인식되면 아래에 쌓임 → <b>현재 회차에 반영</b>
       </div>
       <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--dim);margin-bottom:5px"><span>인식 결과</span><span id="siocr_sum">0명</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--dim);margin-bottom:5px"><span>인식 결과 <button onclick="_siOcrCopy()" style="border:1px solid var(--line);background:var(--panel);color:var(--bunny-deep);border-radius:7px;padding:2px 9px;font-size:10px;font-weight:800;cursor:pointer;margin-left:5px"><i class="fa-solid fa-copy" style="margin-right:3px"></i>복사</button></span><span id="siocr_sum">0명</span></div>
         <div class="panel" style="border-radius:12px;max-height:230px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px" id="siocr_tbl"><tbody><tr><td style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 인식된 데이터가 없어요</td></tr></tbody></table></div>
       </div>
       <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:6px"></i>① 매칭된 사람 현재 회차에 수로 점수 반영</button>
@@ -1942,6 +1942,16 @@ function _siRepOf(raw){ const s=String(raw||''); const i=s.search(/[(（]/); ret
 function _siSubOf(raw){ const m=String(raw||'').match(/[(（]([^)）]*)[)）]/); return m?m[1].replace(/[.…]+$/,'').trim():''; }
 function _siMemByNick(nick){ if(!nick) return null; const k=_siOcrNorm(nick); let hit=_siMembers.find(m=>_siOcrNorm(m.name)===k); if(!hit && nick.length>=2){ const c=_siMembers.filter(m=>_siOcrNorm(m.name).startsWith(k)); if(c.length===1) hit=c[0]; } return hit||null; }
 function _siFindMem(raw){ return _siMemByNick(_siRepOf(raw)); }
+/* OCR 인식 결과를 탭구분 텍스트로 클립보드 복사 — OCR 원본 글자까지 담아 검토·공유·디버깅용 */
+window._siOcrCopy=async ()=>{
+  const recs=[..._siOcrRecs.values()]; if(!recs.length) return alert('복사할 인식 데이터가 없어요. 먼저 캡처해주세요.');
+  const lines=['원본\t대표\t접속부캐\t인식점수\t매칭'];
+  recs.forEach(r=>{ const rep=_siRepOf(r.name), sub=_siSubOf(r.name), mm=_siFindMem(r.name);
+    lines.push(`${r.name}\t${rep}\t${sub||''}\t${r.culv||0}\t${mm?mm.name:'멤버없음'}`); });
+  const txt=lines.join('\n');
+  try{ await navigator.clipboard.writeText(txt); alert(`📋 복사됨 — ${recs.length}건\n붙여넣기(Ctrl+V)로 확인하거나 나한테 붙여줘.`); }
+  catch(e){ window.prompt('아래 전체 선택(Ctrl+A) → 복사(Ctrl+C):', txt); }
+};
 function _siOcrRenderList(){
   const tbl=document.getElementById('siocr_tbl'); if(!tbl) return;
   const recs=[..._siOcrRecs.values()];
