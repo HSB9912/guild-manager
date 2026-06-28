@@ -1998,14 +1998,18 @@ window._siOcrApply=async ()=>{
   const recs=[..._siOcrRecs.values()]; if(!recs.length) return alert('인식된 데이터가 없어요. 먼저 캡처해주세요.');
   if(!isAdmin()) return alert('운영진만 반영할 수 있어요. 운영진 로그인 후 이용해주세요.');
   if(!_siPid) return alert('회차를 먼저 선택/생성해주세요.');
-  const matched=recs.map(r=>({m:_siFindMem(r.name),r})).filter(x=>x.m);
-  if(!matched.length) return alert('이름이 매칭되는 멤버가 없어요. 닉네임을 확인해주세요.');
-  const rows=matched.map(({m,r})=>({member_id:m.id,period_id:_siPid,score:Number(r.culv)||0,guild:GUILD}));
+  // 그룹(대표) 기준 — 접속 캐릭이 부캐로 떠도 그 계정 대표(본캐)에 점수 귀속. 접속 상태에 안 휘둘리게.
+  const repOf=(m)=>{ if(!m) return null; if(m.is_main!==false) return m; const rep=_siMembers.find(x=>x.name===m.main_char_name && x.is_main!==false); return rep||m; };
+  const byRep={};
+  recs.forEach(r=>{ const m=repOf(_siFindMem(r.name)); if(!m) return; const v=Number(r.culv)||0; if(!byRep[m.id] || v>byRep[m.id].v) byRep[m.id]={m,v}; });
+  const reps=Object.values(byRep);
+  if(!reps.length) return alert('이름이 매칭되는 멤버가 없어요. 닉네임을 확인해주세요.');
+  const rows=reps.map(({m,v})=>({member_id:m.id,period_id:_siPid,score:v,guild:GUILD}));
   const { error }=await db().from('suro_scores').upsert(rows,{onConflict:'member_id,period_id'});
   if(error) return alert('반영 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
-  matched.forEach(({m,r})=>{ const v=Number(r.culv)||0; _siScores[m.id]=String(v); _siBroadcast('score',{mid:m.id,score:v,by:CURRENT.name||'운영진'}); });
-  const n=matched.length, tot=recs.length; _siOcrClose(); _siRenderList();
-  alert(`${n}명 수로 점수를 현재 회차에 반영했어요. (인식 ${tot}명 중 매칭 ${n}명)`);
+  reps.forEach(({m,v})=>{ _siScores[m.id]=String(v); _siBroadcast('score',{mid:m.id,score:v,by:(typeof CURRENT!=='undefined'&&CURRENT&&CURRENT.name)||'운영진'}); });
+  _siOcrClose(); _siRenderList();
+  alert(`${reps.length}개 계정(대표)에 수로 점수를 반영했어요. (인식 ${recs.length}건)\n※ 접속 부캐로 떠도 대표(본캐)에 기록됩니다.`);
 };
 /* ② 길드 컨텐츠 창(대표=본캐) 기준으로 본캐/부캐 정정 — 대표(괄호앞)→본캐 승격, 접속부캐(괄호안)→부캐 강등+대표 연결 */
 window._siOcrSetMains=async ()=>{
