@@ -2360,8 +2360,14 @@ window._syncNickCheck=async (auto)=>{
   } };
   await Promise.all(Array.from({length:Math.min(8,added.length)}, worker));
   const matched=new Set(), usedNew=new Set(), pairs=[];
-  // ① OCID 확정
-  newInfo.forEach(ni=>{ if(ni.ocid && leftByOcid[ni.ocid]){ const old=leftByOcid[ni.ocid]; pairs.push({ oldId:old.id, oldName:old.name, newName:ni.name, conf:'OCID' }); matched.add(old.id); usedNew.add(ni.name); } });
+  // ⓪ 저장된 OCID로 현재이름 직접 조회 (메애기 원리 — OCID는 닉변해도 불변. 부캐 없어도·신규목록에 없어도 잡힘)
+  for(const old of leftM){ if(!old.ocid||matched.has(old.id)) continue;
+    try{ const b=await _getCharBasic(old.ocid); const cur=b&&b.character_name;
+      if(cur && cur!==old.name && (!window._syncGuildNameSet || window._syncGuildNameSet.has(cur))){
+        pairs.push({ oldId:old.id, oldName:old.name, newName:cur, conf:'OCID직접', via:'저장ocid→현재이름' }); matched.add(old.id); usedNew.add(cur); } }catch(e){}
+  }
+  // ① OCID 확정 (신규 쪽 해석)
+  newInfo.forEach(ni=>{ if(ni.ocid && leftByOcid[ni.ocid] && !matched.has(leftByOcid[ni.ocid].id)){ const old=leftByOcid[ni.ocid]; pairs.push({ oldId:old.id, oldName:old.name, newName:ni.name, conf:'OCID' }); matched.add(old.id); usedNew.add(ni.name); } });
   // ② 유니온 부캐 겹침 = 같은 계정 확정 (OCID 없어도)
   leftM.forEach(old=>{ if(matched.has(old.id)) return; const subs=subsByMain[old.name]; if(!subs||!subs.length) return;
     const subSet=new Set(subs);
