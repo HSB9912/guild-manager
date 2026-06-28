@@ -1900,7 +1900,7 @@ window._siOcrOpen=()=>{
         3. 인식되면 아래에 쌓임 → <b>대표 칸 쫙 검토하고 틀린 거 고친 뒤</b>(빨간칸=못찾음, 비우면 제외) → 반영
       </div>
       <div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--dim);margin-bottom:5px"><span>인식 결과 <button onclick="_siOcrCopy()" style="border:1px solid var(--line);background:var(--panel);color:var(--bunny-deep);border-radius:7px;padding:2px 9px;font-size:10px;font-weight:800;cursor:pointer;margin-left:5px"><i class="fa-solid fa-copy" style="margin-right:3px"></i>복사</button></span><span id="siocr_sum">0명</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--dim);margin-bottom:5px"><span>인식 결과 <button onclick="_siOcrAddRow()" style="border:1px solid var(--bunny-main);background:var(--bunny-light);color:var(--bunny-deep);border-radius:7px;padding:2px 9px;font-size:10px;font-weight:800;cursor:pointer;margin-left:5px"><i class="fa-solid fa-plus" style="margin-right:3px"></i>직접 추가</button> <button onclick="_siOcrCopy()" style="border:1px solid var(--line);background:var(--panel);color:var(--bunny-deep);border-radius:7px;padding:2px 9px;font-size:10px;font-weight:800;cursor:pointer"><i class="fa-solid fa-copy" style="margin-right:3px"></i>복사</button></span><span id="siocr_sum">0명</span></div>
         <div class="panel" style="border-radius:12px;max-height:230px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px" id="siocr_tbl"><tbody><tr><td style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 인식된 데이터가 없어요</td></tr></tbody></table></div>
       </div>
       <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-circle-check" style="margin-right:6px"></i>검토 끝 — 대표에게 점수 반영</button>
@@ -1961,6 +1961,10 @@ window._siOcrCopy=async ()=>{
   try{ await navigator.clipboard.writeText(txt); alert(`📋 복사됨 — ${recs.length}건\n붙여넣기(Ctrl+V)로 확인하거나 나한테 붙여줘.`); }
   catch(e){ window.prompt('아래 전체 선택(Ctrl+A) → 복사(Ctrl+C):', txt); }
 };
+/* OCR이 놓친 사람(맨 윗줄 등) 검토 그리드에 직접 한 줄 추가 — 대표·점수 타이핑 */
+let _siOcrAddN=0;
+window._siOcrAddRow=()=>{ _siOcrAddN++; _siOcrRecs.set('__manual_'+_siOcrAddN,{name:'',culv:0}); _siOcrRenderList();
+  setTimeout(()=>{ const inps=document.querySelectorAll('#siocr_tbl input[id^="ocr_rep_"]'); const last=inps[inps.length-1]; if(last){ last.focus(); last.scrollIntoView({block:'nearest'}); } },40); };
 function _siOcrRepOf(m){ if(!m) return null; if(m.is_main!==false) return m; const rep=_siMembers.find(x=>x.name===m.main_char_name && x.is_main!==false); return rep||m; }
 function _siOcrRenderList(){
   const tbl=document.getElementById('siocr_tbl'); if(!tbl) return;
