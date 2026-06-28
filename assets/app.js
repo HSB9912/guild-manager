@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'feat', x:'동기화 — 닉변 자동 감지(시스템화). 동기화하면 닉변자(옛닉↔새닉, OCID/부캐겹침)를 자동으로 찾아 신규 목록에서 체크 해제 + "🔄닉변(연결)" 표시 → 닉변자를 실수로 신규로 받아 중복 생기는 일 자체를 차단' },
     { t:'feat', x:'동기화 신규 길드원 — 받을 사람만 체크해서 선택 추가(전체 토글 + 개별 체크박스). 기존엔 누르면 전원 일괄이었는데, 한 명씩 받을지 결정 가능' },
     { t:'feat', x:'동기화 닉변 검사 — "유니온 부캐 겹침=계정 확정" 추가(OCID 백필 없이도 이미 닉변한 사람 잡힘). ①OCID ②부캐겹침 ③직업·레벨추정' },
     { t:'feat', x:'동기화 — OCID 기반 닉변(닉네임 변경) 감지. OCID는 닉변해도 안 변해서, "OCID 백필"로 멤버 OCID를 미리 저장 → 동기화 후 "닉변 의심 검사"가 사라진 옛 닉 ↔ 새 닉을 확정 매칭 → 이름만 바꿔 수로 이력·점수 보존 (members.ocid 컬럼 필요)' },
@@ -2252,6 +2253,8 @@ window._syncRun=async ()=>{
       </div>
       <p class="dim" style="font-size:11px;font-weight:700;margin:6px 0 0">넥슨 길드엔 없는데 DB엔 본캐로 남은 캐릭. 체크 후 삭제 (잘못 잡힐 수 있으니 확인 후) · 추가와 별개 작업</p>
       ${left.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${left.map(m=>`<label style="display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border-radius:999px;padding:5px 12px;cursor:pointer;font-weight:800;font-size:13px"><input type="checkbox" class="sync-gone-cb" data-id="${m.id}" data-name="${escAttr(m.name)}" style="accent-color:var(--bad-tx)">${escHtml(m.name)}</label>`).join('')}</div>`:'<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>'}`;
+    // 닉변 자동 감지 → 신규에 섞인 닉변자를 자동 체크해제 + "닉변→연결"로 분류 (받아지기 전에 시스템적으로 차단)
+    if(added.length && left.length) setTimeout(()=>{ try{ _syncNickCheck(true); }catch(e){} }, 350);
   }catch(e){ box.innerHTML=`<div class="panel" style="border-radius:16px;padding:20px;text-align:center"><span style="font-weight:800;color:var(--bad-tx)">${e.message||e}</span><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">키·월드·길드명을 확인해주세요.</p></div>`; }
 };
 window._syncAdd=async ()=>{
@@ -2326,7 +2329,7 @@ window._syncBackfillOcid=async ()=>{
   await Promise.all(Array.from({length:CONC}, worker));
   set(`<div style="font-weight:800;color:var(--ok-tx);padding:8px">OCID 백필 완료 ✓ 성공 ${ok}명${fail?` · 실패 ${fail}`:''}${skipped?` · 제외 ${skipped}명(닉변/탈퇴 의심)`:''}</div>`);
 };
-window._syncNickCheck=async ()=>{
+window._syncNickCheck=async (auto)=>{
   if(!nexonKey()) return alert('먼저 Nexon API Key를 등록해주세요.');
   const out=document.getElementById('ocidResult'); const set=(h)=>{ if(out) out.innerHTML=h; };
   const added=window._syncAdded||[], left=window._syncLeft||[];
@@ -2370,7 +2373,9 @@ window._syncNickCheck=async ()=>{
     const cands=newInfo.filter(ni=>!usedNew.has(ni.name) && ni.cls && ni.cls===old.class && ni.level!=null && old.level!=null && ni.level>=old.level && (ni.level-old.level)<=10);
     if(cands.length===1){ pairs.push({ oldId:old.id, oldName:old.name, newName:cands[0].name, conf:'추정', via:old.class }); matched.add(old.id); usedNew.add(cands[0].name); }
   });
-  if(!pairs.length){ set(`<div class="dim" style="font-weight:700;padding:8px;line-height:1.6">닉변 의심 없음 ✓<br><span style="font-size:11px">대조: OCID ${haveOcid}명 · 부캐보유 ${haveSubs}명 · 직업/레벨 — 일치 후보 없음.</span></div>`); return; }
+  // 신규 목록에서 닉변자 자동 체크해제 + 라벨 (실수로 받지 않게 — 시스템적 차단)
+  pairs.forEach(p=>{ const cb=[...document.querySelectorAll('.sync-add-cb')].find(c=>c.dataset.name===p.newName); if(cb){ cb.checked=false; cb.disabled=true; const row=cb.closest('label'); if(row && !row.querySelector('.nickflag')){ row.style.opacity='.55'; const s=document.createElement('span'); s.className='nickflag'; s.style.cssText='margin-left:6px;font-size:9px;font-weight:900;color:var(--warn-tx)'; s.textContent='🔄 닉변(연결)'; row.appendChild(s); } } });
+  if(!pairs.length){ if(!auto) set(`<div class="dim" style="font-weight:700;padding:8px;line-height:1.6">닉변 의심 없음 ✓<br><span style="font-size:11px">대조: OCID ${haveOcid}명 · 부캐보유 ${haveSubs}명 · 직업/레벨 — 일치 후보 없음.</span></div>`); else set(''); return; }
   const badge=(c)=> c==='OCID' ? '<span style="font-size:9px;font-weight:900;background:var(--ok-bg);color:var(--ok-tx);padding:1px 6px;border-radius:99px">OCID 확정</span>'
     : c==='계정' ? '<span style="font-size:9px;font-weight:900;background:var(--ok-bg);color:var(--ok-tx);padding:1px 6px;border-radius:99px">계정 일치</span>'
     : '<span style="font-size:9px;font-weight:900;background:var(--warn-bg);color:var(--warn-tx);padding:1px 6px;border-radius:99px">직업·레벨 추정</span>';
