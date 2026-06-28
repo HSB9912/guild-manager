@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'feat', x:'수로 입력/OCR — 길드 컨텐츠 현황 창(닉네임이 "대표(접속캐릭)" 포맷) 지원. ① 대표(괄호 앞)로 매칭 + 잘린 이름은 접두어 유일매칭 → 부캐로 접속한 사람도 대표 본캐 점수로 반영(멤버없음 해결). ② "본캐·부캐 맞추기" 버튼 — 창에 뜬 대표를 본캐로 승격, 접속 부캐를 부캐로 강등+대표 연결 → 194 vs 190 같은 본캐 중복 정리' },
     { t:'fix', x:'수로 입력/OCR — 계정그룹(1대표+5부캐) 부캐도 매칭·기록. 부캐도 각자 수로를 뛰는데 본캐만 매칭해서 "멤버없음" 뜨던 문제 수정 → 부캐는 자기 점수로 저장(입력칸에 "부캐·본캐명" 표시). 본캐만 집계하는 보상/분석은 그대로라 영향 없음' },
     { t:'feat', x:'동기화 — 닉변 자동 감지(시스템화). 동기화하면 닉변자(옛닉↔새닉, OCID/부캐겹침)를 자동으로 찾아 신규 목록에서 체크 해제 + "🔄닉변(연결)" 표시 → 닉변자를 실수로 신규로 받아 중복 생기는 일 자체를 차단' },
     { t:'feat', x:'동기화 신규 길드원 — 받을 사람만 체크해서 선택 추가(전체 토글 + 개별 체크박스). 기존엔 누르면 전원 일괄이었는데, 한 명씩 받을지 결정 가능' },
@@ -1893,7 +1894,8 @@ window._siOcrOpen=()=>{
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--dim);margin-bottom:5px"><span>인식 결과</span><span id="siocr_sum">0명</span></div>
         <div class="panel" style="border-radius:12px;max-height:230px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px" id="siocr_tbl"><tbody><tr><td style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 인식된 데이터가 없어요</td></tr></tbody></table></div>
       </div>
-      <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:6px"></i>매칭된 사람 현재 회차에 반영</button>
+      <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:6px"></i>① 매칭된 사람 현재 회차에 수로 점수 반영</button>
+      <button onclick="_siOcrSetMains()" style="border:1.5px solid var(--bunny-main);background:var(--panel);color:var(--bunny-deep);border-radius:12px;padding:11px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-crown" style="margin-right:6px"></i>② 이 창 기준 본캐·부캐 맞추기 (대표→본캐)</button>
     </div></div>`;
   document.body.appendChild(m);
   m.addEventListener('click',e=>{ if(e.target===m) _siOcrClose(); });
@@ -1935,17 +1937,22 @@ window._siOcrFile=()=>{
     catch(err){ _siOcrStatus('이미지 처리 실패: '+err.message); } };
   inp.click();
 };
+/* 길드 컨텐츠 현황 창은 닉네임이 "대표(접속캐릭)"로 뜸 → 대표(괄호 앞)로 매칭. 잘린 이름(..)은 접두어 유일매칭 */
+function _siRepOf(raw){ const s=String(raw||''); const i=s.search(/[(（]/); return (i>=0?s.slice(0,i):s).replace(/[.…]+$/,'').trim(); }
+function _siSubOf(raw){ const m=String(raw||'').match(/[(（]([^)）]*)[)）]/); return m?m[1].replace(/[.…]+$/,'').trim():''; }
+function _siMemByNick(nick){ if(!nick) return null; const k=_siOcrNorm(nick); let hit=_siMembers.find(m=>_siOcrNorm(m.name)===k); if(!hit && nick.length>=2){ const c=_siMembers.filter(m=>_siOcrNorm(m.name).startsWith(k)); if(c.length===1) hit=c[0]; } return hit||null; }
+function _siFindMem(raw){ return _siMemByNick(_siRepOf(raw)); }
 function _siOcrRenderList(){
   const tbl=document.getElementById('siocr_tbl'); if(!tbl) return;
   const recs=[..._siOcrRecs.values()];
-  const byName={}; _siMembers.forEach(mm=>byName[_siOcrNorm(mm.name)]=mm);
   let nMatch=0;
   const body=recs.map(r=>{
-    const mm=byName[_siOcrNorm(r.name)]; const cur=mm?(_siScores[mm.id]??''):''; if(mm) nMatch++;
+    const rep=_siRepOf(r.name), sub=_siSubOf(r.name);
+    const mm=_siFindMem(r.name); const cur=mm?(_siScores[mm.id]??''):''; if(mm) nMatch++;
     const badge=mm?`<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--ok-bg);color:var(--ok-tx)">매칭</span>`
                   :`<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--bad-bg);color:var(--bad-tx)">멤버없음</span>`;
     return `<tr style="border-top:1px solid var(--line)">
-      <td style="padding:6px 9px;font-weight:800">${escHtml(r.name)}</td>
+      <td style="padding:6px 9px;font-weight:800">${escHtml(rep||r.name)}${sub&&sub!==rep?`<span style="font-size:10px;color:var(--dim);font-weight:700"> (${escHtml(sub)})</span>`:''}</td>
       <td style="padding:6px 9px;text-align:right;color:var(--dim)">${cur!==''?Number(cur).toLocaleString():'-'}</td>
       <td style="padding:6px 9px;text-align:right;font-weight:800;color:var(--bunny-deep)">${(r.culv||0).toLocaleString()}</td>
       <td style="padding:6px 9px;text-align:right">${badge}</td></tr>`;
@@ -1957,8 +1964,7 @@ window._siOcrApply=async ()=>{
   const recs=[..._siOcrRecs.values()]; if(!recs.length) return alert('인식된 데이터가 없어요. 먼저 캡처해주세요.');
   if(!isAdmin()) return alert('운영진만 반영할 수 있어요. 운영진 로그인 후 이용해주세요.');
   if(!_siPid) return alert('회차를 먼저 선택/생성해주세요.');
-  const byName={}; _siMembers.forEach(mm=>byName[_siOcrNorm(mm.name)]=mm);
-  const matched=recs.map(r=>({m:byName[_siOcrNorm(r.name)],r})).filter(x=>x.m);
+  const matched=recs.map(r=>({m:_siFindMem(r.name),r})).filter(x=>x.m);
   if(!matched.length) return alert('이름이 매칭되는 멤버가 없어요. 닉네임을 확인해주세요.');
   const rows=matched.map(({m,r})=>({member_id:m.id,period_id:_siPid,score:Number(r.culv)||0,guild:GUILD}));
   const { error }=await db().from('suro_scores').upsert(rows,{onConflict:'member_id,period_id'});
@@ -1966,6 +1972,24 @@ window._siOcrApply=async ()=>{
   matched.forEach(({m,r})=>{ const v=Number(r.culv)||0; _siScores[m.id]=String(v); _siBroadcast('score',{mid:m.id,score:v,by:CURRENT.name||'운영진'}); });
   const n=matched.length, tot=recs.length; _siOcrClose(); _siRenderList();
   alert(`${n}명 수로 점수를 현재 회차에 반영했어요. (인식 ${tot}명 중 매칭 ${n}명)`);
+};
+/* ② 길드 컨텐츠 창(대표=본캐) 기준으로 본캐/부캐 정정 — 대표(괄호앞)→본캐 승격, 접속부캐(괄호안)→부캐 강등+대표 연결 */
+window._siOcrSetMains=async ()=>{
+  const recs=[..._siOcrRecs.values()]; if(!recs.length) return alert('먼저 길드 컨텐츠 창을 캡처해주세요.');
+  if(!isAdmin()) return alert('운영진만 가능해요. 운영진 로그인 후 이용해주세요.');
+  const promote=[], demote=[];
+  recs.forEach(r=>{ const rep=_siRepOf(r.name), sub=_siSubOf(r.name);
+    const rm=_siMemByNick(rep); if(!rm) return;                       // 대표가 멤버일 때만
+    if(rm.is_main===false) promote.push(rm);
+    if(sub){ const sm=_siMemByNick(sub); if(sm && sm.id!==rm.id && (sm.is_main!==false || sm.main_char_name!==rm.name)) demote.push({m:sm,rep:rm.name}); }
+  });
+  if(!promote.length && !demote.length) return alert('바꿀 게 없어요 — 인식된 대표/부캐가 이미 맞거나 멤버 매칭이 안 됐어요.');
+  if(!confirm(`길드 컨텐츠 창(대표=본캐) 기준으로 맞출까요?\n· 부캐로 잘못 표시된 대표 → 본캐 승격: ${promote.length}명\n· 접속 부캐 → 부캐로 강등(+대표 연결): ${demote.length}명\n\n※ 라이브 공유 DB. 큰 변경이면 백업 먼저(tools/db-snapshot.js) · 결과는 데이터 현황에서 확인.`)) return;
+  let ok=0, fail=0;
+  for(const m of promote){ const { error }=await db().from('members').update({ is_main:true, main_char_name:null }).eq('id',m.id); if(error)fail++; else { ok++; m.is_main=true; m.main_char_name=null; } }
+  for(const { m,rep } of demote){ const { error }=await db().from('members').update({ is_main:false, main_char_name:rep }).eq('id',m.id); if(error)fail++; else { ok++; m.is_main=false; m.main_char_name=rep; } }
+  _siOcrRenderList();
+  alert(`완료 — ${ok}건 반영${fail?` · 실패 ${fail}`:''}\n(대표→본캐 ${promote.length} · 부캐 강등 ${demote.length})\n수로 점수는 ① 버튼으로 따로 반영하세요.`);
 };
 async function _siFetch(pid){
   _siScores={}; _siPrev={}; _siEditing={};
