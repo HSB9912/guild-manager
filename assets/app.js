@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'feat', x:'수로 입력/OCR — 길드 선택(🐰버니 · 🐺늑대 · 🐆쿠거) 추가. 수로 입력 페이지 상단 버튼으로 길드 전환 → 멤버·점수·OCR 모두 해당 길드로 (회차는 공유). 늑대·쿠거도 수로 점수·OCR 가능' },
     { t:'feat', x:'수로 입력/OCR — 길드 컨텐츠 현황 창(닉네임이 "대표(접속캐릭)" 포맷) 지원. ① 대표(괄호 앞)로 매칭 + 잘린 이름은 접두어 유일매칭 → 부캐로 접속한 사람도 대표 본캐 점수로 반영(멤버없음 해결). ② "본캐·부캐 맞추기" 버튼 — 창에 뜬 대표를 본캐로 승격, 접속 부캐를 부캐로 강등+대표 연결 → 194 vs 190 같은 본캐 중복 정리' },
     { t:'fix', x:'수로 입력/OCR — 계정그룹(1대표+5부캐) 부캐도 매칭·기록. 부캐도 각자 수로를 뛰는데 본캐만 매칭해서 "멤버없음" 뜨던 문제 수정 → 부캐는 자기 점수로 저장(입력칸에 "부캐·본캐명" 표시). 본캐만 집계하는 보상/분석은 그대로라 영향 없음' },
     { t:'feat', x:'동기화 — 닉변 자동 감지(시스템화). 동기화하면 닉변자(옛닉↔새닉, OCID/부캐겹침)를 자동으로 찾아 신규 목록에서 체크 해제 + "🔄닉변(연결)" 표시 → 닉변자를 실수로 신규로 받아 중복 생기는 일 자체를 차단' },
@@ -1776,7 +1777,8 @@ window._roleApply = async ()=>{
 };
 
 /* ----- 수로 입력 (실시간 동시 입력 · 셀 단위 자동저장) ----- */
-let _siMembers=[], _siPid=null, _siPeriods=[], _siScores={}, _siPrev={}, _siEditing={}, _siPresence=[], _siCh=null, _siOnlyEmpty=false, _siTimers={}, _siPoll=null, _siVisBound=false;
+let _siMembers=[], _siPid=null, _siPeriods=[], _siScores={}, _siPrev={}, _siEditing={}, _siPresence=[], _siCh=null, _siOnlyEmpty=false, _siTimers={}, _siPoll=null, _siVisBound=false, _siGuild='버니';
+window._siSetGuild=async (k)=>{ if(!FACTIONS[k]) return; const g=FACTIONS[k].key; if(g===_siGuild) return; _siGuild=g; const el=document.getElementById('pageBody'); if(!el) return; el.innerHTML=loadingHTML('suro_input'); try{ el.innerHTML=await buildSuroInput(); }catch(e){ el.innerHTML=errorHTML('suro_input',e); } };
 async function buildSuroInput(){
   const { data:periods, error } = await db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(80);
   if(error) throw error;
@@ -1786,8 +1788,10 @@ async function buildSuroInput(){
   const rowsHtml = _siPid ? await _siFetch(_siPid) : `<div class="dim" style="padding:30px;text-align:center;font-weight:700">아직 회차가 없어요 — 위 <b>+ 회차</b>로 이번 주차(${escHtml(curRange)})를 만들어주세요</div>`;
   setTimeout(()=>{ try{ _siSubscribe(); }catch(e){} _siUpdateProgress(); }, 60);
   if(!_siVisBound){ _siVisBound=true; document.addEventListener('visibilitychange',()=>{ if(!document.hidden && document.getElementById('si_list')) _siRefresh(); }); }
+  const gtabs=['bunny','wolf','cougar'].map(k=>{ const f=FACTIONS[k], on=f.key===_siGuild; return `<button onclick="_siSetGuild('${k}')" style="border:0;border-radius:10px;padding:7px 15px;font-weight:800;font-size:13px;cursor:pointer;${on?`background:${f.main};color:#fff;box-shadow:0 3px 9px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}</button>`; }).join('');
   return headerHTML('수로 입력','실시간 동시 입력 · 자동 저장') +
     `<div class="panel" style="border-radius:18px;padding:13px 15px;margin-bottom:13px;position:sticky;top:8px;z-index:8">
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">${gtabs}</div>
       <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
         <select id="si_period" onchange="_siLoad(this.value)" style="${inp};flex:1;min-width:180px">${_siPeriods.map(p=>`<option value="${p.id}">${escHtml(p.period_label)}</option>`).join('')}</select>
         <div style="flex:1;min-width:150px;display:flex;align-items:center;gap:7px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:0 12px"><i class="fa-solid fa-magnifying-glass dim"></i><input id="si_q" oninput="_siSearch()" placeholder="닉네임 검색…" style="border:0;background:transparent;flex:1;padding:10px 0;font-weight:800;font-size:14px;color:var(--text);outline:0"></div>
@@ -1984,7 +1988,7 @@ window._siOcrApply=async ()=>{
   recs.forEach(r=>{ const m=repOf(_siFindMem(r.name)); if(!m) return; const v=Number(r.culv)||0; if(!byRep[m.id] || v>byRep[m.id].v) byRep[m.id]={m,v}; });
   const reps=Object.values(byRep);
   if(!reps.length) return alert('이름이 매칭되는 멤버가 없어요. 닉네임을 확인해주세요.');
-  const rows=reps.map(({m,v})=>({member_id:m.id,period_id:_siPid,score:v,guild:GUILD}));
+  const rows=reps.map(({m,v})=>({member_id:m.id,period_id:_siPid,score:v,guild:_siGuild}));
   const { error }=await db().from('suro_scores').upsert(rows,{onConflict:'member_id,period_id'});
   if(error) return alert('반영 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
   reps.forEach(({m,v})=>{ _siScores[m.id]=String(v); _siBroadcast('score',{mid:m.id,score:v,by:(typeof CURRENT!=='undefined'&&CURRENT&&CURRENT.name)||'운영진'}); });
@@ -2013,11 +2017,11 @@ async function _siFetch(pid){
   _siScores={}; _siPrev={}; _siEditing={};
   const idx=_siPeriods.findIndex(p=>String(p.id)===String(pid)); const prevPid=_siPeriods[idx+1]?.id;
   const qs=[
-    db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',pid).limit(4000),
+    db().from('suro_scores').select('member_id,score').eq('guild',_siGuild).eq('period_id',pid).limit(4000),
   ];
-  if(prevPid) qs.push(db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',prevPid).limit(4000));
+  if(prevPid) qs.push(db().from('suro_scores').select('member_id,score').eq('guild',_siGuild).eq('period_id',prevPid).limit(4000));
   // 본캐+부캐 전부 로드 — 계정그룹(1대표+5부캐) 부캐도 각자 수로를 뛰어 OCR·점수 매칭 대상이고, 부캐 점수는 자기 기록에 저장. dbAll로 1000행 cap 회피
-  const members=await dbAll(()=>db().from('members').select('id,name,role,is_main,main_char_name').eq('guild',GUILD).order('id',{ascending:true}));
+  const members=await dbAll(()=>db().from('members').select('id,name,role,is_main,main_char_name').eq('guild',_siGuild).order('id',{ascending:true}));
   const res=await Promise.all(qs);
   const scores=res[0].data||[], prev=prevPid?(res[1].data||[]):[];
   scores.forEach(s=>{ _siScores[s.member_id]=String(Number(s.score)||0); });
