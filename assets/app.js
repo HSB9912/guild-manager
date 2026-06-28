@@ -2364,7 +2364,9 @@ window._syncNickCheck=async (auto)=>{
   for(const old of leftM){ if(!old.ocid||matched.has(old.id)) continue;
     try{ const b=await _getCharBasic(old.ocid); const cur=b&&b.character_name;
       if(cur && cur!==old.name && (!window._syncGuildNameSet || window._syncGuildNameSet.has(cur))){
-        pairs.push({ oldId:old.id, oldName:old.name, newName:cur, conf:'OCID직접', via:'저장ocid→현재이름' }); matched.add(old.id); usedNew.add(cur); } }catch(e){}
+        // 역검증: 현재이름→OCID가 저장 OCID와 일치할 때만 확정 (넥슨 일일캐시 불일치로 인한 오매칭 방지)
+        let rev=null; try{ rev=await _getCharOcid(cur); }catch(e){}
+        if(rev===old.ocid){ pairs.push({ oldId:old.id, oldName:old.name, newName:cur, conf:'OCID직접', via:'저장ocid↔현재이름 양방향 일치' }); matched.add(old.id); usedNew.add(cur); } } }catch(e){}
   }
   // ① OCID 확정 (신규 쪽 해석)
   newInfo.forEach(ni=>{ if(ni.ocid && leftByOcid[ni.ocid] && !matched.has(leftByOcid[ni.ocid].id)){ const old=leftByOcid[ni.ocid]; pairs.push({ oldId:old.id, oldName:old.name, newName:ni.name, conf:'OCID' }); matched.add(old.id); usedNew.add(ni.name); } });
