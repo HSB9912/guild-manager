@@ -1865,8 +1865,26 @@ function _siOcrInit(){
   };
   _siOcrWorker.onerror=(e)=>{ _siOcrStatus('OCR 오류: '+(e.message||'worker error')); _siOcrBusy=false; };
 }
+/* 본캐 명단용 — 캡처 중 화면을 여러 장 담아 세로로 이어붙여 한 장 PNG로 저장 (괄호 안 대표를 사람이/내가 읽기 위함) */
+let _siShots=[];
+window._siShotAdd=()=>{
+  if(!_siOcrVideo || _siOcrVideo.readyState<2) return alert('먼저 "화면 캡처 시작"을 누르고 길드원 창이 보이게 해주세요.');
+  const w=_siOcrVideo.videoWidth, h=_siOcrVideo.videoHeight;
+  const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(_siOcrVideo,0,0,w,h);
+  _siShots.push(c);
+  const n=document.getElementById('siShotN'); if(n) n.textContent=_siShots.length+'장 담김';
+};
+window._siShotsSave=()=>{
+  if(!_siShots.length) return alert('담은 화면이 없어요. 길드원 창을 스크롤하며 "현재 화면 담기"를 눌러 모아주세요.');
+  const w=Math.max(..._siShots.map(c=>c.width)), totH=_siShots.reduce((s,c)=>s+c.height,0);
+  const out=document.createElement('canvas'); out.width=w; out.height=totH; const ctx=out.getContext('2d');
+  ctx.fillStyle='#13131a'; ctx.fillRect(0,0,w,totH);
+  let y=0; _siShots.forEach(c=>{ ctx.drawImage(c,0,y); y+=c.height; });
+  out.toBlob(b=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='guild_list_'+_siShots.length+'shots.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+    const cnt=_siShots.length; _siShots=[]; const n=document.getElementById('siShotN'); if(n) n.textContent='0장'; alert(`💾 ${cnt}장을 한 장으로 저장했어요 (다운로드 폴더 → guild_list_*.png).\n그 파일을 채팅에 붙여주면 대표(본캐) 다 읽어줄게.`); },'image/png');
+};
 window._siOcrOpen=()=>{
-  _siOcrRecs=new Map(); _siOcrInit();
+  _siOcrRecs=new Map(); _siShots=[]; _siOcrInit();
   document.getElementById('siocr_modal')?.remove();
   const m=document.createElement('div'); m.id='siocr_modal';
   m.style.cssText='position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(40,12,24,.34);backdrop-filter:blur(3px);padding:14px';
@@ -1883,6 +1901,12 @@ window._siOcrOpen=()=>{
           <button id="siocr_start" onclick="_siOcrStart()" disabled style="flex:1;min-width:130px;border:0;background:var(--bunny-deep);color:#fff;border-radius:11px;padding:11px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-play" style="margin-right:5px"></i>화면 캡처 시작</button>
           <button id="siocr_stop" onclick="_siOcrStop()" style="display:none;flex:1;min-width:130px;border:0;background:var(--bad-tx);color:#fff;border-radius:11px;padding:11px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-stop" style="margin-right:5px"></i>캡처 중지</button>
           <button onclick="_siOcrFile()" title="스크린샷 파일로 인식" style="border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:11px;padding:11px 13px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-image" style="margin-right:5px"></i>이미지</button>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;border-top:1px dashed var(--line);padding-top:9px;margin-top:2px">
+          <span style="font-size:10.5px;font-weight:800;color:var(--bunny-deep);width:100%">📜 본캐 명단용 — 길드원 창 스크롤하며 화면을 담아 한 장으로 저장</span>
+          <button onclick="_siShotAdd()" style="border:1.5px solid var(--bunny-main);background:var(--panel);color:var(--bunny-deep);border-radius:9px;padding:7px 12px;font-weight:800;font-size:12px;cursor:pointer"><i class="fa-solid fa-camera" style="margin-right:4px"></i>현재 화면 담기</button>
+          <button onclick="_siShotsSave()" style="border:0;background:var(--bunny-deep);color:#fff;border-radius:9px;padding:7px 12px;font-weight:800;font-size:12px;cursor:pointer"><i class="fa-solid fa-download" style="margin-right:4px"></i>한 장으로 저장</button>
+          <span id="siShotN" style="font-size:11px;font-weight:800;color:var(--dim)">0장</span>
         </div>
       </div>
       <div style="font-size:11.5px;color:var(--dim);font-weight:700;line-height:1.75">
