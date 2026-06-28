@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'fix', x:'수로 입력/OCR — 계정그룹(1대표+5부캐) 부캐도 매칭·기록. 부캐도 각자 수로를 뛰는데 본캐만 매칭해서 "멤버없음" 뜨던 문제 수정 → 부캐는 자기 점수로 저장(입력칸에 "부캐·본캐명" 표시). 본캐만 집계하는 보상/분석은 그대로라 영향 없음' },
     { t:'feat', x:'동기화 — 닉변 자동 감지(시스템화). 동기화하면 닉변자(옛닉↔새닉, OCID/부캐겹침)를 자동으로 찾아 신규 목록에서 체크 해제 + "🔄닉변(연결)" 표시 → 닉변자를 실수로 신규로 받아 중복 생기는 일 자체를 차단' },
     { t:'feat', x:'동기화 신규 길드원 — 받을 사람만 체크해서 선택 추가(전체 토글 + 개별 체크박스). 기존엔 누르면 전원 일괄이었는데, 한 명씩 받을지 결정 가능' },
     { t:'feat', x:'동기화 닉변 검사 — "유니온 부캐 겹침=계정 확정" 추가(OCID 백필 없이도 이미 닉변한 사람 잡힘). ①OCID ②부캐겹침 ③직업·레벨추정' },
@@ -1970,12 +1971,13 @@ async function _siFetch(pid){
   _siScores={}; _siPrev={}; _siEditing={};
   const idx=_siPeriods.findIndex(p=>String(p.id)===String(pid)); const prevPid=_siPeriods[idx+1]?.id;
   const qs=[
-    db().from('members').select('id,name,role').eq('guild',GUILD).eq('is_main',true).limit(3000),
     db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',pid).limit(4000),
   ];
   if(prevPid) qs.push(db().from('suro_scores').select('member_id,score').eq('guild',GUILD).eq('period_id',prevPid).limit(4000));
+  // 본캐+부캐 전부 로드 — 계정그룹(1대표+5부캐) 부캐도 각자 수로를 뛰어 OCR·점수 매칭 대상이고, 부캐 점수는 자기 기록에 저장. dbAll로 1000행 cap 회피
+  const members=await dbAll(()=>db().from('members').select('id,name,role,is_main,main_char_name').eq('guild',GUILD).order('id',{ascending:true}));
   const res=await Promise.all(qs);
-  const members=res[0].data||[], scores=res[1].data||[], prev=prevPid?(res[2].data||[]):[];
+  const scores=res[0].data||[], prev=prevPid?(res[1].data||[]):[];
   scores.forEach(s=>{ _siScores[s.member_id]=String(Number(s.score)||0); });
   prev.forEach(s=>{ _siPrev[s.member_id]=Number(s.score)||0; });
   _siMembers=members.slice().sort((a,b)=>{ const d=(_siPrev[b.id]||0)-(_siPrev[a.id]||0); if(d) return d; const x=String(a.name||''),y=String(b.name||''); return x<y?-1:x>y?1:0; });   // 동점은 닉네임 유니코드순
@@ -1986,7 +1988,7 @@ function _siRowHTML(m){
   return `<div class="si_row" data-mid="${m.id}" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border-bottom:1px solid var(--line)">
     <div style="width:32px;height:32px;border-radius:99px;background:linear-gradient(135deg,var(--bunny-light),var(--bunny-main));color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">${escHtml(String(m.name||'?').slice(0,1))}</div>
     <div style="flex:1;min-width:0">
-      <div style="font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(m.name)}</div>
+      <div style="font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(m.name)}${m.is_main===false?` <span style="font-size:9px;font-weight:900;color:var(--dim);background:var(--line);border-radius:99px;padding:1px 6px">부캐·${escHtml(m.main_char_name||'')}</span>`:''}</div>
       <div style="font-size:11px;color:var(--dim);font-weight:700;margin-top:1px">${memRoleChip((m.role||'').trim()||'-')} 지난주 ${prev!=null?prev.toLocaleString():'-'} <span class="si_edit" data-mid="${m.id}">${who?`· <span style="color:var(--bunny-deep);font-weight:800"><i class="fa-solid fa-pen"></i> ${escHtml(who)} 입력 중</span>`:''}</span></div>
     </div>
     <input class="si_in${has?' si_done':''}" data-mid="${m.id}" type="number" inputmode="numeric" value="${escAttr(v)}" placeholder="0"
