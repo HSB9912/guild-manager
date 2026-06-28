@@ -116,6 +116,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-06-26', date:'2026-06-26', items:[
+    { t:'feat', x:'수로 OCR — 인식 결과를 "검토·수정 그리드"로. 바로 등록 안 하고, 각 행의 대표 이름(자동완성)·점수를 보면서 고친 뒤 반영(빨간칸=못찾음, 비우면 제외). 5명 틀려서 꼬이던 거 방지' },
     { t:'feat', x:'수로 입력/OCR — 길드 선택(🐰버니 · 🐺늑대 · 🐆쿠거) 추가. 수로 입력 페이지 상단 버튼으로 길드 전환 → 멤버·점수·OCR 모두 해당 길드로 (회차는 공유). 늑대·쿠거도 수로 점수·OCR 가능' },
     { t:'feat', x:'수로 입력/OCR — 길드 컨텐츠 현황 창(닉네임이 "대표(접속캐릭)" 포맷) 지원. ① 대표(괄호 앞)로 매칭 + 잘린 이름은 접두어 유일매칭 → 부캐로 접속한 사람도 대표 본캐 점수로 반영(멤버없음 해결). ② "본캐·부캐 맞추기" 버튼 — 창에 뜬 대표를 본캐로 승격, 접속 부캐를 부캐로 강등+대표 연결 → 194 vs 190 같은 본캐 중복 정리' },
     { t:'fix', x:'수로 입력/OCR — 계정그룹(1대표+5부캐) 부캐도 매칭·기록. 부캐도 각자 수로를 뛰는데 본캐만 매칭해서 "멤버없음" 뜨던 문제 수정 → 부캐는 자기 점수로 저장(입력칸에 "부캐·본캐명" 표시). 본캐만 집계하는 보상/분석은 그대로라 영향 없음' },
@@ -1896,13 +1897,13 @@ window._siOcrOpen=()=>{
       <div style="font-size:11.5px;color:var(--dim);font-weight:700;line-height:1.75">
         1. <b>화면 캡처 시작</b> → 메이플 창(또는 화면) 선택<br>
         2. 길드 컨텐츠 창을 <b>천천히 위→아래로 스크롤</b> (커서가 닉네임·점수 가리지 않게)<br>
-        3. 인식되면 아래에 쌓임 → <b>현재 회차에 반영</b>
+        3. 인식되면 아래에 쌓임 → <b>대표 칸 쫙 검토하고 틀린 거 고친 뒤</b>(빨간칸=못찾음, 비우면 제외) → 반영
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--dim);margin-bottom:5px"><span>인식 결과 <button onclick="_siOcrCopy()" style="border:1px solid var(--line);background:var(--panel);color:var(--bunny-deep);border-radius:7px;padding:2px 9px;font-size:10px;font-weight:800;cursor:pointer;margin-left:5px"><i class="fa-solid fa-copy" style="margin-right:3px"></i>복사</button></span><span id="siocr_sum">0명</span></div>
         <div class="panel" style="border-radius:12px;max-height:230px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px" id="siocr_tbl"><tbody><tr><td style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 인식된 데이터가 없어요</td></tr></tbody></table></div>
       </div>
-      <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:6px"></i>매칭된 사람 현재 회차에 수로 점수 반영</button>
+      <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-circle-check" style="margin-right:6px"></i>검토 끝 — 대표에게 점수 반영</button>
       <div style="font-size:11px;color:var(--dim);font-weight:700;text-align:center;padding:7px;background:var(--panel-2);border-radius:10px;line-height:1.5">⚠ "본캐 지정"은 이 창(참여 캐릭만 떠서 부정확)으론 못 함 → <b>길드원 목록 탭</b>으로 분리 예정</div>
     </div></div>`;
   document.body.appendChild(m);
@@ -1960,40 +1961,46 @@ window._siOcrCopy=async ()=>{
   try{ await navigator.clipboard.writeText(txt); alert(`📋 복사됨 — ${recs.length}건\n붙여넣기(Ctrl+V)로 확인하거나 나한테 붙여줘.`); }
   catch(e){ window.prompt('아래 전체 선택(Ctrl+A) → 복사(Ctrl+C):', txt); }
 };
+function _siOcrRepOf(m){ if(!m) return null; if(m.is_main!==false) return m; const rep=_siMembers.find(x=>x.name===m.main_char_name && x.is_main!==false); return rep||m; }
 function _siOcrRenderList(){
   const tbl=document.getElementById('siocr_tbl'); if(!tbl) return;
   const recs=[..._siOcrRecs.values()];
   let nMatch=0;
-  const body=recs.map(r=>{
-    const rep=_siRepOf(r.name), sub=_siSubOf(r.name);
-    const mm=_siFindMem(r.name); const cur=mm?(_siScores[mm.id]??''):''; if(mm) nMatch++;
-    const badge=mm?`<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--ok-bg);color:var(--ok-tx)">매칭</span>`
-                  :`<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--bad-bg);color:var(--bad-tx)">멤버없음</span>`;
+  const body=recs.map((r,i)=>{
+    const m0=_siOcrRepOf(_siFindMem(r.name)); if(m0) nMatch++;
+    const repName=m0?m0.name:''; const ok=!!m0;
     return `<tr style="border-top:1px solid var(--line)">
-      <td style="padding:6px 9px;font-weight:800">${escHtml(rep||r.name)}${sub&&sub!==rep?`<span style="font-size:10px;color:var(--dim);font-weight:700"> (${escHtml(sub)})</span>`:''}</td>
-      <td style="padding:6px 9px;text-align:right;color:var(--dim)">${cur!==''?Number(cur).toLocaleString():'-'}</td>
-      <td style="padding:6px 9px;text-align:right;font-weight:800;color:var(--bunny-deep)">${(r.culv||0).toLocaleString()}</td>
-      <td style="padding:6px 9px;text-align:right">${badge}</td></tr>`;
+      <td style="padding:5px 7px;color:var(--dim);font-size:11px;max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(r.name)}">${escHtml(r.name)}</td>
+      <td style="padding:4px 6px"><input list="ocr_memlist" id="ocr_rep_${i}" value="${escAttr(repName)}" placeholder="대표 못찾음 — 입력" oninput="_siOcrMark(${i})" style="width:100%;box-sizing:border-box;border:1.5px solid ${ok?'var(--line)':'var(--bad-tx)'};background:${ok?'var(--panel-2)':'var(--bad-bg)'};border-radius:8px;padding:6px 8px;font-weight:800;font-size:12.5px;color:var(--text);outline:0"></td>
+      <td style="padding:4px 6px;width:74px"><input id="ocr_sc_${i}" type="number" value="${Number(r.culv)||0}" style="width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:6px 5px;font-weight:800;font-size:12px;text-align:right;color:var(--text);outline:0"></td></tr>`;
   }).join('');
-  tbl.innerHTML=`<thead><tr style="font-size:10px;color:var(--dim);text-transform:uppercase"><th style="padding:6px 9px;text-align:left">닉네임</th><th style="padding:6px 9px;text-align:right">기존</th><th style="padding:6px 9px;text-align:right">인식</th><th style="padding:6px 9px;text-align:right">상태</th></tr></thead><tbody>${body||'<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 없음</td></tr>'}</tbody>`;
-  const sum=document.getElementById('siocr_sum'); if(sum) sum.textContent=`인식 ${recs.length} · 매칭 ${nMatch}`;
+  const dl=_siMembers.filter(m=>m.is_main!==false).map(m=>`<option value="${escAttr(m.name)}">`).join('');
+  tbl.innerHTML=`<datalist id="ocr_memlist">${dl}</datalist><thead><tr style="font-size:10px;color:var(--dim)"><th style="padding:5px 7px;text-align:left">인식(원본)</th><th style="padding:5px 7px;text-align:left">→ 대표 (수정 가능 · 비우면 제외)</th><th style="padding:5px 7px;text-align:right">점수</th></tr></thead><tbody>${body||'<tr><td colspan="3" style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 인식된 데이터가 없어요</td></tr>'}</tbody>`;
+  const sum=document.getElementById('siocr_sum'); if(sum) sum.textContent=`인식 ${recs.length} · 매칭 ${nMatch}${recs.length-nMatch?` · 미매칭 ${recs.length-nMatch} (빨간칸 고쳐줘)`:''}`;
 }
+window._siOcrMark=(i)=>{ const el=document.getElementById('ocr_rep_'+i); if(!el) return; const v=el.value.trim(); const ok=!v||!!_siMembers.find(x=>x.name===v && x.is_main!==false); el.style.borderColor=ok?'var(--line)':'var(--bad-tx)'; el.style.background=ok?'var(--panel-2)':'var(--bad-bg)'; };
 window._siOcrApply=async ()=>{
   const recs=[..._siOcrRecs.values()]; if(!recs.length) return alert('인식된 데이터가 없어요. 먼저 캡처해주세요.');
   if(!isAdmin()) return alert('운영진만 반영할 수 있어요. 운영진 로그인 후 이용해주세요.');
   if(!_siPid) return alert('회차를 먼저 선택/생성해주세요.');
-  // 그룹(대표) 기준 — 접속 캐릭이 부캐로 떠도 그 계정 대표(본캐)에 점수 귀속. 접속 상태에 안 휘둘리게.
-  const repOf=(m)=>{ if(!m) return null; if(m.is_main!==false) return m; const rep=_siMembers.find(x=>x.name===m.main_char_name && x.is_main!==false); return rep||m; };
-  const byRep={};
-  recs.forEach(r=>{ const m=repOf(_siFindMem(r.name)); if(!m) return; const v=Number(r.culv)||0; if(!byRep[m.id] || v>byRep[m.id].v) byRep[m.id]={m,v}; });
+  // 검토 그리드의 (수정된) 대표 이름 + 점수를 읽어 반영. 비운 행은 제외, 못 찾는 이름은 따로 모아 알림.
+  const byRep={}, bad=[];
+  recs.forEach((r,i)=>{ const nm=(document.getElementById('ocr_rep_'+i)?.value||'').trim(); if(!nm) return;
+    const v=Number(document.getElementById('ocr_sc_'+i)?.value)||0;
+    let m=_siMembers.find(x=>x.name===nm)||_siMemByNick(nm); m=_siOcrRepOf(m);
+    if(!m){ bad.push(nm); return; }
+    if(!byRep[m.id] || v>byRep[m.id].v) byRep[m.id]={m,v}; });
   const reps=Object.values(byRep);
-  if(!reps.length) return alert('이름이 매칭되는 멤버가 없어요. 닉네임을 확인해주세요.');
+  if(!reps.length) return alert('반영할 대표가 없어요. 대표 이름을 확인해주세요.');
+  let msg=`검토한 대표 ${reps.length}명에게 수로 점수를 반영할까요?`;
+  if(bad.length) msg+=`\n\n⚠ 멤버를 못 찾아 제외되는 이름 ${bad.length}개:\n${bad.slice(0,8).join(', ')}${bad.length>8?' …':''}\n(대표 칸을 고치거나 비워서 다시 시도 가능)`;
+  if(!confirm(msg)) return;
   const rows=reps.map(({m,v})=>({member_id:m.id,period_id:_siPid,score:v,guild:_siGuild}));
   const { error }=await db().from('suro_scores').upsert(rows,{onConflict:'member_id,period_id'});
   if(error) return alert('반영 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
   reps.forEach(({m,v})=>{ _siScores[m.id]=String(v); _siBroadcast('score',{mid:m.id,score:v,by:(typeof CURRENT!=='undefined'&&CURRENT&&CURRENT.name)||'운영진'}); });
   _siOcrClose(); _siRenderList();
-  alert(`${reps.length}개 계정(대표)에 수로 점수를 반영했어요. (인식 ${recs.length}건)\n※ 접속 부캐로 떠도 대표(본캐)에 기록됩니다.`);
+  alert(`✅ 대표 ${reps.length}명 수로 점수 반영 완료${bad.length?` · ${bad.length}명 제외`:''}.`);
 };
 /* ② 길드 컨텐츠 창(대표=본캐) 기준으로 본캐/부캐 정정 — 대표(괄호앞)→본캐 승격, 접속부캐(괄호안)→부캐 강등+대표 연결 */
 window._siOcrSetMains=async ()=>{
