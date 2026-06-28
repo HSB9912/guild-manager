@@ -1894,8 +1894,8 @@ window._siOcrOpen=()=>{
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;color:var(--dim);margin-bottom:5px"><span>인식 결과 <button onclick="_siOcrCopy()" style="border:1px solid var(--line);background:var(--panel);color:var(--bunny-deep);border-radius:7px;padding:2px 9px;font-size:10px;font-weight:800;cursor:pointer;margin-left:5px"><i class="fa-solid fa-copy" style="margin-right:3px"></i>복사</button></span><span id="siocr_sum">0명</span></div>
         <div class="panel" style="border-radius:12px;max-height:230px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px" id="siocr_tbl"><tbody><tr><td style="padding:18px;text-align:center;color:var(--dim);font-weight:700">아직 인식된 데이터가 없어요</td></tr></tbody></table></div>
       </div>
-      <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:6px"></i>① 매칭된 사람 현재 회차에 수로 점수 반영</button>
-      <button onclick="_siOcrSetMains()" style="border:1.5px solid var(--bunny-main);background:var(--panel);color:var(--bunny-deep);border-radius:12px;padding:11px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-crown" style="margin-right:6px"></i>② 이 창 기준 본캐·부캐 맞추기 (대표→본캐)</button>
+      <button onclick="_siOcrApply()" style="border:0;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;border-radius:12px;padding:13px;font-weight:900;font-size:14px;cursor:pointer"><i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:6px"></i>매칭된 사람 현재 회차에 수로 점수 반영</button>
+      <div style="font-size:11px;color:var(--dim);font-weight:700;text-align:center;padding:7px;background:var(--panel-2);border-radius:10px;line-height:1.5">⚠ "본캐 지정"은 이 창(참여 캐릭만 떠서 부정확)으론 못 함 → <b>길드원 목록 탭</b>으로 분리 예정</div>
     </div></div>`;
   document.body.appendChild(m);
   m.addEventListener('click',e=>{ if(e.target===m) _siOcrClose(); });
