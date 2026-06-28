@@ -1991,7 +1991,7 @@ window._siOcrApply=async ()=>{
   const byRep={}, bad=[];
   recs.forEach((r,i)=>{ const nm=(document.getElementById('ocr_rep_'+i)?.value||'').trim(); if(!nm) return;
     const v=Number(document.getElementById('ocr_sc_'+i)?.value)||0;
-    let m=_siMembers.find(x=>x.name===nm)||_siMemByNick(nm); m=_siOcrRepOf(m);
+    let m=_siMembers.find(x=>x.name===nm)||_siMemByNick(nm);   // 그리드에 적힌 대표 그대로(자동변환 안 함) — 멀티대표·수정 존중. 부캐→대표 기본값은 렌더 때 이미 채워둠
     if(!m){ bad.push(nm); return; }
     if(!byRep[m.id] || v>byRep[m.id].v) byRep[m.id]={m,v}; });
   const reps=Object.values(byRep);
