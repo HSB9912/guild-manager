@@ -2045,12 +2045,12 @@ function _siRowHTML(m){
 }
 function _siRenderList(){
   const q=(document.getElementById('si_q')?.value||'').trim(); const list=document.getElementById('si_list'); if(!list) return;
-  const vis=_siMembers.filter(m=> (!_siOnlyEmpty||(_siScores[m.id]??'')==='') && (!q||String(m.name||'').includes(q)) );
+  const vis=_siMembers.filter(m=> m.is_main!==false && (!_siOnlyEmpty||(_siScores[m.id]??'')==='') && (!q||String(m.name||'').includes(q)) );  // 대표(본캐)만 표시 — 부캐는 OCR 매칭용으로만 _siMembers에 있고 화면엔 안 띄움(점수는 그룹 기준으로 대표에 들어감)
   list.innerHTML = vis.length ? vis.map(_siRowHTML).join('') : '<div class="dim" style="padding:26px;text-align:center;font-weight:700">표시할 사람이 없어요</div>';
   _siUpdateProgress();
 }
 function _siUpdateProgress(){
-  const done=_siMembers.filter(m=>(_siScores[m.id]??'')!=='').length, tot=_siMembers.length;
+  const reps=_siMembers.filter(m=>m.is_main!==false); const done=reps.filter(m=>(_siScores[m.id]??'')!=='').length, tot=reps.length;
   const c=document.getElementById('si_pcount'); if(c) c.textContent=`입력 ${done} / ${tot}`;
   const f=document.getElementById('si_fill'); if(f) f.style.width=(tot?done/tot*100:0)+'%';
 }
