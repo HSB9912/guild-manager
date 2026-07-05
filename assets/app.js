@@ -1357,6 +1357,37 @@ window._srCopySettlement = ()=>{
   const txt=lines.join('\n');
   (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>alert('📋 정산표 복사됨 — '+rs.length+'명\n엑셀·카톡에 붙여넣기(Ctrl+V)하면 표로 정리돼요.')).catch(()=>window.prompt('아래 전체선택(Ctrl+A)→복사(Ctrl+C):',txt));
 };
+/* 지급 정산 확인 창 — 조각(상위20)·숫돌(21~51등) 지급 대상 + 시세 조절 + 지급완료 체크(로컬 저장) */
+function _srPayKey(){ return 'srPaid_'+(_srData&&_srData._selQ||''); }
+window._srPayCheck=(nm)=>{ const k=_srPayKey(); const p=JSON.parse(localStorage.getItem(k)||'{}'); p[nm]=!p[nm]; localStorage.setItem(k,JSON.stringify(p)); _srPayCalc(); };
+window._srPayModal=()=>{
+  const rs=_srData&&_srData._results; if(!rs||!rs.length) return alert('분기를 먼저 선택해주세요.');
+  document.getElementById('srPayModal')?.remove();
+  const q=_srData._selQ||'', defSise=Math.round((_srData.piecePrice||7000000)/10000);
+  const m=document.createElement('div'); m.id='srPayModal';
+  m.style.cssText='position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;background:rgba(30,20,10,.45);padding:12px';
+  m.innerHTML='<div style="background:#fff;border-radius:18px;max-width:600px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px -10px rgba(0,0,0,.4)">'
+    +'<div style="padding:14px 18px;background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;display:flex;justify-content:space-between;align-items:center"><div style="font-weight:900;font-size:16px">💳 '+escHtml(q)+' 지급 정산</div><button onclick="document.getElementById(\'srPayModal\').remove()" style="background:0;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button></div>'
+    +'<div style="padding:11px 18px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fffbeb"><span style="font-weight:800;font-size:13px">조각 지급 시세</span><input id="srPaySise" type="number" value="'+defSise+'" oninput="_srPayCalc()" style="width:88px;border:1.5px solid #f59e0b;border-radius:8px;padding:6px 8px;font-weight:800;text-align:right;outline:0"><span style="font-weight:700;font-size:12px;color:#888">만원 / 개</span><span id="srPaySum" style="margin-left:auto;font-size:11px;font-weight:800;color:#b45309"></span></div>'
+    +'<div id="srPayBody" style="overflow-y:auto;padding:6px 14px 16px"></div></div>';
+  document.body.appendChild(m); m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  _srPayCalc();
+};
+window._srPayCalc=()=>{
+  const rs=_srData&&_srData._results||[]; const body=document.getElementById('srPayBody'); if(!body) return;
+  const sise=(Number(document.getElementById('srPaySise').value)||700)*10000, POOL=100*100000000;
+  const paid=JSON.parse(localStorage.getItem(_srPayKey())||'{}');
+  const chip=rs.filter(r=>r.rank<=20).map(r=>{ let pc=Math.round(POOL*REWARD_TIERS[r.rank-1].ratio/sise); if(r.isNewbie)pc=Math.round(pc*(r.activeWeeks/(r.weeks||1))); return Object.assign({},r,{amt:pc}); });
+  const sut=rs.filter(r=>r.rank>=21&&r.rank<=51).map(r=>Object.assign({},r,{amt:r.isNewbie?Math.round(24*(r.activeWeeks/(r.weeks||1))):24}));
+  const jT=chip.reduce((s,r)=>s+r.amt,0), sT=sut.reduce((s,r)=>s+r.amt,0);
+  const doneN=[...chip,...sut].filter(r=>paid[r.name]).length, totN=chip.length+sut.length;
+  const row=(r)=>'<div style="display:flex;align-items:center;gap:9px;padding:7px 6px;border-bottom:1px solid #f4f4f4;'+(paid[r.name]?'opacity:.5':'')+'"><input type="checkbox" '+(paid[r.name]?'checked':'')+' data-nm="'+escAttr(r.name)+'" onchange="_srPayCheck(this.dataset.nm)" style="width:17px;height:17px;accent-color:#16a34a;cursor:pointer;flex-shrink:0"><span style="font-weight:800;font-size:12px;color:#aaa;width:30px">'+r.rank+'등</span><span style="font-weight:800;font-size:13px;flex:1;min-width:0;'+(paid[r.name]?'text-decoration:line-through':'')+'">'+escHtml(r.name)+'</span><span style="font-weight:900;font-size:13px;color:#d97706;white-space:nowrap">'+r.amt.toLocaleString()+'개</span></div>';
+  body.innerHTML='<div style="font-weight:900;font-size:13px;color:#b45309;margin:10px 4px 4px"><i class="fas fa-gem" style="margin-right:5px"></i>솔 에르다 조각 — 상위 20 (총 '+jT.toLocaleString()+'개)</div>'
+    +chip.map(row).join('')
+    +'<div style="font-weight:900;font-size:13px;color:#7c3aed;margin:15px 4px 4px"><i class="fas fa-hammer" style="margin-right:5px"></i>숫돌 — 티라미슈 21~51등 (총 '+sT.toLocaleString()+'개)</div>'
+    +(sut.length?sut.map(row).join(''):'<div style="color:#bbb;font-size:12px;font-weight:700;padding:8px 4px">대상 없음</div>');
+  const sum=document.getElementById('srPaySum'); if(sum) sum.textContent='조각 '+jT.toLocaleString()+' · 숫돌 '+sT+' · 지급완료 '+doneN+'/'+totN;
+};
 function _srRender(){
   const container=document.getElementById('contentArea'); if(!container) return;
   const qm=_srQuarters(); const quarters=Object.keys(qm).sort().reverse();
@@ -1370,6 +1401,7 @@ function _srRender(){
         '<select id="rewardQuarter" onchange="window._rewardChangeQ()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[11px] font-bold outline-none">'+
           (quarters.map(q=>'<option value="'+q+'" '+(q===selQ?'selected':'')+'>'+q+'</option>').join('')||'<option>분기 없음</option>')+
         '</select>'+
+        '<button onclick="window._srPayModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-3 py-1.5 text-[11px] font-bold"><i class="fas fa-hand-holding-dollar mr-1"></i>지급 정산</button>'+
         '<button onclick="window._srCopySettlement()" class="bg-amber-400 hover:bg-amber-500 text-white rounded-xl px-3 py-1.5 text-[11px] font-bold"><i class="fas fa-clipboard-list mr-1"></i>정산 복사</button>'+
         (pp>0?'<span class="text-[10px] text-gray-400 font-bold ml-auto">솔 에르다 조각 시세: '+Math.round(pp/10000).toLocaleString()+'만원 (개당)</span>':'<span class="text-[10px] text-red-400 font-bold ml-auto">⚠ 솔 에르다 조각 시세 미설정 (설정 → 관리자)</span>')+
       '</div>'+
