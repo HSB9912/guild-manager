@@ -115,6 +115,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
  * ============================================================ */
 const CHANGELOG = [
+    { t:'feat', x:'수로 보상 — "지급 정산" 지급완료 체크를 DB(suro_payouts)에 저장. 폰·PC 어디서나 유지 + 여러 운영진 동시 체크 + 받은 날짜 자동 기록 + "안 받은 사람만" 필터. (기존 localStorage는 그 브라우저에만 남던 문제 해결)' },
   { id:'2026-06-26', date:'2026-06-26', items:[
     { t:'feat', x:'수로 OCR — 인식 결과를 "검토·수정 그리드"로. 바로 등록 안 하고, 각 행의 대표 이름(자동완성)·점수를 보면서 고친 뒤 반영(빨간칸=못찾음, 비우면 제외). 5명 틀려서 꼬이던 거 방지' },
     { t:'feat', x:'수로 입력/OCR — 길드 선택(🐰버니 · 🐺늑대 · 🐆쿠거) 추가. 수로 입력 페이지 상단 버튼으로 길드 전환 → 멤버·점수·OCR 모두 해당 길드로 (회차는 공유). 늑대·쿠거도 수로 점수·OCR 가능' },
@@ -1357,36 +1358,62 @@ window._srCopySettlement = ()=>{
   const txt=lines.join('\n');
   (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>alert('📋 정산표 복사됨 — '+rs.length+'명\n엑셀·카톡에 붙여넣기(Ctrl+V)하면 표로 정리돼요.')).catch(()=>window.prompt('아래 전체선택(Ctrl+A)→복사(Ctrl+C):',txt));
 };
-/* 지급 정산 확인 창 — 조각(상위20)·숫돌(21~51등) 지급 대상 + 시세 조절 + 지급완료 체크(로컬 저장) */
-function _srPayKey(){ return 'srPaid_'+(_srData&&_srData._selQ||''); }
-window._srPayCheck=(nm)=>{ const k=_srPayKey(); const p=JSON.parse(localStorage.getItem(k)||'{}'); p[nm]=!p[nm]; localStorage.setItem(k,JSON.stringify(p)); _srPayCalc(); };
-window._srPayModal=()=>{
+/* 지급 정산 확인 창 — 조각(상위20)·숫돌(21~51등) 지급 대상 + 시세 조절 + 지급완료 체크(DB 저장: suro_payouts) */
+let _srPaid={};              // { 닉네임: {paid_at} } — 현재 회차 지급현황 (DB 캐시)
+let _srPayOnlyUnpaid=false;  // "안 받은 사람만" 필터
+function _srPayQ(){ return (_srData&&_srData._selQ)||''; }
+async function _srPayLoad(){
+  _srPaid={};
+  try{ const {data}=await db().from('suro_payouts').select('member_name,is_paid,paid_at').eq('guild',GUILD).eq('quarter',_srPayQ());
+    (data||[]).forEach(r=>{ if(r.is_paid) _srPaid[r.member_name]={paid_at:r.paid_at}; }); }catch(e){ console.warn('지급현황 로드 실패',e); }
+}
+window._srPayCheck=async (nm)=>{
+  const q=_srPayQ(), now=new Date().toISOString();
+  if(_srPaid[nm]){                                   // 체크 해제 → DB 행 삭제
+    delete _srPaid[nm]; _srPayCalc();
+    try{ await db().from('suro_payouts').delete().eq('guild',GUILD).eq('quarter',q).eq('member_name',nm); }
+    catch(e){ alert('저장 실패 — 다시 시도해줘'); await _srPayLoad(); _srPayCalc(); }
+  } else {                                            // 체크 → DB upsert (받은 날짜 기록)
+    _srPaid[nm]={paid_at:now}; _srPayCalc();
+    const r=(_srData._results||[]).find(x=>x.name===nm)||{}, mem=(_srData.members||[]).find(x=>x.name===nm);
+    const kind=/조각/.test(r.reward||'')?'조각':/숫돌/.test(r.reward||'')?'숫돌':null;
+    try{ await db().from('suro_payouts').upsert({guild:GUILD,quarter:q,member_id:mem?mem.id:null,member_name:nm,rank:r.rank||null,reward_kind:kind,is_paid:true,paid_at:now},{onConflict:'quarter,member_name'}); }
+    catch(e){ alert('저장 실패 — 다시 시도해줘'); await _srPayLoad(); _srPayCalc(); }
+  }
+};
+window._srPayToggleFilter=(v)=>{ _srPayOnlyUnpaid=!!v; _srPayCalc(); };
+window._srPayModal=async ()=>{
   const rs=_srData&&_srData._results; if(!rs||!rs.length) return alert('분기를 먼저 선택해주세요.');
   document.getElementById('srPayModal')?.remove();
+  _srPayOnlyUnpaid=false;
   const q=_srData._selQ||'', defSise=Math.round((_srData.piecePrice||7000000)/10000);
   const m=document.createElement('div'); m.id='srPayModal';
   m.style.cssText='position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;background:rgba(30,20,10,.45);padding:12px';
   m.innerHTML='<div style="background:#fff;border-radius:18px;max-width:600px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px -10px rgba(0,0,0,.4)">'
-    +'<div style="padding:14px 18px;background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;display:flex;justify-content:space-between;align-items:center"><div style="font-weight:900;font-size:16px">💳 '+escHtml(q)+' 지급 정산</div><button onclick="document.getElementById(\'srPayModal\').remove()" style="background:0;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button></div>'
+    +'<div style="padding:14px 18px;background:linear-gradient(135deg,#fbbf24,#d97706);color:#fff;display:flex;justify-content:space-between;align-items:center"><div style="font-weight:900;font-size:16px">💳 '+escHtml(q)+' 지급 정산</div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:10px;font-weight:800;background:rgba(255,255,255,.25);padding:3px 9px;border-radius:20px">☁ DB 저장</span><button onclick="document.getElementById(\'srPayModal\').remove()" style="background:0;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button></div></div>'
     +'<div style="padding:11px 18px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fffbeb"><span style="font-weight:800;font-size:13px">조각 지급 시세</span><input id="srPaySise" type="number" value="'+defSise+'" oninput="_srPayCalc()" style="width:88px;border:1.5px solid #f59e0b;border-radius:8px;padding:6px 8px;font-weight:800;text-align:right;outline:0"><span style="font-weight:700;font-size:12px;color:#888">만원 / 개</span><span id="srPaySum" style="margin-left:auto;font-size:11px;font-weight:800;color:#b45309"></span></div>'
-    +'<div id="srPayBody" style="overflow-y:auto;padding:6px 14px 16px"></div></div>';
+    +'<div style="padding:8px 18px;border-bottom:1px solid #f4f4f4;display:flex;align-items:center;gap:10px;background:#fafafa"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:700;font-size:12px;color:#555"><input type="checkbox" onchange="_srPayToggleFilter(this.checked)" style="width:15px;height:15px;accent-color:#16a34a;cursor:pointer">안 받은 사람만</label><span id="srPayProg" style="margin-left:auto;font-weight:800;font-size:11px;color:#16a34a"></span></div>'
+    +'<div id="srPayBody" style="overflow-y:auto;padding:6px 14px 16px"><div style="text-align:center;color:#bbb;font-size:12px;font-weight:700;padding:24px">불러오는 중…</div></div></div>';
   document.body.appendChild(m); m.addEventListener('click',e=>{if(e.target===m)m.remove();});
-  _srPayCalc();
+  await _srPayLoad(); _srPayCalc();
 };
 window._srPayCalc=()=>{
   const rs=_srData&&_srData._results||[]; const body=document.getElementById('srPayBody'); if(!body) return;
   const sise=(Number(document.getElementById('srPaySise').value)||700)*10000, POOL=100*100000000;
-  const paid=JSON.parse(localStorage.getItem(_srPayKey())||'{}');
+  const paid=_srPaid, onlyU=_srPayOnlyUnpaid;
   const chip=rs.filter(r=>r.rank<=20).map(r=>{ let pc=Math.round(POOL*REWARD_TIERS[r.rank-1].ratio/sise); if(r.isNewbie)pc=Math.round(pc*(r.activeWeeks/(r.weeks||1))); return Object.assign({},r,{amt:pc}); });
   const sut=rs.filter(r=>r.rank>=21&&r.rank<=51).map(r=>Object.assign({},r,{amt:r.isNewbie?Math.round(24*(r.activeWeeks/(r.weeks||1))):24}));
   const jT=chip.reduce((s,r)=>s+r.amt,0), sT=sut.reduce((s,r)=>s+r.amt,0);
   const doneN=[...chip,...sut].filter(r=>paid[r.name]).length, totN=chip.length+sut.length;
-  const row=(r)=>'<div style="display:flex;align-items:center;gap:9px;padding:7px 6px;border-bottom:1px solid #f4f4f4;'+(paid[r.name]?'opacity:.5':'')+'"><input type="checkbox" '+(paid[r.name]?'checked':'')+' data-nm="'+escAttr(r.name)+'" onchange="_srPayCheck(this.dataset.nm)" style="width:17px;height:17px;accent-color:#16a34a;cursor:pointer;flex-shrink:0"><span style="font-weight:800;font-size:12px;color:#aaa;width:30px">'+r.rank+'등</span><span style="font-weight:800;font-size:13px;flex:1;min-width:0;'+(paid[r.name]?'text-decoration:line-through':'')+'">'+escHtml(r.name)+'</span><span style="font-weight:900;font-size:13px;color:#d97706;white-space:nowrap">'+r.amt.toLocaleString()+'개</span></div>';
+  const fmtD=iso=>{ try{ const d=new Date(iso); return (d.getMonth()+1)+'/'+d.getDate(); }catch(e){ return ''; } };
+  const row=(r)=>{ const p=paid[r.name]; return '<div style="display:flex;align-items:center;gap:9px;padding:7px 6px;border-bottom:1px solid #f4f4f4;'+(p?'opacity:.55':'')+'"><input type="checkbox" '+(p?'checked':'')+' data-nm="'+escAttr(r.name)+'" onchange="_srPayCheck(this.dataset.nm)" style="width:17px;height:17px;accent-color:#16a34a;cursor:pointer;flex-shrink:0"><span style="font-weight:800;font-size:12px;color:#aaa;width:30px">'+r.rank+'등</span><span style="font-weight:800;font-size:13px;flex:1;min-width:0;'+(p?'text-decoration:line-through':'')+'">'+escHtml(r.name)+'</span><span style="font-weight:900;font-size:13px;color:#d97706;white-space:nowrap">'+r.amt.toLocaleString()+'개</span><span style="width:42px;text-align:right;font-size:11px;font-weight:800;color:#16a34a;white-space:nowrap">'+(p&&p.paid_at?'✓'+fmtD(p.paid_at):'')+'</span></div>'; };
+  const showChip=onlyU?chip.filter(r=>!paid[r.name]):chip, showSut=onlyU?sut.filter(r=>!paid[r.name]):sut;
   body.innerHTML='<div style="font-weight:900;font-size:13px;color:#b45309;margin:10px 4px 4px"><i class="fas fa-gem" style="margin-right:5px"></i>솔 에르다 조각 — 상위 20 (총 '+jT.toLocaleString()+'개)</div>'
-    +chip.map(row).join('')
+    +(showChip.length?showChip.map(row).join(''):'<div style="color:#bbb;font-size:12px;font-weight:700;padding:8px 4px">'+(onlyU?'다 받음 ✓':'대상 없음')+'</div>')
     +'<div style="font-weight:900;font-size:13px;color:#7c3aed;margin:15px 4px 4px"><i class="fas fa-hammer" style="margin-right:5px"></i>숫돌 — 티라미슈 21~51등 (총 '+sT.toLocaleString()+'개)</div>'
-    +(sut.length?sut.map(row).join(''):'<div style="color:#bbb;font-size:12px;font-weight:700;padding:8px 4px">대상 없음</div>');
-  const sum=document.getElementById('srPaySum'); if(sum) sum.textContent='조각 '+jT.toLocaleString()+' · 숫돌 '+sT+' · 지급완료 '+doneN+'/'+totN;
+    +(showSut.length?showSut.map(row).join(''):'<div style="color:#bbb;font-size:12px;font-weight:700;padding:8px 4px">'+(onlyU&&sut.length?'다 받음 ✓':'대상 없음')+'</div>');
+  const sum=document.getElementById('srPaySum'); if(sum) sum.textContent='조각 '+jT.toLocaleString()+'개 · 숫돌 '+sT+'개';
+  const prog=document.getElementById('srPayProg'); if(prog) prog.textContent='지급완료 '+doneN+' / '+totN;
 };
 function _srRender(){
   const container=document.getElementById('contentArea'); if(!container) return;
