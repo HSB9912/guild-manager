@@ -1346,6 +1346,17 @@ function _srQuarters(){
   return qm;
 }
 window._rewardChangeQ = ()=>{ const q=document.getElementById('rewardQuarter')?.value; if(!_srData.cfg.suroReward)_srData.cfg.suroReward={}; _srData.cfg.suroReward._selectedQ=q; _srRender(); };
+/* 정산 내보내기 — 현재 분기 랭킹을 탭구분 텍스트로 복사 (엑셀·카톡 붙여넣기용) */
+window._srCopySettlement = ()=>{
+  const rs=_srData&&_srData._results; if(!rs||!rs.length) return alert('정산 데이터가 없어요. 분기를 먼저 선택해주세요.');
+  const q=_srData._selQ||'';
+  const chip=rs.filter(r=>/조각/.test(r.reward)).length, sut=rs.filter(r=>/숫돌/.test(r.reward)).length;
+  const lines=[q+' 수로 보상 정산 (조각 '+chip+'명 · 숫돌 '+sut+'명 · 총 '+rs.length+'명)',
+    '순위\t등급\t닉네임\t분기평균\t참여\t보상\t혜택'];
+  rs.forEach(r=>{ lines.push([r.rank,r.grade,r.name,r.avg,r.participated+'/'+r.activeWeeks+'주',String(r.reward||'').replace(/<[^>]+>/g,''),r.benefit||''].join('\t')); });
+  const txt=lines.join('\n');
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>alert('📋 정산표 복사됨 — '+rs.length+'명\n엑셀·카톡에 붙여넣기(Ctrl+V)하면 표로 정리돼요.')).catch(()=>window.prompt('아래 전체선택(Ctrl+A)→복사(Ctrl+C):',txt));
+};
 function _srRender(){
   const container=document.getElementById('contentArea'); if(!container) return;
   const qm=_srQuarters(); const quarters=Object.keys(qm).sort().reverse();
@@ -1359,6 +1370,7 @@ function _srRender(){
         '<select id="rewardQuarter" onchange="window._rewardChangeQ()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-[11px] font-bold outline-none">'+
           (quarters.map(q=>'<option value="'+q+'" '+(q===selQ?'selected':'')+'>'+q+'</option>').join('')||'<option>분기 없음</option>')+
         '</select>'+
+        '<button onclick="window._srCopySettlement()" class="bg-amber-400 hover:bg-amber-500 text-white rounded-xl px-3 py-1.5 text-[11px] font-bold"><i class="fas fa-clipboard-list mr-1"></i>정산 복사</button>'+
         (pp>0?'<span class="text-[10px] text-gray-400 font-bold ml-auto">솔 에르다 조각 시세: '+Math.round(pp/10000).toLocaleString()+'만원 (개당)</span>':'<span class="text-[10px] text-red-400 font-bold ml-auto">⚠ 솔 에르다 조각 시세 미설정 (설정 → 관리자)</span>')+
       '</div>'+
       '<div id="rewardContent"></div>'+
@@ -1399,6 +1411,7 @@ function _rewardRenderBody(selQ, qm, piecePrice){
     else { grade='롤케이크'; reward='-'; benefit='절반면제'; }
     return Object.assign({}, m, { rank, grade, reward, benefit, rewardNote });
   });
+  _srData._results=results; _srData._selQ=selQ;   // 정산 내보내기용
   const gc=(grade)=>gradeColors[grade]||gradeColors['팬케이크'];
   let html='';
   html+='<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5 mb-3">'+
