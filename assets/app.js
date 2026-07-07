@@ -115,7 +115,10 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
  * ============================================================ */
 const CHANGELOG = [
+  { id:'2026-07-06', date:'2026-07-06', items:[
+    { t:'feat', x:'길드원 — 그룹 편집 모드에 🗑 삭제 추가. 탈퇴·중복 캐릭을 길드원 페이지에서 바로 DB에서 삭제(대표를 지우면 딸린 부캐는 "대표 미상"으로 안내)' },
     { t:'feat', x:'수로 보상 — "지급 정산" 지급완료 체크를 DB(suro_payouts)에 저장. 폰·PC 어디서나 유지 + 여러 운영진 동시 체크 + 받은 날짜 자동 기록 + "안 받은 사람만" 필터. (기존 localStorage는 그 브라우저에만 남던 문제 해결)' },
+  ]},
   { id:'2026-06-26', date:'2026-06-26', items:[
     { t:'feat', x:'수로 OCR — 인식 결과를 "검토·수정 그리드"로. 바로 등록 안 하고, 각 행의 대표 이름(자동완성)·점수를 보면서 고친 뒤 반영(빨간칸=못찾음, 비우면 제외). 5명 틀려서 꼬이던 거 방지' },
     { t:'feat', x:'수로 입력/OCR — 길드 선택(🐰버니 · 🐺늑대 · 🐆쿠거) 추가. 수로 입력 페이지 상단 버튼으로 길드 전환 → 멤버·점수·OCR 모두 해당 길드로 (회차는 공유). 늑대·쿠거도 수로 점수·OCR 가능' },
@@ -526,6 +529,18 @@ window._grpMoveByName = (id, repName)=>{ if(!_grpEdit) return; repName=(repName|
   if(m.is_main!==false){ const hasAlts=_mem.some(x=>x.is_main===false && x.main_char_name===m.name); if(hasAlts){ alert(m.name+'은(는) 부캐가 있는 대표예요. 부캐를 먼저 옮기거나 다른 캐릭에 👑를 주세요.'); _memApply(); return; } }
   m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpReopen(repName);
 };
+/* 길드원 DB 삭제 (편집모드 🗑) — 탈퇴/중복 캐릭 제거. 대표 삭제 시 부캐는 대표 미상이 됨을 안내 */
+window._grpDelete = async (id)=>{
+  if(!isAdmin()) return alert('운영진만 삭제할 수 있어요.');
+  const m=_grpMemById(id); if(!m) return;
+  const isRep=m.is_main!==false, alts=isRep?_mem.filter(x=>x.is_main===false && x.main_char_name===m.name):[];
+  let msg='"'+m.name+'"을(를) DB에서 삭제할까요?\n※ 라이브 공유 DB · 되돌릴 수 없음 (수로/직위 기록도 끊길 수 있어요)';
+  if(alts.length) msg='"'+m.name+'"은(는) 부캐 '+alts.length+'명이 딸린 대표예요.\n삭제하면 그 부캐들은 "대표 미상"이 됩니다.\n\n'+msg;
+  if(!confirm(msg)) return;
+  const { error }=await db().from('members').delete().eq('id',id);
+  if(error) return alert('삭제 실패: '+error.message);
+  _mem=_mem.filter(x=>x.id!==id); _grpDirty.delete(id); _memApply();
+};
 /* 유니온 자동 묶기는 제거됨 (2026-06-29). API엔 "길드 대표"가 없어 부정확:
    유니온 슬롯1(젤 센 캐릭)≠길드 대표, 다계정/다대표인 사람을 하나로 잘못 병합.
    대표는 인겜 길드창(사람 적은 시간 캡처=깔끔)으로만 정확히 얻을 수 있음. */
@@ -577,7 +592,7 @@ function memberGroups(q){
       ${crown(m,isRep)}${av(m.name,22)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span>
       <span class="dim" style="font-size:11px;font-weight:700">${escHtml(m.class||'')}${m.level?' · Lv.'+m.level:''}</span>
       <span class="${isRep?'chip':'dim'}" style="${isRep?'background:var(--bunny-deep);color:#fff;':'color:var(--dim);'}font-size:10px;font-weight:800;margin-left:auto">${isRep?'대표':'부캐'}</span>
-      ${ed&&reassign?`<input list="grpRepList" placeholder="${isRep?'다른 대표 밑으로':'대표 변경'}…" onchange="_grpMoveByName(${m.id},this.value)" style="border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text);outline:0;width:128px">${!isRep?`<button onclick="_grpPromote(${m.id})" title="독립(본캐로)" style="border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer">독립</button><i class="fa-solid fa-grip-vertical dim" title="끌어서 이동" style="font-size:11px;cursor:grab"></i>`:''}`:''}</div>`;
+      ${ed&&reassign?`<input list="grpRepList" placeholder="${isRep?'다른 대표 밑으로':'대표 변경'}…" onchange="_grpMoveByName(${m.id},this.value)" style="border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text);outline:0;width:128px">${!isRep?`<button onclick="_grpPromote(${m.id})" title="독립(본캐로)" style="border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer">독립</button><i class="fa-solid fa-grip-vertical dim" title="끌어서 이동" style="font-size:11px;cursor:grab"></i>`:''}`:''}${ed?`<button onclick="event.stopPropagation();_grpDelete(${m.id})" title="이 캐릭 DB에서 삭제" style="border:0;border-radius:7px;background:var(--bad-bg);color:var(--bad-tx);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-trash"></i></button>`:''}</div>`;
   const grpHtml = (g)=>{
     const miss=hasSuro&&(sv(g.rep)||0)<=0;
     const bodyRows = ed
@@ -602,7 +617,7 @@ function memberGroups(q){
         <i class="fa-solid fa-chevron-right acc-chev dim" style="font-size:10px;width:10px;transition:.15s"></i>
         <i class="fa-solid fa-link-slash dim"></i><span style="font-weight:900;font-size:14px;color:var(--warn-tx)">대표 미상 (부캐인데 본캐 못 찾음)</span>
         <span class="chip" style="background:var(--warn-bg);color:var(--warn-tx);font-weight:800;margin-left:auto">${orphans.length}</span></div>
-      <div class="acc-body" style="display:none;background:var(--panel-2);padding:4px 12px 9px 34px">${orphans.map(a=>`<div ${ed?`draggable="true" ondragstart="_grpDragStart(event,${a.id})"`:''} style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line)">${av(a.name,22)}<span style="font-weight:700;font-size:13px">${escHtml(a.name)}</span><span class="dim" style="font-size:11px;font-weight:700">${escHtml(a.class||'')}${a.level?' · Lv.'+a.level:''}${a.main_char_name?' · 지정(없음): '+escHtml(a.main_char_name):''}</span>${ed?`<button onclick="_grpPromote(${a.id})" style="margin-left:auto;border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:4px 9px;cursor:pointer">본캐로</button><i class="fa-solid fa-grip-vertical dim" style="font-size:11px;cursor:grab;margin-left:6px"></i>`:''}</div>`).join('')}</div></div>` : '';
+      <div class="acc-body" style="display:none;background:var(--panel-2);padding:4px 12px 9px 34px">${orphans.map(a=>`<div ${ed?`draggable="true" ondragstart="_grpDragStart(event,${a.id})"`:''} style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line)">${av(a.name,22)}<span style="font-weight:700;font-size:13px">${escHtml(a.name)}</span><span class="dim" style="font-size:11px;font-weight:700">${escHtml(a.class||'')}${a.level?' · Lv.'+a.level:''}${a.main_char_name?' · 지정(없음): '+escHtml(a.main_char_name):''}</span>${ed?`<button onclick="_grpPromote(${a.id})" style="margin-left:auto;border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:4px 9px;cursor:pointer">본캐로</button><i class="fa-solid fa-grip-vertical dim" style="font-size:11px;cursor:grab;margin-left:6px"></i><button onclick="event.stopPropagation();_grpDelete(${a.id})" title="이 캐릭 DB에서 삭제" style="border:0;border-radius:7px;background:var(--bad-bg);color:var(--bad-tx);font-weight:800;font-size:11px;padding:4px 8px;cursor:pointer;margin-left:6px"><i class="fa-solid fa-trash"></i></button>`:''}</div>`).join('')}</div></div>` : '';
   const summary = hasSuro
     ? `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
         <span class="chip" style="background:var(--bunny-light);color:var(--bunny-deep);font-weight:900;font-size:12px;padding:7px 13px"><i class="fa-solid fa-calendar-week" style="margin-right:5px"></i>${escHtml(_memSuroLabel||'이번 주차')}</span>
@@ -615,7 +630,7 @@ function memberGroups(q){
   const editBar = isAdmin() ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
       ${ed?`<button onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
-      <span class="dim" style="font-size:11px;font-weight:700">펼쳐서 — <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 그룹 헤더에 떨구기 · <b>독립</b>=본캐 분리</span>`:''}
+      <span class="dim" style="font-size:11px;font-weight:700">펼쳐서 — <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 그룹 헤더에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
     </div>` : '';
   const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
   const repDatalist = ed ? `<datalist id="grpRepList">${reps.map(r=>`<option value="${escAttr(r.name)}"></option>`).join('')}</datalist>` : '';
