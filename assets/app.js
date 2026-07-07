@@ -115,6 +115,9 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
  * ============================================================ */
 const CHANGELOG = [
+  { id:'2026-07-07', date:'2026-07-07', items:[
+    { t:'feat', x:'길드원 — 대표 그룹마다 앞에 순번(1·2·3…) 표시. 맨 아래 번호 = 총 대표 수라 몇 명인지 한눈에 확인' },
+  ]},
   { id:'2026-07-06', date:'2026-07-06', items:[
     { t:'feat', x:'길드원 — 그룹 편집 모드에 🗑 삭제 추가. 탈퇴·중복 캐릭을 길드원 페이지에서 바로 DB에서 삭제(대표를 지우면 딸린 부캐는 "대표 미상"으로 안내)' },
     { t:'feat', x:'수로 보상 — "지급 정산" 지급완료 체크를 DB(suro_payouts)에 저장. 폰·PC 어디서나 유지 + 여러 운영진 동시 체크 + 받은 날짜 자동 기록 + "안 받은 사람만" 필터. (기존 localStorage는 그 브라우저에만 남던 문제 해결)' },
@@ -593,7 +596,7 @@ function memberGroups(q){
       <span class="dim" style="font-size:11px;font-weight:700">${escHtml(m.class||'')}${m.level?' · Lv.'+m.level:''}</span>
       <span class="${isRep?'chip':'dim'}" style="${isRep?'background:var(--bunny-deep);color:#fff;':'color:var(--dim);'}font-size:10px;font-weight:800;margin-left:auto">${isRep?'대표':'부캐'}</span>
       ${ed&&reassign?`<input list="grpRepList" placeholder="${isRep?'다른 대표 밑으로':'대표 변경'}…" onchange="_grpMoveByName(${m.id},this.value)" style="border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text);outline:0;width:128px">${!isRep?`<button onclick="_grpPromote(${m.id})" title="독립(본캐로)" style="border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer">독립</button><i class="fa-solid fa-grip-vertical dim" title="끌어서 이동" style="font-size:11px;cursor:grab"></i>`:''}`:''}${ed?`<button onclick="event.stopPropagation();_grpDelete(${m.id})" title="이 캐릭 DB에서 삭제" style="border:0;border-radius:7px;background:var(--bad-bg);color:var(--bad-tx);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-trash"></i></button>`:''}</div>`;
-  const grpHtml = (g)=>{
+  const grpHtml = (g,idx)=>{
     const miss=hasSuro&&(sv(g.rep)||0)<=0;
     const bodyRows = ed
       ? memRow(g.rep,true,g.alts.length===0) + g.alts.map(a=>memRow(a,false,true)).join('')
@@ -602,6 +605,7 @@ function memberGroups(q){
     return `<div class="acc-grp${_memState.expandAll?' open':''}" data-rep="${escAttr(g.rep.name)}" style="border-bottom:1px solid var(--line)">
       <div class="acc-head" onclick="_grpToggle(this)" ${drop} style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;${miss?'box-shadow:inset 3px 0 0 var(--bad-tx)':''}">
         <i class="fa-solid fa-chevron-right acc-chev dim" style="font-size:10px;width:10px;transition:.15s"></i>
+        <span style="font-weight:800;font-size:12px;color:var(--dim);min-width:30px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0">${idx}</span>
         ${av(g.rep.name,26)}
         <span style="font-weight:900;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(g.rep.name)}</span>
         ${memRoleChip(g.rep.role)}
@@ -640,7 +644,7 @@ function memberGroups(q){
   const sortBar = `<div style="display:flex;align-items:center;gap:4px;padding:9px 11px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:12px;font-weight:800;flex-wrap:wrap">
     ${sk('name','닉네임')}${sk('role','직위')}${sk('level','레벨')}${sk('class','직업')}${sk('join','가입일')}${sk('suro','이번주 수로',true)}
   </div>`;
-  const body = css + repDatalist + editBar + summary + warnBar + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${sortBar}${groups.map(grpHtml).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
+  const body = css + repDatalist + editBar + summary + warnBar + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${sortBar}${groups.map((g,i)=>grpHtml(g,i+1)).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
   return { body, count: groups.length };
 }
 
