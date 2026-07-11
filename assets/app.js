@@ -117,7 +117,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
 const CHANGELOG = [
   { id:'2026-07-12', date:'2026-07-12', items:[
     { t:'fix', x:'신청 처리 · 보석금 관리 — 보석금 내역이 4건만 뜨던 문제 수정. 옛 길드키(뚠/뚱/밤/별/꿀/달카롱)로 저장된 100건이 "버니" 필터에 걸러졌던 것 → 보석금은 길드 통합 관리라 전체 표시. 상단에 합계 조각/전체/대기/완료 요약 추가' },
-    { t:'feat', x:'신청 처리 보석금 — 카드에 완전 삭제(🗑) 버튼 복원 (뚠카롱에 있던 기능)' },
+    { t:'feat', x:'신청 처리 보석금 — 뚠카롱처럼 완전 복원: 상태별 탭(확인대기·보류·입금확인·노블해제·거절) + 완료건도 카드형(인증샷·되돌리기·완전삭제)으로 과거 기록 조정 가능. 기존엔 완료건이 표라 이미지도·수정도 안 됐음' },
   ]},
   { id:'2026-07-07', date:'2026-07-07', items:[
     { t:'feat', x:'길드원 — 대표 그룹마다 앞에 순번(1·2·3…) 표시. 맨 아래 번호 = 총 대표 수라 몇 명인지 한눈에 확인' },
@@ -809,6 +809,8 @@ window._reqExemptAct=async (id,status)=>{
 };
 
 /* ===== 수로 보석금 신청 처리 — bail_requests ===== */
+let _reqBailTab='pending';   // 상태별 탭 (확인대기/보류/입금확인/노블해제/거절)
+window._reqBailSetTab=(k)=>{ _reqBailTab=k; window._reqMain('bail'); };
 async function _reqBailBody(){
   const { data, error } = await db().from('bail_requests').select('*').order('created_at',{ascending:false}).limit(2000);
   if(error) throw error;
@@ -841,15 +843,19 @@ async function _reqBailBody(){
       </div>
     </div>`;
   };
+  const TABS=[['pending','확인 대기','#d97706'],['hold','보류','#6b7280'],['paid','입금 확인됨','#0ea5e9'],['noble_unlocked','노블 해제 완료','#16a34a'],['rejected','거절됨','#dc2626']];
+  const grp={}; TABS.forEach(([k])=>grp[k]=[]); all.forEach(r=>{ const s=r.status||'pending'; (grp[s]||(grp[s]=[])).push(r); });
+  if(!(grp[_reqBailTab]||[]).length){ const f=TABS.find(t=>(grp[t[0]]||[]).length); if(f)_reqBailTab=f[0]; }
+  const tabBar=TABS.map(([k,l,c])=>{ const n=(grp[k]||[]).length, on=_reqBailTab===k; return `<button onclick="_reqBailSetTab('${k}')" style="border:0;border-radius:11px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;${on?`background:${c};color:#fff`:'background:var(--panel-2);color:var(--text)'}">${l} <span class="chip" style="background:${on?'rgba(255,255,255,.28)':'var(--panel-3)'};color:${on?'#fff':'var(--dim)'};margin-left:2px">${n}</span></button>`; }).join('');
+  const cur=grp[_reqBailTab]||[];
   return `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
       <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">합계 조각<b style="display:block;font-size:18px;color:var(--bunny-deep)">${sumChip.toLocaleString()}개</b></div>
       <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">전체<b style="display:block;font-size:18px;color:var(--text)">${all.length}건</b></div>
-      <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">대기<b style="display:block;font-size:18px;color:var(--warn-tx)">${pending.length}</b></div>
-      <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">완료<b style="display:block;font-size:18px;color:var(--ok-tx)">${done.length}</b></div>
+      <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">대기<b style="display:block;font-size:18px;color:var(--warn-tx)">${(grp.pending||[]).length}</b></div>
+      <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">노블해제<b style="display:block;font-size:18px;color:var(--ok-tx)">${(grp.noble_unlocked||[]).length}</b></div>
     </div>
-    <div>${pending.length?pending.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-gem" style="margin-right:6px"></i>대기 중인 보석금 신청이 없어요</span></div>'}</div>
-    ${done.length?`<h3 style="font-weight:900;font-size:15px;margin:22px 0 12px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--bunny-main);margin-right:8px"></i>처리 완료 (${done.length})</h3>
-    <div class="panel" style="border-radius:20px;padding:16px"><div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:420px"><thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:9px 8px">납부자</th><th style="text-align:left;padding:9px 0">조각</th><th style="text-align:left;padding:9px 0">상태</th><th style="text-align:left;padding:9px 0">처리일</th></tr></thead><tbody style="font-weight:500">${done.map(r=>{ const sl=stLabel(r.status); return `<tr style="border-bottom:1px solid var(--line)"><td style="padding:9px 8px;font-weight:800">${escHtml(r.payer_char||r.main_char||'-')}</td><td class="dim" style="font-weight:800">${Number(r.total_amount)||0}개</td><td><span class="chip" style="background:${sl[1]};color:${sl[2]}">${sl[0]}</span></td><td class="dim" style="font-weight:700">${(r.processed_at||r.created_at||'').slice(0,10)}</td></tr>`; }).join('')}</tbody></table></div></div>`:''}`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${tabBar}</div>
+    <div>${cur.length?cur.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-gem" style="margin-right:6px"></i>이 상태의 보석금이 없어요</span></div>'}</div>`;
 }
 window._reqBailDelete=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 보석금 신청을 완전히 삭제할까요? (되돌릴 수 없음)')) return; const { error }=await db().from('bail_requests').delete().eq('id',id); if(error) return alert('삭제 실패: '+error.message); render(); };
 window._reqBailAct=async (id,action)=>{
