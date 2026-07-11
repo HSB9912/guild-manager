@@ -857,7 +857,7 @@ async function _reqBailBody(){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${tabBar}</div>
     <div>${cur.length?cur.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-gem" style="margin-right:6px"></i>이 상태의 보석금이 없어요</span></div>'}</div>`;
 }
-window._reqBailDelete=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 보석금 신청을 완전히 삭제할까요? (되돌릴 수 없음)')) return; const { error }=await db().from('bail_requests').delete().eq('id',id); if(error) return alert('삭제 실패: '+error.message); render(); };
+window._reqBailDelete=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 보석금 신청을 완전히 삭제할까요? (되돌릴 수 없음)')) return; const { data, error }=await db().from('bail_requests').delete().eq('id',id).select(); if(error) return alert('삭제 실패: '+error.message); if(!data||!data.length) return alert('삭제가 반영되지 않았어요 (bail_requests DELETE 권한 없음).\nSupabase SQL:\ncreate policy bail_requests_delete_auth on public.bail_requests for delete to authenticated using (true);'); render(); };
 window._reqBailAct=async (id,action)=>{
   if(!isAdmin()) return alert('운영진만 처리할 수 있어요.');
   const me=CURRENT.name||CURRENT.email||'운영진'; const now=new Date().toISOString();
