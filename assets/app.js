@@ -115,6 +115,9 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
  * ============================================================ */
 const CHANGELOG = [
+  { id:'2026-07-12', date:'2026-07-12', items:[
+    { t:'fix', x:'신청 처리 · 보석금 관리 — 보석금 내역이 4건만 뜨던 문제 수정. 옛 길드키(뚠/뚱/밤/별/꿀/달카롱)로 저장된 100건이 "버니" 필터에 걸러졌던 것 → 보석금은 길드 통합 관리라 전체 표시(104건). 상단에 합계 조각/전체/대기/완료 요약 추가' },
+  ]},
   { id:'2026-07-07', date:'2026-07-07', items:[
     { t:'feat', x:'길드원 — 대표 그룹마다 앞에 순번(1·2·3…) 표시. 맨 아래 번호 = 총 대표 수라 몇 명인지 한눈에 확인' },
   ]},
@@ -686,7 +689,7 @@ async function buildRequests(){
   let cj=0,ce=0,cb=0;
   try{ const r=await db().from('join_requests').select('id',{count:'exact',head:true}).or('status.is.null,status.eq.pending'); cj=r.count||0; }catch(e){}
   try{ const r=await db().from('exempt_requests').select('id',{count:'exact',head:true}).eq('status','pending'); ce=r.count||0; }catch(e){}
-  try{ const r=await db().from('bail_requests').select('id',{count:'exact',head:true}).eq('status','pending').eq('payer_guild',GUILD); cb=r.count||0; }catch(e){}
+  try{ const r=await db().from('bail_requests').select('id',{count:'exact',head:true}).eq('status','pending'); cb=r.count||0; }catch(e){}
   const mtab=(k,l,ic,c)=>{ const on=_reqMainTab===k; return `<button onclick="_reqMain('${k}')" style="border:0;border-radius:13px;padding:11px 17px;font-weight:800;font-size:14px;cursor:pointer;${on?'background:var(--bunny-main);color:#fff':'background:var(--panel-2);color:var(--text)'}"><i class="fa-solid ${ic}" style="margin-right:6px"></i>${l}${c?` <span class="chip" style="background:${on?'rgba(255,255,255,.28)':'var(--bad-tx)'};color:#fff;margin-left:2px">${c}</span>`:''}</button>`; };
   let body='';
   try{ body = _reqMainTab==='exempt' ? await _reqExemptBody() : _reqMainTab==='bail' ? await _reqBailBody() : await _reqJoinBody(); }
@@ -806,9 +809,10 @@ window._reqExemptAct=async (id,status)=>{
 
 /* ===== 수로 보석금 신청 처리 — bail_requests ===== */
 async function _reqBailBody(){
-  const { data, error } = await db().from('bail_requests').select('*').eq('payer_guild',GUILD).order('created_at',{ascending:false}).limit(300);
+  const { data, error } = await db().from('bail_requests').select('*').order('created_at',{ascending:false}).limit(2000);
   if(error) throw error;
   const all=data||[]; const pending=all.filter(r=>(r.status||'pending')==='pending'); const done=all.filter(r=>r.status&&r.status!=='pending');
+  const sumChip=all.reduce((s,r)=>s+(Number(r.total_amount)||0),0);
   const stLabel=(s)=> s==='noble_unlocked'?['노블 해제됨','var(--ok-bg)','var(--ok-tx)']: s==='rejected'?['거절됨','var(--bad-bg)','var(--bad-tx)']: s==='paid'?['입금확인','var(--ok-bg)','var(--ok-tx)']:['대기','var(--warn-bg)','var(--warn-tx)'];
   const card=(r)=>{
     const st=r.status||'pending'; const proc=r.processed_at?`<div class="dim" style="font-size:10px;font-weight:700;margin-top:7px"><i class="fa-solid fa-user-shield" style="margin-right:4px"></i>${escHtml(r.unlocked_by||r.processed_by||'?')} · ${new Date(r.processed_at).toLocaleString('ko-KR')}${r.admin_note?' · '+escHtml(r.admin_note):''}</div>`:'';
@@ -836,7 +840,13 @@ async function _reqBailBody(){
       </div>
     </div>`;
   };
-  return `<div>${pending.length?pending.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-gem" style="margin-right:6px"></i>대기 중인 보석금 신청이 없어요</span></div>'}</div>
+  return `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">합계 조각<b style="display:block;font-size:18px;color:var(--bunny-deep)">${sumChip.toLocaleString()}개</b></div>
+      <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">전체<b style="display:block;font-size:18px;color:var(--text)">${all.length}건</b></div>
+      <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">대기<b style="display:block;font-size:18px;color:var(--warn-tx)">${pending.length}</b></div>
+      <div class="panel" style="border-radius:14px;padding:10px 14px;font-size:12px;font-weight:800;color:var(--dim)">완료<b style="display:block;font-size:18px;color:var(--ok-tx)">${done.length}</b></div>
+    </div>
+    <div>${pending.length?pending.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-gem" style="margin-right:6px"></i>대기 중인 보석금 신청이 없어요</span></div>'}</div>
     ${done.length?`<h3 style="font-weight:900;font-size:15px;margin:22px 0 12px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--bunny-main);margin-right:8px"></i>처리 완료 (${done.length})</h3>
     <div class="panel" style="border-radius:20px;padding:16px"><div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:420px"><thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:9px 8px">납부자</th><th style="text-align:left;padding:9px 0">조각</th><th style="text-align:left;padding:9px 0">상태</th><th style="text-align:left;padding:9px 0">처리일</th></tr></thead><tbody style="font-weight:500">${done.map(r=>{ const sl=stLabel(r.status); return `<tr style="border-bottom:1px solid var(--line)"><td style="padding:9px 8px;font-weight:800">${escHtml(r.payer_char||r.main_char||'-')}</td><td class="dim" style="font-weight:800">${Number(r.total_amount)||0}개</td><td><span class="chip" style="background:${sl[1]};color:${sl[2]}">${sl[0]}</span></td><td class="dim" style="font-weight:700">${(r.processed_at||r.created_at||'').slice(0,10)}</td></tr>`; }).join('')}</tbody></table></div></div>`:''}`;
 }
@@ -879,7 +889,7 @@ async function buildBail(){
   const num = (n)=> (Number(n)||0).toLocaleString('ko-KR');
   const [{data:hist,error:e1},{data:reqs,error:e2}] = await Promise.all([
     db().from('bail_history').select('date,payer,receiver,amount,memo').order('date',{ascending:false}).limit(800),
-    db().from('bail_requests').select('payer_char,total_amount,status,payer_guild,created_at').eq('payer_guild',GUILD).order('created_at',{ascending:false}).limit(500),
+    db().from('bail_requests').select('payer_char,total_amount,status,payer_guild,created_at').order('created_at',{ascending:false}).limit(2000),
   ]);
   if(e1) throw e1;
   const mine=(hist||[]).filter(h=>h.receiver===WH||h.payer===WH);
