@@ -116,7 +116,8 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  * ============================================================ */
 const CHANGELOG = [
   { id:'2026-07-12', date:'2026-07-12', items:[
-    { t:'fix', x:'신청 처리 · 보석금 관리 — 보석금 내역이 4건만 뜨던 문제 수정. 옛 길드키(뚠/뚱/밤/별/꿀/달카롱)로 저장된 100건이 "버니" 필터에 걸러졌던 것 → 보석금은 길드 통합 관리라 전체 표시(104건). 상단에 합계 조각/전체/대기/완료 요약 추가' },
+    { t:'fix', x:'신청 처리 · 보석금 관리 — 보석금 내역이 4건만 뜨던 문제 수정. 옛 길드키(뚠/뚱/밤/별/꿀/달카롱)로 저장된 100건이 "버니" 필터에 걸러졌던 것 → 보석금은 길드 통합 관리라 전체 표시. 상단에 합계 조각/전체/대기/완료 요약 추가' },
+    { t:'feat', x:'신청 처리 보석금 — 카드에 완전 삭제(🗑) 버튼 복원 (뚠카롱에 있던 기능)' },
   ]},
   { id:'2026-07-07', date:'2026-07-07', items:[
     { t:'feat', x:'길드원 — 대표 그룹마다 앞에 순번(1·2·3…) 표시. 맨 아래 번호 = 총 대표 수라 몇 명인지 한눈에 확인' },
@@ -834,7 +835,7 @@ async function _reqBailBody(){
           <div class="dim" style="font-size:12px;font-weight:700;margin-bottom:4px"><i class="fa-solid fa-calendar-xmark" style="margin-right:5px"></i>미참 회차: ${escHtml((r.miss_period_label||'-').replace(' 수로 점수',''))}</div>
           ${r.half_year?`<div class="dim" style="font-size:11px;font-weight:700">반기 ${escHtml(r.half_year)}${r.kakao_nick?' · 카톡 '+escHtml(r.kakao_nick):''}</div>`:''}
           ${r.reason?`<div class="panel" style="border-radius:12px;padding:10px;font-size:12px;font-weight:600;margin-top:8px">${escHtml(r.reason)}</div>`:''}
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">${actions}</div>${proc}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">${actions}<button onclick="_reqBailDelete(${r.id})" title="완전 삭제" style="border:1px solid var(--line);background:var(--panel);color:var(--dim);border-radius:10px;padding:8px 11px;font-weight:800;cursor:pointer"><i class="fa-solid fa-trash"></i></button></div>${proc}
         </div>
         <div style="flex-shrink:0">${img}</div>
       </div>
@@ -850,6 +851,7 @@ async function _reqBailBody(){
     ${done.length?`<h3 style="font-weight:900;font-size:15px;margin:22px 0 12px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--bunny-main);margin-right:8px"></i>처리 완료 (${done.length})</h3>
     <div class="panel" style="border-radius:20px;padding:16px"><div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:420px"><thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:9px 8px">납부자</th><th style="text-align:left;padding:9px 0">조각</th><th style="text-align:left;padding:9px 0">상태</th><th style="text-align:left;padding:9px 0">처리일</th></tr></thead><tbody style="font-weight:500">${done.map(r=>{ const sl=stLabel(r.status); return `<tr style="border-bottom:1px solid var(--line)"><td style="padding:9px 8px;font-weight:800">${escHtml(r.payer_char||r.main_char||'-')}</td><td class="dim" style="font-weight:800">${Number(r.total_amount)||0}개</td><td><span class="chip" style="background:${sl[1]};color:${sl[2]}">${sl[0]}</span></td><td class="dim" style="font-weight:700">${(r.processed_at||r.created_at||'').slice(0,10)}</td></tr>`; }).join('')}</tbody></table></div></div>`:''}`;
 }
+window._reqBailDelete=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 보석금 신청을 완전히 삭제할까요? (되돌릴 수 없음)')) return; const { error }=await db().from('bail_requests').delete().eq('id',id); if(error) return alert('삭제 실패: '+error.message); render(); };
 window._reqBailAct=async (id,action)=>{
   if(!isAdmin()) return alert('운영진만 처리할 수 있어요.');
   const me=CURRENT.name||CURRENT.email||'운영진'; const now=new Date().toISOString();
