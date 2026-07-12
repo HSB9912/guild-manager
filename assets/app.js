@@ -118,6 +118,8 @@ const CHANGELOG = [
   { id:'2026-07-12', date:'2026-07-12', items:[
     { t:'fix', x:'신청 처리 · 보석금 관리 — 보석금 내역이 4건만 뜨던 문제 수정. 옛 길드키(뚠/뚱/밤/별/꿀/달카롱)로 저장된 100건이 "버니" 필터에 걸러졌던 것 → 보석금은 길드 통합 관리라 전체 표시. 상단에 합계 조각/전체/대기/완료 요약 추가' },
     { t:'feat', x:'신청 처리 보석금 — 뚠카롱처럼 완전 복원: 상태별 탭(확인대기·보류·입금확인·노블해제·거절) + 완료건도 카드형(인증샷·되돌리기·완전삭제)으로 과거 기록 조정 가능. 기존엔 완료건이 표라 이미지도·수정도 안 됐음' },
+    { t:'feat', x:'헤더 "멤버 검색"이 실제로 작동 — 닉네임 입력하면 길드원 페이지에서 검색(장식이던 걸 기능화). 길드원 페이지가 ?q= 검색어를 받아 자동 필터' },
+    { t:'feat', x:'버니버디 — 팀 상세에서 버디팀 삭제 버튼 추가(운영진). 잘못 올라간 팀 정리 가능 (미션 기록도 함께 삭제)' },
   ]},
   { id:'2026-07-07', date:'2026-07-07', items:[
     { t:'feat', x:'길드원 — 대표 그룹마다 앞에 순번(1·2·3…) 표시. 맨 아래 번호 = 총 대표 수라 몇 명인지 한눈에 확인' },
@@ -268,7 +270,7 @@ function headerHTML(title, sub){
       <h2 style="font-size:30px;font-weight:900;margin:0">${title} <span class="dim" style="font-size:16px;font-weight:700;margin-left:4px">${sub||''}</span></h2>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div class="panel" style="border-radius:12px;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;"><i class="fa-solid fa-magnifying-glass dim"></i><span class="dim">멤버 검색</span></div>
+      <form onsubmit="event.preventDefault();var q=this.q.value.trim();location.href='members.html'+(q?'?q='+encodeURIComponent(q):'')" class="panel" style="border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-magnifying-glass dim"></i><input name="q" placeholder="멤버 검색" autocomplete="off" style="border:0;background:transparent;outline:0;color:var(--text);font-size:14px;font-weight:700;width:120px"></form>
       <div class="tone-rose" style="width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;">길</div>
     </div>
   </header>`;
@@ -456,17 +458,18 @@ async function buildMembers(){
   }catch(e){}
   try{ const cfg=await getConfig(); _memRanks=(cfg.ranks&&(cfg.ranks[FK.key]||cfg.ranks[GUILD]))||[]; }catch(e){ _memRanks=[]; }
   const mains = _mem.filter(m=>m.is_main!==false).length;
+  const q0=(new URLSearchParams(location.search).get('q')||'').trim();   // 헤더 멤버검색에서 넘어온 검색어
   const controls = `<div class="panel" style="border-radius:20px;padding:14px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;position:sticky;top:0;z-index:6;box-shadow:0 6px 16px -10px rgba(0,0,0,.25)">
     <div style="flex:1;min-width:170px;display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:12px;padding:10px 14px;">
       <i class="fa-solid fa-magnifying-glass dim"></i>
-      <input id="memSearch" oninput="_memApply()" placeholder="닉네임 검색" autocomplete="off" style="border:0;background:transparent;outline:0;color:var(--text);font-size:14px;font-weight:700;width:100%;">
+      <input id="memSearch" value="${escAttr(q0)}" oninput="_memApply()" placeholder="닉네임 검색" autocomplete="off" style="border:0;background:transparent;outline:0;color:var(--text);font-size:14px;font-weight:700;width:100%;">
     </div>
     <button id="memExpand" onclick="_memExpandAll()" style="padding:10px 15px;border:1px solid var(--line);border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text);white-space:nowrap"><i class="fa-solid fa-chevron-${_memState.expandAll?'up':'down'}" style="margin-right:6px"></i>${_memState.expandAll?'전체 접기':'전체 펼치기'}</button>
     <span class="dim" style="font-size:13px;font-weight:800;margin-left:auto"><b id="memCount" style="color:var(--bunny-deep)">${mains}</b> 그룹</span>
   </div>`;
   const facBtn = (k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_memFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85;font-weight:700">메인</span>':''; return `<button onclick="_memTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
   const facTabs = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">${facBtn('bunny')}<span class="dim" style="font-size:11px;font-weight:800;margin:0 2px">· 부길드</span>${facBtn('wolf')}${facBtn('cougar')}</div>`;
-  const initBody = memberGroups('').body;
+  const initBody = memberGroups(q0).body;
   return headerHTML('길드원', `${FK.label} · 총 ${_mem.length}명`) + facTabs + controls +
     `<div class="panel" style="border-radius:24px;padding:18px;"><div id="memTbl">${initBody}</div></div>`;
 }
@@ -4901,7 +4904,7 @@ window._buddyDetail=async (id)=>{
       <td style="text-align:center">${m.admin_verified?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">인증</span>':'<span class="chip" style="background:var(--warn-bg);color:var(--warn-tx)">대기</span>'}</td>
     </tr>`).join('');
     el.innerHTML = headerHTML('버니버디', team.team_name||(team.mentor_name+' × '+team.mentee_name)) +
-      `<button onclick="_buddyBack()" style="border:0;background:var(--panel-2);color:var(--text);border-radius:10px;padding:8px 16px;font-weight:800;cursor:pointer;margin-bottom:14px"><i class="fa-solid fa-arrow-left"></i> 목록</button>
+      `<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px"><button onclick="_buddyBack()" style="border:0;background:var(--panel-2);color:var(--text);border-radius:10px;padding:8px 16px;font-weight:800;cursor:pointer"><i class="fa-solid fa-arrow-left"></i> 목록</button>${isAdmin()?`<button onclick="_buddyDelete(${id})" style="border:1px solid var(--bad-tx);background:var(--panel);color:var(--bad-tx);border-radius:10px;padding:8px 16px;font-weight:800;cursor:pointer;margin-left:auto"><i class="fa-solid fa-trash" style="margin-right:5px"></i>버디팀 삭제</button>`:''}</div>
        <div class="panel" style="border-radius:24px;padding:0;overflow:hidden;margin-bottom:16px">
          ${team.team_image?`<img src="${team.team_image}" style="width:100%;max-height:220px;object-fit:cover">`:''}
          <div style="padding:20px">
@@ -4916,6 +4919,15 @@ window._buddyDetail=async (id)=>{
            <tbody style="font-weight:600">${rows||'<tr><td colspan="4" class="dim" style="padding:24px;text-align:center;font-weight:700">미션 기록 없음</td></tr>'}</tbody></table></div>
        </div>`;
   }catch(e){ el.innerHTML=errorHTML('buddy',e); }
+};
+window._buddyDelete=async (id)=>{
+  if(!isAdmin()) return alert('운영진만 삭제할 수 있어요.');
+  if(!confirm('이 버디팀을 삭제할까요?\n주차별 미션 기록도 함께 삭제됩니다. (되돌릴 수 없음)')) return;
+  try{ await db().from('buddy_missions').delete().eq('team_id',id);
+    const {data,error}=await db().from('buddy_teams').delete().eq('id',id).select(); if(error) throw error;
+    if(!data||!data.length){ alert('삭제가 반영되지 않았어요 (buddy_teams DELETE 권한 없음).\nSupabase에 DELETE 정책이 필요할 수 있어요.'); return; }
+  }catch(e){ return alert('삭제 실패: '+(e.message||e)); }
+  _buddyBack();
 };
 /* 과거 버니버디 완료 이력(디스코드 #버니-버디 export 기준) — 운영진이 1회 가져오기 */
 const _BP='https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev/guide-images/buddy-fix-';
