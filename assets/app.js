@@ -119,6 +119,7 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
 const CHANGELOG = [
   { id:'2026-07-13', date:'2026-07-13', items:[
     { t:'feat', x:'수로 면제 — 바뀐 제도(계정=대표1+부캐5·대표 수로 필수) 반영. 대표가 수로 참여하면 부캐(수로면제캐릭) 노블 유지, 대표 미참(0점)이면 그 계정 전체 노블 잠김을 빨간칸으로 경고 + 부캐 정원 5 초과 시 주황 경고. "시트 복사"로 색상·서식까지 구글시트에 그대로 붙여넣기(핑크=수로면제캐릭·빨강=노블잠김·주황=정원초과)' },
+    { t:'feat', x:'길드원 셀편집 — 그룹 편집모드에서 닉네임·직위·직업·레벨을 칸에 직접 수정해 한번에 저장(대표 개명 시 부캐 연결도 자동 따라감). "시트 복사"로 현재 목록을 엑셀/시트에 붙여넣기' },
   ]},
   { id:'2026-07-12', date:'2026-07-12', items:[
     { t:'fix', x:'신청 처리 · 보석금 관리 — 보석금 내역이 4건만 뜨던 문제 수정. 옛 길드키(뚠/뚱/밤/별/꿀/달카롱)로 저장된 100건이 "버니" 필터에 걸러졌던 것 → 보석금은 길드 통합 관리라 전체 표시. 상단에 합계 조각/전체/대기/완료 요약 추가' },
@@ -561,6 +562,19 @@ window._grpMoveByName = (id, repName)=>{ if(!_grpEdit) return; repName=(repName|
   if(m.is_main!==false){ const hasAlts=_mem.some(x=>x.is_main===false && x.main_char_name===m.name); if(hasAlts){ alert(m.name+'은(는) 부캐가 있는 대표예요. 부캐를 먼저 옮기거나 다른 캐릭에 👑를 주세요.'); _memApply(); return; } }
   m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpReopen(repName);
 };
+/* 셀편집(B) — 편집모드에서 닉네임·직위·직업·레벨 인메모리 수정 → _grpDirty 배치 저장. 라이브 즉시쓰기 없음 */
+function _grpBadge(){ const b=document.getElementById('grpSaveBtn'); if(b) b.innerHTML=`<i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})`; }
+window._grpField = (id, field, val)=>{ if(!_grpEdit) return; const m=_grpMemById(id); if(!m) return;
+  if(field==='level'){ m.level=Math.max(0,Number(val)||0); _grpDirty.add(m.id); _grpBadge(); return; }
+  if(field==='name'){ const nv=(val||'').trim();
+    if(!nv){ alert('닉네임은 비울 수 없어요.'); _memApply(); return; }
+    const old=m.name; if(nv===old) return;
+    if(_mem.some(x=>x.id!==m.id && x.name===nv)){ alert('"'+nv+'" — 이미 있는 닉네임이에요.'); _memApply(); return; }
+    if(m.is_main!==false){ _mem.forEach(x=>{ if(x.is_main===false && x.main_char_name===old){ x.main_char_name=nv; _grpDirty.add(x.id); } }); }  // 대표 개명 → 부캐 연결(main_char_name) 따라가기
+    m.name=nv; _grpDirty.add(m.id); _memApply(); _grpReopen(nv); return;
+  }
+  m[field]=val; _grpDirty.add(m.id); _grpBadge();
+};
 /* 길드원 DB 삭제 (편집모드 🗑) — 탈퇴/중복 캐릭 제거. 대표 삭제 시 부캐는 대표 미상이 됨을 안내 */
 window._grpDelete = async (id)=>{
   if(!isAdmin()) return alert('운영진만 삭제할 수 있어요.');
@@ -579,11 +593,14 @@ window._grpDelete = async (id)=>{
 window._grpSave = async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
   if(!_grpDirty.size) return alert('변경된 내용이 없어요.');
-  const ids=[..._grpDirty]; if(!confirm(`${ids.length}명의 대표/그룹 변경을 저장할까요?\n※ 라이브 공유 DB(members.is_main·main_char_name)에 반영됩니다.`)) return;
+  const ids=[..._grpDirty];
+  const blank=ids.map(_grpMemById).filter(m=>m&&!(m.name||'').trim());
+  if(blank.length) return alert('닉네임이 빈 캐릭이 있어요. 채운 뒤 저장해주세요.');
+  if(!confirm(`${ids.length}명의 변경을 저장할까요?\n※ 라이브 공유 DB(members: 닉네임·직위·직업·레벨·대표/그룹)에 반영됩니다.`)) return;
   let ok=0, fail=0;
   for(const id of ids){ const m=_grpMemById(id); if(!m) continue;
     const isMain=m.is_main!==false;
-    const { error } = await db().from('members').update({ is_main:isMain, main_char_name:(isMain?null:(m.main_char_name||null)) }).eq('id',id);
+    const { error } = await db().from('members').update({ is_main:isMain, main_char_name:(isMain?null:(m.main_char_name||null)), name:(m.name||'').trim(), role:m.role||null, class:m.class||null, level:Math.max(0,Number(m.level)||0) }).eq('id',id);
     if(error) fail++; else ok++; }
   alert(`저장 완료 ✓ (${ok}명${fail?` · 실패 ${fail}`:''})`); _grpDirty=new Set(); _grpEdit=false;
   const el=document.getElementById('pageBody'); if(el){ el.innerHTML=loadingHTML('members'); try{ el.innerHTML=await buildMembers(); }catch(e){ el.innerHTML=errorHTML('members',e); } }
@@ -620,9 +637,15 @@ function memberGroups(q){
       <span style="font-weight:900;font-variant-numeric:tabular-nums;font-size:14px;color:${col};min-width:48px;text-align:right">${v>0?_suroFmt(v):'미참'}</span></span>`; };
   const av=(n,sz)=>`<span style="width:${sz}px;height:${sz}px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:${sz<26?10:12}px;font-weight:900;flex-shrink:0;background:${avatarColor(n)}">${(n||'?').slice(0,1)}</span>`;
   const crown=(m,isRep)=>ed?`<button onclick="event.stopPropagation();_grpSetRep(${m.id})" title="${isRep?'대표':'이 캐릭을 대표로'}" style="width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:${isRep?'linear-gradient(135deg,var(--bunny-main),var(--bunny-deep))':'var(--panel)'};color:${isRep?'#fff':'var(--dim)'};cursor:pointer;flex-shrink:0;font-size:11px"><i class="fa-solid fa-crown"></i></button>`:'';
+  const _cellSty='border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:4px 7px;font-size:11px;font-weight:700;color:var(--text);outline:0';
+  const _inCell=(m,f,ph,w)=>`<input value="${escAttr(m[f]==null?'':m[f])}" onchange="_grpField(${m.id},'${f}',this.value)" onclick="event.stopPropagation()" placeholder="${ph}" style="${_cellSty};width:${w}px">`;
+  const _inRole=(m)=>{ const opts=(_memRanks&&_memRanks.length?_memRanks.slice():[]); if((m.role||'')&&!opts.includes(m.role)) opts.unshift(m.role); if(!opts.length) opts.push('');
+    return `<select onchange="_grpField(${m.id},'role',this.value)" onclick="event.stopPropagation()" style="${_cellSty};font-weight:800;max-width:100px">${opts.map(r=>`<option value="${escAttr(r)}"${r===(m.role||'')?' selected':''}>${escHtml(r||'(직위 없음)')}</option>`).join('')}</select>`; };
+  const _rowHead=(m,isRep)=> ed
+    ? `${crown(m,isRep)}${av(m.name,22)}${_inCell(m,'name','닉네임',94)}${_inRole(m)}${_inCell(m,'class','직업',66)}<input type="number" value="${escAttr(m.level||0)}" onchange="_grpField(${m.id},'level',this.value)" onclick="event.stopPropagation()" style="${_cellSty};font-weight:800;width:52px;text-align:right">`
+    : `${av(m.name,22)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span><span class="dim" style="font-size:11px;font-weight:700">${escHtml(m.class||'')}${m.level?' · Lv.'+m.level:''}</span>`;
   const memRow=(m,isRep,reassign)=>`<div ${ed&&!isRep?`draggable="true" ondragstart="_grpDragStart(event,${m.id})"`:''} style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line);flex-wrap:wrap">
-      ${crown(m,isRep)}${av(m.name,22)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span>
-      <span class="dim" style="font-size:11px;font-weight:700">${escHtml(m.class||'')}${m.level?' · Lv.'+m.level:''}</span>
+      ${_rowHead(m,isRep)}
       <span class="${isRep?'chip':'dim'}" style="${isRep?'background:var(--bunny-deep);color:#fff;':'color:var(--dim);'}font-size:10px;font-weight:800;margin-left:auto">${isRep?'대표':'부캐'}</span>
       ${ed&&reassign?`<input list="grpRepList" placeholder="${isRep?'다른 대표 밑으로':'대표 변경'}…" onchange="_grpMoveByName(${m.id},this.value)" style="border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text);outline:0;width:128px">${!isRep?`<button onclick="_grpPromote(${m.id})" title="독립(본캐로)" style="border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer">독립</button><i class="fa-solid fa-grip-vertical dim" title="끌어서 이동" style="font-size:11px;cursor:grab"></i>`:''}`:''}${ed?`<button onclick="event.stopPropagation();_grpDelete(${m.id})" title="이 캐릭 DB에서 삭제" style="border:0;border-radius:7px;background:var(--bad-bg);color:var(--bad-tx);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-trash"></i></button>`:''}</div>`;
   const grpHtml = (g,idx)=>{
@@ -662,8 +685,8 @@ function memberGroups(q){
   const warnBar = (hasSuro&&miss) ? `<div style="background:var(--bad-bg);color:var(--bad-tx);border-radius:12px;padding:9px 13px;font-weight:800;font-size:13px;margin-bottom:12px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:6px"></i>${escHtml(_memSuroLabel||'이번 주차')} 수로 <b>미참 대표 ${miss}명</b> — 확인 필요${sort==='suro'?' (목록 맨 아래)':''}</div>` : '';
   const editBar = isAdmin() ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
-      ${ed?`<button onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
-      <span class="dim" style="font-size:11px;font-weight:700">펼쳐서 — <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 그룹 헤더에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
+      ${ed?`<button id="grpSaveBtn" onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
+      <span class="dim" style="font-size:11px;font-weight:700">펼쳐서 — 셀 직접수정: <b>닉네임·직위·직업·레벨</b> · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 그룹 헤더에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
     </div>` : '';
   const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
   const repDatalist = ed ? `<datalist id="grpRepList">${reps.map(r=>`<option value="${escAttr(r.name)}"></option>`).join('')}</datalist>` : '';
