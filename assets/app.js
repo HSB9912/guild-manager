@@ -557,6 +557,19 @@ window._memApply = ()=>{
   const b=document.getElementById('memViewBtn'); if(b) b.innerHTML=`<i class="fa-solid fa-${_memState.view==='grid'?'list':'table-cells'}" style="margin-right:6px"></i>${_memState.view==='grid'?'기본 보기':'시트 모드'}`;
 };
 window._memToggleView = ()=>{ _memState.view = (_memState.view==='grid')?'db':'grid'; _memApply(); };
+/* 시트 모드(grid) 키보드 셀 이동 — 위임 리스너 1개(document, 1회 바인딩)로 메모리 절약. Enter=아래·Shift+Enter=위·Tab=오른쪽(줄바꿈)·↑↓=행이동. 좌우 화살표는 캐럿(네이티브) 유지 */
+window._gGridKey = (e)=>{
+  const t=e.target; if(!t||!t.classList||!t.classList.contains('gcell')) return;
+  const r=+t.dataset.gr, c=+t.dataset.gc, k=e.key, isSel=t.tagName==='SELECT';
+  let nr=r, nc=c, move=false;
+  if(k==='Enter'){ move=true; nr=r+(e.shiftKey?-1:1); }
+  else if(k==='Tab'){ move=true; nc=c+(e.shiftKey?-1:1); if(nc>3){nc=0;nr++;} else if(nc<0){nc=3;nr--;} }
+  else if(!isSel && (k==='ArrowDown'||k==='ArrowUp')){ move=true; nr=r+(k==='ArrowDown'?1:-1); }
+  if(!move) return;
+  const tgt=document.querySelector('.gcell[data-gr="'+nr+'"][data-gc="'+nc+'"]');
+  if(tgt){ e.preventDefault(); tgt.focus(); if(tgt.select){ try{ tgt.select(); }catch(_){} } }
+};
+if(typeof document!=='undefined' && !window._gKeyBound){ window._gKeyBound=true; document.addEventListener('keydown', window._gGridKey, true); }
 /* 계정그룹 아코디언 — 대표(본캐)+부캐 · 대표 수로 여부 · 편집(👑 대표변경/드래그 이동/저장) */
 let _grpEdit=false; let _grpDirty=new Set();
 window._grpToggle = (el)=>{ const g=el.closest('.acc-grp'); if(g) g.classList.toggle('open'); };
@@ -693,19 +706,25 @@ function memberGroups(q){
     </div>`;
   };
   const _dbGrp=(g,idx)=>`<div style="border-bottom:1px solid var(--line)">${_dbRow(g.rep,true,idx,g.alts.length,g.alts.length===0)}${g.alts.map(a=>_dbRow(a,false,'',0,true)).join('')}</div>`;
-  // ===== A (시트 모드) — 스프레드시트 <table>. 대표=핑크 좌측줄·닉네임 열 고정(sticky) =====
-  const gName=(m,isRep)=> ed?`${crown(m,isRep)}${av(m.name,20)}${_inCell(m,'name','닉네임',isRep?90:82)}`:`${av(m.name,20)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span>`;
-  const gTr=(m,isRep,idx,altCount,reassign)=>{
+  // ===== A (시트 모드) — 스프레드시트 <table>. 대표=핑크 좌측줄·닉네임 열 고정(sticky) · 키보드 셀 이동(위임 리스너 1개) =====
+  // 편집 셀은 좌표(data-gr 행 · data-gc 열: 0닉 1직위 2직업 3레벨) — 인라인 핸들러 없이 class=gcell만, 이동은 _gGridKey가 위임 처리(메모리 절약)
+  const _gAttr=(r,c)=>`class="gcell" data-gr="${r}" data-gc="${c}"`;
+  const gNameCell=(m,isRep,r)=> ed?`${crown(m,isRep)}${av(m.name,20)}<input ${_gAttr(r,0)} value="${escAttr(m.name==null?'':m.name)}" onchange="_grpField(${m.id},'name',this.value)" placeholder="닉네임" style="${_cellSty};width:${isRep?90:82}px">`:`${av(m.name,20)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span>`;
+  const gRoleCell=(m,r)=>{ const opts=(_memRanks&&_memRanks.length?_memRanks.slice():[]); if((m.role||'')&&!opts.includes(m.role)) opts.unshift(m.role); if(!opts.length) opts.push('');
+    return `<select ${_gAttr(r,1)} onchange="_grpField(${m.id},'role',this.value)" style="${_cellSty};font-weight:800;max-width:100px">${opts.map(rr=>`<option value="${escAttr(rr)}"${rr===(m.role||'')?' selected':''}>${escHtml(rr||'(직위 없음)')}</option>`).join('')}</select>`; };
+  const gClassCell=(m,r)=>`<input ${_gAttr(r,2)} value="${escAttr(m.class==null?'':m.class)}" onchange="_grpField(${m.id},'class',this.value)" placeholder="직업" style="${_cellSty};width:64px">`;
+  const gLvlCell=(m,r)=>`<input ${_gAttr(r,3)} type="number" value="${escAttr(m.level||0)}" onchange="_grpField(${m.id},'level',this.value)" style="${_cellSty};font-weight:800;width:52px;text-align:right">`;
+  const gTr=(m,isRep,idx,altCount,reassign,r)=>{
     const missG=isRep&&hasSuro&&sv(m)<=0;
     const drag=ed&&!isRep?`draggable="true" ondragstart="_grpDragStart(event,${m.id})"`:'';
     const drop=isRep?_dropAttr(m.name):'';
     const stkBg=isRep?'var(--panel)':'var(--panel-2)';
     return `<tr ${drag} ${drop} data-rep="${isRep?escAttr(m.name):''}" style="border-top:1px ${isRep?'solid':'dashed'} var(--line);${isRep&&missG?'background:var(--bad-bg)':''}">
       <td style="padding:7px 8px;text-align:right;color:var(--dim);font-weight:800;font-size:12px;font-variant-numeric:tabular-nums">${isRep?idx:''}</td>
-      <td style="padding:6px 8px;position:sticky;left:0;background:${stkBg};box-shadow:${isRep?'inset 3px 0 0 var(--bunny-main)':'none'};z-index:1"><span style="display:inline-flex;align-items:center;gap:7px;${isRep?'':'padding-left:16px'}">${gName(m,isRep)}${isRep&&altCount?`<span class="chip" style="background:var(--panel-3);color:var(--dim);font-weight:800;font-size:10px">부캐 ${altCount}</span>`:''}</span></td>
-      <td style="padding:6px 8px">${ed?_inRole(m):memRoleChip(m.role)}</td>
-      <td style="padding:6px 8px">${ed?_inCell(m,'class','직업',64):`<span class="dim" style="font-weight:700;font-size:12px">${escHtml(m.class||'-')}</span>`}</td>
-      <td style="padding:6px 8px;text-align:right">${ed?_lvlIn(m):`<span style="font-weight:900;font-size:12px">${m.level||0}</span>`}</td>
+      <td style="padding:6px 8px;position:sticky;left:0;background:${stkBg};box-shadow:${isRep?'inset 3px 0 0 var(--bunny-main)':'none'};z-index:1"><span style="display:inline-flex;align-items:center;gap:7px;${isRep?'':'padding-left:16px'}">${gNameCell(m,isRep,r)}${isRep&&altCount?`<span class="chip" style="background:var(--panel-3);color:var(--dim);font-weight:800;font-size:10px">부캐 ${altCount}</span>`:''}</span></td>
+      <td style="padding:6px 8px">${ed?gRoleCell(m,r):memRoleChip(m.role)}</td>
+      <td style="padding:6px 8px">${ed?gClassCell(m,r):`<span class="dim" style="font-weight:700;font-size:12px">${escHtml(m.class||'-')}</span>`}</td>
+      <td style="padding:6px 8px;text-align:right">${ed?gLvlCell(m,r):`<span style="font-weight:900;font-size:12px">${m.level||0}</span>`}</td>
       <td style="padding:6px 8px">${isRep?suroGraph(m):`<span class="dim" style="font-size:10px;font-weight:800">부캐·${escHtml(m.main_char_name||'')}</span>`}</td>
       <td style="padding:6px 8px;text-align:right;white-space:nowrap">${editCtrls(m,isRep,reassign)}</td>
     </tr>`;
@@ -715,7 +734,7 @@ function memberGroups(q){
       <th style="padding:8px;text-align:right;width:36px">No</th>
       <th style="padding:8px;text-align:left;position:sticky;left:0;background:var(--panel-2);z-index:2">대표 / 닉네임</th>
       <th style="padding:8px;text-align:left">직위</th><th style="padding:8px;text-align:left">직업</th><th style="padding:8px;text-align:right">Lv</th><th style="padding:8px;text-align:left">이번 수로</th><th style="padding:8px"></th>
-    </tr></thead><tbody>${groups.map((g,i)=>gTr(g.rep,true,i+1,g.alts.length,g.alts.length===0)+g.alts.map(a=>gTr(a,false,'',0,true)).join('')).join('')||'<tr><td colspan="7" class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</td></tr>'}</tbody></table></div>`;
+    </tr></thead><tbody>${(()=>{ const gr=[]; groups.forEach((g,i)=>{ gr.push(gTr(g.rep,true,i+1,g.alts.length,g.alts.length===0,gr.length)); g.alts.forEach(a=>gr.push(gTr(a,false,'',0,true,gr.length))); }); return gr.join('')||'<tr><td colspan="7" class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</td></tr>'; })()}</tbody></table></div>`;
   const dbInner=groups.map((g,i)=>_dbGrp(g,i+1)).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>';
   const orphanBlock = orphans.length ? `<div class="acc-grp open" style="border-top:2px solid var(--line)">
       <div onclick="_grpToggle(this)" style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer">
