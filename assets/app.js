@@ -40,14 +40,15 @@ async function resolveAuth(){
   CURRENT.name  = session.user.user_metadata?.full_name || session.user.user_metadata?.name || CURRENT.email;
   const cache = JSON.parse(sessionStorage.getItem('bunny_auth')||'null');
   if(cache && cache.email===CURRENT.email){ CURRENT.role = dev||cache.role; return; }
-  let role='member';
-  try{ const {data:wl}=await BACKEND.db.from('admin_whitelist').select('status').eq('email',CURRENT.email).maybeSingle(); if(wl&&wl.status==='approved') role='admin'; }catch(e){}
-  if(role!=='admin'){ try{ const {data:aa}=await BACKEND.db.from('admin_auth').select('email').eq('email',CURRENT.email).maybeSingle(); if(aa) role='admin'; }catch(e){} }
-  sessionStorage.setItem('bunny_auth', JSON.stringify({email:CURRENT.email, role}));
+  let role='member', authErr=false;
+  try{ const {data:wl}=await BACKEND.db.from('admin_whitelist').select('status').eq('email',CURRENT.email).maybeSingle(); if(wl&&wl.status==='approved') role='admin'; }catch(e){ authErr=true; console.error('admin_whitelist 조회 실패', e); }
+  if(role!=='admin'){ try{ const {data:aa}=await BACKEND.db.from('admin_auth').select('email').eq('email',CURRENT.email).maybeSingle(); if(aa) role='admin'; }catch(e){ authErr=true; console.error('admin_auth 조회 실패', e); } }
+  // 네트워크 오류 시엔 권한을 캐시하지 않음 — 다음 렌더에서 재조회(운영진이 오판으로 잠기는 것 방지)
+  if(!authErr) sessionStorage.setItem('bunny_auth', JSON.stringify({email:CURRENT.email, role}));
   CURRENT.role = dev||role;
 }
 
-window.bunnyLogin  = ()=> BACKEND.db.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href.split('#')[0] } });
+window.bunnyLogin  = ()=> BACKEND.db.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href.split('#')[0] } }).catch(e=>{ console.error('로그인 실패', e); alert('로그인에 실패했어요. 잠시 후 다시 시도해주세요.\n('+(e&&e.message||e)+')'); });
 window.bunnyLogout = async ()=>{ try{await BACKEND.db.auth.signOut();}catch(e){} sessionStorage.removeItem('bunny_auth'); localStorage.removeItem('bunny_role'); location.reload(); };
 
 /* 대시보드 데이터 — 지금은 목(mock). 백엔드는 이 객체만 실데이터로 교체.
@@ -873,7 +874,8 @@ window._reqBailAct=async (id,action)=>{
 window._joinAct = async (id, status)=>{
   if(!isAdmin()) return alert('운영진만 처리할 수 있어요. 로그인 후 이용해주세요.');
   const me = CURRENT.name || CURRENT.email || '운영진';
-  let r=null; try{ const {data}=await db().from('join_requests').select('*').eq('id',id).single(); r=data; }catch(e){}
+  let r=null; try{ const {data}=await db().from('join_requests').select('*').eq('id',id).single(); r=data; }catch(e){ console.error('join_requests 조회 실패', e); return alert('신청 정보를 불러오지 못했어요. 네트워크를 확인 후 다시 시도해주세요.\n('+(e&&e.message||e)+')'); }
+  if(!r) return alert('신청 정보를 찾을 수 없어요. 이미 처리됐거나 삭제된 신청일 수 있어요.');
   if(status==='approved'){
     const suroNum=Number(String(r?.suro_score||'').replace(/[^\d]/g,''))||0;
     let msg='이 가입 신청을 승인할까요?\n· 상태 → 승인\n· 영구기록(member_records)에 자동 등록';
