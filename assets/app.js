@@ -447,7 +447,7 @@ let _memRanks = [];       // 직위 위계순 (설정 cfg.ranks) — 직위별 �
 function _memRoleRank(role){ if(!role) return 998; const i=_memRanks.indexOf(role); return i>=0?i:998; }
 const _suroFmt=n=> n>=10000?(n/10000).toFixed(n%10000?1:0)+'만': (n? n.toLocaleString():'0');
 function _suroTier(s){ return s<=0?'#C03A3A': s<50000?'#E0A52E': s<120000?'#3D7DD6':'#1A8A4A'; }  // 미참/저조/양호/우수
-const _memState = { mode:'group', sort:'suro', dir:'desc', expandAll:false };   // 계정그룹 아코디언 · 헤더 클릭 정렬
+const _memState = { mode:'group', sort:'suro', dir:'desc', view:'db' };   // view: 'db'(기본 데이터베이스 뷰) | 'grid'(시트 모드) · 헤더 클릭 정렬
 async function buildMembers(){
   const FK = FACTIONS[_memFac] || FACTIONS.bunny;
   const { data, error } = await db().from('members')
@@ -472,7 +472,7 @@ async function buildMembers(){
       <i class="fa-solid fa-magnifying-glass dim"></i>
       <input id="memSearch" value="${escAttr(q0)}" oninput="_memApply()" placeholder="닉네임 검색" autocomplete="off" style="border:0;background:transparent;outline:0;color:var(--text);font-size:14px;font-weight:700;width:100%;">
     </div>
-    <button id="memExpand" onclick="_memExpandAll()" style="padding:10px 15px;border:1px solid var(--line);border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text);white-space:nowrap"><i class="fa-solid fa-chevron-${_memState.expandAll?'up':'down'}" style="margin-right:6px"></i>${_memState.expandAll?'전체 접기':'전체 펼치기'}</button>
+    <button id="memViewBtn" onclick="_memToggleView()" title="데이터베이스 뷰 ↔ 시트 모드 전환" style="padding:10px 15px;border:1px solid var(--line);border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text);white-space:nowrap"><i class="fa-solid fa-${_memState.view==='grid'?'list':'table-cells'}" style="margin-right:6px"></i>${_memState.view==='grid'?'기본 보기':'시트 모드'}</button>
     <button onclick="_memCopy()" title="현재 목록을 시트/엑셀로 복사" style="padding:10px 15px;border:0;border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:#059669;color:#fff;white-space:nowrap"><i class="fa-solid fa-copy" style="margin-right:6px"></i>시트 복사</button>
     <button onclick="_memCopyGroups()" title="대표+부캐 매핑을 시트형(가로)으로 복사" style="padding:10px 15px;border:0;border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:#0d9488;color:#fff;white-space:nowrap"><i class="fa-solid fa-table-cells" style="margin-right:6px"></i>그룹 매핑</button>
     <span class="dim" style="font-size:13px;font-weight:800;margin-left:auto"><b id="memCount" style="color:var(--bunny-deep)">${init.count}</b> 그룹</span>
@@ -511,7 +511,6 @@ window._memSort = (k)=>{
   else { _memState.sort=k; _memState.dir=_MEM_SORT_DEF[k]||'asc'; }
   _memApply();
 };
-window._memExpandAll = ()=>{ _memState.expandAll=!_memState.expandAll; _memApply(); };
 /* 길드원 시트 복사(A) — 현재 검색 필터 반영, 대표(본캐)+부캐 순으로 TSV (_sheetCopy 경유) */
 window._memCopy = ()=>{
   const q=(document.getElementById('memSearch')?.value||'').trim();
@@ -546,8 +545,9 @@ window._memApply = ()=>{
   const html=memberGroups(q);
   const tbl=document.getElementById('memTbl'); if(tbl) tbl.innerHTML=html.body;
   const c=document.getElementById('memCount'); if(c) c.textContent=html.count;
-  const b=document.getElementById('memExpand'); if(b) b.innerHTML=`<i class="fa-solid fa-chevron-${_memState.expandAll?'up':'down'}" style="margin-right:6px"></i>${_memState.expandAll?'전체 접기':'전체 펼치기'}`;
+  const b=document.getElementById('memViewBtn'); if(b) b.innerHTML=`<i class="fa-solid fa-${_memState.view==='grid'?'list':'table-cells'}" style="margin-right:6px"></i>${_memState.view==='grid'?'기본 보기':'시트 모드'}`;
 };
+window._memToggleView = ()=>{ _memState.view = (_memState.view==='grid')?'db':'grid'; _memApply(); };
 /* 계정그룹 아코디언 — 대표(본캐)+부캐 · 대표 수로 여부 · 편집(👑 대표변경/드래그 이동/저장) */
 let _grpEdit=false; let _grpDirty=new Set();
 window._grpToggle = (el)=>{ const g=el.closest('.acc-grp'); if(g) g.classList.toggle('open'); };
@@ -647,6 +647,7 @@ function memberGroups(q){
   const played = hasSuro ? groups.filter(g=>sv(g.rep)>0) : [];
   const avg = played.length ? Math.round(played.reduce((s,g)=>s+sv(g.rep),0)/played.length) : 0;
   const ed=_grpEdit;
+  const view=_memState.view||'db';
   const suroGraph=(m)=>{ if(!hasSuro) return ''; const v=sv(m); const col=_suroTier(v); const pct=v>0?Math.max(6,Math.round(v/maxS*100)):0;
     return `<span style="display:inline-flex;align-items:center;gap:8px">
       <span title="이번 주차 수로 점수" style="width:62px;height:7px;border-radius:99px;background:var(--panel-3);overflow:hidden;display:inline-block"><span style="display:block;height:100%;width:${pct}%;background:${col}"></span></span>
@@ -660,31 +661,54 @@ function memberGroups(q){
   const _rowHead=(m,isRep)=> ed
     ? `${crown(m,isRep)}${av(m.name,22)}${_inCell(m,'name','닉네임',94)}${_inRole(m)}${_inCell(m,'class','직업',66)}<input type="number" value="${escAttr(m.level||0)}" onchange="_grpField(${m.id},'level',this.value)" onclick="event.stopPropagation()" style="${_cellSty};font-weight:800;width:52px;text-align:right">`
     : `${av(m.name,22)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span><span class="dim" style="font-size:11px;font-weight:700">${escHtml(m.class||'')}${m.level?' · Lv.'+m.level:''}</span>`;
-  const memRow=(m,isRep,reassign)=>`<div ${ed&&!isRep?`draggable="true" ondragstart="_grpDragStart(event,${m.id})"`:''} style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px dashed var(--line);flex-wrap:wrap">
+  const _lvlIn=(m)=>`<input type="number" value="${escAttr(m.level||0)}" onchange="_grpField(${m.id},'level',this.value)" onclick="event.stopPropagation()" style="${_cellSty};font-weight:800;width:52px;text-align:right">`;
+  // 편집 컨트롤(대표 변경·독립·삭제) — B(db)·A(grid) 공통
+  const editCtrls=(m,isRep,reassign)=> ed?`${reassign?`<input list="grpRepList" placeholder="${isRep?'다른 대표 밑으로':'대표 변경'}…" onchange="_grpMoveByName(${m.id},this.value)" style="border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text);outline:0;width:120px">${!isRep?`<button onclick="event.stopPropagation();_grpPromote(${m.id})" title="독립(본캐로)" style="border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer">독립</button><i class="fa-solid fa-grip-vertical dim" title="끌어서 이동" style="font-size:11px;cursor:grab"></i>`:''}`:''}<button onclick="event.stopPropagation();_grpDelete(${m.id})" title="이 캐릭 DB에서 삭제" style="border:0;border-radius:7px;background:var(--bad-bg);color:var(--bad-tx);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-trash"></i></button>`:'';
+  const _dropAttr=(repName)=> ed?`ondragover="event.preventDefault();this.classList.add('gover')" ondragleave="this.classList.remove('gover')" ondrop="_grpDropOn(event,'${escAttr(repName).replace(/'/g,"\\'")}')"`:'';
+  // ===== B (데이터베이스 뷰) — 계정 그룹핑 평면 행. 대표행 + 부캐행 상시 표시(아코디언 접힘 없음) =====
+  const _dbRow=(m,isRep,idx,altCount,reassign)=>{
+    const missG=isRep&&hasSuro&&sv(m)<=0;
+    const drag=ed&&!isRep?`draggable="true" ondragstart="_grpDragStart(event,${m.id})"`:'';
+    const drop=isRep?_dropAttr(m.name):'';
+    const pad=isRep?'9px 12px':'7px 12px 7px 44px';
+    const bar=isRep?(missG?'box-shadow:inset 3px 0 0 var(--bad-tx)':'box-shadow:inset 3px 0 0 var(--bunny-main)'):'';
+    return `<div ${drag} ${drop} data-rep="${isRep?escAttr(m.name):''}" class="mg-dbrow" style="display:flex;align-items:center;gap:9px;padding:${pad};border-top:1px ${isRep?'solid':'dashed'} var(--line);flex-wrap:wrap;${bar}">
+      ${isRep?`<span style="font-weight:800;font-size:12px;color:var(--dim);min-width:26px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums">${idx}</span>`:''}
       ${_rowHead(m,isRep)}
-      <span class="${isRep?'chip':'dim'}" style="${isRep?'background:var(--bunny-deep);color:#fff;':'color:var(--dim);'}font-size:10px;font-weight:800;margin-left:auto">${isRep?'대표':'부캐'}</span>
-      ${ed&&reassign?`<input list="grpRepList" placeholder="${isRep?'다른 대표 밑으로':'대표 변경'}…" onchange="_grpMoveByName(${m.id},this.value)" style="border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text);outline:0;width:128px">${!isRep?`<button onclick="_grpPromote(${m.id})" title="독립(본캐로)" style="border:0;border-radius:7px;background:var(--bunny-light);color:var(--bunny-deep);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer">독립</button><i class="fa-solid fa-grip-vertical dim" title="끌어서 이동" style="font-size:11px;cursor:grab"></i>`:''}`:''}${ed?`<button onclick="event.stopPropagation();_grpDelete(${m.id})" title="이 캐릭 DB에서 삭제" style="border:0;border-radius:7px;background:var(--bad-bg);color:var(--bad-tx);font-weight:800;font-size:11px;padding:5px 9px;cursor:pointer;flex-shrink:0"><i class="fa-solid fa-trash"></i></button>`:''}</div>`;
-  const grpHtml = (g,idx)=>{
-    const miss=hasSuro&&(sv(g.rep)||0)<=0;
-    const bodyRows = ed
-      ? memRow(g.rep,true,g.alts.length===0) + g.alts.map(a=>memRow(a,false,true)).join('')
-      : (g.alts.length ? g.alts.map(a=>memRow(a,false,false)).join('') : `<div class="dim" style="font-size:11px;font-weight:700;padding:5px 4px">부캐 없음 · 단일 캐릭</div>`);
-    const drop = ed?`ondragover="event.preventDefault();this.classList.add('gover')" ondragleave="this.classList.remove('gover')" ondrop="_grpDropOn(event,'${escAttr(g.rep.name).replace(/'/g,"\\'")}')"`:'';
-    return `<div class="acc-grp${_memState.expandAll?' open':''}" data-rep="${escAttr(g.rep.name)}" style="border-bottom:1px solid var(--line)">
-      <div class="acc-head" onclick="_grpToggle(this)" ${drop} style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;${miss?'box-shadow:inset 3px 0 0 var(--bad-tx)':''}">
-        <i class="fa-solid fa-chevron-right acc-chev dim" style="font-size:10px;width:10px;transition:.15s"></i>
-        <span style="font-weight:800;font-size:12px;color:var(--dim);min-width:30px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0">${idx}</span>
-        ${av(g.rep.name,26)}
-        <span style="font-weight:900;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(g.rep.name)}</span>
-        ${memRoleChip(g.rep.role)}
-        ${g.alts.length?`<span class="chip" style="background:var(--panel-3);color:var(--dim);font-weight:800">부캐 ${g.alts.length}</span>`:''}
-        <span style="flex:1"></span>
-        ${suroGraph(g.rep)}
-      </div>
-      <div class="acc-body" style="display:none;background:var(--panel-2);padding:4px 12px 9px 34px">${bodyRows}</div>
+      ${!ed&&isRep?memRoleChip(m.role):''}
+      <span class="${isRep?'chip':'dim'}" style="${isRep?'background:var(--bunny-deep);color:#fff;':'color:var(--dim);'}font-size:10px;font-weight:800">${isRep?'대표':'부캐'}</span>
+      ${isRep&&altCount?`<span class="chip" style="background:var(--panel-3);color:var(--dim);font-weight:800">부캐 ${altCount}</span>`:''}
+      <span style="flex:1"></span>
+      ${isRep?suroGraph(m):''}
+      ${editCtrls(m,isRep,reassign)}
     </div>`;
   };
-  const orphanBlock = orphans.length ? `<div class="acc-grp${_memState.expandAll?' open':''}" style="border-top:2px solid var(--line)">
+  const _dbGrp=(g,idx)=>`<div style="border-bottom:1px solid var(--line)">${_dbRow(g.rep,true,idx,g.alts.length,g.alts.length===0)}${g.alts.map(a=>_dbRow(a,false,'',0,true)).join('')}</div>`;
+  // ===== A (시트 모드) — 스프레드시트 <table>. 대표=핑크 좌측줄·닉네임 열 고정(sticky) =====
+  const gName=(m,isRep)=> ed?`${crown(m,isRep)}${av(m.name,20)}${_inCell(m,'name','닉네임',isRep?90:82)}`:`${av(m.name,20)}<span style="font-weight:${isRep?900:700};font-size:13px">${escHtml(m.name)}</span>`;
+  const gTr=(m,isRep,idx,altCount,reassign)=>{
+    const missG=isRep&&hasSuro&&sv(m)<=0;
+    const drag=ed&&!isRep?`draggable="true" ondragstart="_grpDragStart(event,${m.id})"`:'';
+    const drop=isRep?_dropAttr(m.name):'';
+    const stkBg=isRep?'var(--panel)':'var(--panel-2)';
+    return `<tr ${drag} ${drop} data-rep="${isRep?escAttr(m.name):''}" style="border-top:1px ${isRep?'solid':'dashed'} var(--line);${isRep&&missG?'background:var(--bad-bg)':''}">
+      <td style="padding:7px 8px;text-align:right;color:var(--dim);font-weight:800;font-size:12px;font-variant-numeric:tabular-nums">${isRep?idx:''}</td>
+      <td style="padding:6px 8px;position:sticky;left:0;background:${stkBg};box-shadow:${isRep?'inset 3px 0 0 var(--bunny-main)':'none'};z-index:1"><span style="display:inline-flex;align-items:center;gap:7px;${isRep?'':'padding-left:16px'}">${gName(m,isRep)}${isRep&&altCount?`<span class="chip" style="background:var(--panel-3);color:var(--dim);font-weight:800;font-size:10px">부캐 ${altCount}</span>`:''}</span></td>
+      <td style="padding:6px 8px">${ed?_inRole(m):memRoleChip(m.role)}</td>
+      <td style="padding:6px 8px">${ed?_inCell(m,'class','직업',64):`<span class="dim" style="font-weight:700;font-size:12px">${escHtml(m.class||'-')}</span>`}</td>
+      <td style="padding:6px 8px;text-align:right">${ed?_lvlIn(m):`<span style="font-weight:900;font-size:12px">${m.level||0}</span>`}</td>
+      <td style="padding:6px 8px">${isRep?suroGraph(m):`<span class="dim" style="font-size:10px;font-weight:800">부캐·${escHtml(m.main_char_name||'')}</span>`}</td>
+      <td style="padding:6px 8px;text-align:right;white-space:nowrap">${editCtrls(m,isRep,reassign)}</td>
+    </tr>`;
+  };
+  const gridInner=`<div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
+    <thead><tr class="dim" style="font-size:11px;font-weight:800;background:var(--panel-2);border-bottom:1px solid var(--line)">
+      <th style="padding:8px;text-align:right;width:36px">No</th>
+      <th style="padding:8px;text-align:left;position:sticky;left:0;background:var(--panel-2);z-index:2">대표 / 닉네임</th>
+      <th style="padding:8px;text-align:left">직위</th><th style="padding:8px;text-align:left">직업</th><th style="padding:8px;text-align:right">Lv</th><th style="padding:8px;text-align:left">이번 수로</th><th style="padding:8px"></th>
+    </tr></thead><tbody>${groups.map((g,i)=>gTr(g.rep,true,i+1,g.alts.length,g.alts.length===0)+g.alts.map(a=>gTr(a,false,'',0,true)).join('')).join('')||'<tr><td colspan="7" class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</td></tr>'}</tbody></table></div>`;
+  const dbInner=groups.map((g,i)=>_dbGrp(g,i+1)).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>';
+  const orphanBlock = orphans.length ? `<div class="acc-grp open" style="border-top:2px solid var(--line)">
       <div onclick="_grpToggle(this)" style="display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer">
         <i class="fa-solid fa-chevron-right acc-chev dim" style="font-size:10px;width:10px;transition:.15s"></i>
         <i class="fa-solid fa-link-slash dim"></i><span style="font-weight:900;font-size:14px;color:var(--warn-tx)">대표 미상 (부캐인데 본캐 못 찾음)</span>
@@ -702,7 +726,7 @@ function memberGroups(q){
   const editBar = isAdmin() ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
       ${ed?`<button id="grpSaveBtn" onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
-      <span class="dim" style="font-size:11px;font-weight:700">펼쳐서 — 셀 직접수정: <b>닉네임·직위·직업·레벨</b> · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 그룹 헤더에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
+      <span class="dim" style="font-size:11px;font-weight:700">셀 직접수정: <b>닉네임·직위·직업·레벨</b> · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 대표행에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
     </div>` : '';
   const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
   const repDatalist = ed ? `<datalist id="grpRepList">${reps.map(r=>`<option value="${escAttr(r.name)}"></option>`).join('')}</datalist>` : '';
@@ -712,7 +736,8 @@ function memberGroups(q){
   const sortBar = `<div style="display:flex;align-items:center;gap:4px;padding:9px 11px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:12px;font-weight:800;flex-wrap:wrap">
     ${sk('name','닉네임')}${sk('role','직위')}${sk('level','레벨')}${sk('class','직업')}${sk('join','가입일')}${sk('suro','이번주 수로',true)}
   </div>`;
-  const body = css + repDatalist + editBar + summary + warnBar + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${sortBar}${groups.map((g,i)=>grpHtml(g,i+1)).join('')||'<div class="dim" style="padding:40px;text-align:center;font-weight:700">그룹 없음</div>'}${orphanBlock}</div>`;
+  const viewBody = (view==='grid') ? gridInner : dbInner;
+  const body = css + repDatalist + editBar + summary + warnBar + `<div style="border:1px solid var(--line);border-radius:14px;overflow:hidden">${sortBar}${viewBody}${orphanBlock}</div>`;
   return { body, count: groups.length };
 }
 
