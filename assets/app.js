@@ -120,6 +120,7 @@ const CHANGELOG = [
   { id:'2026-07-13', date:'2026-07-13', items:[
     { t:'feat', x:'수로 면제 — 바뀐 제도(계정=대표1+부캐5·대표 수로 필수) 반영. 대표가 수로 참여하면 부캐(수로면제캐릭) 노블 유지, 대표 미참(0점)이면 그 계정 전체 노블 잠김을 빨간칸으로 경고 + 부캐 정원 5 초과 시 주황 경고. "시트 복사"로 색상·서식까지 구글시트에 그대로 붙여넣기(핑크=수로면제캐릭·빨강=노블잠김·주황=정원초과)' },
     { t:'feat', x:'길드원 셀편집 — 그룹 편집모드에서 닉네임·직위·직업·레벨을 칸에 직접 수정해 한번에 저장(대표 개명 시 부캐 연결도 자동 따라감). "시트 복사"로 현재 목록을 엑셀/시트에 붙여넣기' },
+    { t:'feat', x:'시트 복사 확장 — 수로 입력에 "복사"(대표별 점수 점수순), 길드원에 "그룹 매핑"(대표+부캐1..N 가로 시트) 버튼 추가. 엑셀·구글시트에 그대로 붙여넣기' },
   ]},
   { id:'2026-07-12', date:'2026-07-12', items:[
     { t:'fix', x:'신청 처리 · 보석금 관리 — 보석금 내역이 4건만 뜨던 문제 수정. 옛 길드키(뚠/뚱/밤/별/꿀/달카롱)로 저장된 100건이 "버니" 필터에 걸러졌던 것 → 보석금은 길드 통합 관리라 전체 표시. 상단에 합계 조각/전체/대기/완료 요약 추가' },
@@ -473,6 +474,7 @@ async function buildMembers(){
     </div>
     <button id="memExpand" onclick="_memExpandAll()" style="padding:10px 15px;border:1px solid var(--line);border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text);white-space:nowrap"><i class="fa-solid fa-chevron-${_memState.expandAll?'up':'down'}" style="margin-right:6px"></i>${_memState.expandAll?'전체 접기':'전체 펼치기'}</button>
     <button onclick="_memCopy()" title="현재 목록을 시트/엑셀로 복사" style="padding:10px 15px;border:0;border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:#059669;color:#fff;white-space:nowrap"><i class="fa-solid fa-copy" style="margin-right:6px"></i>시트 복사</button>
+    <button onclick="_memCopyGroups()" title="대표+부캐 매핑을 시트형(가로)으로 복사" style="padding:10px 15px;border:0;border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:#0d9488;color:#fff;white-space:nowrap"><i class="fa-solid fa-table-cells" style="margin-right:6px"></i>그룹 매핑</button>
     <span class="dim" style="font-size:13px;font-weight:800;margin-left:auto"><b id="memCount" style="color:var(--bunny-deep)">${init.count}</b> 그룹</span>
   </div>`;
   const facBtn = (k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_memFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85;font-weight:700">메인</span>':''; return `<button onclick="_memTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
@@ -524,6 +526,20 @@ window._memCopy = ()=>{
   });
   if(!rows.length) return alert('복사할 길드원이 없어요.');
   _sheetCopy(['닉네임','직위','직업','레벨','구분','대표캐릭','수로','가입일'], rows, null, { ok:'📋 길드원 '+rows.length+'명 복사됨 — 시트/엑셀에 붙여넣기(Ctrl+V)' });
+};
+/* 계정그룹 매핑 시트 복사(A) — 대표 1행 + 부캐1..N 가로 배치(계정=대표1+부캐5) · 수로점수순 · _sheetCopy 경유 */
+window._memCopyGroups = ()=>{
+  const q=(document.getElementById('memSearch')?.value||'').trim();
+  const byMain={}; _mem.filter(m=>m.is_main===false).forEach(m=>{ const k=m.main_char_name||''; (byMain[k]||(byMain[k]=[])).push(m); });
+  const groups=_mem.filter(m=>m.is_main!==false)
+    .map(r=>({ rep:r, alts:(byMain[r.name]||[]).slice().sort((a,b)=>(b.level||0)-(a.level||0)) }))
+    .filter(g=> !q || g.rep.name.includes(q) || g.alts.some(a=>(a.name||'').includes(q)))
+    .sort((a,b)=>((_memSuro[b.rep.id]||0)-(_memSuro[a.rep.id]||0)));
+  if(!groups.length) return alert('복사할 그룹이 없어요.');
+  const maxSubs=Math.max(0,...groups.map(g=>g.alts.length));
+  const headers=['No','대표캐릭','직위','이번수로','부캐수'].concat(Array.from({length:maxSubs},(_,i)=>'부캐'+(i+1)));
+  const rows=groups.map((g,i)=>{ const base=[i+1, g.rep.name||'', (g.rep.role||'').trim()||'-', _memSuro[g.rep.id]||0, g.alts.length]; for(let j=0;j<maxSubs;j++) base.push(g.alts[j]?g.alts[j].name:''); return base; });
+  _sheetCopy(headers, rows, null, { title:(_memSuroLabel||'')+' 계정 그룹 매핑 — '+groups.length+'그룹', ok:'📋 계정그룹 '+groups.length+'개 복사됨 (대표+부캐1..N) — 시트/엑셀에 붙여넣기(Ctrl+V)' });
 };
 window._memApply = ()=>{
   const q=(document.getElementById('memSearch')?.value||'').trim();
@@ -1953,6 +1969,7 @@ async function buildSuroInput(){
         <select id="si_period" onchange="_siLoad(this.value)" style="${inp};flex:1;min-width:180px">${_siPeriods.map(p=>`<option value="${p.id}">${escHtml(p.period_label)}</option>`).join('')}</select>
         <div style="flex:1;min-width:150px;display:flex;align-items:center;gap:7px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:0 12px"><i class="fa-solid fa-magnifying-glass dim"></i><input id="si_q" oninput="_siSearch()" placeholder="닉네임 검색…" style="border:0;background:transparent;flex:1;padding:10px 0;font-weight:800;font-size:14px;color:var(--text);outline:0"></div>
         <button id="si_only" onclick="_siToggleEmpty()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">미입력만</button>
+        <button onclick="_siCopy()" title="현재 회차 대표별 점수를 시트/엑셀로 복사" style="border:0;background:#059669;color:#fff;border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-copy" style="margin-right:4px"></i>복사</button>
         <button onclick="_siAddPeriod()" title="새 회차(주차) 추가" style="border:1px solid var(--bunny-main);background:var(--bunny-light);color:var(--bunny-deep);border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-plus" style="margin-right:4px"></i>회차</button>
         <button onclick="_siOcrOpen()" title="화면 캡처로 수로 점수 자동 인식" style="border:1px solid var(--bunny-deep);background:var(--bunny-deep);color:#fff;border-radius:11px;padding:10px 13px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap"><i class="fa-solid fa-camera" style="margin-right:4px"></i>OCR</button>
       </div>
@@ -2228,6 +2245,17 @@ function _siRenderPresence(){
     ? `<i class="fa-solid fa-user-group" style="color:var(--bunny-deep);margin-right:6px"></i>같이 작업 중 ${others.length}명 · ${others.map(escHtml).join(' · ')}`
     : '<i class="fa-solid fa-user-check" style="color:var(--ok-tx);margin-right:6px"></i>나만 작업 중';
 }
+/* 수로점수 시트 복사(A) — 현재 회차 대표별 점수 TSV (점수순 · _sheetCopy 경유) */
+window._siCopy = ()=>{
+  const reps=_siMembers.filter(m=>m.is_main!==false);
+  if(!reps.length) return alert('복사할 대표가 없어요. 회차를 먼저 선택해주세요.');
+  const sv=(m)=>{ const v=_siScores[m.id]; return (v===''||v==null)?null:(Number(v)||0); };
+  const rows=reps.map(m=>({m,s:sv(m)}))
+    .sort((a,b)=>((b.s==null?-1:b.s)-(a.s==null?-1:a.s)))
+    .map((r,i)=>[i+1, r.m.name||'', (r.m.role||'').trim()||'-', r.s==null?'미입력':r.s, _siPrev[r.m.id]!=null?_siPrev[r.m.id]:'']);
+  const per=_siPeriods.find(p=>String(p.id)===String(_siPid));
+  _sheetCopy(['순위','닉네임','직위','이번수로','지난주'], rows, null, { title:(per?per.period_label:'수로 점수')+' — 대표 '+reps.length+'명', ok:'📋 수로 점수 '+reps.length+'명 복사됨 — 시트/엑셀에 붙여넣기(Ctrl+V)' });
+};
 /* 입력 이벤트 */
 window._siInput=(mid,val)=>{
   _siScores[mid]=val; const has=val!=='';
