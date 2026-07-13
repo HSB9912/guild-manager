@@ -471,6 +471,7 @@ async function buildMembers(){
       <input id="memSearch" value="${escAttr(q0)}" oninput="_memApply()" placeholder="닉네임 검색" autocomplete="off" style="border:0;background:transparent;outline:0;color:var(--text);font-size:14px;font-weight:700;width:100%;">
     </div>
     <button id="memExpand" onclick="_memExpandAll()" style="padding:10px 15px;border:1px solid var(--line);border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:var(--panel-2);color:var(--text);white-space:nowrap"><i class="fa-solid fa-chevron-${_memState.expandAll?'up':'down'}" style="margin-right:6px"></i>${_memState.expandAll?'전체 접기':'전체 펼치기'}</button>
+    <button onclick="_memCopy()" title="현재 목록을 시트/엑셀로 복사" style="padding:10px 15px;border:0;border-radius:11px;font-weight:800;font-size:13px;cursor:pointer;background:#059669;color:#fff;white-space:nowrap"><i class="fa-solid fa-copy" style="margin-right:6px"></i>시트 복사</button>
     <span class="dim" style="font-size:13px;font-weight:800;margin-left:auto"><b id="memCount" style="color:var(--bunny-deep)">${init.count}</b> 그룹</span>
   </div>`;
   const facBtn = (k)=>{ const f=FACTIONS[k]||FACTIONS.bunny, on=k===_memFac, tag=k==='bunny'?' <span style="font-size:10px;opacity:.85;font-weight:700">메인</span>':''; return `<button onclick="_memTab('${k}')" style="border:0;border-radius:12px;padding:9px 18px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;${on?`background:${f.main};color:#fff;box-shadow:0 4px 12px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}${tag}</button>`; };
@@ -508,6 +509,21 @@ window._memSort = (k)=>{
   _memApply();
 };
 window._memExpandAll = ()=>{ _memState.expandAll=!_memState.expandAll; _memApply(); };
+/* 길드원 시트 복사(A) — 현재 검색 필터 반영, 대표(본캐)+부캐 순으로 TSV (_sheetCopy 경유) */
+window._memCopy = ()=>{
+  const q=(document.getElementById('memSearch')?.value||'').trim();
+  const reps=_mem.filter(m=>m.is_main!==false);
+  const byMain={}; _mem.filter(m=>m.is_main===false).forEach(m=>{ const k=m.main_char_name||''; (byMain[k]||(byMain[k]=[])).push(m); });
+  const line=(m)=>[m.name||'', m.role||'', m.class||'', m.level||0, m.is_main!==false?'본캐':'부캐', m.is_main!==false?'':(m.main_char_name||''), _memSuro[m.id]||0, m.join_date||''];
+  const rows=[];
+  reps.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'')).forEach(r=>{
+    const alts=(byMain[r.name]||[]).slice().sort((a,b)=>(b.level||0)-(a.level||0));
+    if(q && !(r.name||'').includes(q) && !alts.some(a=>(a.name||'').includes(q))) return;
+    rows.push(line(r)); alts.forEach(a=>rows.push(line(a)));
+  });
+  if(!rows.length) return alert('복사할 길드원이 없어요.');
+  _sheetCopy(['닉네임','직위','직업','레벨','구분','대표캐릭','수로','가입일'], rows, null, { ok:'📋 길드원 '+rows.length+'명 복사됨 — 시트/엑셀에 붙여넣기(Ctrl+V)' });
+};
 window._memApply = ()=>{
   const q=(document.getElementById('memSearch')?.value||'').trim();
   const html=memberGroups(q);
