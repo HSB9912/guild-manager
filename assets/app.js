@@ -425,7 +425,7 @@ function loadingHTML(k){
 function errorHTML(k,e){
   return headerHTML(META[k]?META[k].t:'', '') + `<div class="panel" style="border-radius:24px;padding:44px;text-align:center;">
     <p style="font-weight:900;font-size:18px;margin:0 0 6px">데이터를 불러오지 못했어요</p>
-    <p class="dim" style="font-size:13px;font-weight:700;margin:0">${(e&&e.message)||e||''}</p>
+    <p class="dim" style="font-size:13px;font-weight:700;margin:0">${escHtml((e&&e.message)||e||'')}</p>
     <p class="dim" style="font-size:12px;margin:10px 0 0">로그인이 필요하거나 네트워크 문제일 수 있어요.</p></div>`;
 }
 
@@ -1380,7 +1380,7 @@ async function buildSuroReward(){
     scores.forEach(s=>{ (scoreMap[s.member_id]||(scoreMap[s.member_id]={}))[s.period_id]=Math.round(Number(s.score))||0; });
   }catch(e){}
   _srData = { periods:periods||[], members:mem||[], scoreMap, piecePrice, cfg };
-  setTimeout(()=>{ try{ _srRender(); }catch(e){ const el=document.getElementById('contentArea'); if(el) el.innerHTML='<div style="padding:40px;text-align:center;color:var(--bad-tx);font-weight:700">'+(e.message||e)+'</div>'; } },0);
+  setTimeout(()=>{ try{ _srRender(); }catch(e){ const el=document.getElementById('contentArea'); if(el) el.innerHTML='<div style="padding:40px;text-align:center;color:var(--bad-tx);font-weight:700">'+escHtml(e.message||e)+'</div>'; } },0);
   return headerHTML('수로 보상','분기별 등급·보상 산정') +
     '<div id="contentArea"><div style="text-align:center;padding:48px;color:var(--dim);font-weight:700"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>불러오는 중…</div></div>';
 }
@@ -2429,7 +2429,7 @@ window._syncRun=async ()=>{
       ${left.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${left.map(m=>`<label style="display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border-radius:999px;padding:5px 12px;cursor:pointer;font-weight:800;font-size:13px"><input type="checkbox" class="sync-gone-cb" data-id="${m.id}" data-name="${escAttr(m.name)}" style="accent-color:var(--bad-tx)">${escHtml(m.name)}</label>`).join('')}</div>`:'<div class="dim" style="font-size:13px;font-weight:700;margin-top:6px">없음</div>'}`;
     // 닉변 자동 감지 → 신규에 섞인 닉변자를 자동 체크해제 + "닉변→연결"로 분류 (받아지기 전에 시스템적으로 차단)
     if(added.length && left.length) setTimeout(()=>{ try{ _syncNickCheck(true); }catch(e){} }, 350);
-  }catch(e){ box.innerHTML=`<div class="panel" style="border-radius:16px;padding:20px;text-align:center"><span style="font-weight:800;color:var(--bad-tx)">${e.message||e}</span><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">키·월드·길드명을 확인해주세요.</p></div>`; }
+  }catch(e){ box.innerHTML=`<div class="panel" style="border-radius:16px;padding:20px;text-align:center"><span style="font-weight:800;color:var(--bad-tx)">${escHtml(e.message||e)}</span><p class="dim" style="font-size:12px;font-weight:700;margin:8px 0 0">키·월드·길드명을 확인해주세요.</p></div>`; }
 };
 window._syncAdd=async ()=>{
   if(!isAdmin()) return alert('운영진만 추가할 수 있어요.');
