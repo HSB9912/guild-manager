@@ -601,6 +601,32 @@ window._gGridPaste = (e)=>{
   if(changed){ _memApply(); _grpSchedule(); }
 };
 if(typeof document!=='undefined' && !window._gPasteBound){ window._gPasteBound=true; document.addEventListener('paste', window._gGridPaste, true); }
+/* 시트 모드 셀 범위 선택(드래그) + Ctrl+C 복사(TSV). 위임 리스너 4개(mousedown/move/up/copy)만.
+   선택은 사각 좌표 _gSelRect만 보관(셀 배열 저장 안 함=램 절약), 하이라이트는 .gsel 토글(선택 셀만 O(범위)). */
+let _gSelAnchor=null, _gSelRect=null, _gSelecting=false;
+function _gCellAt(x,y){ const el=document.elementFromPoint(x,y); if(!el) return null; if(el.classList&&el.classList.contains('gcell')) return el; return el.querySelector?el.querySelector('.gcell'):null; }
+function _gClearSel(){ document.querySelectorAll('.gcell.gsel').forEach(c=>c.classList.remove('gsel')); }
+function _gPaintSel(){ if(!_gSelRect) return; _gClearSel(); const {r0,c0,r1,c1}=_gSelRect; const rmin=Math.min(r0,r1),rmax=Math.max(r0,r1),cmin=Math.min(c0,c1),cmax=Math.max(c0,c1);
+  for(let r=rmin;r<=rmax;r++)for(let c=cmin;c<=cmax;c++){ const el=document.querySelector('.gcell[data-gr="'+r+'"][data-gc="'+c+'"]'); if(el) el.classList.add('gsel'); } }
+window._gSelDown=(e)=>{ if(e.button!==0) return; const t=e.target; if(!t||!t.classList||!t.classList.contains('gcell')){ if(_gSelRect){ _gClearSel(); _gSelRect=null; } return; }
+  _gClearSel(); _gSelRect=null; _gSelAnchor={r:+t.dataset.gr,c:+t.dataset.gc}; _gSelecting=true; };
+window._gSelMove=(e)=>{ if(!_gSelecting||!_gSelAnchor) return; const el=_gCellAt(e.clientX,e.clientY); if(!el) return;
+  const r=+el.dataset.gr, c=+el.dataset.gc;
+  if(r===_gSelAnchor.r && c===_gSelAnchor.c){ if(_gSelRect){ _gClearSel(); _gSelRect=null; } return; }   // 아직 같은 셀=단순 클릭(편집 허용)
+  e.preventDefault(); const ae=document.activeElement; if(ae&&ae.blur&&ae.classList&&ae.classList.contains('gcell')) ae.blur();   // 드래그 확정=텍스트선택 대신 범위선택
+  _gSelRect={r0:_gSelAnchor.r,c0:_gSelAnchor.c,r1:r,c1:c}; _gPaintSel(); };
+window._gSelUp=()=>{ _gSelecting=false; };
+window._gSelCopy=(e)=>{ if(!_gSelRect) return;
+  const ae=document.activeElement; if(ae&&(ae.tagName==='INPUT')&&ae.classList&&ae.classList.contains('gcell')&&ae.selectionStart!=null&&ae.selectionStart!==ae.selectionEnd) return;   // 셀 안 텍스트 선택 복사는 방해 안 함
+  const {r0,c0,r1,c1}=_gSelRect; const rmin=Math.min(r0,r1),rmax=Math.max(r0,r1),cmin=Math.min(c0,c1),cmax=Math.max(c0,c1);
+  const lines=[]; for(let r=rmin;r<=rmax;r++){ const cells=[]; for(let c=cmin;c<=cmax;c++){ const el=document.querySelector('.gcell[data-gr="'+r+'"][data-gc="'+c+'"]'); cells.push(el&&el.value!=null?el.value:''); } lines.push(cells.join('\t')); }
+  const tsv=lines.join('\n');
+  if(e.clipboardData){ e.clipboardData.setData('text/plain', tsv); e.preventDefault(); } };
+if(typeof document!=='undefined' && !window._gSelBound){ window._gSelBound=true;
+  document.addEventListener('mousedown', window._gSelDown, true);
+  document.addEventListener('mousemove', window._gSelMove, true);
+  document.addEventListener('mouseup', window._gSelUp, true);
+  document.addEventListener('copy', window._gSelCopy, true); }
 /* 계정그룹 아코디언 — 대표(본캐)+부캐 · 대표 수로 여부 · 편집(👑 대표변경/드래그 이동/저장) */
 let _grpEdit=false; let _grpDirty=new Map();   // id -> Set<field> (필드 단위 dirty: 바뀐 컬럼만 저장 → 동시편집 시 다른 컬럼 덮어쓰기 방지)
 function _grpMark(id, ...fields){ let s=_grpDirty.get(id); if(!s){ s=new Set(); _grpDirty.set(id,s); } fields.forEach(f=>s.add(f)); }
@@ -821,9 +847,9 @@ function memberGroups(q){
       <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
       <a href="suro_input.html?ocr=1&guild=${escAttr(_memFac)}" title="화면 캡처 OCR로 수로 점수 반영 — 수로 입력 페이지에서 실행" style="text-decoration:none;border:1px solid var(--bunny-deep);border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;background:var(--bunny-deep);color:#fff"><i class="fa-solid fa-camera" style="margin-right:5px"></i>수로 OCR</a>
       ${ed?`<button id="grpSaveBtn" onclick="_grpSave()" title="수정하면 자동 저장돼요 · 클릭 시 즉시 저장하고 편집 종료" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-${_grpDirty.size?'floppy-disk':'check'}" style="margin-right:5px"></i>${_grpDirty.size?`저장 (${_grpDirty.size})`:'저장됨 ✓'}</button>
-      <span class="dim" style="font-size:11px;font-weight:700"><b style="color:#1A8A4A">자동저장</b> · 셀 직접수정: <b>닉네임·직위·직업·레벨</b>${view==='grid'?' · 시트모드 <b>Ctrl+V</b> 붙여넣기(구글시트/엑셀)':''} · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 대표행에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
+      <span class="dim" style="font-size:11px;font-weight:700"><b style="color:#1A8A4A">자동저장</b> · 셀 직접수정: <b>닉네임·직위·직업·레벨</b>${view==='grid'?' · 시트모드 <b>드래그</b> 범위선택→<b>Ctrl+C</b> 복사 · <b>Ctrl+V</b> 붙여넣기(구글시트/엑셀)':''} · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 대표행에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
     </div>` : '';
-  const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
+  const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}.gcell.gsel{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
   const repDatalist = ed ? `<datalist id="grpRepList">${reps.map(r=>`<option value="${escAttr(r.name)}"></option>`).join('')}</datalist>` : '';
   // 헤더 클릭 정렬 바 (C안: 활성 기준 핑크 강조 + 방향 화살표) — 닉네임은 유니코드순
   const arr = dir==='asc' ? '<i class="fa-solid fa-arrow-up-short-wide" style="margin-left:5px;font-size:10px"></i>' : '<i class="fa-solid fa-arrow-down-wide-short" style="margin-left:5px;font-size:10px"></i>';
