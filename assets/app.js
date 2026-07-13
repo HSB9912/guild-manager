@@ -457,10 +457,19 @@ async function buildMembers(){
   _mem = data||[];
   _memSuro = {}; _memSuroLabel = '';
   try{
-    const { data:per } = await db().from('suro_periods').select('id,period_label').order('start_date',{ascending:false}).limit(1);
-    if(per && per[0]){ _memSuroLabel = per[0].period_label;
-      const { data:sc } = await db().from('suro_scores').select('member_id,score').eq('guild',FK.key).eq('period_id',per[0].id).limit(4000);
-      (sc||[]).forEach(s=>{ _memSuro[s.member_id] = Number(s.score)||0; });
+    // 노블/참여 표시는 "점수가 있는 최신 회차" 기준 — 갓 만든 빈 이번 주차가 최신이어도 전원 미참으로 리셋되지 않게
+    // 지난주 점수로 폴백하고, 이번주 점수가 쌓이면 자동으로 이번주로 전환됨.
+    const { data:per } = await db().from('suro_periods').select('id,period_label').order('start_date',{ascending:false}).limit(8);
+    if(per && per.length){
+      _memSuroLabel = per[0].period_label;
+      for(let i=0;i<per.length;i++){
+        const { data:sc } = await db().from('suro_scores').select('member_id,score').eq('guild',FK.key).eq('period_id',per[i].id).limit(4000);
+        if(sc && sc.length){
+          _memSuroLabel = per[i].period_label + (i>0?' (지난주 기준)':'');
+          sc.forEach(s=>{ _memSuro[s.member_id] = Number(s.score)||0; });
+          break;
+        }
+      }
     }
   }catch(e){}
   try{ const cfg=await getConfig(); _memRanks=(cfg.ranks&&(cfg.ranks[FK.key]||cfg.ranks[GUILD]))||[]; }catch(e){ _memRanks=[]; }
@@ -1975,7 +1984,7 @@ window._roleApply = async ()=>{
 };
 
 /* ----- 수로 입력 (실시간 동시 입력 · 셀 단위 자동저장) ----- */
-let _siMembers=[], _siPid=null, _siPeriods=[], _siScores={}, _siPrev={}, _siEditing={}, _siPresence=[], _siCh=null, _siOnlyEmpty=false, _siTimers={}, _siPoll=null, _siVisBound=false, _siGuild='버니';
+let _siMembers=[], _siPid=null, _siPeriods=[], _siScores={}, _siPrev={}, _siEditing={}, _siPresence=[], _siCh=null, _siOnlyEmpty=false, _siTimers={}, _siPoll=null, _siVisBound=false, _siGuild='버니', _siAutoGen=false;
 window._siSetGuild=async (k)=>{ if(!FACTIONS[k]) return; const g=FACTIONS[k].key; if(g===_siGuild) return; _siGuild=g; const el=document.getElementById('pageBody'); if(!el) return; el.innerHTML=loadingHTML('suro_input'); try{ el.innerHTML=await buildSuroInput(); }catch(e){ el.innerHTML=errorHTML('suro_input',e); } };
 async function buildSuroInput(){
   const { data:periods, error } = await db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(80);
@@ -1985,6 +1994,8 @@ async function buildSuroInput(){
   const inp='border:1px solid var(--line);background:var(--panel-2);border-radius:11px;padding:10px 12px;font-weight:800;font-size:14px;color:var(--text);outline:0;';
   const rowsHtml = _siPid ? await _siFetch(_siPid) : `<div class="dim" style="padding:30px;text-align:center;font-weight:700">아직 회차가 없어요 — 위 <b>+ 회차</b>로 이번 주차(${escHtml(curRange)})를 만들어주세요</div>`;
   setTimeout(()=>{ try{ _siSubscribe(); }catch(e){} _siUpdateProgress(); }, 60);
+  // 주차 자동생성 — 이번 주차(목~수) 회차가 없으면 운영진 방문 시 1회 자동 생성(prompt 없이). 노블/참여는 buildMembers가 지난주 점수로 폴백해 유지됨.
+  if(!hasCur && isAdmin() && !_siAutoGen){ _siAutoGen=true; setTimeout(()=>{ _siAddPeriod(curLabel, true); }, 150); }
   if(!_siVisBound){ _siVisBound=true; document.addEventListener('visibilitychange',()=>{ if(!document.hidden && document.getElementById('si_list')) _siRefresh(); }); }
   const gtabs=['bunny','wolf','cougar'].map(k=>{ const f=FACTIONS[k], on=f.key===_siGuild; return `<button onclick="_siSetGuild('${k}')" style="border:0;border-radius:10px;padding:7px 15px;font-weight:800;font-size:13px;cursor:pointer;${on?`background:${f.main};color:#fff;box-shadow:0 3px 9px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}</button>`; }).join('');
   return headerHTML('수로 입력','실시간 동시 입력 · 자동 저장') +
@@ -2012,19 +2023,20 @@ async function buildSuroInput(){
     <p class="dim" style="font-size:12px;font-weight:700;text-align:center;margin-top:12px"><i class="fa-solid fa-bolt" style="color:var(--bunny-main);margin-right:5px"></i>점수 입력 후 Enter → 자동 저장 + 다음 칸. 다른 운영진 입력도 실시간으로 반영돼요.</p>`;
 }
 function _suroPeriodLabel(dateObj){ const now=dateObj||new Date(); let d=now.getDay()-3; if(d<0)d+=7; const end=new Date(now); end.setDate(now.getDate()-d); const start=new Date(end); start.setDate(end.getDate()-6); const f=x=>`${String(x.getFullYear()).slice(-2)}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; return `${f(start)}(목) ~ ${f(end)}(수) 수로 점수`; }
-window._siAddPeriod=async (preset)=>{
-  if(!isAdmin()) return alert('운영진만 회차를 추가할 수 있어요. 운영진 로그인 후 이용해주세요.');
-  const label=(prompt('새 회차(주차) 라벨\n형식: YY-MM-DD(목) ~ YY-MM-DD(수) 수로 점수', preset||_suroPeriodLabel())||'').trim();
+window._siAddPeriod=async (preset, silent)=>{
+  if(!isAdmin()){ if(!silent) alert('운영진만 회차를 추가할 수 있어요. 운영진 로그인 후 이용해주세요.'); return; }
+  // silent=true → 주차 자동생성(prompt/alert 없이 preset 라벨로 생성)
+  const label = silent ? String(preset||_suroPeriodLabel()).trim() : (prompt('새 회차(주차) 라벨\n형식: YY-MM-DD(목) ~ YY-MM-DD(수) 수로 점수', preset||_suroPeriodLabel())||'').trim();
   if(!label) return;
   let newId=null;
   const { data:exist }=await db().from('suro_periods').select('id').eq('period_label',label).maybeSingle();
-  if(exist){ alert('이미 있는 회차예요 — 선택해서 입력하면 돼요.'); newId=exist.id; }
+  if(exist){ if(!silent) alert('이미 있는 회차예요 — 선택해서 입력하면 돼요.'); newId=exist.id; }
   else{
     const m=label.match(/(\d{2})-(\d{2})-(\d{2})\(.\)\s*~\s*(\d{2})-(\d{2})-(\d{2})/);
     const start=m?`20${m[1]}-${m[2]}-${m[3]}`:new Date().toISOString().slice(0,10);
     const end=m?`20${m[4]}-${m[5]}-${m[6]}`:new Date().toISOString().slice(0,10);
     const { data:np, error }=await db().from('suro_periods').insert({ period_label:label, start_date:start, end_date:end }).select().single();
-    if(error) return alert('회차 생성 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)');
+    if(error){ if(!silent) alert('회차 생성 실패: '+error.message+'\n(운영진 로그인 상태인지 확인해주세요)'); return; }
     newId=np.id;
   }
   const el=document.getElementById('pageBody'); if(!el) return;
