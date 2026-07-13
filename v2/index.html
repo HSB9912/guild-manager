@@ -3,7 +3,7 @@
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>뚠카롱 [v2 베타 — 미니멀]</title>
+ <title>버니 [v2 베타 — 미니멀]</title>
  <link rel="icon" type="image/png" href="../favicon.png">
  <script src="https://cdn.tailwindcss.com"></script>
  <script>tailwind.config = { darkMode: 'class' }</script>
@@ -241,7 +241,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
 
    <p class="px-2 pt-2.5 pb-0.5 text-[9px] font-bold text-gray-400 uppercase tracking-wider">컨텐츠</p>
    <button onclick="router('board')" class="nav-item v2-nav w-full flex items-center gap-2 px-2 py-1.5 rounded text-gray-700 hover:bg-gray-200 font-medium text-[12px]" data-target="board"><i class="fas fa-clipboard w-3 text-center text-[10px] text-gray-400"></i><span>게시판</span></button>
-   <button onclick="router('buddy')" class="nav-item v2-nav w-full flex items-center gap-2 px-2 py-1.5 rounded text-gray-700 hover:bg-gray-200 font-medium text-[12px]" data-target="buddy"><i class="fas fa-handshake w-3 text-center text-[10px] text-gray-400"></i><span>뚠뚠 버디</span></button>
+   <button onclick="router('buddy')" class="nav-item v2-nav w-full flex items-center gap-2 px-2 py-1.5 rounded text-gray-700 hover:bg-gray-200 font-medium text-[12px]" data-target="buddy"><i class="fas fa-handshake w-3 text-center text-[10px] text-gray-400"></i><span>버니버디</span></button>
    <button onclick="router('consulting')" class="nav-item v2-nav w-full flex items-center gap-2 px-2 py-1.5 rounded text-gray-700 hover:bg-gray-200 font-medium text-[12px]" data-target="consulting"><i class="fas fa-stethoscope w-3 text-center text-[10px] text-gray-400"></i><span>아이템 컨설팅</span></button>
    <button onclick="router('manual')" class="nav-item v2-nav w-full flex items-center gap-2 px-2 py-1.5 rounded text-gray-700 hover:bg-gray-200 font-medium text-[12px]" data-target="manual"><i class="fas fa-book-open w-3 text-center text-[10px] text-gray-400"></i><span>사용 안내</span></button>
 
@@ -1582,7 +1582,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             const content = document.getElementById('contentArea'); if(!content) return;
             content.innerHTML = '';
             document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.target === tab || el.dataset.targetAlt === tab));
-            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '뚠뚠 버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', consulting: '아이템 컨설팅', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영', exempt_form: '면제 신청', bail_form: '보석금 신청', join_form: '가입 신청', manual: '사용 안내', requests: '신청 처리', admin_todos: '운영진 할 일', dual_guild: '이중길드 감사' };
+            const titles = { home: '홈', members: '길드원', analysis: '수로 분석', promotion: '승강제', guild_stats: '현황', suro_reward: '수로 보상', board: '게시판', buddy: '버니버디', sub_chars: '부캐 현황', suro_exempt: '수로 면제', sheet_manage: '시트 관리', consulting: '아이템 컨설팅', weekly_log: '주간 이력', all_history: '이력', suro_input: '수로 입력', bail: '보석금', penalty: '벌점', sheet: 'DB 시트', guide_edit: '가이드 편집', history: '운영 이력', records: '영구 기록', sync: '동기화', settings: '설정', role_assign: '직위 반영', exempt_form: '면제 신청', bail_form: '보석금 신청', join_form: '가입 신청', manual: '사용 안내', requests: '신청 처리', admin_todos: '운영진 할 일', dual_guild: '이중길드 감사' };
             document.getElementById('pageTitle').innerText = titles[tab] || '';
             if (tab === 'home') window.renderHome(content);
             else if (tab === 'members') window.renderMembers(content);
@@ -4629,7 +4629,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
             { id: 'color_badge', icon: '🏷️', label: '뱃지 그룹', html: `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px"><span style="background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:8px;font-weight:700;font-size:12px">뱃지1 → 설명</span><span style="background:#fef2f2;color:#ef4444;padding:4px 12px;border-radius:8px;font-weight:700;font-size:12px">뱃지2 → 설명</span><span style="background:#ecfdf5;color:#059669;padding:4px 12px;border-radius:8px;font-weight:700;font-size:12px">뱃지3 → 설명</span></div>` },
             { id: 'guild_info', icon: '🎮', label: '길드 정보 카드', html: `<div style="background:white;border-radius:16px;border:1px solid #f3f4f6;padding:16px;margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">🍰</span><h4 style="font-weight:900;color:#1f2937;font-size:14px;margin:0">길드명</h4><span style="font-size:10px;background:#fef2f2;color:#ef4444;padding:2px 8px;border-radius:999px;font-weight:700">설명</span></div><span style="font-size:12px;font-weight:700;color:#9ca3af">49p</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px"><div style="background:#f9fafb;padding:8px 12px;border-radius:8px"><span style="color:#9ca3af">노블 조건:</span> <b>수로 필참</b></div><div style="background:#f9fafb;padding:8px 12px;border-radius:8px"><span style="color:#9ca3af">캐릭 제한:</span> <b>없음</b></div></div></div>` },
             { id: 'spacer', icon: '➖', label: '여백', html: `<div style="height:16px"></div>` },
-            { id: 'nav_button', icon: '🔀', label: '페이지 이동 버튼', html: `<div style="margin-bottom:12px"><a href="#" onclick="router('buddy');return false" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:16px;padding:16px 20px;text-decoration:none;color:inherit;cursor:pointer;transition:all 0.2s" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"><span style="font-size:24px">🤝</span><div><p style="font-weight:900;font-size:14px;color:#92400e;margin:0">뚠뚠 버디</p><p style="font-size:11px;color:#b45309;margin:4px 0 0 0;font-weight:600">버디팀 현황 보러가기 →</p></div><i class="fas fa-chevron-right" style="color:#d97706;margin-left:auto;font-size:14px"></i></a></div>` },
+            { id: 'nav_button', icon: '🔀', label: '페이지 이동 버튼', html: `<div style="margin-bottom:12px"><a href="#" onclick="router('buddy');return false" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #f59e0b;border-radius:16px;padding:16px 20px;text-decoration:none;color:inherit;cursor:pointer;transition:all 0.2s" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"><span style="font-size:24px">🤝</span><div><p style="font-weight:900;font-size:14px;color:#92400e;margin:0">버니버디</p><p style="font-size:11px;color:#b45309;margin:4px 0 0 0;font-weight:600">버디팀 현황 보러가기 →</p></div><i class="fas fa-chevron-right" style="color:#d97706;margin-left:auto;font-size:14px"></i></a></div>` },
             { id: 'image_card', icon: '🖼️', label: '이미지 카드', html: `<div style="background:white;border-radius:16px;border:1px solid #f3f4f6;overflow:hidden;margin-bottom:12px"><img src="이미지URL" style="width:100%;max-height:300px;object-fit:cover" alt="이미지"><div style="padding:12px 16px;font-size:12px;font-weight:700;color:#374151">이미지 설명을 입력하세요</div></div>` },
             { id: 'profile_grid', icon: '👤', label: '프로필 카드 (4열)', html: `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:12px"><div style="background:white;border-radius:16px;border:1px solid #f3f4f6;overflow:hidden"><img src="이미지URL" style="width:100%;height:180px;object-fit:cover" alt="프로필"><div style="padding:12px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="font-size:14px">❤️</span><b style="font-size:14px;color:#1f2937">닉네임</b></div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"><span style="background:#fdf2f8;color:#ec4899;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700">뚠카롱</span></div><p style="font-size:11px;color:#6b7280;margin:0">▶ 담당 업무 설명</p><p style="font-size:11px;color:#9ca3af;margin:6px 0 0 0;font-style:italic">" 한마디를 입력하세요 "</p></div></div></div>` },
         ];
@@ -5075,7 +5075,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
   };
 
   window._guideNavTargets = [
-    { route: 'buddy', icon: '🤝', label: '뚠뚠 버디', color: '#f59e0b', bg: '#fef3c7' },
+    { route: 'buddy', icon: '🤝', label: '버니버디', color: '#f59e0b', bg: '#fef3c7' },
     { route: 'members', icon: '👥', label: '길드원', color: '#ec4899', bg: '#fdf2f8' },
     { route: 'analysis', icon: '📊', label: '수로 분석', color: '#3b82f6', bg: '#eff6ff' },
     { route: 'guild_stats', icon: '📈', label: '현황', color: '#10b981', bg: '#ecfdf5' },
@@ -11563,7 +11563,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
     } catch(e) { window.showMsg('추가 실패: ' + e.message, 'error'); }
   };
 
-    // ============ 뚠뚠 버디 ============
+    // ============ 버니버디 ============
   const DEFAULT_ROULETTE_ITEMS = [
     { name:'다조 120개', prob:23.4, value:'8억', color:'#6b7280' },
     { name:'다조 160개', prob:17.3, value:'11억', color:'#3b82f6' },
@@ -11667,7 +11667,7 @@ body.theme-retro.dark table tbody tr:hover td{background:#4338ca !important;}
       container.innerHTML = `
       <div class="flex flex-col gap-3 fade-in pb-20 lg:pb-0">
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 lg:p-4 flex items-center gap-3 flex-wrap shrink-0">
-          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-handshake mr-2 text-yellow-400"></i>뚠뚠 버디</h3>
+          <h3 class="text-sm font-bold text-gray-800"><i class="fas fa-handshake mr-2 text-yellow-400"></i>버니버디</h3>
           <span class="text-[10px] text-gray-400 font-bold">진행 ${activeTeams.length}팀 · 완료 ${doneTeams.length}팀</span>
           ${isAdmin() ? `<button onclick="window._buddyCreateModal()" class="ml-auto px-3 py-1.5 bg-yellow-500 text-white rounded-xl text-[10px] font-bold shadow hover:bg-yellow-600"><i class="fas fa-plus mr-1"></i>팀 생성</button>` : ''}
         </div>
