@@ -98,6 +98,7 @@ const GROUPS = [
     { k:'penalty',     t:'벌점',          i:'fa-flag' },
     { k:'admin_todos', t:'운영진 할 일',  i:'fa-list-check' },
     { k:'absence',     t:'장기부재 면제', i:'fa-plane-departure' },
+    { k:'suro_exempt', t:'수로 면제',     i:'fa-shield-halved' },
   ]},
   { label:'관리자 도구', lock:true, admin:true, items: [
     { k:'suro_input',  t:'수로 입력',   i:'fa-keyboard', star:true },
@@ -116,6 +117,9 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
  * ============================================================ */
 const CHANGELOG = [
+  { id:'2026-07-13', date:'2026-07-13', items:[
+    { t:'feat', x:'수로 면제 — 바뀐 제도(계정=대표1+부캐5·대표 수로 필수) 반영. 대표가 수로 참여하면 부캐(수로면제캐릭) 노블 유지, 대표 미참(0점)이면 그 계정 전체 노블 잠김을 빨간칸으로 경고 + 부캐 정원 5 초과 시 주황 경고. "시트 복사"로 색상·서식까지 구글시트에 그대로 붙여넣기(핑크=수로면제캐릭·빨강=노블잠김·주황=정원초과)' },
+  ]},
   { id:'2026-07-12', date:'2026-07-12', items:[
     { t:'fix', x:'신청 처리 · 보석금 관리 — 보석금 내역이 4건만 뜨던 문제 수정. 옛 길드키(뚠/뚱/밤/별/꿀/달카롱)로 저장된 100건이 "버니" 필터에 걸러졌던 것 → 보석금은 길드 통합 관리라 전체 표시. 상단에 합계 조각/전체/대기/완료 요약 추가' },
     { t:'feat', x:'신청 처리 보석금 — 뚠카롱처럼 완전 복원: 상태별 탭(확인대기·보류·입금확인·노블해제·거절) + 완료건도 카드형(인증샷·되돌리기·완전삭제)으로 과거 기록 조정 가능. 기존엔 완료건이 표라 이미지도·수정도 안 됐음' },
@@ -1395,11 +1399,9 @@ window._srCopySettlement = ()=>{
   const rs=_srData&&_srData._results; if(!rs||!rs.length) return alert('정산 데이터가 없어요. 분기를 먼저 선택해주세요.');
   const q=_srData._selQ||'';
   const chip=rs.filter(r=>/조각/.test(r.reward)).length, sut=rs.filter(r=>/숫돌/.test(r.reward)).length;
-  const lines=[q+' 수로 보상 정산 (조각 '+chip+'명 · 숫돌 '+sut+'명 · 총 '+rs.length+'명)',
-    '순위\t등급\t닉네임\t분기평균\t참여\t보상\t혜택'];
-  rs.forEach(r=>{ lines.push([r.rank,r.grade,r.name,r.avg,r.participated+'/'+r.activeWeeks+'주',String(r.reward||'').replace(/<[^>]+>/g,''),r.benefit||''].join('\t')); });
-  const txt=lines.join('\n');
-  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>alert('📋 정산표 복사됨 — '+rs.length+'명\n엑셀·카톡에 붙여넣기(Ctrl+V)하면 표로 정리돼요.')).catch(()=>window.prompt('아래 전체선택(Ctrl+A)→복사(Ctrl+C):',txt));
+  const headers=['순위','등급','닉네임','분기평균','참여','보상','혜택'];
+  const rows=rs.map(r=>[r.rank,r.grade,r.name,r.avg,r.participated+'/'+r.activeWeeks+'주',String(r.reward||'').replace(/<[^>]+>/g,''),r.benefit||'']);
+  _sheetCopy(headers, rows, null, { title:q+' 수로 보상 정산 (조각 '+chip+'명 · 숫돌 '+sut+'명 · 총 '+rs.length+'명)', ok:'📋 정산표 복사됨 — '+rs.length+'명\n엑셀·카톡에 붙여넣기(Ctrl+V)하면 표로 정리돼요.' });
 };
 /* 지급 정산 확인 창 — 조각(상위20)·숫돌(21~51등) 지급 대상 + 시세 조절 + 지급완료 체크(DB 저장: suro_payouts) */
 let _srPaid={};              // { 닉네임: {paid_at} } — 현재 회차 지급현황 (DB 캐시)
@@ -2579,6 +2581,197 @@ window._syncNickApply=async (oldId, newName)=>{
   alert(`이름 변경 완료 ✓ → ${newName}\n동기화를 다시 실행하면 신규·탈퇴 목록이 정리돼요.`);
   _syncRun();
 };
+/* ============================================================
+ *  공용 시트 복사 헬퍼 (_sheetCopy)
+ *  colorFn 없으면 TSV(엑셀·카톡용), 있으면 색상 HTML 표(구글시트 색상 유지)+TSV 동시 제공.
+ *  실패 시 clipboard.writeText → prompt 폴백. (옛 _srCopySettlement·_suroExemptCopy 일반화)
+ *  headers:[string], rows:[[cell]], colorFn(r,c,cell,row)->{bg,color}|null, opts:{title,ok}
+ * ============================================================ */
+function _sheetCopy(headers, rows, colorFn, opts){
+  opts = opts||{};
+  const clean = (v)=> String(v==null?'':v).replace(/<[^>]+>/g,'').trim();
+  const tsvLines = [];
+  if(opts.title) tsvLines.push(opts.title);
+  tsvLines.push(headers.map(clean).join('\t'));
+  rows.forEach(row=> tsvLines.push(row.map(clean).join('\t')));
+  const tsv = tsvLines.join('\n');
+  const fallback = ()=> (navigator.clipboard?navigator.clipboard.writeText(tsv):Promise.reject())
+    .then(()=>alert(opts.ok||('📋 복사 완료 — '+rows.length+'행 (Ctrl+V)')))
+    .catch(()=>window.prompt('전체선택(Ctrl+A)→복사(Ctrl+C):', tsv));
+  if(!colorFn) return fallback();
+  const cellTag = (tag,text,sty)=> '<'+tag+' style="border:1px solid #ccc;padding:2px 6px;font-weight:bold;text-align:center;font-size:11pt;'+sty+'">'+escHtml(clean(text))+'</'+tag+'>';
+  let html='<table border="1" cellpadding="4" style="border-collapse:collapse;font-family:sans-serif">';
+  html+='<tr>'+headers.map(h=>cellTag('th',h,'background:#f3f4f6;')).join('')+'</tr>';
+  rows.forEach((row,r)=>{ html+='<tr>'+row.map((cell,c)=>{ const cl=colorFn(r,c,cell,row)||{}; return cellTag('td',cell,(cl.bg?'background:'+cl.bg+';':'')+(cl.color?'color:'+cl.color+';':'')); }).join('')+'</tr>'; });
+  html+='</table>';
+  try{
+    const bH=new Blob([html],{type:'text/html'}), bT=new Blob([tsv],{type:'text/plain'});
+    return navigator.clipboard.write([new ClipboardItem({'text/html':bH,'text/plain':bT})])
+      .then(()=>alert(opts.ok||'📋 서식+색상 포함 복사 완료!\n구글시트에 붙여넣기(Ctrl+V)하면 색상까지 그대로 들어가요.'))
+      .catch(()=>fallback());
+  }catch(e){ return fallback(); }
+}
+
+/* ----- 수로 면제 (노블/수로 관리 — 바뀐 제도 반영) -----
+   제도: 계정 그룹 = 대표캐릭 1 + 부캐릭(수로면제캐릭) 최대 5.
+   대표가 수로(컨텐츠) 참여해야 그 계정 노블 유지. 대표 미참(수로 0) → 그룹 전체 노블 잠김.
+   상태: 🔴 노블잠김(대표 미참) > 🟠 정원초과(부캐>5) > 🟢 정상. 색상 export 지원(구글시트). */
+const SE_MAIN_GUILDS = ['버니','늑대','쿠거'];
+const SE_SUB_CAP = 5;                                     // 대표당 부캐(수로면제캐릭) 정원
+const SE_C = { lock:'#fee2e2', lockTx:'#dc2626', exempt:'#ff99ff', cap:'#ffedd5', capTx:'#c2410c' };
+let _seMem = [], _seScore = {}, _seLabel = '';
+const _seState = { guild:'all', filter:'all', search:'', sortField:'status', sortOrder:'asc' };
+let _seSearchFocused = false, _seSearchTimer = null;
+async function buildSuroExempt(){
+  _seMem = await dbAll(()=>db().from('members').select('id,name,role,guild,is_main,main_char_name,level'));
+  _seScore = {}; _seLabel = '';
+  try{
+    const { data:per } = await db().from('suro_periods').select('id,period_label').order('start_date',{ascending:false}).limit(1);
+    if(per && per[0]){ _seLabel = per[0].period_label;
+      const sc = await dbAll(()=>db().from('suro_scores').select('member_id,score').eq('period_id',per[0].id));
+      (sc||[]).forEach(s=>{ _seScore[s.member_id] = Math.round(Number(s.score))||0; });
+    }
+  }catch(e){}
+  return headerHTML('수로 면제', '대표 수로 참여 → 계정 노블 유지 · 미참 시 노블 잠김 (부캐=수로면제캐릭)') +
+    `<div id="seWrap">${_seRender()}</div>`;
+}
+function _seData(){
+  const mains = _seMem.filter(m=>m.is_main!==false && SE_MAIN_GUILDS.includes(m.guild));
+  return mains.map(m=>{
+    const score = _seScore[m.id]||0;
+    const subs = _seMem.filter(s=>s.is_main===false && s.main_char_name===m.name);
+    const subCount = subs.length;
+    const participated = score>0;                          // 대표 수로 참여 여부(0점=미참)
+    const overCap = Math.max(0, subCount - SE_SUB_CAP);    // 부캐 정원(5) 초과
+    const status = !participated ? 'locked' : (overCap>0 ? 'cap' : 'ok');
+    return { main:m, score, subs, subCount, participated, overCap, status };
+  });
+}
+/* 부캐 셀 색: 대표 미참=🔴노블잠김, 정원 초과분(6번째~)=🟠, 그 외=핑크(수로면제캐릭) */
+function _seSubStyle(d, ci){
+  if(!d.participated) return { bg:SE_C.lock, color:SE_C.lockTx, mark:' 🔒' };
+  if(ci>=SE_SUB_CAP)  return { bg:SE_C.cap,  color:SE_C.capTx,  mark:' ⚠' };
+  return { bg:SE_C.exempt, color:'#000000', mark:'' };
+}
+const SE_STATUS = { locked:{t:'노블 잠김', bg:'#dc2626', tc:'#fff', rank:0}, cap:{t:'정원 초과', bg:'#f59e0b', tc:'#fff', rank:1}, ok:{t:'정상', bg:'#059669', tc:'#fff', rank:2} };
+function _seView(){
+  const ss = _seState;
+  let data = _seData();
+  const search = (ss.search||'').toLowerCase().trim();
+  if(search) data = data.filter(d=> d.main.name.toLowerCase().includes(search) || d.subs.some(s=>(s.name||'').toLowerCase().includes(search)));
+  if(ss.guild!=='all') data = data.filter(d=>d.main.guild===ss.guild);
+  data = data.filter(d=> d.subCount>0);                    // 부캐(수로면제캐릭) 있는 계정만
+  if(ss.filter==='locked') data = data.filter(d=>d.status==='locked');
+  else if(ss.filter==='cap') data = data.filter(d=>d.overCap>0);
+  else if(ss.filter==='ok') data = data.filter(d=>d.status==='ok');
+  const sf = ss.sortField, dir = ss.sortOrder==='asc'?1:-1;
+  data.sort((a,b)=>{
+    if(sf==='score')  return (a.score-b.score)*dir;
+    if(sf==='name')   return a.main.name.localeCompare(b.main.name)*dir;
+    if(sf==='subs')   return (a.subCount-b.subCount)*dir;
+    if(sf==='status') return (SE_STATUS[a.status].rank-SE_STATUS[b.status].rank)*dir || (a.score-b.score);
+    return 0;
+  });
+  const maxSubs = Math.max(1, ...data.map(d=>d.subCount));
+  return { data, maxSubs };
+}
+function _seRender(){
+  const ss = _seState;
+  const { data, maxSubs } = _seView();
+  const totalMains = data.length;
+  const totalSubAll = data.reduce((s,d)=>s+d.subCount,0);
+  const lockedCount = data.filter(d=>d.status==='locked').length;
+  const capCount = data.filter(d=>d.overCap>0).length;
+  const sortIcon = (f)=> ss.sortField===f ? (ss.sortOrder==='asc'?' <i class="fa-solid fa-sort-up"></i>':' <i class="fa-solid fa-sort-down"></i>') : '';
+  const th = (label, f, extra='')=> f
+    ? `<th style="padding:8px 10px;text-align:center;border-right:1px solid var(--line);cursor:pointer;white-space:nowrap;${extra}" onclick="_seSort('${f}')">${label}${sortIcon(f)}</th>`
+    : `<th style="padding:8px 10px;text-align:center;border-right:1px solid var(--line);white-space:nowrap;${extra}">${label}</th>`;
+  const gBtn = (key,label)=> `<button onclick="_seSetGuild('${key}')" style="border:0;border-radius:9px;padding:6px 12px;font-weight:800;font-size:12px;cursor:pointer;${ss.guild===key?'background:var(--bunny-main);color:#fff':'background:var(--panel-2);color:var(--text)'}">${label}</button>`;
+  const fBtn = (key,label)=> `<button onclick="_seSetFilter('${key}')" style="border:0;border-radius:9px;padding:6px 12px;font-weight:800;font-size:12px;cursor:pointer;${ss.filter===key?'background:var(--bunny-deep);color:#fff':'background:var(--panel-2);color:var(--text)'}">${label}</button>`;
+  const stat = (lab,val,unit,color)=> `<div class="panel" style="border-radius:16px;padding:12px 14px;text-align:center"><div class="dim" style="font-size:11px;font-weight:800">${lab}</div><div style="font-size:22px;font-weight:900;color:${color}">${val}<span class="dim" style="font-size:11px;font-weight:700">${unit}</span></div></div>`;
+  const rows = data.map((d,i)=>{
+    const st = SE_STATUS[d.status];
+    const rowBg = d.status==='locked' ? 'background:#fef2f2' : (d.status==='cap' ? 'background:#fff7ed' : '');
+    const subCells = Array.from({length:maxSubs}, (_,ci)=>{
+      const sub = d.subs[ci];
+      if(!sub) return `<td style="padding:6px 9px;border-right:1px solid var(--line)"></td>`;
+      const cs = _seSubStyle(d, ci);
+      const gLbl = escHtml(guildLabel(sub.guild));
+      return `<td style="padding:6px 9px;border-right:1px solid var(--line);background:${cs.bg};color:${cs.color}"><span style="font-weight:800">${escHtml(sub.name)}${cs.mark}</span> <span style="font-size:9px;opacity:.55">${gLbl}</span></td>`;
+    }).join('');
+    return `<tr style="border-top:1px solid var(--line);${rowBg}">
+      <td style="padding:6px 9px;text-align:center;color:var(--dim);border-right:1px solid var(--line)">${i+1}</td>
+      <td style="padding:6px 9px;font-weight:900;border-right:1px solid var(--line)">${escHtml(d.main.name)}</td>
+      <td style="padding:6px 9px;border-right:1px solid var(--line)">${memRoleChip(d.main.role)}</td>
+      <td style="padding:6px 9px;text-align:right;font-weight:800;border-right:1px solid var(--line);color:${d.participated?'#059669':'#ef4444'}">${d.score.toLocaleString()}</td>
+      <td style="padding:6px 9px;text-align:center;border-right:1px solid var(--line);font-weight:900;color:${d.participated?'#059669':'#dc2626'}">${d.participated?'✅':'❌'}</td>
+      <td style="padding:6px 9px;text-align:center;border-right:1px solid var(--line);font-weight:800;color:${d.overCap>0?'#c2410c':'var(--text)'}">${d.subCount}${d.overCap>0?' <span style="font-size:9px">/'+SE_SUB_CAP+'</span>':''}</td>
+      <td style="padding:6px 9px;text-align:center;border-right:1px solid var(--line)"><span style="background:${st.bg};color:${st.tc};padding:1px 8px;border-radius:5px;font-size:11px;font-weight:800">${st.t}</span></td>
+      ${subCells}
+    </tr>`;
+  }).join('');
+  return `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">${
+      stat('관리 대표', totalMains, '명', 'var(--text)') +
+      stat('수로면제캐릭(부캐)', totalSubAll, '캐', '#c026d3') +
+      stat('노블 잠김(대표 미참)', lockedCount, '명', lockedCount>0?'#dc2626':'var(--dim)') +
+      stat('정원 초과', capCount, '명', capCount>0?'#c2410c':'var(--dim)')
+    }</div>
+    <div class="panel" style="border-radius:20px;padding:0;overflow:hidden">
+      <div style="padding:12px 14px;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:6px">${gBtn('all','전체')}${SE_MAIN_GUILDS.map(g=>gBtn(g,g)).join('')}</div>
+        <span class="dim">·</span>
+        <div style="display:flex;gap:6px">${fBtn('all','전체')}${fBtn('locked','노블잠김')}${fBtn('cap','정원초과')}${fBtn('ok','정상')}</div>
+        <input id="seSearch" value="${escAttr(ss.search||'')}" oninput="_seSearchInput(this.value)" placeholder="닉네임 검색" autocomplete="off" style="border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:7px 12px;font-weight:700;font-size:13px;color:var(--text);outline:0;width:150px">
+        <button onclick="_seCopy()" style="margin-left:auto;border:0;border-radius:10px;padding:8px 15px;font-weight:800;font-size:13px;color:#fff;background:#059669;cursor:pointer"><i class="fa-solid fa-copy" style="margin-right:6px"></i>시트 복사</button>
+      </div>
+      <div style="padding:9px 14px;background:var(--warn-bg);color:var(--warn-tx);font-size:11px;font-weight:700;line-height:1.6;border-bottom:1px solid var(--line)">
+        <i class="fa-solid fa-circle-info" style="margin-right:4px"></i>대표 수로 참여(✅) 시 부캐(수로면제캐릭) 노블 유지 · 대표 미참(0점)=<b>계정 노블 잠김</b> · 부캐 정원 ${SE_SUB_CAP} 초과=경고 ·
+        <span style="background:${SE_C.exempt};color:#000;padding:0 5px;border-radius:4px">핑크=수로면제캐릭</span>
+        <span style="background:${SE_C.lock};color:${SE_C.lockTx};padding:0 5px;border-radius:4px">빨강=노블잠김</span>
+        <span style="background:${SE_C.cap};color:${SE_C.capTx};padding:0 5px;border-radius:4px">주황=정원초과</span> · 기준: ${escHtml(_seLabel||'-')}
+      </div>
+      <div class="scroll" style="overflow:auto;max-height:66vh">
+        <table id="seTable" style="width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap">
+          <thead style="position:sticky;top:0;z-index:2"><tr class="dim" style="background:var(--panel-2);font-size:11px;font-weight:800">
+            ${th('No.','')}${th('대표캐릭','name','text-align:left')}${th('직위','')}${th('이번수로','score')}${th('참여','')}${th('부캐','subs')}${th('상태','status')}
+            ${Array.from({length:maxSubs},(_,i)=>th('부캐'+(i+1),'','text-align:left')).join('')}
+          </tr></thead>
+          <tbody style="font-weight:600">${rows || `<tr><td colspan="${7+maxSubs}" style="padding:44px;text-align:center" class="dim">해당하는 계정이 없어요</td></tr>`}</tbody>
+        </table>
+      </div>
+      <div class="dim" style="padding:9px;text-align:center;font-size:11px;font-weight:700;border-top:1px solid var(--line)">대표 ${totalMains}명 · 수로면제캐릭 ${totalSubAll}캐 · 노블잠김 ${lockedCount}명 · 정원초과 ${capCount}명</div>
+    </div>`;
+}
+function _seApply(){
+  const el = document.getElementById('seWrap'); if(!el) return;
+  el.innerHTML = _seRender();
+  if(_seSearchFocused){ const inp=document.getElementById('seSearch'); if(inp){ inp.focus(); const n=inp.value.length; inp.setSelectionRange(n,n); } }
+}
+window._seSetGuild = (g)=>{ _seState.guild=g; _seApply(); };
+window._seSetFilter = (f)=>{ _seState.filter=f; _seApply(); };
+window._seSort = (f)=>{ const ss=_seState; if(ss.sortField===f) ss.sortOrder=ss.sortOrder==='asc'?'desc':'asc'; else { ss.sortField=f; ss.sortOrder=(f==='name'||f==='status')?'asc':'desc'; } _seApply(); };
+window._seSearchInput = (val)=>{ _seState.search=val; _seSearchFocused=true; if(_seSearchTimer) clearTimeout(_seSearchTimer); _seSearchTimer=setTimeout(()=>{ _seApply(); setTimeout(()=>{ _seSearchFocused=false; },100); },300); };
+/* 시트 복사 — 현재 뷰(필터·정렬 반영)를 색상 유지 표로 (_sheetCopy 경유) */
+window._seCopy = ()=>{
+  const { data, maxSubs } = _seView();
+  if(!data.length) return alert('복사할 계정이 없어요.');
+  const headers = ['No.','대표캐릭','직위','이번수로','참여','부캐','상태', ...Array.from({length:maxSubs},(_,i)=>'부캐'+(i+1))];
+  const rows = data.map((d,i)=>{
+    const base = [i+1, d.main.name, d.main.role||'', d.score.toLocaleString(), d.participated?'참여':'미참', d.subCount, SE_STATUS[d.status].t];
+    const subs = Array.from({length:maxSubs}, (_,ci)=>{ const sub=d.subs[ci]; if(!sub) return ''; return sub.name+_seSubStyle(d,ci).mark+' ('+guildLabel(sub.guild)+')'; });
+    return base.concat(subs);
+  });
+  const colorFn = (r,c)=>{
+    const d = data[r];
+    if(c===4) return d.participated ? {bg:'#059669',color:'#fff'} : {bg:SE_C.lock,color:SE_C.lockTx};
+    if(c===6){ const st=SE_STATUS[d.status]; return {bg:st.bg,color:st.tc}; }
+    if(c>=7){ const sub=d.subs[c-7]; if(!sub) return null; const cs=_seSubStyle(d,c-7); return {bg:cs.bg,color:cs.color}; }
+    return null;
+  };
+  _sheetCopy(headers, rows, colorFn, { ok:'📋 서식+색상 포함 복사 완료! ('+data.length+'계정)\n구글시트에 붙여넣기(Ctrl+V)하면 색상까지 그대로 들어가요.' });
+};
+
 const PAGES = {
   home:      buildHome,
   members:   buildMembers,
@@ -2601,6 +2794,7 @@ const PAGES = {
   bail_form:   buildBailForm,
   consulting:  buildConsulting,
   buddy:       buildBuddy,
+  suro_exempt: buildSuroExempt,
 };
 
 /* ----- 보석금 신청 (멤버 폼) ----- */
