@@ -573,7 +573,9 @@ if(typeof document!=='undefined' && !window._gKeyBound){ window._gKeyBound=true;
 /* 계정그룹 아코디언 — 대표(본캐)+부캐 · 대표 수로 여부 · 편집(👑 대표변경/드래그 이동/저장) */
 let _grpEdit=false; let _grpDirty=new Set();
 window._grpToggle = (el)=>{ const g=el.closest('.acc-grp'); if(g) g.classList.toggle('open'); };
-window._grpToggleEdit = ()=>{ if(!isAdmin()) return alert('운영진만 편집할 수 있어요.'); _grpEdit=!_grpEdit; _memApply(); };
+window._grpToggleEdit = ()=>{ if(!isAdmin()) return alert('운영진만 편집할 수 있어요.');
+  if(_grpEdit){ if(_grpSaveTimer){ clearTimeout(_grpSaveTimer); _grpSaveTimer=null; } if(_grpDirty.size) _grpAutoSave(); }  // 편집 종료 직전 대기중 변경 즉시 플러시
+  _grpEdit=!_grpEdit; _memApply(); };
 function _grpMemById(id){ return _mem.find(m=>m.id===id); }
 function _grpRepNameOf(m){ return m.is_main!==false ? m.name : (m.main_char_name||''); }
 function _grpReopen(repName){ setTimeout(()=>{ document.querySelectorAll('.acc-grp').forEach(g=>{ if(g.dataset.rep===repName) g.classList.add('open'); }); },0); }
@@ -584,13 +586,13 @@ window._grpSetRep = (id)=>{ if(!_grpEdit) return; const m=_grpMemById(id); if(!m
     if(x.name===oldRep && x.is_main!==false){ x.is_main=false; x.main_char_name=m.name; _grpDirty.add(x.id); }
     else if(x.main_char_name===oldRep && x.is_main===false){ x.main_char_name=m.name; _grpDirty.add(x.id); } });
   m.is_main=true; m.main_char_name=null; _grpDirty.add(m.id);
-  _memApply(); _grpReopen(m.name);
+  _memApply(); _grpSchedule(); _grpReopen(m.name);
 };
-window._grpPromote = (id)=>{ if(!_grpEdit) return; const m=_grpMemById(id); if(!m) return; m.is_main=true; m.main_char_name=null; _grpDirty.add(m.id); _memApply(); _grpReopen(m.name); };
+window._grpPromote = (id)=>{ if(!_grpEdit) return; const m=_grpMemById(id); if(!m) return; m.is_main=true; m.main_char_name=null; _grpDirty.add(m.id); _memApply(); _grpSchedule(); _grpReopen(m.name); };
 window._grpDragStart = (e,id)=>{ if(!_grpEdit){ e.preventDefault(); return; } e.dataTransfer.setData('mid',String(id)); e.dataTransfer.effectAllowed='move'; };
 window._grpDropOn = (e,repName)=>{ e.preventDefault(); e.currentTarget.classList.remove('gover'); const id=Number(e.dataTransfer.getData('mid')); const m=_grpMemById(id); if(!m||!repName||m.name===repName) return;
   if(m.is_main!==false){ alert('대표는 드래그로 옮길 수 없어요. 다른 캐릭에 👑를 눌러 대표를 바꾼 뒤 옮겨주세요.'); return; }
-  m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpReopen(repName);
+  m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpSchedule(); _grpReopen(repName);
 };
 /* 대표 이름 타이핑(datalist)으로 묶기 — 부캐는 그 대표 밑으로, 부캐없는 본캐는 데모트 */
 window._grpMoveByName = (id, repName)=>{ if(!_grpEdit) return; repName=(repName||'').trim(); if(!repName) return;
@@ -598,20 +600,43 @@ window._grpMoveByName = (id, repName)=>{ if(!_grpEdit) return; repName=(repName|
   const target=_mem.find(x=>x.name===repName && x.is_main!==false);
   if(!target){ alert('"'+repName+'" — 대표(본캐)를 찾을 수 없어요. 목록에서 골라주세요.'); return; }
   if(m.is_main!==false){ const hasAlts=_mem.some(x=>x.is_main===false && x.main_char_name===m.name); if(hasAlts){ alert(m.name+'은(는) 부캐가 있는 대표예요. 부캐를 먼저 옮기거나 다른 캐릭에 👑를 주세요.'); _memApply(); return; } }
-  m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpReopen(repName);
+  m.is_main=false; m.main_char_name=repName; _grpDirty.add(m.id); _memApply(); _grpSchedule(); _grpReopen(repName);
 };
-/* 셀편집(B) — 편집모드에서 닉네임·직위·직업·레벨 인메모리 수정 → _grpDirty 배치 저장. 라이브 즉시쓰기 없음 */
-function _grpBadge(){ const b=document.getElementById('grpSaveBtn'); if(b) b.innerHTML=`<i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})`; }
+/* 셀편집(B/A) — 편집모드에서 닉네임·직위·직업·레벨 인메모리 수정 → _grpDirty.
+   디바운스 자동저장(_grpSchedule→_grpAutoSave): 마지막 편집 1.5초 뒤 변경분만 배치 update.
+   Supabase 무료티어 보호: 타이머 1개·연속입력 합침·성공한 id만 dirty에서 제거. */
+let _grpSaveTimer=null, _grpSaveState='', _grpSaveRevert=null;
+function _grpBadge(){ const b=document.getElementById('grpSaveBtn'); if(!b) return;
+  if(_grpSaveState==='saving'){ b.style.background='#6b7280'; b.innerHTML='<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>저장 중…'; return; }
+  if(_grpSaveState==='error'){ b.style.background='#dc2626'; b.innerHTML='<i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i>저장 실패 · 재시도'; return; }
+  b.style.background='#1A8A4A';
+  b.innerHTML=`<i class="fa-solid fa-${(_grpSaveState==='saved'&&!_grpDirty.size)?'check':'floppy-disk'}" style="margin-right:5px"></i>${_grpDirty.size?`저장 (${_grpDirty.size})`:'저장됨 ✓'}`;
+}
+function _grpSchedule(){ if(!isAdmin()||!_grpEdit) return; if(_grpSaveTimer) clearTimeout(_grpSaveTimer); _grpSaveTimer=setTimeout(()=>{ _grpSaveTimer=null; _grpAutoSave(); }, 1500); _grpBadge(); }
+window._grpAutoSave = async ()=>{
+  if(!isAdmin()||!_grpEdit) return;
+  const ids=[..._grpDirty].filter(id=>{ const m=_grpMemById(id); return m && (m.name||'').trim(); });   // 빈 닉네임은 저장 보류(dirty 유지)
+  if(!ids.length) return;
+  _grpSaveState='saving'; _grpBadge();
+  let fail=0;
+  for(const id of ids){ const m=_grpMemById(id); if(!m){ _grpDirty.delete(id); continue; }
+    const isMain=m.is_main!==false;
+    const { error } = await db().from('members').update({ is_main:isMain, main_char_name:(isMain?null:(m.main_char_name||null)), name:(m.name||'').trim(), role:m.role||null, class:m.class||null, level:Math.max(0,Number(m.level)||0) }).eq('id',id);
+    if(error) fail++; else _grpDirty.delete(id); }
+  _grpSaveState=fail?'error':'saved'; _grpBadge();
+  if(_grpSaveRevert) clearTimeout(_grpSaveRevert);
+  _grpSaveRevert=setTimeout(()=>{ _grpSaveState=''; _grpBadge(); }, 1600);
+};
 window._grpField = (id, field, val)=>{ if(!_grpEdit) return; const m=_grpMemById(id); if(!m) return;
-  if(field==='level'){ m.level=Math.max(0,Number(val)||0); _grpDirty.add(m.id); _grpBadge(); return; }
+  if(field==='level'){ m.level=Math.max(0,Number(val)||0); _grpDirty.add(m.id); _grpSchedule(); return; }
   if(field==='name'){ const nv=(val||'').trim();
     if(!nv){ alert('닉네임은 비울 수 없어요.'); _memApply(); return; }
     const old=m.name; if(nv===old) return;
     if(_mem.some(x=>x.id!==m.id && x.name===nv)){ alert('"'+nv+'" — 이미 있는 닉네임이에요.'); _memApply(); return; }
     if(m.is_main!==false){ _mem.forEach(x=>{ if(x.is_main===false && x.main_char_name===old){ x.main_char_name=nv; _grpDirty.add(x.id); } }); }  // 대표 개명 → 부캐 연결(main_char_name) 따라가기
-    m.name=nv; _grpDirty.add(m.id); _memApply(); _grpReopen(nv); return;
+    m.name=nv; _grpDirty.add(m.id); _memApply(); _grpSchedule(); _grpReopen(nv); return;
   }
-  m[field]=val; _grpDirty.add(m.id); _grpBadge();
+  m[field]=val; _grpDirty.add(m.id); _grpSchedule();
 };
 /* 길드원 DB 삭제 (편집모드 🗑) — 탈퇴/중복 캐릭 제거. 대표 삭제 시 부캐는 대표 미상이 됨을 안내 */
 window._grpDelete = async (id)=>{
@@ -630,6 +655,7 @@ window._grpDelete = async (id)=>{
    대표는 인겜 길드창(사람 적은 시간 캡처=깔끔)으로만 정확히 얻을 수 있음. */
 window._grpSave = async ()=>{
   if(!isAdmin()) return alert('운영진만 저장할 수 있어요.');
+  if(_grpSaveTimer){ clearTimeout(_grpSaveTimer); _grpSaveTimer=null; }   // 대기중 자동저장과 겹치지 않게
   if(!_grpDirty.size) return alert('변경된 내용이 없어요.');
   const ids=[..._grpDirty];
   const blank=ids.map(_grpMemById).filter(m=>m&&!(m.name||'').trim());
@@ -754,8 +780,8 @@ function memberGroups(q){
   const editBar = isAdmin() ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
       <a href="suro_input.html?ocr=1&guild=${escAttr(_memFac)}" title="화면 캡처 OCR로 수로 점수 반영 — 수로 입력 페이지에서 실행" style="text-decoration:none;border:1px solid var(--bunny-deep);border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;background:var(--bunny-deep);color:#fff"><i class="fa-solid fa-camera" style="margin-right:5px"></i>수로 OCR</a>
-      ${ed?`<button id="grpSaveBtn" onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
-      <span class="dim" style="font-size:11px;font-weight:700">셀 직접수정: <b>닉네임·직위·직업·레벨</b> · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 대표행에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
+      ${ed?`<button id="grpSaveBtn" onclick="_grpSave()" title="수정하면 자동 저장돼요 · 클릭 시 즉시 저장하고 편집 종료" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-${_grpDirty.size?'floppy-disk':'check'}" style="margin-right:5px"></i>${_grpDirty.size?`저장 (${_grpDirty.size})`:'저장됨 ✓'}</button>
+      <span class="dim" style="font-size:11px;font-weight:700"><b style="color:#1A8A4A">자동저장</b> · 셀 직접수정: <b>닉네임·직위·직업·레벨</b> · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 대표행에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
     </div>` : '';
   const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
   const repDatalist = ed ? `<datalist id="grpRepList">${reps.map(r=>`<option value="${escAttr(r.name)}"></option>`).join('')}</datalist>` : '';
