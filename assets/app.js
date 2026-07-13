@@ -734,6 +734,7 @@ function memberGroups(q){
   const warnBar = (hasSuro&&miss) ? `<div style="background:var(--bad-bg);color:var(--bad-tx);border-radius:12px;padding:9px 13px;font-weight:800;font-size:13px;margin-bottom:12px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:6px"></i>${escHtml(_memSuroLabel||'이번 주차')} 수로 <b>미참 대표 ${miss}명</b> — 확인 필요${sort==='suro'?' (목록 맨 아래)':''}</div>` : '';
   const editBar = isAdmin() ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <button onclick="_grpToggleEdit()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:${ed?'var(--bunny-deep)':'var(--panel-2)'};color:${ed?'#fff':'var(--text)'}"><i class="fa-solid fa-pen-to-square" style="margin-right:5px"></i>${ed?'편집 종료':'그룹 편집'}</button>
+      <a href="suro_input.html?ocr=1&guild=${escAttr(_memFac)}" title="화면 캡처 OCR로 수로 점수 반영 — 수로 입력 페이지에서 실행" style="text-decoration:none;border:1px solid var(--bunny-deep);border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;background:var(--bunny-deep);color:#fff"><i class="fa-solid fa-camera" style="margin-right:5px"></i>수로 OCR</a>
       ${ed?`<button id="grpSaveBtn" onclick="_grpSave()" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>저장 (${_grpDirty.size})</button>
       <span class="dim" style="font-size:11px;font-weight:700">셀 직접수정: <b>닉네임·직위·직업·레벨</b> · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 대표행에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
     </div>` : '';
@@ -1984,9 +1985,12 @@ window._roleApply = async ()=>{
 };
 
 /* ----- 수로 입력 (실시간 동시 입력 · 셀 단위 자동저장) ----- */
-let _siMembers=[], _siPid=null, _siPeriods=[], _siScores={}, _siPrev={}, _siEditing={}, _siPresence=[], _siCh=null, _siOnlyEmpty=false, _siTimers={}, _siPoll=null, _siVisBound=false, _siGuild='버니', _siAutoGen=false;
+let _siMembers=[], _siPid=null, _siPeriods=[], _siScores={}, _siPrev={}, _siEditing={}, _siPresence=[], _siCh=null, _siOnlyEmpty=false, _siTimers={}, _siPoll=null, _siVisBound=false, _siGuild='버니', _siAutoGen=false, _siOcrRouted=false;
 window._siSetGuild=async (k)=>{ if(!FACTIONS[k]) return; const g=FACTIONS[k].key; if(g===_siGuild) return; _siGuild=g; const el=document.getElementById('pageBody'); if(!el) return; el.innerHTML=loadingHTML('suro_input'); try{ el.innerHTML=await buildSuroInput(); }catch(e){ el.innerHTML=errorHTML('suro_input',e); } };
 async function buildSuroInput(){
+  // 관리 시트(길드원 페이지)의 "수로 OCR" 진입점 — ?ocr=1&guild=<fac>로 라우팅되면 해당 길드로 세팅 후 OCR 모달 자동 오픈(최초 1회)
+  const _sp=new URLSearchParams(location.search);
+  if(!_siOcrRouted){ const _gk=_sp.get('guild'); if(_gk&&FACTIONS[_gk]) _siGuild=FACTIONS[_gk].key; }
   const { data:periods, error } = await db().from('suro_periods').select('id,period_label,start_date').order('start_date',{ascending:false}).limit(80);
   if(error) throw error;
   _siPeriods=periods||[]; _siPid=_siPeriods[0]?.id;
@@ -1996,6 +2000,7 @@ async function buildSuroInput(){
   setTimeout(()=>{ try{ _siSubscribe(); }catch(e){} _siUpdateProgress(); }, 60);
   // 주차 자동생성 — 이번 주차(목~수) 회차가 없으면 운영진 방문 시 1회 자동 생성(prompt 없이). 노블/참여는 buildMembers가 지난주 점수로 폴백해 유지됨.
   if(!hasCur && isAdmin() && !_siAutoGen){ _siAutoGen=true; setTimeout(()=>{ _siAddPeriod(curLabel, true); }, 150); }
+  if(!_siOcrRouted){ const _openOcr=_sp.get('ocr'); _siOcrRouted=true; if(_openOcr) setTimeout(()=>{ try{ _siOcrOpen(); }catch(e){} }, 500); }
   if(!_siVisBound){ _siVisBound=true; document.addEventListener('visibilitychange',()=>{ if(!document.hidden && document.getElementById('si_list')) _siRefresh(); }); }
   const gtabs=['bunny','wolf','cougar'].map(k=>{ const f=FACTIONS[k], on=f.key===_siGuild; return `<button onclick="_siSetGuild('${k}')" style="border:0;border-radius:10px;padding:7px 15px;font-weight:800;font-size:13px;cursor:pointer;${on?`background:${f.main};color:#fff;box-shadow:0 3px 9px -3px ${f.deep}`:'background:var(--panel-2);color:var(--text)'}">${f.emoji} ${f.label}</button>`; }).join('');
   return headerHTML('수로 입력','실시간 동시 입력 · 자동 저장') +
