@@ -821,7 +821,7 @@ function memberGroups(q){
       <td style="padding:6px 8px;text-align:right;white-space:nowrap">${editCtrls(m,isRep,reassign)}</td>
     </tr>`;
   };
-  const gridInner=`<div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
+  const gridInner=`<div class="scroll" style="overflow-x:auto"><table class="gsheet" style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
     <thead><tr class="dim" style="font-size:11px;font-weight:800;background:var(--panel-2);border-bottom:1px solid var(--line)">
       <th style="padding:8px;text-align:right;width:36px">No</th>
       <th style="padding:8px;text-align:left;position:sticky;left:0;background:var(--panel-2);z-index:2">대표 / 닉네임</th>
@@ -849,7 +849,13 @@ function memberGroups(q){
       ${ed?`<button id="grpSaveBtn" onclick="_grpSave()" title="수정하면 자동 저장돼요 · 클릭 시 즉시 저장하고 편집 종료" style="border:0;border-radius:10px;padding:8px 14px;font-weight:800;font-size:13px;cursor:pointer;background:#1A8A4A;color:#fff"><i class="fa-solid fa-${_grpDirty.size?'floppy-disk':'check'}" style="margin-right:5px"></i>${_grpDirty.size?`저장 (${_grpDirty.size})`:'저장됨 ✓'}</button>
       <span class="dim" style="font-size:11px;font-weight:700"><b style="color:#1A8A4A">자동저장</b> · 셀 직접수정: <b>닉네임·직위·직업·레벨</b>${view==='grid'?' · 시트모드 <b>드래그</b> 범위선택→<b>Ctrl+C</b> 복사 · <b>Ctrl+V</b> 붙여넣기(구글시트/엑셀)':''} · <b>👑</b> 대표 지정 · <b>"대표 변경"</b> 칸에 대표 이름 타이핑(자동완성) · 부캐 <b>끌어</b> 대표행에 떨구기 · <b>독립</b>=본캐 분리 · <span style="color:var(--bad-tx)"><b>🗑</b> DB 삭제</span></span>`:''}
     </div>` : '';
-  const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}.gcell.gsel{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}</style>`;
+  const css = `<style>.acc-grp.open .acc-chev{transform:rotate(90deg)}.acc-grp.open .acc-body{display:block!important}.acc-head.gover{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}.gcell.gsel{background:var(--bunny-cream)!important;box-shadow:inset 0 0 0 2px var(--bunny-main)}
+    .gsheet th,.gsheet td{border:1px solid var(--line)}
+    .gsheet input.gcell,.gsheet select.gcell{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:6px 8px!important}
+    .gsheet td>input.gcell,.gsheet td>select.gcell{width:100%!important;max-width:none!important}
+    .gsheet td:has(>input.gcell),.gsheet td:has(>select.gcell){padding:0!important}
+    .gsheet .gcell:focus{outline:2px solid var(--bunny-main);outline-offset:-2px;background:var(--panel)!important;position:relative;z-index:3}
+    .gsheet .gcell.gsel{outline:0}</style>`;
   const repDatalist = ed ? `<datalist id="grpRepList">${reps.map(r=>`<option value="${escAttr(r.name)}"></option>`).join('')}</datalist>` : '';
   // 헤더 클릭 정렬 바 (C안: 활성 기준 핑크 강조 + 방향 화살표) — 닉네임은 유니코드순
   const arr = dir==='asc' ? '<i class="fa-solid fa-arrow-up-short-wide" style="margin-left:5px;font-size:10px"></i>' : '<i class="fa-solid fa-arrow-down-wide-short" style="margin-left:5px;font-size:10px"></i>';
