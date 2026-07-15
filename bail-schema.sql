@@ -5,10 +5,10 @@
 --
 -- 비즈니스 로직 메모:
 --  · 수로 미참 시 노블 사용 불가, 보석금 납부 시 해제
---  · 길드별 기본 금액(솔 에르다 조각): 뚠카롱 80 / 뚱카롱 40 / 밤·별·달·꿀·솜 20
---  · 동일 캐릭이 같은 반기에 또 보석금 → 2배, 3배, 4배 (누진)
+--  · 기본 금액(솔 에르다 조각): 버니·늑대·쿠거 3길드 통합 60개 (그 외 옛 길드도 60)
+--  · 동일 캐릭이 같은 반기에 또 보석금 → 60→120→180→240 (기본×누적횟수, 누진)
 --  · 누진세는 반기(YYYY-H1 / YYYY-H2) 기준 자동 초기화
---  · 길드창고(뚠/뚱카롱) 입금 후 스샷 업로드 → 운영진 확인 → 노블 해제
+--  · 버니 길드창고 입금 후 스샷 업로드 → 운영진 확인 → 노블 해제
 -- ========================================
 
 CREATE TABLE IF NOT EXISTS bail_requests (
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS bail_requests (
   payer_is_main BOOLEAN DEFAULT FALSE,         -- 본캐 여부
 
   -- 금액 계산
-  base_amount INTEGER NOT NULL,                -- 길드 기본 금액 (80/40/20)
+  base_amount INTEGER NOT NULL,                -- 기본 금액 (통합 60)
   multiplier INTEGER NOT NULL DEFAULT 1,       -- 누진 배수 (1/2/3/4...)
   total_amount INTEGER NOT NULL,               -- 실제 납부 금액 (base × multiplier)
   offense_count INTEGER NOT NULL DEFAULT 1,    -- 이번 반기 위반 누적 횟수 (= multiplier)
