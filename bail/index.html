@@ -50,22 +50,14 @@
       <i class="fas fa-circle-info text-cyan-500"></i>보석금 안내
     </h3>
     <div class="space-y-1.5 text-[12px] mb-3">
-      <div class="flex justify-between items-center bg-pink-50 rounded-xl px-3 py-2">
-        <span class="font-bold text-pink-700">버니</span>
-        <span class="font-black text-pink-600">솔 에르다 조각 80개</span>
-      </div>
-      <div class="flex justify-between items-center bg-rose-50 rounded-xl px-3 py-2">
-        <span class="font-bold text-rose-700">늑대</span>
-        <span class="font-black text-rose-600">솔 에르다 조각 40개</span>
-      </div>
-      <div class="flex justify-between items-center bg-violet-50 rounded-xl px-3 py-2">
-        <span class="font-bold text-violet-700">쿠거</span>
-        <span class="font-black text-violet-600">솔 에르다 조각 20개</span>
+      <div class="flex justify-between items-center bg-cyan-50 rounded-xl px-3 py-2.5 border border-cyan-100">
+        <span class="font-bold text-cyan-800"><i class="fas fa-gem mr-1.5 text-cyan-500"></i>버니 · 늑대 · 쿠거 <span class="text-[10px] font-black text-cyan-500 bg-cyan-100 px-1.5 py-0.5 rounded ml-1">통합</span></span>
+        <span class="font-black text-cyan-600">솔 에르다 조각 60개</span>
       </div>
     </div>
     <div class="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-[11px] text-amber-800 leading-relaxed">
       <i class="fas fa-triangle-exclamation mr-1"></i>
-      <strong>누진세</strong> · 동일 캐릭이 같은 반기에 또 보석금 시 <strong>×2 → ×3 → ×4</strong> 가산.
+      <strong>누진세</strong> · 동일 캐릭이 같은 반기에 또 보석금 시 <strong>60 → 120 → 180 → 240</strong> (기본×누적횟수).
       반기(<span id="halfYearLabel">-</span>) 기준으로 자동 초기화됩니다.
     </div>
     <div class="bg-cyan-50 border border-cyan-200 rounded-xl px-3 py-2.5 text-[11px] text-cyan-800 leading-relaxed mt-2">
@@ -192,7 +184,8 @@
   const R2_BUCKET = 'bail-images';
   const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
 
-  const BASE_AMOUNT = { '버니': 80, '늑대': 40, '쿠거': 20, '뚠카롱': 80, '뚱카롱': 40, '밤카롱': 20 };  // 신키+레거시. 그 외(옛 길드)는 기본 20
+  const BASE_UNIFIED = 60;  // 3길드(버니·늑대·쿠거) 통합 기본금액 · 반기 누진(base×횟수)은 유지
+  const BASE_AMOUNT = { '버니': BASE_UNIFIED, '늑대': BASE_UNIFIED, '쿠거': BASE_UNIFIED, '뚠카롱': BASE_UNIFIED, '뚱카롱': BASE_UNIFIED, '밤카롱': BASE_UNIFIED };  // 통합 60. 그 외(옛 길드)도 기본 60
   // 길드 DB키 → 표시 이름 (이제 DB값이 버니/늑대/쿠거 · 옛 키도 호환)
   const GUILD_LABEL = { '버니':'버니', '늑대':'늑대', '쿠거':'쿠거', '뚠카롱':'버니', '뚱카롱':'늑대', '밤카롱':'쿠거' };
   const guildLabel = (g) => GUILD_LABEL[g] || g || '?';
@@ -230,7 +223,7 @@
     return `${y}-H${m <= 6 ? 1 : 2}`;
   }
 
-  function baseAmountForGuild(guild) { return BASE_AMOUNT[guild] || 20; }
+  function baseAmountForGuild(guild) { return BASE_AMOUNT[guild] || BASE_UNIFIED; }
 
   state.halfYear = getCurrentHalfYear();
   document.getElementById('halfYearLabel').textContent = state.halfYear;

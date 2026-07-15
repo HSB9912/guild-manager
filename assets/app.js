@@ -3024,14 +3024,15 @@ const PAGES = {
 };
 
 /* ----- 보석금 신청 (멤버 폼) ----- */
-const BASE_AMOUNT = { '버니':80, '늑대':40, '쿠거':20, '뚠카롱':80, '뚱카롱':40, '밤카롱':20 };   // 신키+레거시키 둘 다
+const BASE_UNIFIED = 60;   // 3길드(버니·늑대·쿠거) 통합 기본금액 · 반기 누진(base×횟수)은 유지
+const BASE_AMOUNT = { '버니':BASE_UNIFIED, '늑대':BASE_UNIFIED, '쿠거':BASE_UNIFIED, '뚠카롱':BASE_UNIFIED, '뚱카롱':BASE_UNIFIED, '밤카롱':BASE_UNIFIED };   // 통합 60 · 옛 키도 60
 function curHalfYear(){ const d=new Date(); return `${d.getFullYear()}-H${(d.getMonth()+1)<=6?1:2}`; }
 const BAIL_MEAEGI_URL = 'https://guild-meaegi-proxy.hongsb9912.workers.dev/';
 const BAIL_R2 = { worker:'https://guild-images.hongsb9912.workers.dev', publicUrl:'https://pub-ee3a7d1dfe0a442b96336f0c81289a46.r2.dev', apiKey:'guild-manager-r2-key-2026', bucket:'bail-images' };
 const BAIL_NOTIFY_URL = 'https://guild-bail-notify.hongsb9912.workers.dev/';
 let _bailState = { mainChar:null, allChars:[], payers:[], halfYear:'', proofUrl:null, proofUploading:false, latestPeriod:null };
 function _bailNormGuild(g){ const s=String(g||'').trim(); if(!s)return ''; const known=['버니','늑대','쿠거','뚠카롱','뚱카롱','밤카롱','별카롱','달카롱','꿀카롱','솜카롱']; for(const k of known) if(s===k||s.includes(k)) return k; return s; }
-function _bailBaseFor(guild){ return BASE_AMOUNT[guild]||20; }
+function _bailBaseFor(guild){ return BASE_AMOUNT[guild]||BASE_UNIFIED; }
 async function buildBailForm(){
   _bailState = { mainChar:null, allChars:[], payers:[], halfYear:curHalfYear(), proofUrl:null, proofUploading:false, latestPeriod:null };
   const inp='width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;font-weight:600;color:var(--text);outline:0;font-size:14px;';
@@ -3041,11 +3042,9 @@ async function buildBailForm(){
       <div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px">
         <h3 class="dim" style="font-size:11px;font-weight:800;letter-spacing:.04em;margin:0 0 12px;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-circle-info" style="color:var(--bunny-main)"></i>보석금 안내</h3>
         <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">🐰 버니 <span class="dim" style="font-size:11px;font-weight:700">(메인)</span></span><span style="font-weight:900;color:var(--bunny-deep)">조각 80개</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">🐺 늑대 <span class="dim" style="font-size:11px;font-weight:700">(부길드)</span></span><span style="font-weight:900;color:var(--bunny-deep)">조각 40개</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">🐆 쿠거 <span class="dim" style="font-size:11px;font-weight:700">· 그 외 길드</span></span><span style="font-weight:900;color:var(--bunny-deep)">조각 20개</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-2);border-radius:12px;padding:9px 13px"><span style="font-weight:800">💎 버니 · 늑대 · 쿠거 <span class="dim" style="font-size:11px;font-weight:700">(통합)</span></span><span style="font-weight:900;color:var(--bunny-deep)">조각 60개</span></div>
         </div>
-        <div style="background:var(--warn-bg);color:var(--warn-tx);border-radius:12px;padding:10px 13px;font-size:11px;font-weight:700;line-height:1.6"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i><b>누진세</b> · 동일 캐릭이 같은 반기에 또 보석금 시 <b>×2 → ×3 → ×4</b> 가산. 반기(<b>${escHtml(half)}</b>) 기준 자동 초기화.</div>
+        <div style="background:var(--warn-bg);color:var(--warn-tx);border-radius:12px;padding:10px 13px;font-size:11px;font-weight:700;line-height:1.6"><i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i><b>누진세</b> · 동일 캐릭이 같은 반기에 또 보석금 시 <b>60 → 120 → 180 → 240</b> (기본×누적횟수). 반기(<b>${escHtml(half)}</b>) 기준 자동 초기화.</div>
       </div>
       <div class="panel" style="border-radius:24px;padding:24px">
         <div style="margin-bottom:16px">
