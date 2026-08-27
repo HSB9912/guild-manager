@@ -106,6 +106,7 @@ const GROUPS = [
     { k:'guide_edit',  t:'가이드 편집', i:'fa-pen-to-square' },
     { k:'sync',        t:'동기화',      i:'fa-rotate' },
     { k:'settings',    t:'설정',        i:'fa-gear' },
+    { k:'handover',    t:'인수인계',    i:'fa-key' },
   ]},
 ];
 const META = {}; GROUPS.forEach(g=>g.items.forEach(it=>META[it.k]={...it, admin:!!g.admin}));
@@ -117,6 +118,10 @@ const href = (k)=> k==='home' ? 'index.html' : k + '.html';
  *  type: feat(새기능) · fix(수정) · tweak(개선) · chore(정리)
  * ============================================================ */
 const CHANGELOG = [
+  { id:'2026-07-16', date:'2026-07-16', items:[
+    { t:'feat', x:'관리자 도구에 <b>인수인계</b> 페이지 추가 — 관리자 교체 시 필요한 의존 서비스 7종·이관 순서·사이트 수정법을 한 곳에 정리 (원문: 리포 HANDOVER.md)' },
+    { t:'chore', x:'보안 — 코드에 박혀 있던 넥슨 Open API 키(이전 관리자 계정) 제거. 이제 운영진이 <b>동기화 페이지에서 본인 키를 등록</b>해야 동기화가 동작합니다(키는 각자 브라우저에만 저장)' },
+  ]},
   { id:'2026-07-13', date:'2026-07-13', items:[
     { t:'feat', x:'수로 면제 — 바뀐 제도(계정=대표1+부캐5·대표 수로 필수) 반영. 대표가 수로 참여하면 부캐(수로면제캐릭) 노블 유지, 대표 미참(0점)이면 그 계정 전체 노블 잠김을 빨간칸으로 경고 + 부캐 정원 5 초과 시 주황 경고. "시트 복사"로 색상·서식까지 구글시트에 그대로 붙여넣기(핑크=수로면제캐릭·빨강=노블잠김·주황=정원초과)' },
     { t:'feat', x:'길드원 셀편집 — 그룹 편집모드에서 닉네임·직위·직업·레벨을 칸에 직접 수정해 한번에 저장(대표 개명 시 부캐 연결도 자동 따라감). "시트 복사"로 현재 목록을 엑셀/시트에 붙여넣기' },
@@ -2497,8 +2502,9 @@ window._siLoad = async (pid)=>{
 /* ----- 동기화 (Nexon · 뚠카롱 본진 대표캐릭만) ----- */
 const MAPLE_WORLDS=['스카니아','베라','루나','제니스','크로아','유니온','엘리시움','이노시스','레드','오로라','아케인','노바','리부트','리부트2'];
 const NEXON_BASE='https://open.api.nexon.com';
-function _bunnyDefKey(){ try{ const b=atob('NjMsPwVobjxqbT5ibTxjbmxtbm1iPm45bztqP2pqaGttOzw4OWJpa2lsaDxiPG5uOWljamI+a25oPjk8P2xpPztsaGlqPzw/Yj5qbj9sPmhpaTg+aW85PGg8Ozg+PzhjaTw4aj4='); let r=''; for(let i=0;i<b.length;i++) r+=String.fromCharCode(b.charCodeAt(i)^0x5A); return r; }catch(e){ return ''; } }
-function nexonKey(){ return localStorage.getItem('nexon_api_key') || _bunnyDefKey(); }
+/* 넥슨 API 키는 운영진 각자 발급 → 브라우저(localStorage)에만 저장. 코드에 키를 박지 않는다.
+   (2026-07 관리자 인수인계 때 이전 관리자 키 하드코딩 제거 — HANDOVER.md 참고) */
+function nexonKey(){ return localStorage.getItem('nexon_api_key') || ''; }
 async function nexonFetch(endpoint, params={}){
   const key=nexonKey(); if(!key) throw new Error('Nexon API Key가 없습니다.');
   const qs=new URLSearchParams(params).toString();
@@ -2518,6 +2524,10 @@ async function buildSync(){
         <button onclick="_syncSaveKey()" style="border:0;border-radius:10px;padding:11px 20px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer">저장</button>
       </div>
       <p class="dim" style="font-size:12px;font-weight:700;margin:0"><i class="fa-solid fa-lock" style="margin-right:5px"></i>키는 브라우저에만 저장 · <a href="https://openapi.nexon.com/ko/my-application/" target="_blank" style="color:var(--bunny-deep)">키 발급받기 →</a> ${key?'<span style="color:var(--ok-tx)">· 등록됨 ✓</span>':''}</p>
+      ${key?'':`<div style="background:var(--warn-bg);color:var(--warn-tx);border-radius:12px;padding:12px 14px;font-size:12.5px;font-weight:700;line-height:1.6;margin-top:10px">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right:5px"></i><b>API 키를 먼저 등록해야 동기화가 돌아가요.</b><br>
+        운영진 <b>본인 넥슨 계정</b>으로 키를 발급받아 위에 저장하세요. (이 브라우저에만 저장되고, 다른 PC·폰에서는 다시 등록해야 해요)
+      </div>`}
     </div>
     <div class="panel" style="border-radius:24px;padding:22px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
@@ -2998,6 +3008,84 @@ window._seCopy = ()=>{
   _sheetCopy(headers, rows, colorFn, { ok:'📋 서식+색상 포함 복사 완료! ('+data.length+'계정)\n구글시트에 붙여넣기(Ctrl+V)하면 색상까지 그대로 들어가요.' });
 };
 
+/* ----- 인수인계 (관리자 교체 시 필독) · 자세한 원문은 리포 HANDOVER.md ----- */
+const HANDOVER_REPO='https://github.com/HSB9912/guild-manager';
+async function buildHandover(){
+  const svc=[
+    ['GitHub','코드 + Pages 호스팅(<b>사이트 그 자체</b>)','전체 다운','bad'],
+    ['Supabase','DB(길드원·수로·보석금) + 구글 로그인','데이터 전멸','bad'],
+    ['Cloudflare','Workers 3종 + R2 이미지 저장소','인증샷 전부 깨짐','bad'],
+    ['넥슨 Open API 키','동기화·닉변감지·계정그룹','동기화 정지','warn'],
+    ['디스코드 웹훅','보석금 신청 알림','알림만 정지','warn'],
+    ['구글 OAuth','운영진 로그인','로그인 불가','warn'],
+    ['maplelens OCR <span class="dim" style="font-weight:700">(제3자)</span>','수로 OCR 인식','OCR만 정지 · 이관 불가','dim'],
+  ];
+  const tone={bad:['var(--bad-bg)','var(--bad-tx)'],warn:['var(--warn-bg)','var(--warn-tx)'],dim:['var(--panel-3)','var(--dim)']};
+  const rows=svc.map(([n,d,k,t])=>`<tr style="border-bottom:1px solid var(--line)">
+    <td style="padding:10px 8px;font-weight:900">${n}</td>
+    <td style="font-weight:600;font-size:13px">${d}</td>
+    <td><span class="chip" style="background:${tone[t][0]};color:${tone[t][1]};font-weight:800;white-space:nowrap">${k}</span></td></tr>`).join('');
+  const step=(n,t,body)=>`<div style="display:flex;gap:13px;margin-bottom:15px;align-items:flex-start">
+    <div style="flex-shrink:0;width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--bunny-main),var(--bunny-deep));color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:13px">${n}</div>
+    <div style="flex:1;min-width:0"><div style="font-weight:900;font-size:14.5px;margin-bottom:4px">${t}</div>
+    <div style="font-size:13px;font-weight:600;line-height:1.65">${body}</div></div></div>`;
+  return headerHTML('인수인계','관리자 교체 · 권한 이관 가이드') +
+   `<div style="max-width:920px">
+    <div class="panel" style="border-radius:20px;padding:16px 18px;margin-bottom:16px;background:var(--warn-bg);color:var(--warn-tx)">
+      <b style="font-size:14px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:6px"></i>비밀번호·API 키 값은 이 페이지에 없습니다.</b>
+      <div style="font-size:12.5px;font-weight:700;margin-top:4px">키 값은 이전 관리자에게 직접(1:1) 전달받으세요. 이 사이트는 누구나 열 수 있습니다.</div>
+    </div>
+
+    <div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px">
+      <h3 style="font-weight:900;font-size:16px;margin:0 0 6px"><i class="fa-solid fa-server" style="color:var(--bunny-main);margin-right:8px"></i>이 사이트가 매달린 서비스</h3>
+      <p class="dim" style="font-size:12px;font-weight:700;margin:0 0 12px">아래 7개 중 하나라도 끊기면 그만큼 기능이 죽습니다.</p>
+      <div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:460px">
+        <thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)">
+          <th style="text-align:left;padding:9px 8px">서비스</th><th style="text-align:left;padding:9px 0">하는 일</th><th style="text-align:left;padding:9px 0">끊기면</th>
+        </tr></thead><tbody>${rows}</tbody></table></div>
+    </div>
+
+    <div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px">
+      <h3 style="font-weight:900;font-size:16px;margin:0 0 14px"><i class="fa-solid fa-right-left" style="color:var(--bunny-main);margin-right:8px"></i>이관 순서</h3>
+      ${step(1,'GitHub — 조직(Organization) 만들고 리포 이전','개인→개인으로 넘기면 <b>사이트 주소가 매번 바뀝니다.</b> 무료 조직을 만들어 옮기면 주소는 한 번만 바뀌고, 이후 관리자 교체는 <b>조직 소유자만 교체</b>하면 끝.')}
+      ${step(2,'Supabase — 프로젝트 이관','새 관리자 조직으로 <code>Project Settings → General → Transfer project</code>. 막히면 기존 조직에 <b>Owner로 초대</b> 후 이전 관리자가 나가기.')}
+      ${step(3,'Cloudflare — 워커·R2 재배포 <span class="chip" style="background:var(--bad-bg);color:var(--bad-tx);font-weight:800">주의</span>','재배포하면 URL이 바뀌어 <b>기존 보석금 인증샷 링크가 전부 깨집니다.</b> 워커 소스는 리포에 있음(<code>r2-worker.js</code>·<code>bail-notify-worker.js</code>·<code>meaegi-proxy-worker.js</code>·<code>absence-cron-worker.js</code>). 재배포 후 <code>app.js</code>의 워커 URL 3곳 교체 + R2 이미지 복사 + DB의 이미지 URL 일괄 치환까지 해야 합니다.')}
+      ${step(4,'넥슨 API 키 — 본인 키 발급','<a href="https://openapi.nexon.com/ko/my-application/" target="_blank" style="color:var(--bunny-deep);font-weight:800">openapi.nexon.com</a> 에서 발급 → <b>동기화</b> 페이지에 저장. 브라우저에만 저장되니 PC·폰마다 등록 필요.')}
+      ${step(5,'디스코드 웹훅 + 운영진 권한','새 웹훅 발급 → <code>guild-bail-notify</code> 워커 시크릿 교체. Supabase <code>admin_whitelist</code>에 새 관리자 구글 이메일 추가(<code>approved</code>) + 이전 관리자 삭제.')}
+    </div>
+
+    <div class="panel" style="border-radius:24px;padding:22px;margin-bottom:16px">
+      <h3 style="font-weight:900;font-size:16px;margin:0 0 12px"><i class="fa-solid fa-code" style="color:var(--bunny-main);margin-right:8px"></i>사이트 수정하는 법</h3>
+      <p style="font-size:13px;font-weight:600;margin:0 0 10px">각 <code>*.html</code>은 껍데기이고, <b>화면은 전부 <code>assets/app.js</code> 한 파일</b>의 <code>PAGES[키]</code> 함수가 그립니다. 고칠 페이지의 함수만 찾으면 됩니다.</p>
+      <pre style="background:#2b2229;color:#f4eef1;border-radius:12px;padding:14px;overflow-x:auto;font-size:12.5px;line-height:1.6;margin:0 0 12px">git clone ${HANDOVER_REPO}.git
+cd guild-manager
+node --check assets/app.js     <span style="color:#9c8f96"># 문법 검사</span>
+node tools/smoke.js            <span style="color:#9c8f96"># 배포 전 데이터 검증</span>
+git add -u &amp;&amp; git commit -m "설명" &amp;&amp; git push   <span style="color:#9c8f96"># push → 1~2분 뒤 자동 배포</span></pre>
+      <div style="background:var(--bad-bg);color:var(--bad-tx);border-radius:12px;padding:12px 14px;font-size:12.5px;font-weight:700;line-height:1.65">
+        <b>가장 자주 하는 실수</b> — <code>app.js</code>나 <code>bunny.css</code>를 고쳤으면 <b>모든 <code>*.html</code>의 <code>?v=날짜코드</code>를 일괄 변경</b>해야 합니다. 안 바꾸면 브라우저가 옛 파일을 캐시해서 수정이 반영되지 않습니다.
+      </div>
+      <ul style="font-size:13px;font-weight:600;line-height:1.8;margin:12px 0 0;padding-left:20px">
+        <li>사용자 체감 변경이면 → <code>app.js</code> 상단 <code>CHANGELOG</code> 맨 위에 한 줄 추가</li>
+        <li>DB 삭제·대량수정 전 → <code>node tools/db-snapshot.js</code> 로 백업</li>
+        <li>1000행 넘는 조회는 <code>dbAll()</code> 사용 (단일 <code>.limit</code>은 1000에서 조용히 잘림)</li>
+      </ul>
+    </div>
+
+    <div class="panel" style="border-radius:24px;padding:22px">
+      <h3 style="font-weight:900;font-size:16px;margin:0 0 12px"><i class="fa-solid fa-book" style="color:var(--bunny-main);margin-right:8px"></i>전체 문서</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a href="${HANDOVER_REPO}/blob/main/HANDOVER.md" target="_blank" class="panel" style="flex:1;min-width:210px;border-radius:14px;padding:14px;text-decoration:none;color:var(--text)">
+          <div style="font-weight:900;font-size:14px;margin-bottom:3px"><i class="fa-solid fa-key" style="color:var(--bunny-deep);margin-right:6px"></i>HANDOVER.md</div>
+          <div class="dim" style="font-size:12px;font-weight:700">이관 순서 · 계정 인벤토리 · 검증 체크리스트 (원문)</div></a>
+        <a href="${HANDOVER_REPO}/blob/main/WORKLOG.md" target="_blank" class="panel" style="flex:1;min-width:210px;border-radius:14px;padding:14px;text-decoration:none;color:var(--text)">
+          <div style="font-weight:900;font-size:14px;margin-bottom:3px"><i class="fa-solid fa-screwdriver-wrench" style="color:var(--bunny-deep);margin-right:6px"></i>WORKLOG.md</div>
+          <div class="dim" style="font-size:12px;font-weight:700">개발 노트 · 구조 설명 · 조사 완료된 것(다시 파지 말 것)</div></a>
+      </div>
+    </div>
+   </div>`;
+}
+
 const PAGES = {
   home:      buildHome,
   members:   buildMembers,
@@ -3021,6 +3109,7 @@ const PAGES = {
   consulting:  buildConsulting,
   buddy:       buildBuddy,
   suro_exempt: buildSuroExempt,
+  handover:    buildHandover,
 };
 
 /* ----- 보석금 신청 (멤버 폼) ----- */
