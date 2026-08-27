@@ -6,6 +6,8 @@
 배포: https://hsb9912.github.io/guild-manager/ (GitHub Pages)
 저장소: https://github.com/HSB9912/guild-manager (소유 계정 **HSB9912**)
 
+> 🔑 **관리자 교체/권한 이관은 → [HANDOVER.md](HANDOVER.md)** (계정 인벤토리 · 이관 순서 · 검증 체크리스트)
+
 ---
 
 ## ⚠️ 작업 시 필수 체크리스트
