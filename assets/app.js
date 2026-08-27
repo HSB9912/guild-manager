@@ -3081,6 +3081,9 @@ git add -u &amp;&amp; git commit -m "설명" &amp;&amp; git push   <span style="
         <a href="${HANDOVER_REPO}/blob/main/WORKLOG.md" target="_blank" class="panel" style="flex:1;min-width:210px;border-radius:14px;padding:14px;text-decoration:none;color:var(--text)">
           <div style="font-weight:900;font-size:14px;margin-bottom:3px"><i class="fa-solid fa-screwdriver-wrench" style="color:var(--bunny-deep);margin-right:6px"></i>WORKLOG.md</div>
           <div class="dim" style="font-size:12px;font-weight:700">개발 노트 · 구조 설명 · 조사 완료된 것(다시 파지 말 것)</div></a>
+        <a href="${HANDOVER_REPO}/blob/main/join/README.md" target="_blank" class="panel" style="flex:1;min-width:210px;border-radius:14px;padding:14px;text-decoration:none;color:var(--text);border:2px solid var(--bunny-light)">
+          <div style="font-weight:900;font-size:14px;margin-bottom:3px">🔰 <span style="color:var(--bunny-deep)">가입폼 수정법</span> <span class="chip" style="background:var(--ok-bg);color:var(--ok-tx);font-weight:800">개발 몰라도 OK</span></div>
+          <div class="dim" style="font-size:12px;font-weight:700">GitHub 가입 → 웹에서 직접 수정 → 커밋까지. 신규 직업 추가 등</div></a>
       </div>
     </div>
    </div>`;
