@@ -17,7 +17,7 @@
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   .fade-in { animation: fadeIn 0.3s ease; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  .badge-9만 { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+  .badge-13만 { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
   .badge-half { background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; }
   .badge-new { background: linear-gradient(135deg, #fce7f3, #fbcfe8); color: #9d174d; }
   /* iOS safe-area */
@@ -46,11 +46,11 @@
   </div>
   <div class="space-y-1 text-[11px]">
     <div class="flex items-center justify-between bg-amber-50 rounded-lg px-3 py-1.5">
-      <span class="font-bold text-amber-700">9만 이상</span>
+      <span class="font-bold text-amber-700">13만 이상</span>
       <span class="font-black text-amber-700">전체 면제</span>
     </div>
     <div class="flex items-center justify-between bg-red-50 rounded-lg px-3 py-1.5">
-      <span class="font-bold text-red-700">9만 미만</span>
+      <span class="font-bold text-red-700">13만 미만</span>
       <span class="font-black text-red-700">신청 불가</span>
     </div>
   </div>
@@ -124,8 +124,8 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1Z2xzaHJma2tlYWNtZWZudmxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjE0NTIsImV4cCI6MjA4NzYzNzQ1Mn0.LrJ-ejXJGqVGzrJyL5nFW45J92-MxrcKuEpE2EGNsIo';
   const R2_WORKER_URL = 'https://guild-images.hongsb9912.workers.dev';
   const R2_API_KEY = 'guild-manager-r2-key-2026';
-  const SCORE_FULL_THRESHOLD = 90000;  // 9만 이상 → 전체 면제
-  const SCORE_HALF_THRESHOLD = 90000;  // 9만 미만 → 신청 불가
+  const SCORE_FULL_THRESHOLD = 130000;  // 13만 이상 → 전체 면제
+  const SCORE_HALF_THRESHOLD = 130000;  // 13만 미만 → 신청 불가
 
   // 길드 리스트 (수동 입력용 드롭다운)
   // [DB키, 표시이름] — 값은 데이터 연결용 키 유지, 화면엔 버니/늑대/쿠거
@@ -249,7 +249,7 @@
     const score = state.mainScore;
     const hasScore = score != null;
     const reqType = requestTypeFromScore(score);
-    const badge = reqType === 'full' ? '<span class="badge-9만 text-[10px] font-black px-2 py-1 rounded-lg">9만+</span>'
+    const badge = reqType === 'full' ? '<span class="badge-13만 text-[10px] font-black px-2 py-1 rounded-lg">13만+</span>'
                 : reqType === 'ineligible' ? '<span class="text-[10px] font-black text-red-700 bg-red-100 px-2 py-1 rounded-lg">신청 불가</span>'
                 : '<span class="text-[10px] font-black text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">점수 없음</span>';
 
@@ -362,16 +362,16 @@
 
   if (reqType === 'full') {
     badge.className = 'mt-2 text-[11px] font-bold px-3 py-2 rounded-xl text-center bg-amber-100 text-amber-700';
-    badge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>전체 면제 대상 (9만 이상)';
-    if (note) note.innerHTML = `<span class="text-amber-600"><i class="fas fa-bolt mr-0.5"></i>9만 이상이라 전체 면제 대상</span>`;
+    badge.innerHTML = '<i class="fas fa-check-circle mr-1"></i>전체 면제 대상 (13만 이상)';
+    if (note) note.innerHTML = `<span class="text-amber-600"><i class="fas fa-bolt mr-0.5"></i>13만 이상이라 전체 면제 대상</span>`;
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.classList.remove('opacity-40', 'cursor-not-allowed');
     }
   } else if (reqType === 'ineligible') {
     badge.className = 'mt-2 text-[11px] font-bold px-3 py-2 rounded-xl text-center bg-red-100 text-red-700';
-    badge.innerHTML = '<i class="fas fa-circle-xmark mr-1"></i>신청 불가 — 본캐 수로 점수 9만 미만';
-    if (note) note.innerHTML = `<span class="text-red-600"><i class="fas fa-circle-xmark mr-0.5"></i>9만 미만은 면제 신청이 불가능합니다</span>`;
+    badge.innerHTML = '<i class="fas fa-circle-xmark mr-1"></i>신청 불가 — 본캐 수로 점수 13만 미만';
+    if (note) note.innerHTML = `<span class="text-red-600"><i class="fas fa-circle-xmark mr-0.5"></i>13만 미만은 면제 신청이 불가능합니다</span>`;
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.classList.add('opacity-40', 'cursor-not-allowed');
@@ -451,7 +451,7 @@
     if (!state.mainChar) { toast('본캐를 먼저 검색해주세요', 'error'); return; }
     const reqType = requestTypeFromScore(state.mainScore);
     if (!reqType) { toast('수로 점수를 입력해주세요', 'error'); return; }
-    if (reqType === 'ineligible') { toast('본캐 수로 점수 9만 이상이어야 신청 가능합니다', 'error'); return; }
+    if (reqType === 'ineligible') { toast('본캐 수로 점수 13만 이상이어야 신청 가능합니다', 'error'); return; }
 
     // 선택된 부캐 (자동 매칭은 selected, 수동은 모두 포함)
     const selectedSubs = state.subChars.filter(s => s.manual ? (s.name && s.name.trim()) : s.selected);
@@ -514,7 +514,7 @@
   // ============ 디스코드 알림 ============
   async function notifyDiscord(req) {
     const subList = (req.sub_chars || []).map(s => `${s.name} (${s.guild})`).join(', ');
-    const typeLabel = req.request_type === 'full' ? '전체 면제 (9만+)' : '절반 면제 (9만-)';
+    const typeLabel = req.request_type === 'full' ? '전체 면제 (13만+)' : '절반 면제 (13만-)';
     const colorBlock = req.request_type === 'full' ? 0xfbbf24 : 0x3b82f6;
     const newBadge = req.is_new_member ? ' 🆕 신규 가입 동시' : '';
 
