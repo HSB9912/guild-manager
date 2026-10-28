@@ -74,7 +74,7 @@ const MOCK = {
 };
 
 /* ============================================================
- *  메뉴 정의 (4그룹 / 21개)  ·  admin:true 그룹은 관리자 전용
+ *  메뉴 정의 (4그룹 / 22개)  ·  admin:true 그룹은 관리자 전용
  * ============================================================ */
 const GROUPS = [
   { label: null, items: [
@@ -91,6 +91,7 @@ const GROUPS = [
     { k:'join_form',   t:'가입 신청',          i:'fa-user-plus' },
     { k:'absence_reg', t:'장기부재 캐릭 등록', i:'fa-bed' },
     { k:'bail_form',   t:'보석금 신청',        i:'fa-gem' },
+    { k:'homely_form', t:'보금자리 신청서', i:'fa-house' },
   ]},
   { label:'관리자 운영', lock:true, admin:true, items: [
     { k:'requests',    t:'신청 처리',     i:'fa-inbox', badge:3 },
@@ -3094,7 +3095,8 @@ const PAGES = {
   members:   buildMembers,
   promotion: buildPromotion,
   requests:  buildRequests,
-  bail:      buildBail,
+  bail_form:   buildBailForm,
+  homely_form: buildHomelyForm,
   penalty:   buildPenalty,
   join_form: buildJoinForm,
   analysis:  buildAnalysis,
@@ -3108,7 +3110,6 @@ const PAGES = {
   role_assign: buildRoleAssign,
   suro_input:  buildSuroInput,
   sync:        buildSync,
-  bail_form:   buildBailForm,
   consulting:  buildConsulting,
   buddy:       buildBuddy,
   suro_exempt: buildSuroExempt,
@@ -3254,6 +3255,85 @@ function _bailHistoryRow(r){
   const s=map[r.status]||map.pending; const dt=r.processed_at?new Date(r.processed_at).toLocaleDateString('ko-KR'):new Date(r.created_at).toLocaleDateString('ko-KR');
   return `<div style="background:${s[0]};border-radius:14px;padding:11px 13px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:900;color:${s[1]}"><i class="fa-solid ${s[3]}" style="margin-right:4px"></i>${s[2]}</span><span class="dim" style="font-size:10px;font-weight:700">${escHtml(dt)}</span></div><div style="font-size:14px;font-weight:800">${escHtml(r.payer_char)} <span class="dim" style="font-size:10px;font-weight:600">(${escHtml(guildLabel(r.payer_guild))})</span></div><div class="dim" style="font-size:11px;font-weight:700;margin-top:3px">${r.total_amount}개 · ×${r.multiplier} · ${escHtml(r.half_year)}</div>${r.admin_note?`<div style="font-size:11px;color:${s[1]};margin-top:4px;font-weight:700">메모: ${escHtml(r.admin_note)}</div>`:''}</div>`;
 }
+
+/* ----- 보금자리 신청 ----- */
+async function buildHomelyForm(){
+  const inp = 'width:100%;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;font-weight:600;color:var(--text);outline:0;font-size:14px;';
+
+  return headerHTML('보금자리 신청서', '본캐 수로 130,000점 이상 신청 가능') +
+    `<div style="max-width:620px">
+      <div class="panel" style="border-radius:24px;padding:24px">
+        <div style="background:var(--panel-2);border-radius:14px;padding:14px;margin-bottom:18px">
+          <div style="font-weight:900;font-size:15px;margin-bottom:5px">🏡 보금자리 신청 안내</div>
+          <div class="dim" style="font-size:12px;font-weight:700;line-height:1.7">
+            본캐의 최근 수로 점수가 130,000점 이상인 경우에만 신청할 수 있어요.
+          </div>
+        </div>
+
+        <label style="display:block;font-weight:800;font-size:13px;margin-bottom:6px">본캐 닉네임 *</label>
+        <div style="display:flex;gap:8px">
+          <input id="hf_main" placeholder="본캐 닉네임 입력" style="${inp};flex:1">
+          <button onclick="_homelyCheck()" style="border:0;border-radius:12px;padding:11px 16px;font-weight:800;color:#fff;background:var(--bunny-main);cursor:pointer">점수 확인</button>
+        </div>
+
+        <div id="hf_result" style="margin-top:16px"></div>
+        <p class="dim" style="font-size:11px;font-weight:700;margin-top:16px;text-align:center">
+          점수 확인 후 신청 자격이 안내됩니다.
+        </p>
+      </div>
+    </div>`;
+}
+
+window._homelyCheck = async ()=>{
+  const name = (document.getElementById('hf_main')?.value || '').trim();
+  const result = document.getElementById('hf_result');
+  if(!name) return alert('본캐 닉네임을 입력해주세요.');
+
+  result.innerHTML = '<p class="dim">본캐와 최근 수로 점수를 확인하고 있어요…</p>';
+
+  try {
+    const {data: members, error: memberError} = await db()
+      .from('members').select('id,name,is_main').eq('name', name);
+
+    if(memberError) throw memberError;
+
+    const main = (members || []).find(m => m.is_main !== false);
+    if(!main) {
+      result.innerHTML = '<div style="padding:14px;border-radius:12px;background:var(--warn-bg);color:var(--warn-tx);font-weight:800">등록된 본캐를 찾지 못했어요. 닉네임을 확인해주세요.</div>';
+      return;
+    }
+
+    const {data: periods, error: periodError} = await db()
+      .from('suro_periods').select('id,period_label')
+      .order('id',{ascending:false}).limit(1);
+
+    if(periodError) throw periodError;
+
+    if(!periods || !periods.length) {
+      result.innerHTML = '<div style="padding:14px;border-radius:12px;background:var(--warn-bg);color:var(--warn-tx);font-weight:800">최근 수로 기간을 찾지 못했어요.</div>';
+      return;
+    }
+
+    const {data: scores, error: scoreError} = await db()
+      .from('suro_scores').select('score')
+      .eq('member_id', main.id).eq('period_id', periods[0].id).limit(1);
+
+    if(scoreError) throw scoreError;
+
+    const score = Number(scores?.[0]?.score || 0);
+    const eligible = score >= 130000;
+
+    result.innerHTML = `
+      <div style="padding:16px;border-radius:14px;background:${eligible?'var(--ok-bg)':'var(--bad-bg)'};color:${eligible?'var(--ok-tx)':'var(--bad-tx)'}">
+        <div style="font-size:13px;font-weight:800">${escHtml(main.name)} · 최근 수로 점수</div>
+        <div style="font-size:25px;font-weight:900;margin:6px 0">${score.toLocaleString()}점</div>
+        <div style="font-size:13px;font-weight:900">${eligible?'✅ 신청 자격 충족':'❌ 신청 불가 · 130,000점 이상 필요'}</div>
+        <div style="font-size:11px;margin-top:6px">${escHtml(periods[0].period_label || '')}</div>
+      </div>`;
+  } catch(e) {
+    result.innerHTML = `<div style="padding:14px;border-radius:12px;background:var(--bad-bg);color:var(--bad-tx);font-weight:800">점수 조회 실패: ${escHtml(e.message || e)}</div>`;
+  }
+};
 
 /* ===== 아이템 컨설팅 — 원본 뚠카롱 게시판 그대로 이식 =====
  * 원본 index.html(6660-8723) 충실 포팅. Tailwind 온디맨드 + 얇은 호환 셸.
