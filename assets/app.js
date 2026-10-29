@@ -1734,7 +1734,7 @@ function _rewardRenderBody(selQ, qm, piecePrice){
   html+='<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5 mb-3">'+
     '<h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fas fa-info-circle mr-1 text-blue-400"></i>보상 체계 요약</h4>'+
     '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">'+
-      ['로얄버니','문버니','스타버니','코튼버니','토끼풀','새싹'].map(g=>{ const c=gc(g); const cnt=results.filter(r=>r.grade===g).length; const info=g==='로얄버니'?'TOP 5':g==='문버니'?'6~20등':g==='스타버니'?'21~51등':g==='코튼버니'?'90,000+':g==='토끼풀'?'55,000+':'하위 20명';
+      ['로얄버니','문버니','스타버니','코튼버니','토끼풀','새싹'].map(g=>{ const c=gc(g); const cnt=results.filter(r=>r.grade===g).length; const info=g==='로얄버니'?'TOP 5':g==='문버니'?'6~20등':g==='스타버니'?'21~51등':g==='코튼버니'?'130,000+':g==='토끼풀'?'~129,999':'하위 20명';
         return '<div class="'+c.bg+' '+c.border+' border rounded-xl p-2 text-center"><div class="text-[10px] font-black '+c.text+'">'+g+'</div><div class="text-lg font-black '+c.text+'">'+cnt+'</div><div class="text-[8px] text-gray-400">'+info+'</div></div>'; }).join('')+
     '</div></div>';
   html+='<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"><div class="overflow-auto" style="max-height:65vh">'+
