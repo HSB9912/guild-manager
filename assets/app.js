@@ -1721,7 +1721,7 @@ function _rewardRenderBody(selQ, qm, piecePrice){
       if(piecePrice>0){ const poolWon=tier.pool*100000000; let pieces=Math.round((poolWon*tier.ratio)/piecePrice); if(m.isNewbie){ const original=pieces; pieces=Math.round(pieces*ratio); rewardNote='('+original+'→'+pieces+', '+Math.round(ratio*100)+'%)'; } reward='솔 에르다 조각 '+pieces.toLocaleString()+'개'; }
       else { reward='비율 '+(tier.ratio*100).toFixed(0)+'%'; }
       benefit=tier.benefit||(REWARD_TIERS.find(t=>t.grade===grade&&t.benefit)||{}).benefit||'';
-    } else if(rank<=51){ grade='스타버니'; if(m.isNewbie){ const adj=Math.round(24*ratio); reward='숫돌 '+adj+'개'; rewardNote='(24→'+adj+', '+Math.round(ratio*100)+'%)'; } else { reward='숫돌 24개'; } benefit='전체면제 + 숫돌24개 + 부캐길드면제'; }
+    } else if(rank<=51){ grade='스타버니'; if(m.isNewbie){ const adj=Math.round(24*ratio); reward='숫돌 '+adj+'개'; rewardNote='(24→'+adj+', '+Math.round(ratio*100)+'%)'; } else { reward='숫돌 24개'; } benefit='숫돌24개 + 부캐길드면제'; }
     else if(bottom20.includes(m.name)){ grade='새싹'; reward='-'; benefit='부캐면제 X (하위 20)'; }
     else if(m.avg>=90000){ grade='코튼버니'; reward='-'; benefit='-'; }
    else if(m.avg>=55000){ grade='토끼풀'; reward='-'; benefit='-'; }
