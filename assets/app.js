@@ -151,7 +151,7 @@ const CHANGELOG = [
     { t:'feat', x:'동기화 닉변 검사 — "유니온 부캐 겹침=계정 확정" 추가(OCID 백필 없이도 이미 닉변한 사람 잡힘). ①OCID ②부캐겹침 ③직업·레벨추정' },
     { t:'feat', x:'동기화 — OCID 기반 닉변(닉네임 변경) 감지. OCID는 닉변해도 안 변해서, "OCID 백필"로 멤버 OCID를 미리 저장 → 동기화 후 "닉변 의심 검사"가 사라진 옛 닉 ↔ 새 닉을 확정 매칭 → 이름만 바꿔 수로 이력·점수 보존 (members.ocid 컬럼 필요)' },
     { t:'fix',  x:'수로 보상 — 점수가 1000건에서 잘려(DB 한 번에 1000행 제한) 상위권 분기평균이 반토막 나고 순위가 뒤집히던 치명 버그 수정. 전체 회차 점수를 나눠 받도록 변경(리케아 5/12→12/12주, 평균이 분석탭과 일치)' },
-    { t:'fix',  x:'수로 보상 — 부캐(수로 0점)가 보상 랭킹에 섞여 등급 분포(롤케이크/팬케이크)를 오염시키던 문제 수정. 본캐만 산정(557 → 181명)' },
+    { t:'fix',  x:'수로 보상 — 부캐(수로 0점)가 보상 랭킹에 섞여 등급 분포(토끼풀/새싹)를 오염시키던 문제 수정. 본캐만 산정(557 → 181명)' },
     { t:'feat', x:'수로 분석 전면 개편(기존 뚠카롱 분석 복원) — 평균순 안정 랭킹 · 최근 4주 비교표 · 주차 변동 · MVP(고득점/떡상/상승률/평균↑) · 길드 총점 추이 · 직업/직위/검색 필터 · 헤더 클릭 정렬' },
     { t:'fix',  x:'수로 분석 상위권 순위가 격변하던 문제 해결 — 기본 정렬을 최근주차 → 평균순으로(이번주 미참자가 평소 등수에서 추락하지 않게)' },
     { t:'feat', x:'수로 입력 — 📷 화면 캡처 OCR 부활. 메이플 길드 컨텐츠 창을 캡처하면 닉네임·지하수로 점수를 자동 인식 → 멤버 이름 매칭 → 현재 회차에 일괄 반영 (스크린샷 이미지 파일 인식도 지원)' },
@@ -1185,12 +1185,12 @@ function _joinRankFor(v,c){
   const joinCut=c.cut_last+5000;
   if(v<10000) return {rank:'❌ 가입 불가',msg:'1만점 미만은 신청 거절',color:'#C03A3A'};
   if(v<joinCut) return {rank:'🥖 늑대 (2기)',msg:`1기 컷 ${_fmtMan(joinCut)} 미달 — 꼴등 ${_fmtMan(c.cut_last)}+5천 필요`,color:'#2a87a6'};
-  if(v<c.cut180) return {rank:'🥞 팬케이크 (1기 강등권)',msg:'하위 20명 범위 — 매주 강등 위협',color:'#B07A10'};
+  if(v<c.cut180) return {rank:'🥞 새싹 (1기 강등권)',msg:'하위 20명 범위 — 매주 강등 위협',color:'#B07A10'};
   if(v<c.cut90)  return {rank:'⚡ 변동성 위험',msg:'90~180등 — 작은 변동에도 강등 가능',color:'#9a8200'};
-  if(v<c.top51)  return {rank:'🍰 롤케이크 (안정권)',msg:'TOP 90 이내 — 강등 거의 없음',color:'#1A8A4A'};
-  if(v<c.top21)  return {rank:'🎂 티라미슈',msg:'TOP 21~51 (부캐 All 면제 + 숫돌 24개)',color:'#B5446E'};
-  if(v<c.top5)   return {rank:'🍨 파르페',msg:'TOP 6~20 (별도 풀 분배)',color:'#B5446E'};
-  if(v<c.top1)   return {rank:'👑 크라운',msg:'TOP 1~5 (100억 분배)',color:'#9D174D'};
+  if(v<c.top51)  return {rank:'🍰 토끼풀 (안정권)',msg:'TOP 90 이내 — 강등 거의 없음',color:'#1A8A4A'};
+  if(v<c.top21)  return {rank:'🎂스타버니',msg:'TOP 21~51 (부캐 All 면제 + 숫돌 24개)',color:'#B5446E'};
+  if(v<c.top5)   return {rank:'🍨 문버니',msg:'TOP 6~20 (별도 풀 분배)',color:'#B5446E'};
+  if(v<c.top1)   return {rank:'👑 로얄버니',msg:'TOP 1~5 (100억 분배)',color:'#9D174D'};
   return {rank:'👑 TOP 1',msg:'1위 (28% 분배)',color:'#9D174D'};
 }
 window._joinScoreUpdate=()=>{ const sl=document.getElementById('jf_score'); if(!sl)return; const v=Number(sl.value); const r=_joinRankFor(v,_joinCuts); const vEl=document.getElementById('jf_scoreVal'),rEl=document.getElementById('jf_scoreRank'),mEl=document.getElementById('jf_scoreMsg'); if(vEl)vEl.textContent=v.toLocaleString(); if(rEl){rEl.textContent=r.rank;rEl.style.color=r.color;} if(mEl){mEl.textContent=r.msg;mEl.style.color=r.color;} };
@@ -1559,26 +1559,26 @@ function escAttr(s){ return escHtml(s).replace(/"/g,'&quot;'); }
 
 /* ----- 수로 보상 (분기별 등급·보상 산정 — 원본 뚠카롱 renderSuroReward 충실 이식) ----- */
 const REWARD_TIERS = [
-  { grade:'크라운', rank:'1등', ratio:0.28, pool:100, benefit:'부캐길드 전체면제' },
-  { grade:'크라운', rank:'2등', ratio:0.24, pool:100, benefit:'' },
-  { grade:'크라운', rank:'3등', ratio:0.20, pool:100, benefit:'' },
-  { grade:'크라운', rank:'4등', ratio:0.16, pool:100, benefit:'' },
-  { grade:'크라운', rank:'5등', ratio:0.12, pool:100, benefit:'' },
-  { grade:'파르페', rank:'6등', ratio:0.11, pool:100, benefit:'부캐길드 전체면제' },
-  { grade:'파르페', rank:'7등', ratio:0.10, pool:100, benefit:'' },
-  { grade:'파르페', rank:'8등', ratio:0.09, pool:100, benefit:'' },
-  { grade:'파르페', rank:'9등', ratio:0.08, pool:100, benefit:'' },
-  { grade:'파르페', rank:'10등', ratio:0.08, pool:100, benefit:'' },
-  { grade:'파르페', rank:'11등', ratio:0.07, pool:100, benefit:'' },
-  { grade:'파르페', rank:'12등', ratio:0.07, pool:100, benefit:'' },
-  { grade:'파르페', rank:'13등', ratio:0.07, pool:100, benefit:'' },
-  { grade:'파르페', rank:'14등', ratio:0.06, pool:100, benefit:'' },
-  { grade:'파르페', rank:'15등', ratio:0.06, pool:100, benefit:'' },
-  { grade:'파르페', rank:'16등', ratio:0.05, pool:100, benefit:'' },
-  { grade:'파르페', rank:'17등', ratio:0.04, pool:100, benefit:'' },
-  { grade:'파르페', rank:'18등', ratio:0.04, pool:100, benefit:'' },
-  { grade:'파르페', rank:'19등', ratio:0.04, pool:100, benefit:'' },
-  { grade:'파르페', rank:'20등', ratio:0.04, pool:100, benefit:'' },
+  { grade:'로얄버니', rank:'1등', ratio:0.28, pool:100, benefit:'부캐길드 전체면제' },
+  { grade:'로얄버니', rank:'2등', ratio:0.24, pool:100, benefit:'' },
+  { grade:'로얄버니', rank:'3등', ratio:0.20, pool:100, benefit:'' },
+  { grade:'로얄버니', rank:'4등', ratio:0.16, pool:100, benefit:'' },
+  { grade:'로얄버니', rank:'5등', ratio:0.12, pool:100, benefit:'' },
+  { grade:'문버니', rank:'6등', ratio:0.11, pool:100, benefit:'부캐길드 전체면제' },
+  { grade:'문버니', rank:'7등', ratio:0.10, pool:100, benefit:'' },
+  { grade:'문버니', rank:'8등', ratio:0.09, pool:100, benefit:'' },
+  { grade:'문버니', rank:'9등', ratio:0.08, pool:100, benefit:'' },
+  { grade:'문버니', rank:'10등', ratio:0.08, pool:100, benefit:'' },
+  { grade:'문버니', rank:'11등', ratio:0.07, pool:100, benefit:'' },
+  { grade:'문버니', rank:'12등', ratio:0.07, pool:100, benefit:'' },
+  { grade:'문버니', rank:'13등', ratio:0.07, pool:100, benefit:'' },
+  { grade:'문버니', rank:'14등', ratio:0.06, pool:100, benefit:'' },
+  { grade:'문버니', rank:'15등', ratio:0.06, pool:100, benefit:'' },
+  { grade:'문버니', rank:'16등', ratio:0.05, pool:100, benefit:'' },
+  { grade:'문버니', rank:'17등', ratio:0.04, pool:100, benefit:'' },
+  { grade:'문버니', rank:'18등', ratio:0.04, pool:100, benefit:'' },
+  { grade:'문버니', rank:'19등', ratio:0.04, pool:100, benefit:'' },
+  { grade:'문버니', rank:'20등', ratio:0.04, pool:100, benefit:'' },
 ];
 let _srData = null;
 async function buildSuroReward(){
@@ -1668,7 +1668,7 @@ window._srPayCalc=()=>{
   const showChip=onlyU?chip.filter(r=>!paid[r.name]):chip, showSut=onlyU?sut.filter(r=>!paid[r.name]):sut;
   body.innerHTML='<div style="font-weight:900;font-size:13px;color:#b45309;margin:10px 4px 4px"><i class="fas fa-gem" style="margin-right:5px"></i>솔 에르다 조각 — 상위 20 (총 '+jT.toLocaleString()+'개)</div>'
     +(showChip.length?showChip.map(row).join(''):'<div style="color:#bbb;font-size:12px;font-weight:700;padding:8px 4px">'+(onlyU?'다 받음 ✓':'대상 없음')+'</div>')
-    +'<div style="font-weight:900;font-size:13px;color:#7c3aed;margin:15px 4px 4px"><i class="fas fa-hammer" style="margin-right:5px"></i>숫돌 — 티라미슈 21~51등 (총 '+sT.toLocaleString()+'개)</div>'
+    +'<div style="font-weight:900;font-size:13px;color:#7c3aed;margin:15px 4px 4px"><i class="fas fa-hammer" style="margin-right:5px"></i>숫돌 —스타버니 21~51등 (총 '+sT.toLocaleString()+'개)</div>'
     +(showSut.length?showSut.map(row).join(''):'<div style="color:#bbb;font-size:12px;font-weight:700;padding:8px 4px">'+(onlyU&&sut.length?'다 받음 ✓':'대상 없음')+'</div>');
   const sum=document.getElementById('srPaySum'); if(sum) sum.textContent='조각 '+jT.toLocaleString()+'개 · 숫돌 '+sT+'개';
   const prog=document.getElementById('srPayProg'); if(prog) prog.textContent='지급완료 '+doneN+' / '+totN;
@@ -1707,12 +1707,12 @@ function _rewardRenderBody(selQ, qm, piecePrice){
     return { name:m.name, avg, total, weeks:scores.length, activeWeeks, participated, role:m.role, isNewbie, isMain:m.is_main!==false, mainCharName:m.main_char_name||'' };
   }).sort((a,b)=>b.avg-a.avg);
   const gradeColors={
-    '크라운':{bg:'bg-amber-50',border:'border-amber-200',text:'text-amber-700',badge:'bg-amber-400'},
-    '파르페':{bg:'bg-blue-50',border:'border-blue-200',text:'text-blue-700',badge:'bg-blue-400'},
-    '티라미슈':{bg:'bg-purple-50',border:'border-purple-200',text:'text-purple-700',badge:'bg-purple-400'},
-    '크로칸슈':{bg:'bg-green-50',border:'border-green-200',text:'text-green-700',badge:'bg-green-400'},
-    '롤케이크':{bg:'bg-rose-50',border:'border-rose-200',text:'text-rose-700',badge:'bg-rose-400'},
-    '팬케이크':{bg:'bg-gray-50',border:'border-gray-200',text:'text-gray-600',badge:'bg-gray-400'},
+    '로얄버니':{bg:'bg-amber-50',border:'border-amber-200',text:'text-amber-700',badge:'bg-amber-400'},
+    '문버니':{bg:'bg-blue-50',border:'border-blue-200',text:'text-blue-700',badge:'bg-blue-400'},
+    '스타버니':{bg:'bg-purple-50',border:'border-purple-200',text:'text-purple-700',badge:'bg-purple-400'},
+    '코튼버니':{bg:'bg-green-50',border:'border-green-200',text:'text-green-700',badge:'bg-green-400'},
+    '토끼풀':{bg:'bg-rose-50',border:'border-rose-200',text:'text-rose-700',badge:'bg-rose-400'},
+    '새싹':{bg:'bg-gray-50',border:'border-gray-200',text:'text-gray-600',badge:'bg-gray-400'},
   };
   const bottom20=ranked.slice(-20).map(m=>m.name);
   const results=ranked.map((m,i)=>{
@@ -1721,20 +1721,20 @@ function _rewardRenderBody(selQ, qm, piecePrice){
       if(piecePrice>0){ const poolWon=tier.pool*100000000; let pieces=Math.round((poolWon*tier.ratio)/piecePrice); if(m.isNewbie){ const original=pieces; pieces=Math.round(pieces*ratio); rewardNote='('+original+'→'+pieces+', '+Math.round(ratio*100)+'%)'; } reward='솔 에르다 조각 '+pieces.toLocaleString()+'개'; }
       else { reward='비율 '+(tier.ratio*100).toFixed(0)+'%'; }
       benefit=tier.benefit||(REWARD_TIERS.find(t=>t.grade===grade&&t.benefit)||{}).benefit||'';
-    } else if(rank<=51){ grade='티라미슈'; if(m.isNewbie){ const adj=Math.round(24*ratio); reward='숫돌 '+adj+'개'; rewardNote='(24→'+adj+', '+Math.round(ratio*100)+'%)'; } else { reward='숫돌 24개'; } benefit='전체면제 + 숫돌24개 + 부캐길드면제'; }
-    else if(bottom20.includes(m.name)){ grade='팬케이크'; reward='-'; benefit='부캐면제 X (하위 20)'; }
-    else if(m.avg>=90000){ grade='크로칸슈'; reward='-'; benefit='전체면제 + 부캐길드면제'; }
-    else if(m.avg>=55000){ grade='롤케이크'; reward='-'; benefit='절반면제'; }
-    else { grade='롤케이크'; reward='-'; benefit='절반면제'; }
+    } else if(rank<=51){ grade='스타버니'; if(m.isNewbie){ const adj=Math.round(24*ratio); reward='숫돌 '+adj+'개'; rewardNote='(24→'+adj+', '+Math.round(ratio*100)+'%)'; } else { reward='숫돌 24개'; } benefit='전체면제 + 숫돌24개 + 부캐길드면제'; }
+    else if(bottom20.includes(m.name)){ grade='새싹'; reward='-'; benefit='부캐면제 X (하위 20)'; }
+    else if(m.avg>=90000){ grade='코튼버니'; reward='-'; benefit='-'; }
+   else if(m.avg>=55000){ grade='토끼풀'; reward='-'; benefit='-'; }
+   else { grade='토끼풀'; reward='-'; benefit='-'; }
     return Object.assign({}, m, { rank, grade, reward, benefit, rewardNote });
   });
   _srData._results=results; _srData._selQ=selQ;   // 정산 내보내기용
-  const gc=(grade)=>gradeColors[grade]||gradeColors['팬케이크'];
+  const gc=(grade)=>gradeColors[grade]||gradeColors['새싹'];
   let html='';
   html+='<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 lg:p-5 mb-3">'+
     '<h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fas fa-info-circle mr-1 text-blue-400"></i>보상 체계 요약</h4>'+
     '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">'+
-      ['로얄버니','문버니','스타버니','코튼버니','토끼풀','새싹'].map(g=>{ const c=gc(g); const cnt=results.filter(r=>r.grade===g).length; const info=g==='로얄버니'?'TOP 5':g==='문버니'?'6~20등':g==='스타버니'?'21~51등':g==='코튼버니'?'130,000+':g==='토끼풀'?'~129,999':'하위 20명';
+      ['로얄버니','문버니','스타버니','코튼버니','토끼풀','새싹'].map(g=>{ const c=gc(g); const cnt=results.filter(r=>r.grade===g).length; const info=g==='로얄버니'?'TOP 5':g==='문버니'?'6~20등':g==='스타버니'?'21~51등':g==='코튼버니'?'90,000+':g==='토끼풀'?'55,000+':'하위 20명';
         return '<div class="'+c.bg+' '+c.border+' border rounded-xl p-2 text-center"><div class="text-[10px] font-black '+c.text+'">'+g+'</div><div class="text-lg font-black '+c.text+'">'+cnt+'</div><div class="text-[8px] text-gray-400">'+info+'</div></div>'; }).join('')+
     '</div></div>';
   html+='<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"><div class="overflow-auto" style="max-height:65vh">'+
@@ -1846,7 +1846,7 @@ async function buildSettings(){
         ${field('조각 1개 가격 (메소)',`<input id="set_piece" type="number" value="${piece||''}" style="${F}">`, piece?`보석금·보상 환산 · 약 ${(piece/100000000).toFixed(2)}억`:'')}
       </div>
       ${field('길드 로고 URL',`<input id="set_logo" value="${escAttr(cfg.guildLogo||'')}" style="${F}">`, cfg.guildLogo?`<img src="${escAttr(cfg.guildLogo)}" style="height:40px;border-radius:8px;margin-top:7px;background:var(--panel-2);padding:3px">`:'비워두면 기본 토끼 아이콘')}
-      ${field('수로 면제 안내문',`<input id="set_exnote" value="${escAttr(cfg.suroExemptNote||'')}" placeholder="예: 크로칸슈 이상 — 부캐 전부 수로 면제" style="${F}">`)}
+      ${field('수로 면제 안내문',`<input id="set_exnote" value="${escAttr(cfg.suroExemptNote||'')}" placeholder="예: 코튼버니 이상 — 부캐 전부 수로 면제" style="${F}">`)}
       <div style="display:flex;justify-content:flex-end;margin-top:4px">
         <button onclick="_setSaveBasic()" style="border:0;border-radius:10px;padding:10px 22px;font-weight:800;font-size:13px;color:#fff;background:#1A8A4A;cursor:pointer"><i class="fa-solid fa-floppy-disk" style="margin-right:5px"></i>${FK.label} 기본 + 공통 저장</button>
       </div>
@@ -1878,7 +1878,7 @@ async function buildSettings(){
       <p class="dim" style="font-size:12px;font-weight:700;margin:0 0 6px;line-height:1.6">공지대로 <b>버니·늑대 직위명</b>을 한 번에 바꿔요(설정의 직위·승강기준·색상·면제 + <b>멤버들의 직위(DB)</b>까지 일괄).<br>
         버니: 마카롱→버니버니 · 다쿠아즈→당근당근 · 크라운→로얄버니 · 파르페→문버니 · 티라미슈→스타버니 · 크로칸슈→코튼버니 · 롤케이크→토끼풀 · 팬케이크→새싹 · 스콘→돌멩이<br>
         늑대: 마카롱→늑대 · 다쿠아즈→울프 · 뚠케이크→딩고 · 뚠바게트→허스키 · 뚠브레드→강아지 · 뚠스콘→발자국<br>
-        승강기준: 문버니 TOP25 · 스타버니 TOP60 · 코튼버니 13만 이상</p>
+        승강기준: 문버니 TOP25 ·스타버니 TOP60 · 코튼버니 13만 이상</p>
       <p class="dim" style="font-size:11px;font-weight:700;margin:0 0 12px;color:var(--warn-tx)"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i>라이브 공유 DB에 반영 · 1회만 누르면 됨(이미 바뀐 이름은 건너뜀) · 운영진 로그인 필요</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button onclick="_setReformPreview()" style="border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:10px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer"><i class="fa-solid fa-eye" style="margin-right:5px"></i>변경 미리보기</button>
@@ -1987,7 +1987,7 @@ window._setSaveBasic=async ()=>{
 /* ===== 길드 대규모 개편(직위명 변경 + 승강기준) — 공지 기반 1회성 마이그레이션 ===== */
 const _REFORM = {
   '버니': { label:'버니',
-    renames:{ '마카롱':'버니버니','다쿠아즈':'당근당근','크라운':'로얄버니','파르페':'문버니','티라미슈':'스타버니','크로칸슈':'코튼버니','롤케이크':'토끼풀','팬케이크':'새싹','스콘':'돌멩이' },
+ renames:{ '마카롱':'버니버니','다쿠아즈':'당근당근','크라운':'로얄버니','파르페':'문버니','티라미슈':'스타버니','크로칸슈':'코튼버니','롤케이크':'토끼풀','팬케이크':'새싹','스콘':'돌멩이' },
     rules:{ '문버니':{topN:25}, '스타버니':{topN:60}, '코튼버니':{min:130000} } },  // 로얄버니 TOP5·새싹 하위20·돌멩이 미참은 기존과 동일
   '늑대': { label:'늑대',
     renames:{ '마카롱':'늑대','다쿠아즈':'울프','뚠케이크':'딩고','뚠바게트':'허스키','뚠브레드':'강아지','뚠스콘':'발자국' },
@@ -2025,7 +2025,7 @@ window._setReformPreview=async ()=>{
 };
 window._setReformApply=async ()=>{
   if(!isAdmin()) return alert('운영진만 적용할 수 있어요.');
-  if(!confirm('📢 길드 개편 적용\n\n· 버니·늑대 직위명을 새 이름으로 일괄 변경 (설정 + 멤버 직위 DB)\n· 승강 기준 갱신: 문버니 TOP25, 스타버니 TOP60, 코튼버니 13만 이상\n\n※ 라이브 공유 DB에 반영됩니다(되돌리기 어려움). 진행할까요?')) return;
+  if(!confirm('📢 길드 개편 적용\n\n· 버니·늑대 직위명을 새 이름으로 일괄 변경 (설정 + 멤버 직위 DB)\n· 승강 기준 갱신: 문버니 TOP25,스타버니 TOP60, 코튼버니 13만 이상\n\n※ 라이브 공유 DB에 반영됩니다(되돌리기 어려움). 진행할까요?')) return;
   const cfg=_cfg||await getConfig();
   const nc=_reformConfig(cfg);
   const { error } = await db().from('site_config').update({ config:nc, updated_at:new Date().toISOString() }).eq('id',_cfgId);
@@ -2074,7 +2074,7 @@ async function buildRoleAssign(){
       let cum=0; for(const r of topNR){ cum+=(r.topN||0); if(idx<cum&&score>0) return r.rank; }
     }
     for(const r of scoreR){ if(score>=(r.min||0)) return r.rank; }
-    return scoreR.length?scoreR[scoreR.length-1].rank:'스콘';
+    return scoreR.length?scoreR[scoreR.length-1].rank:'돌멩이';
   };
   const all=mains.map(m=>({...m,to:roleFor(m),protected:!!absMap[m.name],absReason:absMap[m.name]?.reason_type})).filter(m=>m.role!==m.to);
   const fmt=(n)=>(Number(n)||0).toLocaleString();
