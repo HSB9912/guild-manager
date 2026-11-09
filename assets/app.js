@@ -159,7 +159,7 @@ const CHANGELOG = [
   ]},
   { id:'2026-06-25', date:'2026-06-25', items:[
     { t:'feat', x:'버니버디 — 과거 완료 버디팀 19팀 한 번에 가져오기(운영진 "과거 이력 가져오기" 버튼)' },
-    { t:'feat', x:'신청 처리 3탭 복원 — 가입 신청 · 아인슈페너(수로 면제) 신청 · 수로 보석금 신청을 한 곳에서 승인/거절' },
+    { t:'feat', x:'신청 처리 3탭 복원 — 가입 신청 · 보금자리(수로 면제) 신청 · 수로 보석금 신청을 한 곳에서 승인/거절' },
     { t:'tweak', x:'주소창·탭 아이콘(파비콘)을 현재 길드 마크로 (🐰버니 / 🐺늑대 / 🐆쿠거), 옛 뚠카롱 아이콘 제거' },
     { t:'feat', x:'수로 입력 — 새 회차(주차) 추가 버튼. 이번 주차 회차가 없으면 안내 배너로 바로 생성' },
   ]},
@@ -906,7 +906,7 @@ async function buildPromotion(){
     </div>`;
 }
 
-/* ----- 신청 처리 (3탭 허브: 가입 / 아인슈페너(면제) / 수로 보석금) ----- */
+/* ----- 신청 처리 (3탭 허브: 가입 / 보금자리(면제) / 수로 보석금) ----- */
 let _reqMainTab='join'; let _reqTab='pending'; let _reqBg={};
 async function buildRequests(){
   let cj=0,ce=0,cb=0;
@@ -917,8 +917,8 @@ async function buildRequests(){
   let body='';
   try{ body = _reqMainTab==='exempt' ? await _reqExemptBody() : _reqMainTab==='bail' ? await _reqBailBody() : await _reqJoinBody(); }
   catch(e){ body=`<div class="panel" style="border-radius:18px;padding:30px;text-align:center"><span class="dim" style="font-weight:700">${escHtml(e.message||String(e))}</span></div>`; }
-  return headerHTML('신청 처리', `가입 ${cj} · 아인슈페너 ${ce} · 보석금 ${cb}`) +
-    `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">${mtab('join','가입 신청','fa-user-plus',cj)}${mtab('exempt','아인슈페너 신청','fa-mug-hot',ce)}${mtab('bail','수로 보석금','fa-gem',cb)}</div>
+  return headerHTML('신청 처리', `가입 ${cj} · 보금자리 ${ce} · 보석금 ${cb}`) +
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">${mtab('join','가입 신청','fa-user-plus',cj)}${mtab('exempt','보금자리 신청','fa-mug-hot',ce)}${mtab('bail','수로 보석금','fa-gem',cb)}</div>
      <div id="reqMainBody">${body}</div>`;
 }
 window._reqMain=async (k)=>{ _reqMainTab=k; const el=document.getElementById('pageBody'); if(!el) return; el.innerHTML=loadingHTML('requests'); try{ el.innerHTML=await buildRequests(); }catch(e){ el.innerHTML=errorHTML('requests',e); } };
@@ -985,7 +985,7 @@ window._reqCopyNotice=(enc)=>{ try{ navigator.clipboard.writeText(decodeURICompo
 window._reqRevert=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 신청을 대기 상태로 되돌릴까요?')) return; const { error }=await db().from('join_requests').update({ status:'pending', processed_by:null, processed_at:null, admin_note:null }).eq('id',id); if(error) return alert('실패: '+error.message); render(); };
 window._reqDelete=async (id)=>{ if(!isAdmin()) return alert('운영진만 가능해요.'); if(!confirm('이 신청을 삭제할까요? (되돌릴 수 없음)')) return; const { error }=await db().from('join_requests').delete().eq('id',id); if(error) return alert('삭제 실패: '+error.message); render(); };
 
-/* ===== 아인슈페너(면제) 신청 처리 — exempt_requests ===== */
+/* ===== 보금자리(면제) 신청 처리 — exempt_requests ===== */
 async function _reqExemptBody(){
   const { data, error } = await db().from('exempt_requests').select('*').order('created_at',{ascending:false}).limit(300);
   if(error) throw error;
@@ -1016,7 +1016,7 @@ async function _reqExemptBody(){
     </div>`;
   };
   const doneRow=(r)=>`<tr style="border-bottom:1px solid var(--line)"><td style="padding:9px 8px;font-weight:800">${escHtml(r.main_char||'-')}</td><td class="dim" style="font-weight:700">${rtype(r.request_type)}</td><td>${r.status==='approved'?'<span class="chip" style="background:var(--ok-bg);color:var(--ok-tx)">승인</span>':'<span class="chip" style="background:var(--bad-bg);color:var(--bad-tx)">거절</span>'}</td><td class="dim" style="font-weight:700">${(r.processed_at||r.created_at||'').slice(0,10)}</td></tr>`;
-  return `<div>${pending.length?pending.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-mug-hot" style="margin-right:6px"></i>대기 중인 아인슈페너(면제) 신청이 없어요</span></div>'}</div>
+  return `<div>${pending.length?pending.map(card).join(''):'<div class="panel" style="border-radius:18px;padding:40px;text-align:center"><span class="dim" style="font-weight:800"><i class="fa-solid fa-mug-hot" style="margin-right:6px"></i>대기 중인 보금자리(면제) 신청이 없어요</span></div>'}</div>
     ${done.length?`<h3 style="font-weight:900;font-size:15px;margin:22px 0 12px"><i class="fa-solid fa-clock-rotate-left" style="color:var(--bunny-main);margin-right:8px"></i>처리 완료 (${done.length})</h3>
     <div class="panel" style="border-radius:20px;padding:16px"><div class="scroll" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px;min-width:420px"><thead><tr class="dim" style="font-size:12px;font-weight:700;border-bottom:2px solid var(--line)"><th style="text-align:left;padding:9px 8px">대표</th><th style="text-align:left;padding:9px 0">유형</th><th style="text-align:left;padding:9px 0">결과</th><th style="text-align:left;padding:9px 0">처리일</th></tr></thead><tbody style="font-weight:500">${done.map(doneRow).join('')}</tbody></table></div></div>`:''}`;
 }
